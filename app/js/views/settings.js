@@ -81,7 +81,7 @@ const SettingsView = (() => {
             { key:'agent_error', label:'Agent Errors', desc:'Alerts when an agent encounters an error.' },
             { key:'task_complete', label:'Task Complete', desc:'When a task or blueprint setup finishes.' },
             { key:'task_failed', label:'Task Failed', desc:'When a task fails or times out.' },
-            { key:'fleet_deployed', label:'Spaceship Launched', desc:'When a spaceship is deployed.' },
+            { key:'fleet_deployed', label:`${Terminology.label('spaceship')} Launched`, desc:`When ${Terminology.article('spaceship')} ${Terminology.label('spaceship', { lowercase: true })} is deployed.` },
             { key:'budget_alert', label:'Budget Alerts', desc:'Spend threshold warnings.' },
             { key:'system', label:'System', desc:'General system notifications.' },
           ].map(cat => {
@@ -198,7 +198,7 @@ const SettingsView = (() => {
           <div class="settings-row">
             <div class="settings-row-info">
               <span class="settings-row-name">Upgrade Plan</span>
-              <span class="settings-row-desc">Get more tokens, agents, and spaceships.</span>
+              <span class="settings-row-desc">Get more tokens, agents, and ${Utils.esc(Terminology.label('spaceship', { plural: true, lowercase: true }))}.</span>
             </div>
             <button class="btn btn-sm btn-primary" id="btn-upgrade-plan">Upgrade</button>
           </div>
@@ -334,7 +334,7 @@ const SettingsView = (() => {
               </button>
             </div>
             <div class="modal-body">
-              <p class="settings-row-desc">This permanently deletes your account, agents, spaceships, missions, integrations, and billing records. <strong>This cannot be undone.</strong> Blueprints you published to the community stay available but are no longer linked to you.</p>
+              <p class="settings-row-desc">This permanently deletes your account, agents, ${Utils.esc(Terminology.label('spaceship', { plural: true, lowercase: true }))}, missions, integrations, and billing records. <strong>This cannot be undone.</strong> Blueprints you published to the community stay available but are no longer linked to you.</p>
               <form id="delete-account-form" class="auth-form">
                 <div class="auth-field">
                   <label for="delete-account-confirm">Type <strong>DELETE</strong> to confirm</label>

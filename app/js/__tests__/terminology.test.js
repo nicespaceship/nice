@@ -57,7 +57,7 @@ describe('Terminology', () => {
       stubTheme('office');
       // Office only overrides `mission` today; agent/spaceship fall through.
       expect(Terminology.label('agent')).toBe('Agent');
-      expect(Terminology.label('spaceship')).toBe('Spaceship');
+      expect(Terminology.label('spaceship')).toBe('Project');
     });
 
     it('accepts an explicit theme override via opts.theme', () => {
@@ -67,6 +67,65 @@ describe('Terminology', () => {
 
     it('returns a capitalized fallback for unknown nouns', () => {
       expect(Terminology.label('quest')).toBe('Quest');
+    });
+  });
+
+  describe('spaceship noun', () => {
+    it('reads "Project" in the default look when no theme is active', () => {
+      expect(Terminology.label('spaceship')).toBe('Project');
+      expect(Terminology.label('spaceship', { plural: true })).toBe('Projects');
+    });
+
+    it('reads "Project" under nice, nice-dark, office and office-dark', () => {
+      ['nice', 'nice-dark', 'office', 'office-dark'].forEach(id => {
+        stubTheme(id);
+        expect(Terminology.label('spaceship')).toBe('Project');
+        expect(Terminology.label('spaceship', { plural: true })).toBe('Projects');
+      });
+    });
+
+    it('keeps "Spaceship" for the sci-fi themes', () => {
+      ['hal-9000', 'grid', 'matrix', 'lcars', 'jarvis', 'cyberpunk', 'rx-78-2', '16bit'].forEach(id => {
+        stubTheme(id);
+        expect(Terminology.label('spaceship')).toBe('Spaceship');
+        expect(Terminology.label('spaceship', { plural: true })).toBe('Spaceships');
+      });
+    });
+
+    it('lowercases singular and plural in either vocabulary', () => {
+      expect(Terminology.label('spaceship', { lowercase: true })).toBe('project');
+      expect(Terminology.label('spaceship', { plural: true, lowercase: true })).toBe('projects');
+      stubTheme('matrix');
+      expect(Terminology.label('spaceship', { lowercase: true })).toBe('spaceship');
+      expect(Terminology.label('spaceship', { plural: true, lowercase: true })).toBe('spaceships');
+    });
+
+    it('leaves the other nouns alone in sci-fi themes', () => {
+      stubTheme('matrix');
+      expect(Terminology.label('mission')).toBe('Mission');
+      expect(Terminology.label('agent')).toBe('Agent');
+    });
+
+    it('accepts an explicit theme via opts.theme', () => {
+      expect(Terminology.label('spaceship', { theme: 'lcars' })).toBe('Spaceship');
+      expect(Terminology.label('spaceship', { theme: 'office' })).toBe('Project');
+    });
+
+    it('takes "a" in both vocabularies', () => {
+      expect(Terminology.article('spaceship')).toBe('a');
+      stubTheme('jarvis');
+      expect(Terminology.article('spaceship')).toBe('a');
+    });
+
+    it('fills [data-term="spaceship"] per theme', () => {
+      document.body.innerHTML = '<span id="s" data-term="spaceship"></span><span id="p" data-term="spaceship.plural"></span>';
+      Terminology.applyDOM();
+      expect(document.getElementById('s').textContent).toBe('Project');
+      expect(document.getElementById('p').textContent).toBe('Projects');
+      stubTheme('cyberpunk');
+      Terminology.applyDOM();
+      expect(document.getElementById('s').textContent).toBe('Spaceship');
+      expect(document.getElementById('p').textContent).toBe('Spaceships');
     });
   });
 

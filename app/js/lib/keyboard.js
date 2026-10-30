@@ -13,11 +13,12 @@ const Keyboard = (() => {
   // picks up the active theme's vocabulary each time it's opened. Non-
   // themed labels stay as plain strings.
   const _goMissions = () => `Go ${Terminology.label('mission', { plural: true })}`;
+  const _goShips = () => `Go ${Terminology.label('spaceship', { plural: true })}`;
   const SHORTCUTS = [
     // Navigation chords: G + letter
     { chord: ['g', 'h'], label: 'Go Home', action: () => Router.navigate('#/') },
     { chord: ['g', 'a'], label: 'Go Agents',       action: () => Router.navigate('#/bridge/agents') },
-    { chord: ['g', 's'], label: 'Go Shipyard',     action: () => Router.navigate('#/bridge/spaceships') },
+    { chord: ['g', 's'], label: _goShips,          action: () => Router.navigate('#/bridge/spaceships') },
     { chord: ['g', 'm'], label: _goMissions,       action: () => Router.navigate('#/missions') },
     { chord: ['g', 'b'], label: 'Go Blueprints',   action: () => Router.navigate('#/blueprints') },
     { chord: ['g', 'n'], label: 'Go Analytics',    action: () => Router.navigate('#/analytics') },

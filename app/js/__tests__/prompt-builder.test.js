@@ -65,7 +65,7 @@ describe('PromptBuilder', () => {
     });
     expect(result).toContain('Science Officer');
     expect(result).toContain('USS Enterprise');
-    expect(result).toContain('Ship\'s Log');
+    expect(result).toContain('shared crew log');
   });
 
   it('falls back to config.type when metadata.agentType is missing', () => {

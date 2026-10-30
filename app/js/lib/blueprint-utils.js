@@ -251,7 +251,8 @@ const BlueprintUtils = (() => {
     'class-3': { name: 'Cruiser',     slots: _buildClassSlots(10, 'Epic') },
     'class-4': { name: 'Dreadnought', slots: _buildClassSlots(12, 'Legendary') },
     'class-5': { name: 'Flagship',    slots: _buildClassSlots(24, 'Legendary') },
-    'slot-6':  { name: 'Spaceship',   slots: _buildClassSlots(6, 'Common') },
+    // The default class reads the spaceship noun per theme ("Project").
+    'slot-6':  { get name() { return Terminology.label('spaceship'); }, slots: _buildClassSlots(6, 'Common') },
   };
 
   function _buildClassSlots(count, maxRarity) {

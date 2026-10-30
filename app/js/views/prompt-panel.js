@@ -10,6 +10,15 @@ const PromptPanel = (() => {
 
   const STORAGE_KEY = Utils.KEYS.aiMessages;
 
+  // The spaceship noun follows the theme: "project" in the default look.
+  const _ship = (opts = {}) => Terminology.label('spaceship', opts);
+  // Every Run belongs to a spaceship; this is what the user reads when none is active.
+  const _needShip = () => {
+    const a = Terminology.article('spaceship');
+    const ship = _ship({ lowercase: true });
+    return { lead: `Activate ${a} ${ship} first.`, a, ship };
+  };
+
   /* ── Prompt-injection hardening ──
      User-provided text (the turn they just typed, any attached text files,
      and — once this lands on the edge function — the callsign they set)
@@ -520,7 +529,7 @@ const PromptPanel = (() => {
     ToolRegistry.register({
       id: 'create-mission',
       name: 'Create Mission',
-      description: 'Queue a mission run on the active spaceship, optionally assigned to an agent.',
+      description: 'Queue a mission run on the active project, optionally assigned to an agent.',
       surfaces: ['human', 'agent'],
       schema: {
         type: 'object',
@@ -558,7 +567,8 @@ const PromptPanel = (() => {
             const spaceships = State.get('spaceships') || [];
             const spaceshipId = spaceships[0]?.id;
             if (!spaceshipId) {
-              return { ok: false, msg: `Activate a Spaceship first — Missions always run on a Ship.` };
+              const need = _needShip();
+              return { ok: false, msg: `${need.lead} ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.` };
             }
             const created = await SB.db('mission_runs').create({
               user_id: user.id, spaceship_id: spaceshipId,
@@ -728,7 +738,8 @@ const PromptPanel = (() => {
     const spaceships = State.get('spaceships') || [];
     const spaceshipId = spaceships[0]?.id;
     if (!spaceshipId) {
-      _messages[_messages.length - 1].text += `\n\n**Activate a Spaceship first.** Missions always run on a Ship.`;
+      const need = _needShip();
+      _messages[_messages.length - 1].text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
       _saveMessages();
       _renderMonitor();
       _setSending(false);
@@ -820,9 +831,10 @@ const PromptPanel = (() => {
 
     if (!ship) {
       _removeMonitorThinking();
+      const need = _needShip();
       _messages.push({
         role: 'assistant',
-        text: '**Activate a Spaceship first.** Chat runs always belong to a Ship.\n[ACTION: Bridge | #/bridge]',
+        text: `**${need.lead}** Chat runs always belong to ${need.a} ${need.ship}.\n[ACTION: Bridge | #/bridge]`,
         agent: 'NICE', ts: Date.now(),
       });
       _saveMessages();
@@ -1179,7 +1191,7 @@ const PromptPanel = (() => {
     if (/how many (agent|crew)/i.test(lower) || /agent count/i.test(lower)) {
       const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
       const slotted = _getSlottedAgents();
-      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''} in your fleet.${slotted.length ? ' ' + slotted.length + ' currently assigned to ship slots.' : ''}` };
+      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''}.${slotted.length ? ' ' + slotted.length + ' currently assigned to crew slots.' : ''}` };
     }
 
     if (/mission.*(running|active|progress|status)/i.test(lower) || /running mission/i.test(lower) || /how many mission/i.test(lower)) {
@@ -1189,9 +1201,9 @@ const PromptPanel = (() => {
       return { text: `${running.length} mission${running.length !== 1 ? 's' : ''} running, ${completed.length} completed, ${missions.length} total.` };
     }
 
-    if (/how many (spaceship|ship)/i.test(lower) || /ship count/i.test(lower)) {
+    if (/how many (spaceship|ship|project)/i.test(lower) || /(ship|project) count/i.test(lower)) {
       const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-      return { text: `You have ${ships.length || 0} spaceship${ships.length !== 1 ? 's' : ''} in your fleet.` };
+      return { text: `You have ${ships.length || 0} ${_ship({ plural: ships.length !== 1, lowercase: true })}.` };
     }
 
     if (/token|balance|credit/i.test(lower) && /(how much|what|check|my|remaining)/i.test(lower)) {
@@ -1320,7 +1332,7 @@ const PromptPanel = (() => {
     const shipSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     const matchShips = shipSeed.filter(s => (s.name || '').toLowerCase().includes(q) || (s.desc || '').toLowerCase().includes(q));
     if (matchShips.length) {
-      results.push(`Spaceships (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
+      results.push(`${_ship({ plural: true })} (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
     }
 
     if (!results.length) return { text: `No results found for "${query}".`, handled: true };
@@ -1354,7 +1366,7 @@ const PromptPanel = (() => {
     const statusResult = _detectStatusQuery(text);
     if (statusResult) return { type: 'status', response: statusResult };
 
-    const searchMatch = lower.match(/(?:find|search|look for|locate)\s+(?:agent|blueprint|workflow|spaceship|ship)s?\s+(?:named?\s+|for\s+|called?\s+)?(.+)/i);
+    const searchMatch = lower.match(/(?:find|search|look for|locate)\s+(?:agent|blueprint|workflow|spaceship|ship|project)s?\s+(?:named?\s+|for\s+|called?\s+)?(.+)/i);
     if (searchMatch) return { type: 'search', response: _handleSearch(searchMatch[1].trim()) };
     const genericSearch = lower.match(/^(?:find|search|search for|look for|look up)\s+(.+)/i);
     if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) return { type: 'search', response: _handleSearch(genericSearch[1].trim()) };
@@ -1370,9 +1382,12 @@ const PromptPanel = (() => {
       return _cmd('open-missions', { reply: 'Opening Missions so you can create a new one.', isNav: true, navLabel: 'Missions' });
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower))
       return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
-    // "build me a spaceship for my bakery" → Crew Designer (describe → design →
-    // deploy), seeded with any business context already typed.
-    const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:spaceship|space\s?ship|ship|crew|team|fleet)\b(.*)$/i);
+    // "build me a spaceship for my bakery" / "set up a project for my
+    // business" → Crew Designer (describe → design → deploy), seeded with
+    // any business context already typed. "project" counts only at the end
+    // or before for/to/around: "create a project plan" is a request for the
+    // model, not for a new crew.
+    const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:(?:spaceship|space\s?ship|ship|crew|team|fleet)\b|project(?=\s*[.!?]?\s*$|\s+(?:for|to|around)\b))(.*)$/i);
     if (shipBuild) {
       let seed = shipBuild[1].trim()
         .replace(/^(?:for|to|around)\s+/i, '')
@@ -1392,12 +1407,17 @@ const PromptPanel = (() => {
     if (/^(export|download)\s+(data|backup)/i.test(lower))
       return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
-    if (/^(pause|stop|disable)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: 'Spaceship paused. All agents on standby.' };
-    if (/^(resume|start|enable|activate)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: 'Spaceship resumed. Agents resuming operations.' };
+    if (/^(pause|stop|disable)\s+(?:(?:spaceship|ship)\b|project\s*[.!]?\s*$)/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_ship()} paused. All agents on standby.` };
+    if (/^(resume|start|enable|activate)\s+(?:(?:spaceship|ship)\b|project\s*[.!]?\s*$)/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_ship()} resumed. Agents resuming operations.` };
     if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
       return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
       return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
+
+    // "Open projects" (a suggestion chip) opens the project blueprints.
+    // "project" is not a nav keyword, so this one phrasing is matched whole.
+    if (/^(?:open|show|go to|view)\s+(?:my\s+)?(?:projects|spaceships)\s*$/i.test(lower))
+      return _cmd('open-shipyard', { reply: `Opening ${_ship({ plural: true })}.`, isNav: true, navLabel: _ship({ plural: true }) });
 
     // Navigation — resolve against the registry. Only act when the phrasing
     // signals navigation (a nav verb) or the whole input is one word, so
@@ -1496,10 +1516,10 @@ const PromptPanel = (() => {
     '#/':           ['How many agents do I have?', 'Show missions', 'Switch to cyberpunk'],
     '#/space':      ['What can NICE do for me?', 'Help me write an email', 'Switch to cyberpunk'],
     '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
-    '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
+    get '#/bridge/agents/new'() { return ['Show blueprints', 'What roles are available?', `Open ${_ship({ plural: true, lowercase: true })}`]; },
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
-    '#/bridge/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
-    '#/bridge': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
+    get '#/bridge/spaceships'() { return ['Guided setup', `Deploy ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, `How many ${_ship({ plural: true, lowercase: true })}?`, 'Browse blueprints']; },
+    get '#/bridge'() { return ['Search blueprints for', 'Find agent named', `Deploy ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, 'What\'s popular?']; },
     '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
     '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
@@ -2822,7 +2842,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     if (ships.length) {
       const grp1 = document.createElement('optgroup');
-      grp1.label = 'Spaceships';
+      grp1.label = _ship({ plural: true });
       ships.forEach(bp => { const opt = document.createElement('option'); opt.value = bp.id; opt.textContent = bp.name; grp1.appendChild(opt); });
       select.appendChild(grp1);
     }
@@ -3945,5 +3965,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare, _detectIntent };
 })();

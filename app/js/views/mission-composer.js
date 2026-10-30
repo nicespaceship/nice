@@ -554,7 +554,9 @@ const MissionComposerView = (() => {
     const spaceships = State.get('spaceships') || [];
     const spaceshipId = plan.spaceship_id || spaceships[0]?.id;
     if (!spaceshipId) {
-      throw new Error('Activate a Spaceship before creating a Mission. Missions always run on a Ship.');
+      const ship = Terminology.label('spaceship', { lowercase: true });
+      const a = Terminology.article('spaceship');
+      throw new Error(`Activate ${a} ${ship} before creating ${Terminology.article('mission', { lowercase: true })} ${_Nl()}. ${Terminology.label('mission', { plural: true })} always belong to ${a} ${ship}.`);
     }
 
     // Create the template + enqueue the run via the shared SSOT (MissionRunner).

@@ -140,6 +140,7 @@ The function still validates the user internally via `supabase.auth.getUser()` �
 Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap. Every new feature in this space MUST fit this model; if it doesn't, revise the ontology explicitly — don't smuggle a fifth primitive.
 
 **Spaceship** — Orchestrator + crew. The worker pool for one Mission. No Mission exists without a Ship; no "solo agent" execution path.
+- User-facing noun: **Project** in the default look (`nice`, `nice-dark`, `office`, `office-dark`); the sci-fi themes keep **Spaceship**. Copy reads it from `Terminology.label('spaceship', …)` (static HTML: `data-term="spaceship"`). Identifiers, routes, tables, `State`/localStorage keys and event names keep `spaceship`. The short noun "ship" is not user copy any more: **Ship** is the delivery destination (`#/ship`).
 - Template: `spaceship_blueprints` (+ `ship_slots` for crew)
 - Instance: `user_spaceships` (+ `user_ship_slots`)
 
@@ -298,7 +299,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - **Font families (theme-driven):** `--font-h` (display/titles), `--font-b` (body/UI), `--font-m` (monospace, code/telemetry only). `--font-brand` is the brand wordmark.
 
 ### Case rules (follow modern SaaS — Linear/Stripe/Notion/Figma)
-- **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create spaceship", not "Create Spaceship" or "CREATE SPACESHIP".
+- **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create project", not "Create Project" or "CREATE PROJECT".
 - **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`.
 - **Title Case** — page titles, product/feature names, proper nouns only ("NICE SPACESHIP", "Bridge", "Captain's Log", "Gemini 2.5 Flash"). Do NOT title-case arbitrary headings.
 - **Banned:** `text-transform: capitalize`. Produces "An Agent Of The Fleet" which no style guide blesses. Fix the source string instead.
@@ -412,25 +413,25 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `CrewMatcher` | `crew-matcher.js` | Resolves a spaceship's `crew_roles` + `crew_overrides` spec into a `slot_assignments` map at activation |
 | `ShipSlots` | `ship-slots.js` | SSOT for slot assignments via `public.user_ship_slots` after Phase C.1 (`fetchForShips` / `setForShip` replace-all / `setSlot` upsert / `clearSlot` / `deleteForShip`) |
 | `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, provider colors (`providerColor`, frames crew cards), speed/quality bars, marketing copy |
-| `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain` |
+| `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain`. Default `spaceship` noun is **Project**; the sci-fi themes (hal-9000, grid, matrix, lcars, jarvis, cyberpunk, rx-78-2, 16bit) override it back to Spaceship; Office says Assignment for `mission` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
 ### View Modules (`app/js/views/`) — 27 views
-Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Space** (`#/space`, the crew's workspace), **Ship** (`#/ship`, where finished work goes out), **Blueprints** (`#/blueprints`, templates a crew starts from); the NICE mark is Home. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). The nav icons follow it already; much default copy still says spaceship, Commander and the like.
+Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Space** (`#/space`, the crew's workspace), **Ship** (`#/ship`, where finished work goes out), **Blueprints** (`#/blueprints`, templates a crew starts from); the NICE mark is Home. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). The nav icons follow it already, and the default look calls a spaceship a project (see the ontology above); Commander and other sci-fi words in default copy are still to go.
 
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
-| `HomeView` | `home.js` | `#/` (the NICE mark; no Home nav item) | Home (the landing: what needs you from AlertCounts, your spaceships from `Blueprints.getUserShips`, and two ways to start) |
+| `HomeView` | `home.js` | `#/` (the NICE mark; no Home nav item) | Home (the landing: what needs you from AlertCounts, your projects from `Blueprints.getUserShips`, and two ways to start) |
 | `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (where the crew works; today the standalone chat with any model, no crew, until the card workspace lands; greeting + conversation feed under the global prompt panel. The panel's Compare toggle, shown only here, sends one question to 2 or 3 enabled models the user can run and shows the answers side by side; the kept answer becomes the reply the conversation continues from) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
 | `OutboxView` | `outbox.js` | `#/ship` (`?tab=approved\|rejected`, `?item=<id>`, `?view=week`; `#/outbox` forwards) | Ship (where finished work goes out; everything the crew made: Needs you / Approved / Rejected tabs, the list beside the open item at ≥1024px and taking turns below, approve / edit / reject / copy / export, and a week view where dragging an item to another day saves it. Approvals go through `ContentQueue.approve`, which hands runs in review to `MissionRunner`) |
-| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/blueprints` (titled Blueprints; `#/library` forwards) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Operations / Log; old `?tab=outbox` links redirect to `#/ship`; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
+| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/blueprints` (titled Blueprints; `#/library` forwards) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Operations / Log; old `?tab=outbox` links redirect to `#/ship`; Blueprints sub-tabs: Projects (spaceships) / Agents / Active / Workshop. Projects + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed projects + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |
-| `SpaceshipDetailView` | `spaceships.js` | `#/bridge/spaceships/:id` | Ship Detail |
-| `SpaceshipBuilderView` | `spaceship-builder.js` | `#/bridge/spaceships/new` | Ship Builder |
+| `SpaceshipDetailView` | `spaceships.js` | `#/bridge/spaceships/:id` | Project Detail (Spaceship Detail in sci-fi themes) |
+| `SpaceshipBuilderView` | `spaceship-builder.js` | `#/bridge/spaceships/new` | Project Builder (Spaceship Builder in sci-fi themes) |
 | `SchematicView` | `schematic.js` | (embedded in BlueprintsView; linked as the crew view's Diagram, `#/bridge?tab=schematic`) | Schematic |
 | `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
 | `MissionComposerView` | `mission-composer.js` | `#/missions/new` | Mission Composer (prompt-driven authoring; emits to `missions` table + enqueues a `mission_runs` row) |

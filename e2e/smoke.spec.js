@@ -5,9 +5,9 @@ import AxeBuilder from '@axe-core/playwright';
  * NICE™ E2E Smoke Tests
  *
  * Routes:
- *   #/           → HomeView ('Home') — what needs you, your spaceships (the NICE mark)
+ *   #/           → HomeView ('Home') — what needs you, your projects (the NICE mark)
  *   #/space      → ChatView ('Space') — standalone chat until the card workspace lands
- *   #/crew       → CrewView ('Crew') — one spaceship's crew as cards, recent runs, approvals
+ *   #/crew       → CrewView ('Crew') — one project's crew as cards, recent runs, approvals
  *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
  *   #/blueprints → BlueprintsView on its Blueprints tab
  *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
@@ -235,24 +235,42 @@ test.describe('Auth Flow', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 test.describe('Dashboard', () => {
-  test('home view greets new users and points them to a spaceship', async ({ page }) => {
+  test('home view greets new users and points them to a project', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/', 'Home');
     const title = page.locator('.home-title');
     await expect(title).toBeVisible();
     expect(await title.textContent()).toMatch(/Good (morning|afternoon|evening)/);
-    // No spaceship yet: Home offers Blueprints and both ways to start.
-    await expect(page.locator('.home-empty a[href="#/blueprints?tab=spaceship"]')).toBeVisible();
+    // No project yet: Home offers Blueprints and both ways to start.
+    await expect(page.locator('.home-empty a[href="#/blueprints?tab=spaceship"]')).toHaveText('Choose a project');
+    await expect(page.locator('#home-ships-title')).toHaveText('Your projects');
     await expect(page.locator('.home-start[href="#/space"]')).toBeVisible();
   });
 
-  test('crew view points a new visitor to a spaceship', async ({ page }) => {
+  test('crew view points a new visitor to a project', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/crew', 'Crew');
-    await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toBeVisible();
+    await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toHaveText('Choose a project');
   });
 
-  test('crew view shows a card per crew member once a spaceship is active', async ({ page }) => {
+  test('the default look says project and sci-fi themes say spaceship', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); });
+    await navigateTo(page, '#/', 'Home');
+    const sideLabel = page.locator('#side-ships .sidebar-section-label');
+    const sideAdd = page.locator('#side-ships .side-ship-new span');
+    await expect(sideLabel).toHaveText('Projects');
+    await expect(sideAdd).toHaveText('Add a project');
+    await page.evaluate(() => { Theme.set('matrix'); });
+    await expect(sideLabel).toHaveText('Spaceships');
+    await expect(sideAdd).toHaveText('Add a spaceship');
+    await expect(page.locator('#home-ships-title')).toHaveText('Your spaceships');
+    await page.evaluate(() => { Theme.set('nice'); });
+    await expect(sideLabel).toHaveText('Projects');
+    await expect(page.locator('#home-ships-title')).toHaveText('Your projects');
+  });
+
+  test('crew view shows a card per crew member once a project is active', async ({ page }) => {
     await waitForApp(page);
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));

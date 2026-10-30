@@ -614,7 +614,7 @@ const ToolRegistry = (() => {
   register({
     id:          'delegate',
     name:        'Delegate to Agent',
-    description: 'Delegate a subtask to another agent on the same spaceship by role (e.g. "Research", "Content") or by name. The other agent executes the subtask and returns the result.',
+    description: 'Delegate a subtask to another agent on the same project by role (e.g. "Research", "Content") or by name. The other agent executes the subtask and returns the result.',
     schema: {
       type: 'object',
       properties: {

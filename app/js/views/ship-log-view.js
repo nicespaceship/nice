@@ -63,7 +63,7 @@ const ShipLogView = (() => {
 
     el.innerHTML = `
       <div class="task-stat"><span class="task-stat-num">${agents}</span><span class="task-stat-label">Agents</span></div>
-      <div class="task-stat"><span class="task-stat-num">${ships}</span><span class="task-stat-label">Ships</span></div>
+      <div class="task-stat"><span class="task-stat-num">${ships}</span><span class="task-stat-label">${Utils.esc(Terminology.label('spaceship', { plural: true }))}</span></div>
       <div class="task-stat"><span class="task-stat-num">${connections}</span><span class="task-stat-label">LLMs</span></div>
     `;
   }

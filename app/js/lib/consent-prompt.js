@@ -96,7 +96,7 @@ const ConsentPrompt = (() => {
           </svg>
         </div>
         <h2 class="consent-modal-title">Help build a faster, cheaper NICE</h2>
-        <p class="consent-modal-body">NICE can learn from how your spaceships run missions to train its own models. The AI you use gets faster and costs you fewer tokens over time. Your data is never sold, and you can turn this off anytime in Settings.</p>
+        <p class="consent-modal-body">NICE can learn from how your ${Terminology.label('spaceship', { plural: true, lowercase: true })} run missions to train its own models. The AI you use gets faster and costs you fewer tokens over time. Your data is never sold, and you can turn this off anytime in Settings.</p>
         <div class="consent-modal-actions">
           <button class="btn btn-sm" id="consent-decline" type="button">Not now</button>
           <button class="btn btn-sm btn-primary" id="consent-accept" type="button">Yes, help improve NICE</button>

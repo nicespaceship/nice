@@ -13,7 +13,7 @@ const AuditLogView = (() => {
     { value: 'navigation', label: 'Navigation', icon: '⌖', color: 'var(--text-muted)' },
     { value: 'agent',      label: 'Agent',      icon: '⚙', color: 'var(--accent)' },
     { value: 'mission',    label: 'Mission',    icon: '⚡', color: '#22c55e' },
-    { value: 'spaceship',  label: 'Ship',       icon: '◇', color: '#6366f1' },
+    { value: 'spaceship',  get label() { return Terminology.label('spaceship'); }, icon: '◇', color: '#6366f1' },
     { value: 'system',     label: 'System',     icon: '⊚', color: '#f59e0b' },
     { value: 'auth',       label: 'Auth',       icon: '⊕', color: '#06b6d4' },
   ];

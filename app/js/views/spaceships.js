@@ -7,8 +7,9 @@
 
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
-  const title = 'Spaceship Detail';
   const _esc = Utils.esc;
+  // The spaceship noun follows the theme: "Project" in the default look.
+  const _ship = (opts = {}) => Terminology.label('spaceship', opts);
   let _channel = null;
   let _draggedAgentId = null;
 
@@ -35,7 +36,7 @@ const SpaceshipDetailView = (() => {
 
     return `
       <div class="detail-section ship-behaviors-panel" data-ship-id="${Utils.esc(shipId)}">
-        <h3 class="detail-section-title">⚙️ Ship Behaviors</h3>
+        <h3 class="detail-section-title">⚙️ ${_esc(_ship())} behaviors</h3>
 
         <div class="behavior-group">
           <div class="behavior-group-label">Approval Mode</div>
@@ -150,7 +151,7 @@ const SpaceshipDetailView = (() => {
           </div>
         </div>
         <div class="ship-dash-log">
-          <div class="ship-dash-log-title">Recent Ship's Log</div>
+          <div class="ship-dash-log-title">Recent crew log</div>
           ${logHtml}
         </div>
       </div>
@@ -177,7 +178,7 @@ const SpaceshipDetailView = (() => {
   function _getShipIcon(id) {
     const profile = _getShipProfile(id);
     if (profile.icon) {
-      return `<img src="${profile.icon}" class="ship-profile-img" alt="Ship icon" />`;
+      return `<img src="${profile.icon}" class="ship-profile-img" alt="${_esc(_ship())} icon" />`;
     }
     return `<svg class="detail-header-icon-lg" fill="currentColor" stroke="none"><use href="#icon-spaceship"/></svg>`;
   }
@@ -195,7 +196,7 @@ const SpaceshipDetailView = (() => {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 512000) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'File Too Large', message: 'Max 500KB for ship icons.', type: 'error' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'File Too Large', message: `Max 500KB for ${_ship({ lowercase: true })} icons.`, type: 'error' });
           return;
         }
         const reader = new FileReader();
@@ -207,9 +208,9 @@ const SpaceshipDetailView = (() => {
             img.src = dataUrl;
           } else {
             const svg = iconWrap.querySelector('.detail-header-icon-lg');
-            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="Ship icon" />`;
+            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="${_esc(_ship())} icon" />`;
           }
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: 'Ship icon saved.', type: 'success' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: `${_ship()} icon saved.`, type: 'success' });
         };
         reader.readAsDataURL(file);
       });
@@ -293,7 +294,7 @@ const SpaceshipDetailView = (() => {
     // the core reactor as its centerpiece.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const user = State.get('user');
-    el.innerHTML = `<div class="loading-state"><p>Loading spaceship...</p></div>`;
+    el.innerHTML = `<div class="loading-state"><p>Loading ${_esc(_ship({ lowercase: true }))}...</p></div>`;
     _loadSpaceship(el, params.id);
   }
 
@@ -320,7 +321,7 @@ const SpaceshipDetailView = (() => {
       } catch(e) {
         fleet = _localFleet;
       }
-      if (!fleet) throw new Error('Spaceship not found');
+      if (!fleet) throw new Error(`${_ship()} not found`);
       // Merge local state (may be ahead of DB)
       if (_localFleet) {
         if (_localFleet.slot_assignments) {
@@ -442,7 +443,7 @@ const SpaceshipDetailView = (() => {
           <div class="detail-back">
             <a href="#/bridge/spaceships" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
-              Back to Spaceships
+              Back to ${_esc(_ship({ plural: true }))}
             </a>
             ${_canPublish ? '<span id="community-publish-slot"></span>' : ''}
           </div>
@@ -457,7 +458,7 @@ const SpaceshipDetailView = (() => {
             </div>
             <div class="detail-header-info">
               <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)}</h2>
-              <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add a ship description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
+              <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
                 <span class="detail-status">${_esc(Utils.titleCase(fleet.status))}</span>
@@ -566,9 +567,9 @@ const SpaceshipDetailView = (() => {
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
-          <h2>Spaceship Not Found</h2>
+          <h2>${_esc(_ship())} not found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/bridge/spaceships" class="btn btn-sm">Back to Spaceships</a></div>
+          <div class="app-empty-acts"><a href="#/bridge/spaceships" class="btn btn-sm">Back to ${_esc(_ship({ plural: true }))}</a></div>
         </div>
       `;
     }
@@ -853,7 +854,7 @@ const SpaceshipDetailView = (() => {
         const assignments = fleet.slots || fleet.slot_assignments || {};
         const targetSlot = spaceshipClass.slots.find(slot => !assignments[slot.id]);
         if (!targetSlot) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: 'Every crew slot on this spaceship is filled.', type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: `Every crew slot on this ${_ship({ lowercase: true })} is filled.`, type: 'system' });
           return;
         }
         _assignAgentToSlot(el, id, fleet, String(targetSlot.id), agentId, allAgents, agentMap, spaceshipClass);
@@ -943,7 +944,7 @@ const SpaceshipDetailView = (() => {
         const list = effectiveWorkflows(fleet, bp);
         const wf = list[wfIdx];
         if (!wf) return;
-        if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this spaceship?`)) return;
+        if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this ${_ship({ lowercase: true })}?`)) return;
         if (wf.schedule && wf.schedule.missionId && typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
           await MissionRunner.unscheduleMission(wf.schedule.missionId);
         }
@@ -957,7 +958,7 @@ const SpaceshipDetailView = (() => {
     // every forked workflow first so no orphaned mission keeps firing.
     el.querySelector('.ship-wf-reset')?.addEventListener('click', async (e) => {
       e.preventDefault();
-      if (!window.confirm("Reset this spaceship's workflows to the catalog defaults? Your customizations will be removed.")) return;
+      if (!window.confirm(`Reset this ${_ship({ lowercase: true })}'s workflows to the catalog defaults? Your customizations will be removed.`)) return;
       const list = effectiveWorkflows(fleet, bp);
       if (typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
         for (const wf of list) {
@@ -1488,7 +1489,7 @@ const SpaceshipDetailView = (() => {
       Blueprints.saveShipState(id, fleet);
       try { await SB.db('user_spaceships').update(id, { status: 'deployed' }); } catch(e) {}
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Spaceship Launched', message: `${fleet.name || 'Spaceship'} is fully staffed and deployed!`, type: 'fleet_deployed' });
+        Notify.send({ title: `${_ship()} launched`, message: `${fleet.name || _ship()} is fully staffed and deployed!`, type: 'fleet_deployed' });
       }
     }
 
@@ -1527,7 +1528,7 @@ const SpaceshipDetailView = (() => {
     } catch(e) { /* local state already updated */ }
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Spaceship Docked', message: `${fleet.name || 'Spaceship'} has been docked — slot emptied.`, type: 'system' });
+      Notify.send({ title: `${_ship()} docked`, message: `A crew slot is empty, so ${fleet.name || _ship({ lowercase: true })} is docked.`, type: 'system' });
     }
     _loadSpaceship(el, id);
   }
@@ -1543,5 +1544,5 @@ const SpaceshipDetailView = (() => {
     _draggedAgentId = null;
   }
 
-  return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };
+  return { get title() { return `${_ship()} Detail`; }, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };
 })();

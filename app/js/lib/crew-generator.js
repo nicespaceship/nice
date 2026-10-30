@@ -286,7 +286,7 @@ Rules:
     try {
       var foaResult = await Blueprints.findOrCreateActiveShip(blueprintId, function() { return shipRow; });
       var shipCreated = foaResult.ship;
-      if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ship' };
+      if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ' + Terminology.label('spaceship', { lowercase: true }) };
       if (typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
         await ShipSlots.setForShip(shipCreated.id, slotAssignments);
       }
@@ -317,7 +317,7 @@ Rules:
 
       return { shipId: shipCreated.id, agents: savedAgents };
     } catch (e) {
-      return { error: e.message || 'Failed to deploy ship' };
+      return { error: e.message || ('Failed to deploy ' + Terminology.label('spaceship', { lowercase: true })) };
     }
   }
 

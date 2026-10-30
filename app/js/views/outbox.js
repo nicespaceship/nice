@@ -220,7 +220,7 @@ const OutboxView = (() => {
       <div class="ob-empty">
         <b>Nothing needs you right now</b>
         <p>When your ${_esc(Terminology.label('crew', { lowercase: true }))} finishes something that needs your OK, it shows up here and on Home.</p>
-        ${hasShip ? '' : '<a class="btn btn-sm btn-primary" href="#/blueprints?tab=spaceship">Find a spaceship</a>'}
+        ${hasShip ? '' : `<a class="btn btn-sm btn-primary" href="#/blueprints?tab=spaceship">Choose ${Terminology.article('spaceship')} ${_esc(Terminology.label('spaceship', { lowercase: true }))}</a>`}
       </div>`;
   }
 

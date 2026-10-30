@@ -60,10 +60,10 @@ const PromptBuilder = (() => {
     // ── Crew Context ──
     if (opts.crewContext) {
       var cc = opts.crewContext;
-      var shipPart = cc.shipName ? ' aboard ' + cc.shipName : '';
+      var shipPart = cc.shipName ? ' for ' + cc.shipName : '';
       var slotPart = cc.slotLabel ? 'You serve as ' + cc.slotLabel + shipPart + '.' : '';
       if (slotPart) {
-        parts.push(slotPart + ' Coordinate with your fellow agents through the shared Ship\'s Log.');
+        parts.push(slotPart + ' Coordinate with your fellow agents through the shared crew log.');
       }
     }
 

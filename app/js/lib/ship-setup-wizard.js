@@ -36,7 +36,7 @@ const ShipSetupWizard = (() => {
         && !Blueprints.isShipActivated(blueprint.id)
         && Blueprints.canActivateNewShip && !Blueprints.canActivateNewShip()) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
+        Notify.send({ title: `${Terminology.label('spaceship')} limit reached`, message: `Free accounts run one active ${Terminology.label('spaceship', { lowercase: true })} at a time. Upgrade to NICE Pro to run more than one.`, type: 'warning' });
       }
       if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
       return;
@@ -174,14 +174,14 @@ const ShipSetupWizard = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     STEP 0 — Name Your Spaceship
+     STEP 0 — Name your spaceship (project in the default look)
   ═══════════════════════════════════════════════════════════════ */
   function _renderStepName(body, actions) {
     const sc = _getShipClass();
     const bpName = _blueprint.name || 'Orchestrator';
     body.innerHTML = `
-      <h2 class="wizard-title">Name Your Spaceship</h2>
-      <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name — your business or project.</p>
+      <h2 class="wizard-title">Name your ${_esc(Terminology.label('spaceship', { lowercase: true }))}</h2>
+      <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name, such as your business name.</p>
       <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${_esc(bpName)}" maxlength="60" value="${_esc(_data.shipName)}" autofocus>
       <div class="ship-wizard-bp-preview">
         <div>
@@ -472,7 +472,7 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-close">Close</button>
-        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View Spaceship Schematic</button>
+        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View ${_esc(Terminology.label('spaceship', { lowercase: true }))} schematic</button>
       `;
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
@@ -710,7 +710,7 @@ const ShipSetupWizard = (() => {
     // shape deployFromCatalog uses so the loader reconciles cleanly.
     const user = (typeof State !== 'undefined') ? State.get('user') : null;
     if (user && typeof SB !== 'undefined' && typeof SB.isReady === 'function' && SB.isReady()) {
-      if (statusEl) statusEl.textContent = 'Saving to your fleet...';
+      if (statusEl) statusEl.textContent = `Saving to your ${Terminology.label('spaceship', { plural: true, lowercase: true })}...`;
       try {
         const dbShipRow = {
           user_id:      user.id,

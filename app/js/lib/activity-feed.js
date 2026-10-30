@@ -65,9 +65,10 @@ const ActivityFeed = (() => {
       else if (eventType === 'DELETE') description = `Mission removed: ${record.title || 'Untitled'}`;
     } else if (type === 'spaceship') {
       icon = 'rocket';
-      if (eventType === 'INSERT') description = `New ship launched: ${record.name || 'Unnamed'}`;
-      else if (eventType === 'UPDATE') description = `Ship updated: ${record.name || 'Unnamed'}`;
-      else if (eventType === 'DELETE') description = `Ship decommissioned: ${record.name || 'Unnamed'}`;
+      const ship = Terminology.label('spaceship');
+      if (eventType === 'INSERT') description = `New ${ship.toLowerCase()} launched: ${record.name || 'Unnamed'}`;
+      else if (eventType === 'UPDATE') description = `${ship} updated: ${record.name || 'Unnamed'}`;
+      else if (eventType === 'DELETE') description = `${ship} removed: ${record.name || 'Unnamed'}`;
     }
 
     return {

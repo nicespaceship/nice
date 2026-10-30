@@ -7,6 +7,8 @@
 
 const SchematicView = (() => {
   const _esc = Utils.esc;
+  // The spaceship noun follows the theme: "Project" in the default look.
+  const _ship = (opts = {}) => Terminology.label('spaceship', opts);
 
   let _resizeTimer = null;
   let _wiredRO = null;
@@ -221,11 +223,11 @@ const SchematicView = (() => {
         const canWizard = isAuthed && typeof SetupWizard !== 'undefined';
         el.innerHTML = `
           <div class="schematic-empty app-empty">
-            <h2>No spaceships deployed</h2>
-            <p>Activate a spaceship from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <h2>No ${_esc(_ship({ plural: true, lowercase: true }))} deployed</h2>
+            <p>Activate ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} from the catalog or build one from scratch to put a crew on the schematic.</p>
             <div class="app-empty-acts">
               ${canWizard ? '<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my crew</button>' : ''}
-              <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse spaceships</a>
+              <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse ${_esc(_ship({ plural: true, lowercase: true }))}</a>
               <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
             </div>
           </div>
@@ -441,7 +443,7 @@ const SchematicView = (() => {
     const tabs = document.getElementById('app-fixed-tabs');
     if (!tabs) return;
     _unmountFixedShipPicker();
-    const shipName = activeShip?.name || 'Unnamed Ship';
+    const shipName = activeShip?.name || `Unnamed ${_ship({ lowercase: true })}`;
 
     if (_isMobile()) {
       // Pill button sits next to .bp-tab-picker inside #app-fixed-tabs so
@@ -451,7 +453,7 @@ const SchematicView = (() => {
       // the sheet to the root stacking context lets its z:10000 win.
       const optionsHTML = activatedShips.map(s =>
         '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
-        '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
+        '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
       ).join('');
       const pickerHTML =
         '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
@@ -460,9 +462,9 @@ const SchematicView = (() => {
         '</button>';
       const sheetHTML =
         '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
-        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
+        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ' + _esc(_ship({ lowercase: true })) + '" aria-modal="true" hidden>' +
           '<div class="bp-sheet-handle"></div>' +
-          '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
+          '<div class="bp-sheet-header"><h3 class="bp-sheet-title">' + _esc(_ship({ plural: true })) + '</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
           '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
         '</div>';
       tabs.insertAdjacentHTML('beforeend', pickerHTML);
@@ -512,7 +514,7 @@ const SchematicView = (() => {
     const optionsHTML = activatedShips.map(s =>
       '<button class="sch-ship-menu-option' + (s.id === activeShip.id ? ' active' : '') +
       '" role="option" aria-selected="' + (s.id === activeShip.id ? 'true' : 'false') +
-      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
+      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
     ).join('');
     const html =
       '<div class="sch-fixed-ship-picker">' +
@@ -520,7 +522,7 @@ const SchematicView = (() => {
           '<span class="sch-fixed-ship-label">' + _esc(shipName) + '</span>' +
           '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
         '</button>' +
-        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ship" hidden>' + optionsHTML + '</div>' +
+        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ' + _esc(_ship({ lowercase: true })) + '" hidden>' + optionsHTML + '</div>' +
       '</div>';
     // Mount into the shared sub-toolbar so the ship picker lines up with the
     // other pages' controls (centered). Falls back to a sibling of the tabs

@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Home (#/)
    The landing. Leads with anything waiting on the user (results to review,
-   failed runs, crew trouble), then their spaceships, then the two
-   ways to start: chat with a model, or find a spaceship in Blueprints.
+   failed runs, crew trouble), then their projects (spaceships), then
+   the two ways to start: chat with a model, or pick a project in
+   Blueprints.
    Counts come from AlertCounts so Home, the sidebar badges and the Bridge
    tabs always agree.
 ═══════════════════════════════════════════════════════════════════ */
@@ -34,6 +35,10 @@ const HomeView = (() => {
 
   function _plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
+  // The spaceship noun follows the theme: "project" in the default look.
+  const _ship = (opts = {}) => Terminology.label('spaceship', opts);
+  const _a = () => Terminology.article('spaceship');
+
   // Each item states what is waiting and opens the place to act on it.
   function _needs() {
     const missionWord = Terminology.label('mission', { lowercase: true });
@@ -54,7 +59,7 @@ const HomeView = (() => {
   function _status(needs, ships) {
     if (needs.length) return 'Here is what needs you.';
     if (ships.length) return 'Nothing needs you right now.';
-    return 'Start with a chat, or put a spaceship to work for your business.';
+    return `Start with a chat, or set up ${_a()} ${_ship({ lowercase: true })} for your business.`;
   }
 
   function render(el) {
@@ -76,9 +81,9 @@ const HomeView = (() => {
     const shipsHTML = ships.length ? `
       <div class="home-ships">
         ${ships.map(s => {
-          const name = s.name || 'Spaceship';
+          const name = s.name || _ship();
           const cat = typeof s.category === 'string' ? s.category.trim() : '';
-          const meta = cat && cat.toLowerCase() !== name.toLowerCase() ? cat : 'Spaceship';
+          const meta = cat && cat.toLowerCase() !== name.toLowerCase() ? cat : _ship();
           return `
           <a class="widget-card home-ship" href="#/crew?ship=${encodeURIComponent(s.id)}">
             <b class="home-ship-mark" aria-hidden="true">${_esc(Utils.initials(name))}</b>
@@ -91,8 +96,8 @@ const HomeView = (() => {
         }).join('')}
       </div>` : `
       <div class="widget-card home-empty">
-        <p>A spaceship is a crew of AI agents built for one kind of business. Pick one, and its crew gets to work on your ${_esc(Terminology.label('mission', { plural: true, lowercase: true }))}.</p>
-        <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Find a spaceship</a>
+        <p>${_esc(_a() === 'an' ? 'An' : 'A')} ${_esc(_ship({ lowercase: true }))} gives you a crew of AI agents built for one kind of business. Pick one, and its crew gets to work on your ${_esc(Terminology.label('mission', { plural: true, lowercase: true }))}.</p>
+        <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Choose ${_esc(_a())} ${_esc(_ship({ lowercase: true }))}</a>
       </div>`;
 
     el.innerHTML = `
@@ -105,8 +110,8 @@ const HomeView = (() => {
         ${needsHTML}
         <section class="home-section" aria-labelledby="home-ships-title">
           <div class="home-section-head">
-            <h2 id="home-ships-title">Your spaceships</h2>
-            ${ships.length ? '<a class="btn btn-sm" href="#/blueprints?tab=spaceship">New spaceship</a>' : ''}
+            <h2 id="home-ships-title">Your ${_esc(_ship({ plural: true, lowercase: true }))}</h2>
+            ${ships.length ? `<a class="btn btn-sm" href="#/blueprints?tab=spaceship">New ${_esc(_ship({ lowercase: true }))}</a>` : ''}
           </div>
           ${shipsHTML}
         </section>
@@ -117,7 +122,7 @@ const HomeView = (() => {
           </a>
           <a class="widget-card home-start" href="#/blueprints">
             <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg></span>
-            <span class="home-start-text"><b>Browse Blueprints</b><span>Spaceships and agents for your kind of business.</span></span>
+            <span class="home-start-text"><b>Browse Blueprints</b><span>${_esc(_ship({ plural: true }))} and agents for your kind of business.</span></span>
           </a>
         </section>
       </div>`;
