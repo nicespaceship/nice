@@ -332,7 +332,7 @@ html:not([data-theme]),
 :is([data-theme="nice"],[data-theme="nice-dark"]) .search-box {
   background: var(--surface);
   /* --border is `transparent` on nice (borderless aesthetic). The search
-     pill needs a defined edge to stand out against the lavender canvas
+     pill needs a defined edge to stand out against the gray canvas
      on Bridge tabs (Missions, Log, Outbox). border-hi gives a visible
      hairline without breaking the rest of the theme. */
   border-color: var(--border-hi);

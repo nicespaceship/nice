@@ -10,9 +10,8 @@
 
 /* Spacing scale (4px base) */
 :root {
-  /* Historical brand reference — navy is no longer used on surfaces.
-     Action color is Sapphire #0F52BA (see --accent2 in theme.css CORE block).
-     See project_nice_brand_kit_142849.md. */
+  /* Historical brand reference — navy is not used on any surface. The
+     NICE theme is monochrome; see the CORE block in theme.css. */
   --brand-navy: #142849;
 
   --bg-alt: #fafafa;
@@ -9894,7 +9893,7 @@ body.preview-active .nice-ai {
   .bpl-desc { display:none; }
   .bpl-header .bpl-desc { display:none; }
   /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
-     Sapphire dot-grid (radial-gradient on body) bleeds through and
+     dot-grid (`--bg-pattern` on body, in themes that keep it) bleeds through and
      reads as a subtle right/bottom shadow. Use the opaque surface
      token instead — same look as desktop, no dot bleed.
      Same pattern on the list container: `gap:1px` between rows lets
@@ -9912,10 +9911,10 @@ body.preview-active .nice-ai {
      `:has(.bp-view-list)` matched whenever the list-view element existed
      in the DOM, but BlueprintsView keeps its markup mounted across all
      Bridge tabs, so this rule painted .app-view-content white on every
-     tab and hid the .app-main lavender canvas.
+     tab and hid the .app-main canvas.
      Skip nice (Core) light theme — its --surface (#fff) equals --bg, so
-     painting view-content with --surface erases the .app-main lavender
-     canvas (#e8eef5) that defines the page's visual ground on light. */
+     painting view-content with --surface erases the .app-main gray
+     canvas (--app-surface) that defines the page's visual ground on light. */
   html:not([data-theme="nice"]) .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { background:var(--surface); }
 }
 
@@ -10658,9 +10657,9 @@ body.preview-active .nice-ai {
      cards bleed through the bar. */
   background:var(--bg);
 }
-/* The nice theme keeps its catalog on .app-main's #e8eef5 surface (var(--bg)
-   is #ffffff there), so match the surface the cards actually sit on rather
-   than the white base. */
+/* The nice theme keeps its catalog on .app-main's --app-surface canvas
+   (var(--bg) is #ffffff there), so match the surface the cards actually sit
+   on rather than the white base. */
 [data-theme="nice"] .bp-filter-controls { background:var(--app-surface); }
 /* Drop the scroller's top inset on the catalog so the sticky header pins flush
    under the fixed Bridge sub-tabs — the gap would otherwise leave a strip above
@@ -10806,8 +10805,8 @@ body.preview-active .nice-ai {
     transition:transform .2s ease, box-shadow .2s ease;
   }
   /* Match the filter panel to the catalog's main-screen surface: the cards sit
-     on .app-main's #e8eef5 in the nice theme (var(--bg) is white), so the sheet
-     should read as the same surface, not a white overlay. */
+     on .app-main's --app-surface in the nice theme (var(--bg) is white), so the
+     sheet should read as the same surface, not a white overlay. */
   [data-theme="nice"] .bp-filter-controls.bp-filter-controls { background:var(--app-surface); }
   /* Shadow only when the sheet is open. When closed the sheet sits
      at translateY(100%) with its top edge flush against the viewport
