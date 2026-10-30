@@ -1811,9 +1811,9 @@ const NICE = (() => {
     Router.on('/bridge/spaceships/:id', SpaceshipDetailView);
 
     // Legacy redirects → bridge
-    Router.on('/blueprints/agents', { title: 'Blueprints', render: () => { location.hash = '#/blueprints?tab=agent'; } });
+    Router.on('/blueprints/agents', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=agent'); } });
     Router.on('/blueprints/agents/new', AgentBuilderView);
-    Router.on('/blueprints/spaceships', { title: 'Blueprints', render: () => { location.hash = '#/blueprints?tab=spaceship'; } });
+    Router.on('/blueprints/spaceships', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=spaceship'); } });
     Router.on('/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
     Router.on('/agents/new', AgentBuilderView);
     Router.on('/agents/:id', AgentDetailView);

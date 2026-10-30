@@ -1817,7 +1817,6 @@ html:not([data-theme]) .app-main,
   max-width:180px; overflow:hidden; text-overflow:ellipsis;
   text-decoration:none;
 }
-.mobile-bar-theme:hover { opacity:.8; }
 @media (max-width:768px) {
   .mobile-bar-theme { display:inline-block; }
 }
@@ -1843,7 +1842,8 @@ html:not([data-theme]) .app-main,
   .app-sidebar.open { width:280px; transform:translateX(0); }
   .app-mobile-bar { transition:transform .3s ease; }
   .app-sidebar.open ~ .app-mobile-bar { transform:translateX(280px); }
-  .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle { visibility:hidden; }
+  .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle,
+  .app-sidebar.open ~ .app-mobile-bar .mobile-bar-btn-nice { visibility:hidden; }
   .app-sidebar.open ~ .app-main { margin-left:0; transform:translateX(280px); transition:transform .3s ease; }
   .app-main { margin-left:0; margin-top:calc(48px + var(--app-banner-height, 0px)); }
   .app-sidebar.open ~ .nice-ai { left:50%; width:calc(100% - 48px); }
