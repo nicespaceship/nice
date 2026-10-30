@@ -481,6 +481,25 @@ describe('Sending from the panel on Space', () => {
       });
     }
 
+    it('ignores markers that name no real command', async () => {
+      globalThis.fetch = vi.fn(async (url, init) => {
+        calls.push(JSON.parse(init.body));
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Hm. [EXEC: constructor] [EXEC: __proto__ | x] [EXEC: toString]' }] }) };
+      });
+      send('Plan my launch');
+      await settled();
+      await new Promise(r => setTimeout(r, 0));
+      expect(SpaceCards.approval(id)).toBeNull();
+      expect(PromptPanel.messages().some(m => m.note)).toBe(false);
+      // Several cards at once: still no note naming them.
+      SpaceCards.toggle('grok-4-3');
+      send('Again');
+      await settled();
+      await new Promise(r => setTimeout(r, 0));
+      expect(PromptPanel.messages().some(m => m.note)).toBe(false);
+      expect(run).not.toHaveBeenCalled();
+    });
+
     it('drops the question when the chat is cleared', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());

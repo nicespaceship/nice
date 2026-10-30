@@ -681,11 +681,14 @@ const PromptPanel = (() => {
     activate_blueprint: { id: 'activate-blueprint', params: ['blueprintId'] },
     run_mission:        { id: 'run-mission',        params: ['missionId'] },
   };
+  // Model text picks the action name, so only the map's own keys count:
+  // "constructor" or "__proto__" must not resolve to Object's members.
+  const _isExecCommand = (action) => Object.hasOwn(_EXEC_COMMANDS, action);
 
   /* ── Execute EXEC actions from LLM responses (thin adapter over the bus) ── */
   async function _executeExec(action, params, onApprovalNeeded) {
     if (!State.get('user')) return { ok: false, msg: 'Not signed in' };
-    const spec = _EXEC_COMMANDS[action];
+    const spec = _isExecCommand(action) ? _EXEC_COMMANDS[action] : null;
     if (!spec || typeof ToolRegistry === 'undefined') return { ok: false, msg: `Unknown action: ${action}` };
     const input = {};
     spec.params.forEach((name, i) => {
@@ -2421,10 +2424,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // once skip this so parallel answers never run the same command twice.
   async function _afterSingleReply(id, reply) {
     const text = reply.text;
-    const { clean, execs } = _parseActions(text);
+    const { clean, execs: asked } = _parseActions(text);
     _ttsSpeak(clean);
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(text);
-    if (!execs || !execs.length) return;
+    // A marker naming no real command has nothing to run or report.
+    const execs = (asked || []).filter(ex => _isExecCommand(ex.action));
+    if (!execs.length) return;
     const epoch = _cardEpoch;
     // A command that needs the user's OK asks on this card, beside the reply
     // that requested it, rather than on the monitor behind the cards.
@@ -2451,6 +2456,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _commandList(actions) {
     const names = [];
     for (const action of actions) {
+      if (!_isExecCommand(action)) continue;
       const spec = _EXEC_COMMANDS[action];
       const tool = spec && typeof ToolRegistry !== 'undefined' && ToolRegistry.get ? ToolRegistry.get(spec.id) : null;
       const name = (tool && tool.name) || String(action).replace(/_/g, ' ');
@@ -2467,7 +2473,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const actions = [];
     const re = /\[EXEC:\s*(\w+)/g;
     let m;
-    while ((m = re.exec(reply.text || '')) !== null) actions.push(m[1]);
+    while ((m = re.exec(reply.text || '')) !== null) if (_isExecCommand(m[1])) actions.push(m[1]);
     if (!actions.length) return;
     _noteOnCard(id, reply, `This model asked to run ${_commandList(actions)}. Send to this card alone to run it.`);
   }
