@@ -479,8 +479,19 @@ test.describe('Front Page', () => {
     await expect(entry).toBeVisible();
     await expect(page.locator('#codex-what-is-nice')).toBeHidden();
     await page.locator('#codex-search').fill('approve');
-    await expect(page.locator('.lp-codex-nav button[data-entry="outbox"]')).toBeVisible();
+    await expect(page.locator('.lp-codex-nav button[data-entry="ship"]')).toBeVisible();
     await expect(page.locator('.lp-codex-nav button[data-entry="themes"]')).toHaveCount(0);
+  });
+
+  test('keeps old Codex and section links working after the renames', async ({ page }) => {
+    await page.goto('/#codex/outbox');
+    await expect(page.locator('#codex-ship')).toBeVisible();
+    await expect(page).toHaveURL(/#codex\/ship$/);
+    await page.goto('/#codex/compare');
+    await expect(page.locator('#codex-space')).toBeVisible();
+    await page.goto('/#library');
+    await expect(page).toHaveURL(/#blueprints$/);
+    await expect(page.locator('#blueprints')).toBeInViewport();
   });
 
   test('forwards app deep links to /app/', async ({ page }) => {
