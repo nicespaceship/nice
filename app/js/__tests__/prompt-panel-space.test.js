@@ -207,6 +207,25 @@ describe('Sending to the selected cards', () => {
     expect(document.getElementById('nice-ai-send').disabled).toBe(false);
   });
 
+  it('asks for the files rather than retry a reloaded prompt without them', async () => {
+    let n = 0;
+    globalThis.fetch = vi.fn(async (url, init) => {
+      calls.push(JSON.parse(init.body));
+      return ++n === 1
+        ? { ok: false, status: 500, text: async () => JSON.stringify({ error: 'x' }) }
+        : { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+    });
+    State.set('user', { id: 'u1' });
+    PromptPanel._sendToCards('summarize this file', [{ name: 'notes.txt', kind: 'text', mimeType: 'text/plain', text: 'SECRET-PAYLOAD-123' }]);
+    await settled();
+    expect(JSON.stringify(calls[0].messages)).toContain('SECRET-PAYLOAD-123');
+    // A reload keeps the file's name, not the file.
+    PromptPanel._reload();
+    expect(PromptPanel.messages()[0].attachmentPlaceholders).toEqual([{ name: 'notes.txt', mimeType: 'text/plain', kind: 'text' }]);
+    expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(false);
+    expect(calls).toHaveLength(1);
+  });
+
   it('does not retry for a signed-out visitor', async () => {
     globalThis.fetch = vi.fn(async (url, init) => {
       calls.push(JSON.parse(init.body));

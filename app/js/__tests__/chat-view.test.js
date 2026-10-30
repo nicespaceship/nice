@@ -201,6 +201,18 @@ describe('ChatView', () => {
     expect(card(el, 'deepseek-v4-flash').querySelector('[data-act="retry"], .space-err a')).toBeNull();
   });
 
+  it('asks for the files instead of offering Retry when a reloaded prompt lost them', () => {
+    messages = [
+      { role: 'user', text: 'Summarize', to: ['gemini-2-5-flash'], attachmentPlaceholders: [{ name: 'notes.txt', kind: 'text' }, { name: '<b>plan</b>.pdf', kind: 'pdf' }], v: 2 },
+      { role: 'assistant', text: 'Provider timed out', modelId: 'gemini-2-5-flash', error: true, agent: 'NICE', v: 2 },
+    ];
+    mount();
+    const c = card(el, 'gemini-2-5-flash');
+    expect(c.querySelector('[data-act="retry"]')).toBeNull();
+    expect(c.querySelector('.space-retry-note').textContent).toBe('Attach notes.txt and <b>plan</b>.pdf and send again to retry.');
+    expect(c.querySelector('.space-retry-note b')).toBeNull();
+  });
+
   it('offers no Retry without a signed-in user', () => {
     State.set('user', null);
     messages = [

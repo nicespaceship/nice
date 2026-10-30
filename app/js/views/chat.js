@@ -63,17 +63,25 @@ const ChatView = (() => {
       .trim();
   }
 
+  // "notes.txt", "notes.txt and plan.pdf", "a, b and c"
+  function _names(list) {
+    return list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : (list[0] || '');
+  }
+
   function _time(ts) {
     return ts ? new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
   }
 
   /* ── Markup ── */
-  function _replyHTML(id, r, canRetry) {
+  function _replyHTML(id, r, canRetry, lostFiles) {
     const from = r.model && r.model !== id ? `<span class="space-from">${_esc(SpaceCards.label(r.model))}</span>` : '';
     if (r.error) {
       // Billing needs the Wallet, a file the model can't read needs another
-      // model; anything else may go through on a second try.
+      // model; anything else may go through on a second try. A reloaded chat
+      // keeps only file names, so a prompt that had files asks for them
+      // rather than retry without them.
       const next = r.billing ? ' <a href="#/wallet">Open Wallet</a>'
+        : (canRetry && !r.capability && lostFiles.length) ? ` <span class="space-retry-note">Attach ${_esc(_names(lostFiles))} and send again to retry.</span>`
         : (canRetry && !r.capability) ? ' <button type="button" class="space-retry" data-act="retry">Retry</button>'
         : '';
       return `<p class="space-err">${from}${_esc(r.error)}${next}</p>`;
@@ -97,7 +105,8 @@ const ChatView = (() => {
   function _exchangeHTML(id, ex, live, latest) {
     // Retry sends again, so it needs a signed-in user (PromptPanel checks too).
     const canRetry = latest && !live && !!ex.ask && !!State.get('user');
-    let replies = ex.replies.map(r => _replyHTML(id, r, canRetry && r.model === id && !!r.msg)).join('');
+    const lost = SpaceCards.lostFiles(ex.ask);
+    let replies = ex.replies.map(r => _replyHTML(id, r, canRetry && r.model === id && !!r.msg, lost)).join('');
     if (live) {
       replies += live.text
         ? `<div class="space-reply">${_md(_clean(live.text))}</div>`

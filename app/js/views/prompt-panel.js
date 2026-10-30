@@ -2326,6 +2326,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const last = thread[thread.length - 1];
     const failed = last && last.ask ? last.replies.filter(r => r.error && r.model === id && r.msg) : [];
     if (!failed.length) return false;
+    // A reloaded prompt whose files are gone can't go out again as it was;
+    // the card asks for them instead.
+    if (SpaceCards.lostFiles(last.ask).length) return false;
     failed.forEach(r => { const i = _messages.indexOf(r.msg); if (i !== -1) _messages.splice(i, 1); });
     _saveMessages();
     _askCards([id], last.ask.text || '', last.ask.attachments || [], [SpaceCards.historyFor(_messages, id, cards)]);

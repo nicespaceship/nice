@@ -5628,6 +5628,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
 }
 .space-retry { padding:0; border:0; background:none; cursor:pointer; font:inherit; }
+.space-retry-note { color:var(--text-muted); }
 .space-link,
 .space-retry,
 .space-note a,

@@ -219,6 +219,14 @@ const SpaceCards = (() => {
     return out;
   }
 
+  // Names of files a stored prompt had attached but no longer carries: a
+  // saved chat keeps only their names, so such a prompt can't go out again
+  // as it was.
+  function lostFiles(ask) {
+    if (!ask || (ask.attachments || []).length) return [];
+    return (ask.attachmentPlaceholders || []).map(a => (a && a.name) || 'the file');
+  }
+
   /* ── Conversations from before cards ── */
   function idFromLabel(text) {
     if (!text) return null;
@@ -276,6 +284,6 @@ const SpaceCards = (() => {
     label, provider, poolLabel, planAllows, available,
     defaultSelection, selected, toggle,
     live, setLive, endLive, endAll, busy, changed, requestApproval, approval, answer,
-    threads, historyFor, offCard, idFromLabel, tagLegacy,
+    threads, historyFor, offCard, lostFiles, idFromLabel, tagLegacy,
   };
 })();
