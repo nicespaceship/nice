@@ -105,10 +105,11 @@ const SecurityView = (() => {
     if (score >= 60) return 'var(--mono, #e8a32e)';
     return 'var(--mono, #e74c3c)';
   }
-  // Threat severity is an indicator dot: high = stop, medium = busy.
+  // Threat severity is an indicator dot: high = stop, medium = busy. The
+  // --dot-* tokens exist only in NICE; other themes keep these hexes.
   function _sevColor(sev) {
-    if (sev === 'high')   return 'var(--dot-stop)';
-    if (sev === 'medium') return 'var(--dot-busy)';
+    if (sev === 'high')   return 'var(--dot-stop, #e74c3c)';
+    if (sev === 'medium') return 'var(--dot-busy, #e8a32e)';
     return 'var(--text-muted)';
   }
   const _timeAgo = Utils.timeAgo;

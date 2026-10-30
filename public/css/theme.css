@@ -45,18 +45,6 @@
   --card-text-body:    0.75rem;   /* flavor, description, chip */
   --card-text-meta:    0.625rem;  /* subtitle, type line, rarity, role */
   --card-text-micro:   0.5rem;    /* marquee, stat label, serial, mini badge (FLOOR) */
-
-  /* Indicator dots — the only place NICE allows color. Small circles that
-     carry a meaning, shared by every theme (themes may override). Each
-     value keeps at least 3:1 against both white and black.
-       stop  red     no, stop, cancel, error, rejected
-       go    green   go, ready, done, approved, connected
-       busy  orange  working, waiting, needs attention
-       info  blue    info, neutral highlight */
-  --dot-stop: #ef4444;
-  --dot-go:   #16a34a;
-  --dot-busy: #ea580c;
-  --dot-info: #3b82f6;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -65,7 +53,7 @@
 
 /* CORE — the NICE theme (`nice` light, `nice-dark`). Monochrome: black,
    white and grays only. Color appears only as indicator dots (--dot-*
-   above). --accent is ink: near-black on light, near-white on dark (the
+   below). --accent is ink: near-black on light, near-white on dark (the
    dark values ship from THEMES in nice.js), so primary buttons, active
    nav, focus rings and selection all read as black/white. The NICE-only
    tokens (--tint, --mono, status inks) live in app.css's CORE block. */
@@ -100,6 +88,22 @@
      set no --bg-pattern of their own and have always inherited this faint
      dot grid from :root; NICE turns it off in its own block (app.css). */
   --bg-pattern:   radial-gradient(circle, rgba(15,82,186,0.06) 1px, transparent 1px);
+}
+
+/* Indicator dots — the only place NICE allows color. Small circles that
+   carry a meaning; each value keeps at least 3:1 against both white and
+   black. NICE-only: every use reads `var(--dot-go, <its old color>)`, so
+   the other themes keep exactly the dots they had.
+     stop  red     no, stop, cancel, error, rejected
+     go    green   go, ready, done, approved, connected
+     busy  orange  working, waiting, needs attention
+     info  blue    info, neutral highlight */
+html:not([data-theme]),
+:is([data-theme="nice"],[data-theme="nice-dark"]) {
+  --dot-stop: #ef4444;
+  --dot-go:   #16a34a;
+  --dot-busy: #ea580c;
+  --dot-info: #3b82f6;
 }
 
 /* Robotech — light day mode, exact inversion of spaceship */

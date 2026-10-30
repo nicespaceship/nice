@@ -34,4 +34,4 @@ Working reference as of 2026-10-30. The NICE SPACESHIP company icon is being red
   A status that used to be a colored fill, text or border is now ink plus a dot. Blueprint cards follow the same rule in NICE: frames, badges and card art render in ink.
 - **Sapphire** (`#0F52BA`, `#1862ce` on hover) no longer applies to the NICE theme's UI. It stays a brand color only where the marketing front page (`index.html`, `landing.css`) still uses it.
 - **No reactor in NICE.** The circular centerpiece reactor is off in the NICE theme (`reactor:false` in `THEMES`); the sci-fi themes keep theirs.
-- **Other themes** (HAL-9000, The Grid, The Matrix, LCARS, J.A.R.V.I.S., Cyberpunk, RX-78-2, 16-BIT, The Office) keep their own palettes. They share the indicator-dot tokens.
+- **Other themes** (HAL-9000, The Grid, The Matrix, LCARS, J.A.R.V.I.S., Cyberpunk, RX-78-2, 16-BIT, The Office) keep their own palettes, status dots included. The dot tokens are defined for NICE only.
