@@ -18,7 +18,7 @@ const SpaceshipDetailView = (() => {
     const b = ShipBehaviors.getBehaviors(shipId);
 
     const modeOptions = [
-      { value: 'review', label: 'Review Mode', desc: 'All output goes to Outbox for approval' },
+      { value: 'review', label: 'Review Mode', desc: 'All output goes to Ship for approval' },
       { value: 'autonomous', label: 'Autonomous', desc: 'Agent runs freely, no approval needed' },
       { value: 'draft', label: 'Draft Mode', desc: 'Creates drafts but never auto-publishes' },
     ].map(opt =>

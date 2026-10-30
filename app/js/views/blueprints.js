@@ -17,10 +17,10 @@ const BlueprintsView = (() => {
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Tab ↔ route ──
-     The Blueprints tab has its own main-nav route (#/library); the rest
+     The Blueprints tab has its own main-nav route (#/blueprints); the rest
      live under #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
      re-render) and re-highlights the main nav. */
-  const _TAB_ROUTES = { blueprints: '/library' };
+  const _TAB_ROUTES = { blueprints: '/blueprints' };
   function _syncTabRoute(tabId) {
     const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
     params.delete('tab');
@@ -302,13 +302,13 @@ const BlueprintsView = (() => {
       // the marketing site (linked from the global ? icon). Old sub-tab deep
       // links rewrite onto the flat tabs below so they keep resolving.
       const subParam = _hashParams.get('sub');
-      // The Outbox has its own page now; old Bridge links land there.
+      // The review queue has its own page (Ship); old Bridge links land there.
       if (_tabParam === 'outbox' || (_tabParam === 'missions' && subParam === 'outbox')) {
-        location.replace('#/outbox');
+        location.replace('#/ship');
         return;
       }
       // Main-nav routes that open a Bridge tab directly (see _TAB_ROUTES).
-      if (_hash === '#/library') {
+      if (_hash === '#/blueprints') {
         _activeTab = 'blueprints';
         if (['spaceship', 'agent', 'active', 'workshop'].includes(_tabParam)) _subTab = _tabParam;
       }

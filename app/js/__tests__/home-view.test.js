@@ -88,7 +88,7 @@ describe('HomeView', () => {
       '1 mission run failed',
       '2 crew problems to check',
     ]);
-    expect(needs.map(n => n.getAttribute('href'))).toEqual(['#/outbox', '#/bridge?tab=missions', '#/crew']);
+    expect(needs.map(n => n.getAttribute('href'))).toEqual(['#/ship', '#/bridge?tab=missions', '#/crew']);
     expect(el.querySelector('.home-sub').textContent).toBe('Here is what needs you.');
   });
 
@@ -113,10 +113,10 @@ describe('HomeView', () => {
     expect(el.querySelector('.home-ship-meta').textContent).toBe('Spaceship');
   });
 
-  it('offers the Library when the user has no spaceship', () => {
+  it('offers Blueprints when the user has no spaceship', () => {
     HomeView.render(el);
     expect(el.querySelector('.home-ship')).toBeNull();
-    expect(el.querySelector('.home-empty a').getAttribute('href')).toBe('#/library?tab=spaceship');
+    expect(el.querySelector('.home-empty a').getAttribute('href')).toBe('#/blueprints?tab=spaceship');
   });
 
   it('escapes spaceship names', () => {

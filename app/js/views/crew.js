@@ -143,10 +143,10 @@ const CrewView = (() => {
       <div class="crew-wrap">
         <div class="widget-card crew-empty">
           <h1>No spaceship yet</h1>
-          <p>A spaceship is a crew of AI agents built for one kind of business. Pick one from the Library and its crew shows up here.</p>
+          <p>A spaceship is a crew of AI agents built for one kind of business. Pick one from Blueprints and its crew shows up here.</p>
           <div class="crew-empty-acts">
-            <a class="btn btn-primary btn-sm" href="#/library?tab=spaceship">Find a spaceship</a>
-            <a class="btn btn-sm" href="#/chat">Ask anything instead</a>
+            <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Find a spaceship</a>
+            <a class="btn btn-sm" href="#/space">Ask anything instead</a>
           </div>
         </div>
       </div>`;

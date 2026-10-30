@@ -1,6 +1,6 @@
 /**
  * ChatView integration tests
- * Tests the standalone chat view (#/chat): greeting and conversation feed.
+ * Tests the standalone chat view (#/space): greeting and conversation feed.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -91,8 +91,8 @@ beforeEach(() => {
 loadScriptGlobal('views/chat.js');
 
 describe('ChatView', () => {
-  it('has title "Chat"', () => {
-    expect(ChatView.title).toBe('Chat');
+  it('has title "Space"', () => {
+    expect(ChatView.title).toBe('Space');
   });
 
   it('renders without crashing when State is empty', () => {

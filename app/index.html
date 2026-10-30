@@ -64,6 +64,8 @@
   <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
   <symbol id="icon-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><polyline points="6,8 10,12 14,9 18,13"/></symbol>
   <symbol id="icon-chat" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></symbol>
+    <symbol id="icon-space" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+    <symbol id="icon-ship" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></symbol>
   <symbol id="icon-build" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
   <symbol id="icon-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
   <symbol id="icon-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
@@ -233,11 +235,14 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Collapsed rail: the NICE mark expands the menu. The labeled links
-       below stay visible as icons in both states. -->
+  <!-- Collapsed rail: the NICE mark goes Home, the button under it expands
+       the menu. The labeled links below stay visible as icons in both states. -->
   <div class="side-rail">
-    <button type="button" class="side-rail-btn side-rail-nice" id="side-rail-nice" aria-label="Expand menu" title="Expand menu">
+    <a href="#/" class="side-rail-btn side-rail-nice" id="side-rail-nice" aria-label="Home" title="Home">
       <svg class="side-rail-nice-logo" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
+    </a>
+    <button type="button" class="side-rail-btn side-rail-expand" id="side-rail-expand" aria-label="Expand menu" title="Expand menu">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-collapse"/></svg>
     </button>
   </div>
 
@@ -285,24 +290,22 @@
     </div>
   </div>
 
-  <!-- Primary destinations: labeled when open, icons on the collapsed rail. -->
+  <!-- Primary destinations: labeled when open, icons on the collapsed rail.
+       Home is the NICE mark above. Space is where the crew works, Ship is
+       where finished work goes out, Blueprints is what a crew starts from. -->
   <nav class="side-primary" aria-label="Primary">
-    <a href="#/" class="side-link" data-nav="home" title="Home">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-home"/></svg>
-      <span>Home</span>
+    <a href="#/space" class="side-link" data-nav="space" title="Space">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-space"/></svg>
+      <span>Space</span>
     </a>
-    <a href="#/chat" class="side-link" data-nav="chat" title="Chat">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-chat"/></svg>
-      <span>Chat</span>
-    </a>
-    <a href="#/outbox" class="side-link" data-nav="outbox" title="Outbox">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-outbox"/></svg>
-      <span>Outbox</span>
+    <a href="#/ship" class="side-link" data-nav="ship" title="Ship">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-ship"/></svg>
+      <span>Ship</span>
       <b class="side-badge badge-warn" id="side-outbox-badge" hidden></b>
     </a>
-    <a href="#/library" class="side-link" data-nav="library" title="Library">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-library"/></svg>
-      <span>Library</span>
+    <a href="#/blueprints" class="side-link" data-nav="blueprints" title="Blueprints">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg>
+      <span>Blueprints</span>
     </a>
   </nav>
 
@@ -468,27 +471,23 @@
 
 <!-- ═══ BOTTOM TAB BAR (Mobile) ═══ -->
 <nav class="app-tabbar" id="app-tabbar" aria-label="Main navigation">
-  <a href="#/" class="tab active" data-tab="home">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-home"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="#/chat" class="tab" data-tab="chat">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-chat"/></svg>
-    <span>Chat</span>
+  <a href="#/space" class="tab" data-tab="space">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-space"/></svg>
+    <span>Space</span>
   </a>
   <a href="#/crew" class="tab" data-tab="crew">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-spaceship"/></svg>
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-agent"/></svg>
     <span>Crew</span>
     <span class="nav-alert-dot nav-alert-dot--corner" id="tab-crew-alert-dot" hidden></span>
   </a>
-  <a href="#/outbox" class="tab" data-tab="outbox">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-outbox"/></svg>
-    <span>Outbox</span>
+  <a href="#/ship" class="tab" data-tab="ship">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-ship"/></svg>
+    <span>Ship</span>
     <b class="tab-badge" id="tab-outbox-badge" hidden></b>
   </a>
-  <a href="#/library" class="tab" data-tab="library">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-library"/></svg>
-    <span>Library</span>
+  <a href="#/blueprints" class="tab" data-tab="blueprints">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg>
+    <span>Blueprints</span>
   </a>
 </nav>
 

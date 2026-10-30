@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Chat (#/chat)
+   NICE — Space (#/space)
    Standalone chat: talk to NICE on any enabled model, no crew involved.
    The prompt panel docks globally; this view hosts the greeting and the
    conversation feed. Spaceship chat lives on the crew view (#/crew).
 ═══════════════════════════════════════════════════════════════════ */
 
 const ChatView = (() => {
-  const title = 'Chat';
+  const title = 'Space';
   const _esc = Utils.esc;
 
   function _greeting() {

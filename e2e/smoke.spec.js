@@ -5,18 +5,19 @@ import AxeBuilder from '@axe-core/playwright';
  * NICE™ E2E Smoke Tests
  *
  * Routes:
- *   #/           → HomeView ('Home') — what needs you, your spaceships
- *   #/chat       → ChatView ('Chat') — standalone chat, no crew
+ *   #/           → HomeView ('Home') — what needs you, your spaceships (the NICE mark)
+ *   #/space      → ChatView ('Space') — standalone chat until the card workspace lands
  *   #/crew       → CrewView ('Crew') — one spaceship's crew as cards, recent runs, approvals
- *   #/outbox     → OutboxView ('Outbox') — results waiting for review, approved, rejected; week view
- *   #/library    → BlueprintsView on its Blueprints tab
+ *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
+ *   #/blueprints → BlueprintsView on its Blueprints tab
  *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
  *   #/security   → SecurityView ('Security') — Security | Integrations | Wallet
  *   #/settings   → SettingsView ('Settings')
  *   #/theme-editor → ThemeCreatorView ('Theme Editor')
  *
  * Redirects:
- *   #/dock, #/blueprints → #/bridge
+ *   #/chat → #/space, #/outbox → #/ship, #/library → #/blueprints (query kept)
+ *   #/dock → #/bridge
  *   #/missions → #/bridge?tab=missions
  *   #/log → #/bridge?tab=operations&sub=log
  *   #/integrations, #/vault → #/security?tab=integrations
@@ -63,21 +64,27 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // Desktop opens with the sidebar docked and the four destinations labeled.
+    // Desktop opens with the sidebar docked and the three destinations
+    // labeled; the NICE mark is Home.
     await expect(sidebar).toHaveClass(/\bopen\b/);
-    await expect(page.locator('.side-brand')).toBeVisible();
-    for (const label of ['Home', 'Chat', 'Outbox', 'Library']) {
+    await expect(page.locator('.side-brand')).toHaveAttribute('href', '#/');
+    await expect(page.locator('.side-primary .side-link')).toHaveCount(3);
+    for (const label of ['Space', 'Ship', 'Blueprints']) {
       await expect(page.locator('.side-primary .side-link', { hasText: label })).toBeVisible();
     }
     // A destination navigates and becomes the highlighted link.
-    await page.locator('.side-primary .side-link[data-nav="outbox"]').click();
-    await page.waitForFunction(() => location.hash === '#/outbox');
-    await expect(page.locator('.side-primary .side-link[data-nav="outbox"]')).toHaveAttribute('aria-current', 'page');
-    // Collapsing keeps the destinations on the rail as icons.
+    await page.locator('.side-primary .side-link[data-nav="ship"]').click();
+    await page.waitForFunction(() => location.hash === '#/ship');
+    await expect(page.locator('.side-primary .side-link[data-nav="ship"]')).toHaveAttribute('aria-current', 'page');
+    // Collapsing keeps the destinations on the rail as icons. There the NICE
+    // mark still goes Home, and the button under it expands the menu.
     await page.locator('#side-collapse').click();
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
-    await expect(page.locator('.side-primary .side-link[data-nav="home"]')).toBeVisible();
+    await expect(page.locator('.side-primary .side-link[data-nav="space"]')).toBeVisible();
     await page.locator('#side-rail-nice').click();
+    await page.waitForFunction(() => location.hash === '#/');
+    await expect(sidebar).not.toHaveClass(/\bopen\b/);
+    await page.locator('#side-rail-expand').click();
     await expect(sidebar).toHaveClass(/\bopen\b/);
   });
 
@@ -86,7 +93,7 @@ test.describe('Smoke Tests', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of ['#/', '#/chat', '#/outbox', '#/library', '#/crew', '#/bridge', '#/security', '#/settings', '#/theme-editor']) {
+    for (const hash of ['#/', '#/space', '#/ship', '#/blueprints', '#/crew', '#/bridge', '#/security', '#/settings', '#/theme-editor']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await page.waitForTimeout(2000); // Let router + view render complete
       await expect(page.locator('#app-view')).toBeVisible();
@@ -95,10 +102,18 @@ test.describe('Smoke Tests', () => {
     expect(errors.length).toBe(0);
   });
 
-  test('outbox has its own page and old bridge links land on it', async ({ page }) => {
+  test('old names of the main destinations still land, query and all', async ({ page }) => {
+    await waitForApp(page);
+    for (const [from, to] of [['#/chat', '#/space'], ['#/outbox?tab=approved', '#/ship?tab=approved'], ['#/library?tab=spaceship', '#/blueprints?tab=spaceship']]) {
+      await page.evaluate((h) => { window.location.hash = h; }, from);
+      await page.waitForFunction((h) => location.hash === h, to);
+    }
+  });
+
+  test('ship has its own page and old bridge links land on it', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=outbox'; });
-    await page.waitForFunction(() => location.hash === '#/outbox');
+    await page.waitForFunction(() => location.hash === '#/ship');
     await expect(page.locator('.ob-signin')).toBeVisible();
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
     await expect(page.locator('.bp-type-tab[data-tab="missions"]')).toBeVisible();
@@ -135,7 +150,8 @@ test.describe('Smoke Tests', () => {
     // Phones navigate with the bottom tab bar; the sidebar is a closed drawer.
     const tabbar = page.locator('#app-tabbar');
     await expect(tabbar).toBeVisible();
-    for (const label of ['Home', 'Chat', 'Crew', 'Outbox', 'Library']) {
+    await expect(tabbar.locator('.tab')).toHaveCount(4);
+    for (const label of ['Space', 'Crew', 'Ship', 'Blueprints']) {
       await expect(tabbar.locator('.tab', { hasText: label })).toBeVisible();
     }
     await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
@@ -152,7 +168,7 @@ test.describe('Route Tests', () => {
     await navigateTo(page, '#/security', 'Security');
     await navigateTo(page, '#/settings', 'Settings');
     await navigateTo(page, '#/', 'Home');
-    await navigateTo(page, '#/chat', 'Chat');
+    await navigateTo(page, '#/space', 'Space');
   });
 });
 
@@ -221,15 +237,15 @@ test.describe('Dashboard', () => {
     const title = page.locator('.home-title');
     await expect(title).toBeVisible();
     expect(await title.textContent()).toMatch(/Good (morning|afternoon|evening)/);
-    // No spaceship yet: Home offers the Library and both ways to start.
-    await expect(page.locator('.home-empty a[href="#/library?tab=spaceship"]')).toBeVisible();
-    await expect(page.locator('.home-start[href="#/chat"]')).toBeVisible();
+    // No spaceship yet: Home offers Blueprints and both ways to start.
+    await expect(page.locator('.home-empty a[href="#/blueprints?tab=spaceship"]')).toBeVisible();
+    await expect(page.locator('.home-start[href="#/space"]')).toBeVisible();
   });
 
   test('crew view points a new visitor to a spaceship', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/crew', 'Crew');
-    await expect(page.locator('.crew-empty a[href="#/library?tab=spaceship"]')).toBeVisible();
+    await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toBeVisible();
   });
 
   test('crew view shows a card per crew member once a spaceship is active', async ({ page }) => {
@@ -250,7 +266,7 @@ test.describe('Dashboard', () => {
 
   test('chat offers Compare and explains what it needs', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/chat', 'Chat');
+    await navigateTo(page, '#/space', 'Space');
     const toggle = page.locator('#nice-ai-compare');
     await expect(toggle).toBeVisible();
     await toggle.click();
@@ -264,7 +280,7 @@ test.describe('Dashboard', () => {
 
   test('chat view renders greeting', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/chat', 'Chat');
+    await navigateTo(page, '#/space', 'Space');
     const greeting = page.locator('.chat-home-greeting');
     await expect(greeting).toBeVisible();
     expect(await greeting.textContent()).toMatch(/Good (morning|afternoon|evening)/);
@@ -355,7 +371,7 @@ test.describe('Performance', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of ['#/bridge', '#/chat', '#/outbox', '#/security', '#/library', '#/settings', '#/crew', '#/theme-editor', '#/']) {
+    for (const hash of ['#/bridge', '#/space', '#/ship', '#/security', '#/blueprints', '#/settings', '#/crew', '#/theme-editor', '#/']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await page.waitForTimeout(500);
     }
