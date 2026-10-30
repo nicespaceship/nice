@@ -3997,6 +3997,12 @@ html:not([data-theme]) .app-main,
 .mc-age-fresh { border-left:3px solid var(--color-success); }
 .mc-age-stale { border-left:3px solid var(--color-warning); }
 .mc-age-overdue { border-left:3px solid var(--color-error); }
+/* NICE draws no colored edge, so age shows as a dot closing the card's top
+   row: busy (orange) once a mission is stale, stop (red) once overdue. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(.mc-age-stale, .mc-age-overdue) .mc-card-top::after {
+  content:''; width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--dot-busy);
+}
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-age-overdue .mc-card-top::after { background:var(--dot-stop); }
 
 .mc-card-top { display:flex; align-items:center; gap:8px; }
 .mc-card-check { width:14px; height:14px; cursor:pointer; opacity:.4; transition:opacity .15s; }
