@@ -514,7 +514,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
-Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 100 files, 2319 tests (2026-10-30). Counts drift with each feature — verify with `npm test`.
+Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 100 files, 2328 tests (2026-10-30). Counts drift with each feature — verify with `npm test`.
 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
@@ -526,7 +526,7 @@ Coverage areas:
 - **Prompt panel**: `attachment-utils`, `prompt-panel-space` (sending to the selected cards), `space-cards`
 - **Other**: `content-queue`
 
-### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 38 tests
+### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 39 tests
 ```bash
 npm run test:e2e
 ```
