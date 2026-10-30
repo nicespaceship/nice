@@ -212,13 +212,13 @@
           <p class="lp-index"><span>02</span>Inside NICE</p>
           <div class="lp-head-row">
             <h2 class="lp-h2" id="inside-title">Your command center</h2>
-            <p class="lp-head-note">Home shows what needs you. Each spaceship shows its crew as cards. Chat talks to any model. The Outbox holds everything the crew made.</p>
+            <p class="lp-head-note">Home shows what needs you. Each spaceship shows its crew as cards. Space gives every model you turn on its own card. The Outbox holds everything the crew made.</p>
           </div>
         </header>
 
         <div class="lp-tabs" role="tablist" aria-label="Inside NICE">
           <button type="button" role="tab" id="tab-crew" aria-controls="panel-crew" aria-selected="true">The crew</button>
-          <button type="button" role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="false" tabindex="-1">Chat and Compare</button>
+          <button type="button" role="tab" id="tab-space" aria-controls="panel-space" aria-selected="false" tabindex="-1">Space</button>
           <button type="button" role="tab" id="tab-outbox" aria-controls="panel-outbox" aria-selected="false" tabindex="-1">The Outbox</button>
         </div>
 
@@ -232,7 +232,7 @@
               <p class="lp-mock-brand"><img src="/assets/nice-mark-light.svg" alt="" width="16" height="16" />NICE</p>
               <ul>
                 <li>Home</li>
-                <li>Chat</li>
+                <li>Space</li>
                 <li>Outbox <b>3</b></li>
                 <li>Library</li>
               </ul>
@@ -294,30 +294,28 @@
               <p class="lp-mock-caption">Each card's frame takes the color of the lab behind its model. Message any agent from its card.</p>
             </div>
 
-            <!-- Chat and Compare -->
-            <div class="lp-mock-panel" role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden>
-              <div class="lp-chat">
-                <p class="lp-chat-you">Write a two-line caption for our lemon tarts.</p>
-                <p class="lp-overline">Compared 3 models</p>
-                <div class="lp-compare">
-                  <article class="lp-compare-card" style="--p:#4f8df5">
-                    <header><span><i></i>Gemini 2.5 Flash</span><em>Free</em></header>
+            <!-- Space -->
+            <div class="lp-mock-panel" role="tabpanel" id="panel-space" aria-labelledby="tab-space" hidden>
+              <div class="lp-space">
+                <div class="lp-space-cards">
+                  <article class="lp-space-card is-on">
+                    <header><span>Gemini 2.5 Flash<small>Google · Free</small></span><i></i></header>
+                    <p class="lp-space-ask">Write a two-line caption for our lemon tarts.</p>
                     <p>Bright, tart and gone by noon. Our lemon tarts are back this weekend.</p>
-                    <span class="lp-keep">Keep this one</span>
                   </article>
-                  <article class="lp-compare-card is-kept" style="--p:#9aa0a6">
-                    <header><span><i></i>Grok 4.3</span><em>Kept</em></header>
+                  <article class="lp-space-card is-on">
+                    <header><span>Grok 4.3<small>xAI · Standard</small></span><i></i></header>
+                    <p class="lp-space-ask">Write a two-line caption for our lemon tarts.</p>
                     <p>Sunshine in a butter crust. Lemon tarts, this Saturday only, while they last.</p>
-                    <span class="lp-keep">Your conversation continues from this one</span>
                   </article>
-                  <article class="lp-compare-card" style="--p:#6d7cfe">
-                    <header><span><i></i>DeepSeek V4 Flash</span><em>Standard</em></header>
-                    <p>Zest, curd, crumble. Come early: the lemon tarts never last the afternoon.</p>
-                    <span class="lp-keep">Keep this one</span>
+                  <article class="lp-space-card">
+                    <header><span>DeepSeek V4 Flash<small>DeepSeek · Standard</small></span><i></i></header>
+                    <p class="lp-space-ask">Click this card to add it to your next prompt.</p>
                   </article>
                 </div>
+                <p class="lp-space-prompt">Write a two-line caption for our lemon tarts.<span>To 2 models</span></p>
               </div>
-              <p class="lp-mock-caption">Chat with any model, or let NICE Auto pick one per message. Compare asks two or three at once and shows the answers side by side.</p>
+              <p class="lp-mock-caption">Every model you turn on gets a card. Click the cards that should answer, and each one answers in its own card.</p>
             </div>
 
             <!-- Outbox -->
@@ -400,8 +398,8 @@
             <dd>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning.</dd>
           </div>
           <div>
-            <dt>Compare</dt>
-            <dd>Ask two or three models the same question and read their answers side by side. The one you keep becomes the reply your conversation continues from.</dd>
+            <dt>Space</dt>
+            <dd>Every model you turn on gets a card in Space. Click the cards you want, and each one answers your prompt in its own card, side by side.</dd>
           </div>
           <div>
             <dt>Free model</dt>
@@ -536,9 +534,10 @@
               <h3>NICE Auto</h3>
               <p>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning. It stays on the models your plan includes, so it never spends what you didn't choose to.</p>
             </article>
-            <article class="lp-entry" id="codex-compare" data-group="Models">
-              <h3>Compare</h3>
-              <p>Not sure which model is best for a question? Turn on Compare in Chat and ask two or three at once. Their answers appear side by side, and the one you keep becomes the reply your conversation continues from.</p>
+            <article class="lp-entry" id="codex-space" data-group="Models">
+              <h3>Space</h3>
+              <p>Space is where you work with the models. Every model you turn on gets its own card, and the prompt sits at the bottom.</p>
+              <p>Click a card to add it to your next prompt or take it out. Ask one model or several: each one answers in its own card and keeps its own thread, so you can read the answers side by side.</p>
             </article>
 
             <article class="lp-entry" id="codex-tools" data-group="Tools">

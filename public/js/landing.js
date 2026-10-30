@@ -233,7 +233,7 @@
   // Entries are plain articles in the page (readable without this
   // script and by search engines). Here they become an index by group,
   // a search, one entry at a time with previous and next, and links
-  // like #codex/compare.
+  // like #codex/space.
   function codex() {
     const root = document.querySelector('[data-codex]');
     if (!root) return;

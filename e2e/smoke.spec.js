@@ -474,8 +474,8 @@ test.describe('Front Page', () => {
   });
 
   test('opens a Codex entry from its link and searches the Codex', async ({ page }) => {
-    await page.goto('/#codex/compare');
-    const entry = page.locator('#codex-compare');
+    await page.goto('/#codex/space');
+    const entry = page.locator('#codex-space');
     await expect(entry).toBeVisible();
     await expect(page.locator('#codex-what-is-nice')).toBeHidden();
     await page.locator('#codex-search').fill('approve');
