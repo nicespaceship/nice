@@ -5668,6 +5668,10 @@ html:has(.space-reactor) .jv-pp-reactor {
 .space-card:hover { border-color:var(--border-hi, var(--text-muted)); }
 .space-card.is-selected { border-color:var(--text); }
 .space-card.is-expanded { grid-column:1 / -1; aspect-ratio:auto; cursor:auto; }
+/* Waiting on an approval: the card grows to keep the reply that asked in
+   view above the buttons, instead of squeezing it out of a fixed card. */
+.space-card.has-approval { aspect-ratio:auto; }
+.space-card.has-approval:not(.is-expanded) .space-card-body { max-height:160px; }
 
 .space-card-head {
   display:flex; align-items:center; gap:10px; width:100%;

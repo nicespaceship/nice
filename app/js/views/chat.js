@@ -159,7 +159,7 @@ const ChatView = (() => {
       : '';
 
     return `
-      <article class="space-card${isSelected ? ' is-selected' : ''}${expanded ? ' is-expanded' : ''}" data-model="${Utils.escAttr(id)}" data-state="${state}"${live ? ' aria-busy="true"' : ''}>
+      <article class="space-card${isSelected ? ' is-selected' : ''}${expanded ? ' is-expanded' : ''}${pending ? ' has-approval' : ''}" data-model="${Utils.escAttr(id)}" data-state="${state}"${live ? ' aria-busy="true"' : ''}>
         <button type="button" class="space-card-head" data-act="toggle" aria-pressed="${isSelected}">
           <span class="space-card-names">
             <span class="space-card-name">${_esc(SpaceCards.label(id))}</span>
