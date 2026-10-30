@@ -1792,10 +1792,11 @@ html:not([data-theme]) .app-main,
 /* Third-party integration logos render in grayscale. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mcp-catalog-icon-svg { filter:grayscale(1); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.rarity-mythic, .computing-inv-card[data-rarity]) { animation:none; }
-/* Plain links carry no color: they take the surrounding ink and keep the
-   browser underline. Native checkboxes, radios and ranges take ink.
-   Selection inverts ink and paper. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) a:not([class]) { color:inherit; }
+/* Links in running text can't lean on color, so they are ink with an
+   underline (WCAG 1.4.1). This also outranks component rules that drop the
+   underline, like the sign-up modal's Terms and Privacy links. Native
+   checkboxes, radios and ranges take ink. Selection inverts ink and paper. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) a:not([class]) { color:var(--text); text-decoration:underline; text-underline-offset:2px; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) { accent-color:var(--accent); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) ::selection { background:var(--text); color:var(--bg); }
 /* Chat surfaces: an error card and the listening mic stay ink. */
