@@ -38,6 +38,7 @@
 
   --font-b: 'Inter', system-ui, -apple-system, sans-serif;
   --font-h: 'Orbitron', 'Inter', sans-serif;
+  --font-brand: 'Figtree', 'Inter', sans-serif;  /* the NICE wordmark */
   /* Mono only for indexes, numbers and spec data. */
   --font-m: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
@@ -169,8 +170,8 @@ section[id], .lp-codex { scroll-margin-top: calc(var(--header-h) + 8px); }
 .lp-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--header-h); }
 .lp-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .lp-brand-text {
-  font-family: var(--font-h); font-size: var(--text-base); font-weight: var(--fw-bold);
-  letter-spacing: var(--tracking-caps-wider);
+  font-family: var(--font-brand); font-size: var(--text-md); font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-caps);
 }
 .lp-nav { display: flex; align-items: center; gap: 2px; }
 .lp-nav-link {
@@ -332,7 +333,7 @@ section[id], .lp-codex { scroll-margin-top: calc(var(--header-h) + 8px); }
 .lp-mock-side li.is-on { background: color-mix(in srgb, var(--w-ac) 20%, transparent); color: var(--w-fg); }
 .lp-mock-brand {
   display: flex; align-items: center; gap: 8px; margin: 0 6px 14px;
-  font-family: var(--font-h); font-size: var(--text-sm); font-weight: var(--fw-bold); letter-spacing: var(--tracking-caps-wide);
+  font-family: var(--font-brand); font-size: var(--text-sm); font-weight: var(--fw-bold); letter-spacing: var(--tracking-caps);
 }
 .lp-window.is-light .lp-mock-brand img { filter: invert(1); }
 .lp-mock-label { margin: 18px 10px 6px; font-family: var(--font-m); font-size: var(--text-2xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--w-muted); }
