@@ -447,6 +447,40 @@ describe('Sending from the panel on Space', () => {
       expect(PromptPanel.messages().some(m => /declined/.test(m.text || ''))).toBe(false);
     });
 
+    for (const newAsksToo of [false, true]) {
+      it(`stops at a newer prompt even when nothing was waiting at the time (new reply ${newAsksToo ? 'asks too' : 'plain'})`, async () => {
+        // The first command takes a moment to run; the new prompt goes out meanwhile.
+        let finishInsert;
+        run.mockImplementation((input) => new Promise(r => { finishInsert = () => r({ ok: true, msg: `Mission created: ${input.title}` }); }));
+        let n = 0;
+        globalThis.fetch = vi.fn(async (url, init) => {
+          calls.push(JSON.parse(init.body));
+          const text = ++n === 1 ? 'Two. [EXEC: create_mission | First one] [EXEC: create_mission | Second one]'
+            : newAsksToo ? 'Third. [EXEC: create_mission | Third one]' : 'Plain answer.';
+          return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text }] }) };
+        });
+        send('Plan two things');
+        await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+        SpaceCards.answer(id, true, SpaceCards.approval(id).token);
+        await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1));
+        expect(SpaceCards.approval(id)).toBeNull();
+        send('Next question');
+        await settled();
+        finishInsert();
+        await vi.waitFor(() => expect(PromptPanel.messages().filter(m => m.note)).toHaveLength(2));
+        const t = SpaceCards.threads(PromptPanel.messages())[id];
+        expect(t[0].replies.slice(1).map(r => r.text)).toEqual([
+          '**Done:** Mission created: First one',
+          '**Skipped:** Create Mission did not run because you sent this card a new prompt first.',
+        ]);
+        expect(t[1].replies.map(r => r.text)).toEqual([newAsksToo ? 'Third. [EXEC: create_mission | Third one]' : 'Plain answer.']);
+        // Only the new reply's own command may be waiting, under its own exchange.
+        expect(SpaceCards.approval(id)?.input || null).toEqual(newAsksToo ? { title: 'Third one' } : null);
+        expect(PromptPanel.messages().some(m => /declined/.test(m.text || ''))).toBe(false);
+        expect(run).toHaveBeenCalledTimes(1);
+      });
+    }
+
     it('drops the question when the chat is cleared', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());

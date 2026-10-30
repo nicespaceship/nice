@@ -2245,6 +2245,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      Replies are tagged with the model that wrote them. Casual chat surface:
      no mission_runs row, like the rest of the top-level NICE chat. */
   const _cardCalls = new Map(); // modelId → AbortController
+  // modelId → how many prompts went to that card: a reply's commands stop as
+  // soon as their card has been sent a newer prompt.
+  const _cardPrompts = new Map();
   // Bumped whenever the conversation changes under in-flight calls (new or
   // opened chat, teardown) so a late reply never lands in the wrong one.
   let _cardEpoch = 0;
@@ -2298,8 +2301,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Each card's history is read before this prompt joins the conversation.
     const threads = targets.map(id => SpaceCards.historyFor(_messages, id, cards));
     // A card still waiting on an approval moves on: the command it asked
-    // about is skipped, and says so under the reply that asked.
+    // about is skipped, and says so under the reply that asked. A command
+    // already running finishes; the reply's later ones are skipped too.
     targets.forEach(id => {
+      _cardPrompts.set(id, (_cardPrompts.get(id) || 0) + 1);
       const pending = SpaceCards.approval(id);
       if (pending) SpaceCards.answer(id, 'skipped', pending.token);
     });
@@ -2429,15 +2434,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (answer === 'skipped') { skipped = true; return false; }
       return answer;
     };
+    // The user moved on once this card has a newer prompt: the rest of the
+    // reply's commands don't run, and nobody turned them down.
+    const prompt = _cardPrompts.get(id) || 0;
+    const skip = (rest) => _noteOnCard(id, reply, `**Skipped:** ${_commandList(rest.map(e => e.action))} did not run because you sent this card a new prompt first.`);
     for (const [i, ex] of execs.entries()) {
+      if ((_cardPrompts.get(id) || 0) !== prompt) { skip(execs.slice(i)); return; }
       const res = await _executeExec(ex.action, ex.params, askOnCard);
       if (epoch !== _cardEpoch) return;
-      if (skipped) {
-        // The user moved on: this command and the rest of the reply's
-        // commands don't run, and nobody turned them down.
-        _noteOnCard(id, reply, `**Skipped:** ${_commandList(execs.slice(i).map(e => e.action))} did not run because you sent this card a new prompt first.`);
-        return;
-      }
+      if (skipped) { skip(execs.slice(i)); return; }
       _noteOnCard(id, reply, res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`);
     }
   }

@@ -128,8 +128,10 @@ const SpaceCards = (() => {
   let _approvalSeq = 0;
   function requestApproval(id, action) {
     return new Promise(resolve => {
+      // A newer request replaces an older one: the older command was skipped,
+      // never turned down.
       const earlier = _approvals.get(id);
-      if (earlier) earlier.resolve(false);
+      if (earlier) earlier.resolve('skipped');
       _approvals.set(id, { action, resolve, token: ++_approvalSeq });
       _emit({ kind: 'approval', model: id });
     });
