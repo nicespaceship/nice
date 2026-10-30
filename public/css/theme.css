@@ -283,7 +283,8 @@
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card-completed { border-left-color: var(--text-muted); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card-failed { border-left-color: var(--color-error, #ef4444); }
 
-/* Pipeline nodes */
+/* Pipeline nodes — the label and count keep their own ink, so hover and
+   the active filter take the neutral wash rather than an ink fill. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-node {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
@@ -291,7 +292,7 @@
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-node:hover,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-active {
-  background: var(--accent); color: var(--bg); border-color: var(--accent);
+  background: var(--tint); color: var(--text); border-color: var(--border-hi);
 }
 
 /* Inputs */

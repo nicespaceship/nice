@@ -4673,7 +4673,7 @@ html:not([data-theme]) .app-main,
   background:#fff; border-radius:50%; transition:transform .2s;
 }
 .vault-toggle input:checked + .vault-toggle-slider { background:var(--accent); }
-.vault-toggle input:checked + .vault-toggle-slider::before { transform:translateX(16px); }
+.vault-toggle input:checked + .vault-toggle-slider::before { transform:translateX(16px); background:var(--on-accent); }
 .vault-toggle input:disabled + .vault-toggle-slider { opacity:.6; cursor:default; }
 
 .dot-off { width:6px; height:6px; border-radius:50%; background:var(--text-dim); display:inline-block; }
@@ -4780,7 +4780,7 @@ html:not([data-theme]) .app-main,
   border-radius:50%; transition:transform .2s, background .2s;
 }
 .settings-switch input:checked + .settings-slider { background:var(--accent); }
-.settings-switch input:checked + .settings-slider::before { transform:translateX(16px); background:#fff; }
+.settings-switch input:checked + .settings-slider::before { transform:translateX(16px); background:var(--on-accent); }
 
 .settings-range-group { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 
@@ -7958,7 +7958,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .toggle-slider { position:absolute; inset:0; background:var(--border); border-radius:20px; transition:background .2s; }
 .toggle-slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:var(--text); border-radius:50%; transition:transform .2s; }
 .toggle-switch input:checked + .toggle-slider { background:var(--accent); }
-.toggle-switch input:checked + .toggle-slider::before { transform:translateX(16px); background:#fff; }
+.toggle-switch input:checked + .toggle-slider::before { transform:translateX(16px); background:var(--on-accent); }
 
 .security-events { display:flex; flex-direction:column; gap:2px; }
 .security-event {
@@ -8282,7 +8282,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .swipe-action-left, .swipe-action-right {
   position:absolute; top:0; bottom:0; width:80px;
   display:flex; align-items:center; justify-content:center;
-  font-size:.75rem; font-weight:var(--fw-medium); color:#fff;
+  font-size:.75rem; font-weight:var(--fw-medium); color:var(--on-accent);
 }
 .swipe-action-left { left:0; background:var(--color-error); }
 .swipe-action-right { right:0; background:var(--color-success); }
@@ -10489,12 +10489,12 @@ body.preview-active .nice-ai {
     max-width:320px;
   }
   .sch-fixed-ship-trigger:hover { filter:brightness(0.94); border-color:transparent; }
-  .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:#fff; }
+  .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--on-accent); }
   /* Pad-left equals chevron width (12px) + gap (8px) so the label's
      flex slot is symmetric around the trigger's centerline — keeps the
      name visually centered despite the chevron's right-side offset. */
   .sch-fixed-ship-label { flex:1 1 auto; padding-left:20px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sch-fixed-ship-trigger svg { flex-shrink:0; color:#fff; }
+  .sch-fixed-ship-trigger svg { flex-shrink:0; color:var(--on-accent); }
   /* Fixed-position so the popover escapes the bridge tabs row's
      overflow:auto clipping; JS sets `top` and `left` from the trigger
      rect on open. */
