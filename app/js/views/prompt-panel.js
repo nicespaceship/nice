@@ -529,7 +529,7 @@ const PromptPanel = (() => {
     ToolRegistry.register({
       id: 'create-mission',
       name: 'Create Mission',
-      description: 'Queue a mission run on the active spaceship, optionally assigned to an agent.',
+      description: 'Queue a mission run on the active project, optionally assigned to an agent.',
       surfaces: ['human', 'agent'],
       schema: {
         type: 'object',

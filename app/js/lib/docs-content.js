@@ -10,7 +10,9 @@
    build step needed for the in-app surface.
 
    Content uses plain semantic HTML (<h1>, <h2>, <p>, <ul>, <table>…)
-   so the same fragment renders correctly in both surfaces. Each
+   so the same fragment renders correctly in both surfaces. The docs
+   say "project" for a spaceship (the default-look noun) in plain words:
+   the marketing build runs in Node, where Terminology is not loaded. Each
    surface scopes typography under .docs-content via CSS.
 
    UMD wrapper: works as a browser <script> (assigns DocsContent global)
@@ -50,10 +52,10 @@
     {
       id: 'spaceships',
       slug: 'spaceships',
-      label: 'Spaceships',
+      label: 'Projects',
       icon: 'rocket',
       marketingIcon: 'fa-rocket',
-      description: 'Orchestrators with a crew of agents. The unit that runs every Mission.',
+      description: 'A crew of agents working toward one goal. The unit that runs every Mission.',
     },
     {
       id: 'missions',
@@ -61,7 +63,7 @@
       label: 'Missions',
       icon: 'task',
       marketingIcon: 'fa-list-check',
-      description: 'Reusable templates: which Spaceship runs what plan, on what schedule, toward what outcome.',
+      description: 'Reusable templates: which project runs what plan, on what schedule, toward what outcome.',
     },
     {
       id: 'workflows',
@@ -77,7 +79,7 @@
       label: 'Integrations',
       icon: 'integrations',
       marketingIcon: 'fa-plug',
-      description: 'Connect Google Workspace, Microsoft 365, and any custom MCP server to your spaceships.',
+      description: 'Connect Google Workspace, Microsoft 365, and any custom MCP server to your projects.',
     },
     {
       id: 'models',
@@ -118,11 +120,11 @@
 
       <h2>Quick Start</h2>
       <ol>
-        <li><strong>Sign in</strong> — Create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free — no API keys, no token meter.</li>
-        <li><strong>Browse the Bridge</strong> — Explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
-        <li><strong>Activate your first agent</strong> — Click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
-        <li><strong>Run a mission</strong> — Type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
-        <li><strong>Build a spaceship</strong> — Activate a spaceship blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate via the Ship's Log.</li>
+        <li><strong>Sign in</strong>: create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free, with no API keys and no token meter.</li>
+        <li><strong>Browse the Bridge</strong>: explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
+        <li><strong>Activate your first agent</strong>: click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
+        <li><strong>Run a mission</strong>: type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
+        <li><strong>Start a project</strong>: activate a project blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate through the shared crew log.</li>
       </ol>
 
       <h2>Core Concepts</h2>
@@ -132,16 +134,16 @@
           <p>Individual AI workers with specific skills — writing, coding, research, design, and more. Each has a system prompt, tools, and a preferred model.</p>
         </div>
         <div class="docs-card">
-          <h3>Spaceships</h3>
-          <p>Orchestrators with a crew of agents. A spaceship is the unit that runs a mission — it routes the prompt to the right crew member via the WorkflowEngine.</p>
+          <h3>Projects</h3>
+          <p>A crew of agents working toward one goal. A project is the unit that runs a mission: it routes the prompt to the right crew member through the WorkflowEngine.</p>
         </div>
         <div class="docs-card">
           <h3>Missions</h3>
-          <p>Reusable templates: which Spaceship runs what plan, on what schedule, toward what outcome. Each execution is a Run with its own state.</p>
+          <p>Reusable templates: which project runs what plan, on what schedule, toward what outcome. Each execution is a Run with its own state.</p>
         </div>
         <div class="docs-card">
           <h3>Blueprints</h3>
-          <p>Templates for agents and spaceships. The catalog has hundreds of pre-built blueprints. You can also build custom ones in the Workshop.</p>
+          <p>Templates for agents and projects. The catalog has hundreds of pre-built blueprints. You can also build custom ones in the Workshop.</p>
         </div>
       </div>
 
@@ -150,7 +152,7 @@
         <dt>Sidebar</dt>
         <dd>Bridge, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
         <dt>Bridge</dt>
-        <dd>Your main hub — Schematic (active spaceship), Blueprints (catalog and Workshop), Missions, Outbox, Operations, Captain's Log, and Documentation.</dd>
+        <dd>Your main hub: Schematic (active project), Blueprints (catalog and Workshop), Missions, Outbox, Operations, Captain's Log, and Documentation.</dd>
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
@@ -164,7 +166,7 @@
 
       <h2>Activating Agents</h2>
       <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents appear in your fleet and can receive missions.</p>
-      <p>Every blueprint and every crew slot is open from day one. Free accounts run one active spaceship at a time; <strong>NICE Pro</strong> runs a fleet.</p>
+      <p>Every blueprint and every crew slot is open from day one. Free accounts run one active project at a time; <strong>NICE Pro</strong> runs as many as you need.</p>
 
       <h2>Building Custom Agents</h2>
       <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
@@ -188,18 +190,18 @@
     `,
 
     'spaceships': `
-      <h1>Spaceships</h1>
-      <p class="docs-lead">A spaceship is an orchestrator with a crew of agents. It's the unit that runs a Mission — every Run lives on a Ship, even if the crew is just one agent.</p>
+      <h1>Projects</h1>
+      <p class="docs-lead">A project is a crew of agents working toward one goal. It's the unit that runs a Mission: every Run belongs to a project, even when the crew is just one agent.</p>
 
-      <h2>How Spaceships Work</h2>
+      <h2>How projects work</h2>
       <ol>
-        <li><strong>Activate a spaceship</strong> from the catalog or build one in the Workshop</li>
-        <li><strong>Assign crew</strong> — drop agents into the spaceship's crew slots in the Schematic view</li>
-        <li><strong>Send a mission</strong> — by default the Ship runs a <em>triage</em> step: an LLM router reads your prompt + the crew manifest and dispatches to the best-fit agent</li>
-        <li><strong>Agents collaborate</strong> via the Ship's Log — a shared conversation context every crew member can read and append to</li>
+        <li><strong>Activate a project</strong> from the catalog or build one in the Workshop</li>
+        <li><strong>Assign crew</strong>: drop agents into the project's crew slots in the Schematic view</li>
+        <li><strong>Send a mission</strong>: by default the project runs a <em>triage</em> step, where an LLM router reads your prompt + the crew manifest and dispatches to the best-fit agent</li>
+        <li><strong>Agents collaborate</strong> through the shared crew log, a conversation context every crew member can read and append to</li>
       </ol>
 
-      <h2>Ship Classes</h2>
+      <h2>Project classes</h2>
       <table>
         <thead><tr><th>Class</th><th>Crew Size</th><th>Best For</th></tr></thead>
         <tbody>
@@ -210,29 +212,29 @@
         </tbody>
       </table>
 
-      <h2>MCPs Mount at the Ship Level</h2>
-      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected to the spaceship, not to individual agents. Every crew member on the ship inherits the connections, so a single OAuth grant covers the whole crew.</p>
+      <h2>MCPs connect at the project level</h2>
+      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) connect to the project, not to individual agents. Every crew member on the project inherits the connections, so a single OAuth grant covers the whole crew.</p>
 
       <h2>Crew Designer</h2>
-      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a spaceship configuration — picks a hull, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
+      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
     `,
 
     'missions': `
       <h1>Missions</h1>
-      <p class="docs-lead">A Mission is a reusable template: which Spaceship runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
+      <p class="docs-lead">A Mission is a reusable template: which project runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
 
       <h2>Running Missions</h2>
       <ul>
-        <li><strong>Ship-level chat</strong> — open a spaceship's Schematic view and chat. The Ship runs your prompt as a Run with full audit, cancel, and analytics.</li>
-        <li><strong>Agent chat</strong> — visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong> — the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
-        <li><strong>Scheduled Mission</strong> — save a Mission with a cron schedule and the Ship will fire Runs automatically.</li>
+        <li><strong>Project chat</strong>: open a project's Schematic view and chat. The project runs your prompt as a Run with full audit, cancel, and analytics.</li>
+        <li><strong>Agent chat</strong>: visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
+        <li><strong>Top-level NICE chat</strong>: the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Scheduled Mission</strong>: save a Mission with a cron schedule and the project fires Runs automatically.</li>
       </ul>
 
       <h2>Run States</h2>
       <dl>
         <dt>Queued</dt><dd>Waiting to be picked up by the executor</dd>
-        <dt>Running</dt><dd>The Ship is actively executing the plan</dd>
+        <dt>Running</dt><dd>The project is actively executing the plan</dd>
         <dt>Review</dt><dd>An <code>approval_gate</code> node is waiting for your decision (used in approval-mode workflows)</dd>
         <dt>Completed</dt><dd>Run finished successfully — results stored in <code>node_results</code></dd>
         <dt>Failed</dt><dd>Something went wrong — check the error details and retry</dd>
@@ -243,10 +245,10 @@
       <p>Run results stream in real-time via Server-Sent Events. Tokens appear as the model generates them — no waiting for the full response. Tool calls and observations from a ReAct agent stream in the same channel.</p>
 
       <h2>Plans &amp; Workflows</h2>
-      <p>Every Run executes a <em>plan</em> — a JSONB graph of nodes stored on the Mission as <code>missions.plan</code>. A single-agent ship runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
+      <p>Every Run executes a <em>plan</em>: a JSONB graph of nodes stored on the Mission as <code>missions.plan</code>. A single-agent project runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
 
       <h2>Default: Triage</h2>
-      <p>When you chat with a multi-agent spaceship, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the crew manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
+      <p>When you chat with a multi-agent project, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the crew manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
     `,
 
     'workflows': `
@@ -278,17 +280,17 @@
 
       <h2>Triggers</h2>
       <dl>
-        <dt>Manual</dt><dd>Run on demand from the prompt panel, ship chat, or Mission detail page</dd>
+        <dt>Manual</dt><dd>Run on demand from the prompt panel, project chat, or Mission detail page</dd>
         <dt>Scheduled</dt><dd>Stored as <code>missions.schedule</code> JSONB (<code>{ cron, tz, enabled }</code>) — fired by the <code>tick_mission_schedules</code> pg_cron job every minute</dd>
       </dl>
     `,
 
     'integrations': `
       <h1>Integrations</h1>
-      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a spaceship — every crew member inherits the connection through a single OAuth grant.</p>
+      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a project, and every crew member inherits the connection through a single OAuth grant.</p>
 
       <h2>Wired integrations</h2>
-      <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the ship's approval mode — in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
+      <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the project's approval mode: in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
 
       <h3>Workspace &amp; communications</h3>
       <ul>
@@ -377,12 +379,12 @@
       <p class="docs-lead">Tokens pay for AI model usage.</p>
 
       <h2>Subscriptions</h2>
-      <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more active spaceships.</p>
+      <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more active projects.</p>
       <table>
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
-          <tr><td>Free</td><td>$0</td><td>One active spaceship, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>Run a fleet of spaceships, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Free</td><td>$0</td><td>One active project, Gemini 2.5 Flash unlimited</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Run as many projects as you need, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
@@ -426,7 +428,7 @@
         <tbody>
           <tr><td><kbd>G  H</kbd></td><td>Go Bridge</td></tr>
           <tr><td><kbd>G  A</kbd></td><td>Go Agents</td></tr>
-          <tr><td><kbd>G  S</kbd></td><td>Go Shipyard</td></tr>
+          <tr><td><kbd>G  S</kbd></td><td>Go Projects</td></tr>
           <tr><td><kbd>G  M</kbd></td><td>Go Missions</td></tr>
           <tr><td><kbd>G  B</kbd></td><td>Go Blueprints</td></tr>
           <tr><td><kbd>G  N</kbd></td><td>Go Operations</td></tr>
