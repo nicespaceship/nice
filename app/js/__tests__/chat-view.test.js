@@ -247,6 +247,15 @@ describe('ChatView', () => {
     expect(el.textContent).not.toContain('Slash commands');
   });
 
+  it('draws itself again when the monitor closes', async () => {
+    mount();
+    CoreReactor.setVisible.mockClear();
+    document.dispatchEvent(new CustomEvent('nice:monitor-closed'));
+    await frame();
+    // A fresh paint checks the reactor again (the monitor had hidden it).
+    expect(CoreReactor.setVisible).toHaveBeenCalledWith(true);
+  });
+
   describe('signed out', () => {
     beforeEach(() => {
       localStorage.removeItem('sb-test-auth-token');

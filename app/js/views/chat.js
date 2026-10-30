@@ -402,6 +402,9 @@ const ChatView = (() => {
     _listen(document, 'nice:theme-change', () => _queue('*'));
     // Any message saved (a NICE reply too) can change the bar and the cards.
     _listen(document, 'nice:chat-saved', () => _queue('*'));
+    // The monitor hides the reactor while it is open; a paint made under it
+    // left the reactor slot out.
+    _listen(document, 'nice:monitor-closed', () => _queue('*'));
     _listen(_el, 'scroll', _onScroll, { passive: true });
     _listen(window, 'resize', _anchorReactor);
     if (window.ResizeObserver) {

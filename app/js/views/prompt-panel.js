@@ -362,9 +362,13 @@ const PromptPanel = (() => {
 
   function _hideMonitor() {
     if (!_appMain) return;
+    const wasOpen = _appMain.classList.contains('monitor-active');
     _appMain.classList.remove('monitor-active');
     _appMain.classList.remove('monitor-on-schematic');
     _miniExpanded = false;
+    // The view underneath may have drawn itself while covered (Space places
+    // its reactor by what is visible); let it look again.
+    if (wasOpen) document.dispatchEvent(new CustomEvent('nice:monitor-closed'));
   }
 
   function _isOnSchematicInView() {
