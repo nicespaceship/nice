@@ -84,8 +84,8 @@ describe('HomeView', () => {
     HomeView.render(el);
     const needs = [...el.querySelectorAll('.home-need')];
     expect(needs.map(n => n.querySelector('.home-need-text').textContent)).toEqual([
-      '3 drafts waiting for your review',
-      '1 mission run needs you',
+      '3 results waiting for your review',
+      '1 mission run failed',
       '2 crew problems to check',
     ]);
     expect(needs.map(n => n.getAttribute('href'))).toEqual(['#/outbox', '#/bridge?tab=missions', '#/crew']);

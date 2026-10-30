@@ -574,6 +574,16 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     }
   });
 
+  it('resumeDag refuses a gate that already resumed', async () => {
+    await SB.db('mission_runs').create({
+      id: 'm-dag-twice', user_id: userId, title: 'Twice', status: 'running',
+      plan_snapshot: { shape: 'dag', nodes: [{ id: 'g', type: 'approval_gate' }, { id: 'b', type: 'notify' }], edges: [{ from: 'g', to: 'b' }] },
+      metadata: { dag_status: 'paused', paused_at: 'g' },
+    });
+    expect(await MissionRunner.resumeDag('m-dag-twice')).toBeNull();
+    expect(_db.mission_runs['m-dag-twice'].status).toBe('running');
+  });
+
   it('resumeDag is a no-op on a run that is not paused at a gate', async () => {
     await SB.db('mission_runs').create({
       id: 'm-dag-done', user_id: userId, title: 'Done', status: 'completed',
@@ -1446,6 +1456,14 @@ describe('MissionRunner — review decisions', () => {
     const out = await MissionRunner.approveRun({ id: 'r3', agent_id: 'a1' });
     expect(out).toEqual({ resumed: false, persisted: false });
     expect(AgentMemory.learn).not.toHaveBeenCalled();
+  });
+
+  it('approveRun and rejectRun count a returned { error } as not saved', async () => {
+    globalThis.SB.client = { from: () => ({ update: () => ({ eq: async () => ({ error: { message: 'permission denied' } }) }) }) };
+    expect(await MissionRunner.approveRun({ id: 'r5', agent_id: 'a1' })).toEqual({ resumed: false, persisted: false });
+    expect(await MissionRunner.rejectRun({ id: 'r6', agent_id: 'a1' })).toEqual({ persisted: false });
+    expect(AgentMemory.learn).not.toHaveBeenCalled();
+    expect(AgentMemory.addFailure).not.toHaveBeenCalled();
   });
 
   it('rejectRun fails and rejects the run, and the agent learns from it', async () => {

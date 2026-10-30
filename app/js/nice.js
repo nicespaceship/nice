@@ -1780,11 +1780,11 @@ const NICE = (() => {
 
   /* ── Register routes ── */
   function _initRoutes() {
-    // Primary destinations (sidebar + mobile tab bar). Outbox and Library
-    // open the matching Bridge tab until each gets its own view.
+    // Primary destinations (sidebar + mobile tab bar). Library opens the
+    // Bridge's Blueprints tab until it gets its own view.
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
     Router.on('/chat', ChatView);                    // Standalone chat, no crew
-    Router.on('/outbox', BlueprintsView);
+    Router.on('/outbox', OutboxView);                // Results waiting for review, and approved work
     Router.on('/library', BlueprintsView);
     Router.on('/crew', CrewView);                    // One spaceship's crew as cards
     Router.on('/bridge', BlueprintsView);            // Bridge
@@ -2605,6 +2605,8 @@ const NICE = (() => {
     // Idle session timeout
     _initIdleTimeout();
 
+    _initOutboxSync();
+
     // Sidebar alert indicators — live aggregate of the Bridge + Settings dots
     _updateAlertIndicators();
     ['agents', 'missions', 'spaceships', 'content-queue', 'mcp_connections',
@@ -2648,20 +2650,33 @@ const NICE = (() => {
     });
   }
 
-  // Two aggregating parents, one rule (item dot when count > 0; parent shows
-  // the sum), all sourced from the AlertCounts SSOT:
-  //   • The NICE brand (header) + collapsed-rail NICE icon are the one Bridge
-  //     CTA, so both aggregate every Bridge-tab alert (schematic/missions/
-  //     outbox) — visible whether the menu is open or collapsed. The Bridge
-  //     tabs render their own per-tab dots (see blueprints.js).
+  // The Outbox badge and Home read the review queue, so load it at sign-in
+  // (not only when the Outbox opens) and keep it live. One load per user;
+  // signing out clears it.
+  let _queueUserId = null;
+  function _initOutboxSync() {
+    if (typeof ContentQueue === 'undefined') return;
+    State.on('user', (user) => {
+      const id = (user && user.id) || null;
+      if (id === _queueUserId) return;
+      _queueUserId = id;
+      if (id) { ContentQueue.load(); ContentQueue.watch(); }
+      else { ContentQueue.unwatch(); State.set('content-queue', []); }
+    });
+  }
+
+  // One rule (item dot when count > 0; a parent shows the sum), all sourced
+  // from the AlertCounts SSOT:
+  //   • Outbox gets a count badge; the spaceships section and the Crew tab a
+  //     dot. The Bridge tabs render their own per-tab dots (blueprints.js).
   //   • The Settings popover items (integrations/wallet/security/moderation)
   //     each show their own dot; the gear aggregates them, but only while the
   //     popover is closed — once open, the per-item dots are visible and the
   //     gear dot would be redundant.
   function _updateAlertIndicators() {
     if (typeof AlertCounts === 'undefined') return;
-    // Outbox shows how many drafts wait for review; the spaceships section
-    // and the Crew tab show a dot for crew trouble or runs that need you.
+    // Outbox shows how many results wait for review; the spaceships section
+    // and the Crew tab show a dot for crew trouble or failed runs.
     const outbox = AlertCounts.count('outbox');
     _setBadge('side-outbox-badge', outbox);
     _setBadge('tab-outbox-badge', outbox);

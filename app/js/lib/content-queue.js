@@ -2,13 +2,16 @@
    NICE — Content Queue (Outbox)
    Draft & Approve system for agent-generated content.
    Agents create drafts → user reviews → approve/edit/reject → copy/export.
+   Items are mission_runs rows with an approval_status (plus local-only
+   drafts). A run waiting in review is approved through MissionRunner, so
+   the Outbox, the Missions page and the crew view share one approval path.
 ═══════════════════════════════════════════════════════════════════ */
 
 const ContentQueue = (() => {
   const _esc = Utils.esc;
 
   const TYPE_META = {
-    social:  { icon: '📱', label: 'Social Post', color: '#c084fc' },
+    social:  { icon: '📱', label: 'Social post', color: '#c084fc' },
     email:   { icon: '📧', label: 'Email',       color: '#60a5fa' },
     report:  { icon: '📊', label: 'Report',      color: '#34d399' },
     general: { icon: '📝', label: 'Content',     color: '#94a3b8' },
@@ -53,22 +56,36 @@ const ContentQueue = (() => {
   /*  CRUD Operations                                               */
   /* ══════════════════════════════════════════════════════════════ */
 
+  // Everything MissionRunner.approveRun needs, plus what the Outbox shows.
+  const RUN_COLUMNS = 'id, title, agent_id, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, updated_at, metadata, status, spaceship_id, mission_id, plan_snapshot';
+  const LOAD_LIMIT = 200;
+
+  // A run belongs in the queue while it waits in review or once it has been
+  // decided. A run the crew is working on (resumed after a gate, or re-run),
+  // or one that failed or was cancelled, keeps its old approval_status but
+  // has nothing to approve. Local drafts have no run status.
+  function _inQueue(item) {
+    const s = item.status;
+    return !s || s === 'review' || s === 'completed' || (s === 'failed' && item.approval_status === 'rejected');
+  }
+
   async function load(filter = {}) {
     const items = [];
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
 
-    // Try Supabase first — direct query to get approval_status column
-    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+    if (user?.id && typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+      // Everything waiting is always fetched; decided history is capped.
+      const runs = () => SB.client.from('mission_runs').select(RUN_COLUMNS).eq('user_id', user.id);
       try {
-        const user = typeof State !== 'undefined' ? State.get('user') : null;
-        if (user?.id) {
-          const { data } = await SB.client
-            .from('mission_runs')
-            .select('id, title, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, metadata, status')
-            .eq('user_id', user.id)
-            .not('approval_status', 'is', null);
-          if (data) items.push(...data);
-        }
+        const [waiting, decided] = await Promise.all([
+          runs().eq('approval_status', 'draft').in('status', ['review', 'completed']),
+          runs().not('approval_status', 'is', null).neq('approval_status', 'draft')
+            .order('created_at', { ascending: false }).limit(LOAD_LIMIT),
+        ]);
+        items.push(...(waiting.data || []), ...(decided.data || []));
       } catch (e) { console.warn('[ContentQueue] Supabase load error:', e); }
+      // Signed out or switched accounts while this was in flight.
+      if (State.get('user')?.id !== user.id) return [];
     }
 
     // Merge with localStorage fallback
@@ -79,8 +96,7 @@ const ContentQueue = (() => {
       });
     } catch {}
 
-    // Apply filters
-    let filtered = items;
+    let filtered = items.filter(_inQueue);
     if (filter.type && filter.type !== 'all') {
       filtered = filtered.filter(i => i.content_type === filter.type);
     }
@@ -150,12 +166,89 @@ const ContentQueue = (() => {
     return draft;
   }
 
-  async function approve(id) {
-    return _updateStatus(id, 'approved');
+  // The run as it stands now. The cached queue can trail the database (a
+  // run that just entered review, a missed realtime event), so a run row is
+  // re-read before deciding who owns the approval. Local drafts are only
+  // in the cache.
+  async function _currentRun(id) {
+    const cached = (typeof State !== 'undefined' ? (State.get('content-queue') || []) : []).find(i => i.id === id) || null;
+    if (String(id).startsWith('draft-') || typeof SB === 'undefined' || !SB.isReady() || !SB.client) return cached;
+    try {
+      const { data } = await SB.client.from('mission_runs').select(RUN_COLUMNS).eq('id', id).maybeSingle();
+      return data || cached;
+    } catch { return cached; }
   }
 
+  // Who decides this item: MissionRunner for a run in review, the queue
+  // itself for a local draft or a finished run's content. A run that is
+  // working, failed or cancelled has nothing to decide right now.
+  function _owner(run) {
+    if (run && run.status === 'review' && typeof MissionRunner !== 'undefined') return 'runner';
+    if (!run || !run.status || run.status === 'completed') return 'queue';
+    return null;
+  }
+
+  function _movedOn(id) {
+    _removeFromState(id);
+    return new Error('This run is no longer waiting for a decision.');
+  }
+
+  /** Approve an item. A run in review is approved through MissionRunner:
+      a paused gate resumes the crew (the item leaves the queue right away
+      and opts.onResume fires, since the rest of the plan can take minutes)
+      and anything else completes. Resolves { resumed }; throws if the
+      approval could not be saved or the run is no longer waiting. */
+  async function approve(id, opts = {}) {
+    const run = await _currentRun(id);
+    const owner = _owner(run);
+    if (owner === 'queue') {
+      await _updateStatus(id, 'approved');
+      return { resumed: false };
+    }
+    if (!owner) throw _movedOn(id);
+    const gate = !!(MissionRunner.isResumableGate && MissionRunner.isResumableGate(run));
+    if (gate) {
+      _removeFromState(id);
+      if (opts.onResume) opts.onResume();
+    }
+    let out;
+    try {
+      out = await MissionRunner.approveRun(run);
+    } catch (err) {
+      // Put the run back as the database has it.
+      if (gate) load();
+      throw err;
+    }
+    if (out.resumed) { _removeFromState(id); return { resumed: true }; }
+    if (!out.persisted) throw new Error('Could not save the approval. Try again.');
+    _applyToState(id, { status: 'completed', approval_status: 'approved', reviewed_at: new Date().toISOString() });
+    return { resumed: false };
+  }
+
+  /** Reject an item. A run in review is rejected through MissionRunner so
+      the agent learns from it. Throws if the rejection could not be saved
+      or the run is no longer waiting. */
   async function reject(id) {
-    return _updateStatus(id, 'rejected');
+    const run = await _currentRun(id);
+    const owner = _owner(run);
+    if (owner === 'queue') return _updateStatus(id, 'rejected');
+    if (!owner) throw _movedOn(id);
+    const out = await MissionRunner.rejectRun(run);
+    if (!out.persisted) throw new Error('Could not save the rejection. Try again.');
+    _applyToState(id, { status: 'failed', approval_status: 'rejected', reviewed_at: new Date().toISOString() });
+  }
+
+  /** Move an item to another day on the Outbox week view. */
+  async function reschedule(id, scheduledFor) {
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    const metadata = Object.assign({}, item.metadata || {}, { scheduled_for: scheduledFor });
+    if (typeof SB !== 'undefined' && SB.isReady()) {
+      try { await SB.db('mission_runs').update(id, { metadata }); } catch {}
+    }
+    _updateLocal(id, { metadata });
+    _applyToState(id, { metadata });
   }
 
   async function edit(id, newContent) {
@@ -363,6 +456,18 @@ const ContentQueue = (() => {
     }
   }
 
+  function _applyToState(id, updates) {
+    if (typeof State === 'undefined') return;
+    const items = State.get('content-queue') || [];
+    if (!items.some(i => i.id === id)) return;
+    State.set('content-queue', items.map(i => (i.id === id ? Object.assign({}, i, updates) : i)));
+  }
+
+  function _removeFromState(id) {
+    if (typeof State === 'undefined') return;
+    State.set('content-queue', (State.get('content-queue') || []).filter(i => i.id !== id));
+  }
+
   function _persistLocal(draft) {
     try {
       const items = JSON.parse(localStorage.getItem(Utils.KEYS.contentQueue) || '[]');
@@ -406,35 +511,82 @@ const ContentQueue = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════════ */
-  /*  Markdown renderer (simplified from PromptPanel)               */
+  /*  Markdown renderer                                             */
+  /*  Line by line: headings, lists and code fences are their own   */
+  /*  blocks, so list items sit together and nothing nests in a <p>. */
   /* ══════════════════════════════════════════════════════════════ */
+
+  function _marks(s) {
+    return s
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/(?<![\w*])\*([^*]+?)\*(?![\w*])/g, '<em>$1</em>');
+  }
+
+  // Code spans and links come out first (as NUL-marked placeholders) so
+  // nothing inside a code span or a url gets formatted. The text is already
+  // esc()'d, so a url only needs its quotes escaped; safeUrl() gates the
+  // scheme (blocks javascript: etc.). A url may not hold a placeholder: a
+  // code span restored into href would put its raw quotes in the attribute.
+  function _inline(s) {
+    const held = [];
+    const hold = (html) => { held.push(html); return '\u0000' + (held.length - 1) + '\u0000'; };
+    let out = _marks(s
+      .replace(/`([^`]+)`/g, (_m, code) => hold('<code>' + code + '</code>'))
+      .replace(/\[([^\]]+)\]\(([^)\u0000]+)\)/g, (_m, label, url) =>
+        hold(`<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${_marks(label)}</a>`)));
+    // A link label can hold a code span, so restore until none are left;
+    // each placeholder only refers to an earlier one.
+    for (let n = 0; n < 2 && out.includes('\u0000'); n++) out = out.replace(/\u0000(\d+)\u0000/g, (_m, i) => held[i]);
+    return out;
+  }
 
   function renderMarkdown(text) {
     if (!text) return '';
-    let html = _esc(text);
-    // Code blocks
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Italic
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    // Headers
-    html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-    // Lists
-    html = html.replace(/^[-•] (.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
-    // Links — url is already esc()'d above, so quote-escape only (escAttr would
-    // double-escape &); safeUrl() gates the scheme (blocks javascript: etc.).
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) =>
-      `<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${label}</a>`);
-    // Paragraphs
-    html = html.replace(/\n{2,}/g, '</p><p>');
-    html = html.replace(/\n/g, '<br>');
-    return `<p>${html}</p>`;
+    // NUL marks placeholders in _inline; it never belongs in text.
+    const lines = _esc(String(text).replace(/\u0000/g, '')).split(/\r?\n/);
+    const out = [];
+    let para = [];
+    let list = null;
+    const endPara = () => {
+      if (para.length) out.push('<p>' + para.map(_inline).join('<br>') + '</p>');
+      para = [];
+    };
+    const endList = () => {
+      if (list) out.push(`<${list.tag}>` + list.items.map(i => '<li>' + _inline(i) + '</li>').join('') + `</${list.tag}>`);
+      list = null;
+    };
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^```/.test(line)) {
+        endPara(); endList();
+        const code = [];
+        for (i++; i < lines.length && !/^```/.test(lines[i]); i++) code.push(lines[i]);
+        out.push('<pre><code>' + code.join('\n') + '</code></pre>');
+        continue;
+      }
+      const heading = line.match(/^(#{1,3})\s+(.+)$/);
+      if (heading) {
+        endPara(); endList();
+        const tag = ['h2', 'h3', 'h4'][heading[1].length - 1];
+        out.push(`<${tag}>${_inline(heading[2])}</${tag}>`);
+        continue;
+      }
+      const bullet = line.match(/^\s*[-•*]\s+(.+)$/);
+      const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+      if (bullet || numbered) {
+        endPara();
+        const tag = bullet ? 'ul' : 'ol';
+        if (list && list.tag !== tag) endList();
+        if (!list) list = { tag, items: [] };
+        list.items.push((bullet || numbered)[1]);
+        continue;
+      }
+      endList();
+      if (line.trim()) para.push(line);
+      else endPara();
+    }
+    endPara(); endList();
+    return out.join('');
   }
 
   /* ══════════════════════════════════════════════════════════════ */
@@ -496,6 +648,44 @@ const ContentQueue = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════════
+     Live updates — reload when a run with an approval state changes, so
+     the Outbox badge follows runs that land in review (or get approved
+     elsewhere). Progress ticks on ordinary runs are ignored.
+  ══════════════════════════════════════════════════════════════ */
+  let _channel = null;
+  let _reloadTimer = null;
+
+  function _touchesQueue(payload) {
+    if (!payload || payload.eventType === 'DELETE') return true;
+    const row = payload.new || {};
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const cached = items.find(i => i.id === row.id);
+    // Progress writes while the crew works are noise, except the one that
+    // takes a waiting run off the queue (approved elsewhere, re-run).
+    if (row.status === 'running' || row.status === 'queued') return !!cached && cached.status !== row.status;
+    return !!row.approval_status || !!cached;
+  }
+
+  function watch() {
+    unwatch();
+    if (typeof SB === 'undefined' || !SB.realtime) return;
+    _channel = SB.realtime.subscribe('mission_runs', (payload) => {
+      if (!_touchesQueue(payload)) return;
+      clearTimeout(_reloadTimer);
+      _reloadTimer = setTimeout(() => { load(); }, 800);
+    });
+  }
+
+  function unwatch() {
+    clearTimeout(_reloadTimer);
+    _reloadTimer = null;
+    if (_channel && typeof SB !== 'undefined' && SB.realtime) SB.realtime.unsubscribe(_channel);
+    _channel = null;
+  }
+
+  function canPublish() { return PUBLISHING_ENABLED; }
+
+  /* ══════════════════════════════════════════════════════════════
      Batch publish — fan out one item to multiple platforms.
      Returns an array of per-platform results so the caller can show
      a mixed success/failure summary.
@@ -530,8 +720,8 @@ const ContentQueue = (() => {
   }
 
   return {
-    load, createDraft, approve, reject, edit, copy, publish, schedule, exportApproved,
-    publishTo, scheduleTo, getPlatforms, getPlatform, getCounts,
+    load, createDraft, approve, reject, reschedule, edit, copy, publish, schedule, exportApproved,
+    publishTo, scheduleTo, canPublish, getPlatforms, getPlatform, getCounts, watch, unwatch,
     getTypeMeta, getContent, timeAgo, renderMarkdown,
     checkScheduledPosts, startScheduleChecker, stopScheduleChecker,
   };

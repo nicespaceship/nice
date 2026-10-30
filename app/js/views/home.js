@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Home (#/)
-   The landing. Leads with anything waiting on the user (drafts to review,
-   runs that need them, crew trouble), then their spaceships, then the two
+   The landing. Leads with anything waiting on the user (results to review,
+   failed runs, crew trouble), then their spaceships, then the two
    ways to start: chat with a model, or find a spaceship in the Library.
    Counts come from AlertCounts so Home, the sidebar badges and the Bridge
    tabs always agree.
@@ -38,10 +38,10 @@ const HomeView = (() => {
   function _needs() {
     const missionWord = Terminology.label('mission', { lowercase: true });
     const items = [];
-    const drafts = _count('outbox');
-    if (drafts) items.push({ text: `${_plural(drafts, 'draft', 'drafts')} waiting for your review`, cta: 'Review', href: '#/outbox' });
-    const runs = _count('missions');
-    if (runs) items.push({ text: `${_plural(runs, missionWord + ' run', missionWord + ' runs')} ${runs === 1 ? 'needs' : 'need'} you`, cta: 'Open', href: '#/bridge?tab=missions' });
+    const waiting = _count('outbox');
+    if (waiting) items.push({ text: `${_plural(waiting, 'result', 'results')} waiting for your review`, cta: 'Review', href: '#/outbox' });
+    const failed = _count('missions');
+    if (failed) items.push({ text: `${_plural(failed, missionWord + ' run', missionWord + ' runs')} failed`, cta: 'See why', href: '#/bridge?tab=missions' });
     const crew = _count('schematic');
     if (crew) items.push({ text: `${_plural(crew, 'crew problem', 'crew problems')} to check`, cta: 'Check crew', href: '#/crew' });
     return items;

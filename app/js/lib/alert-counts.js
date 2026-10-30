@@ -3,8 +3,9 @@
 
    One source of truth for the contextual alert dots. Every surface
    projects from here instead of re-deriving counts:
-     - Bridge tabs (schematic / missions / outbox) each show a dot, and the
-       Bridge sidebar link aggregates them (visible even off the Bridge).
+     - Bridge tabs (schematic / missions) each show a dot, and the mobile
+       tab picker aggregates them.
+     - The Outbox count drives the sidebar and tab-bar badges and Home.
      - Settings popover items (integrations / moderation / wallet / security)
        each show a dot, and the gear CTA aggregates them when the popover is
        closed.
@@ -52,12 +53,15 @@ const AlertCounts = (() => {
     return broken + ships;
   }
 
-  // Missions: runs that need a human — failed or awaiting review.
+  // Missions: runs that failed and need a look. A run the user rejected is
+  // marked failed too, but they already dealt with it. Runs waiting in
+  // review are counted once, by the Outbox.
   function missions() {
-    return _state('missions').filter(m => m.status === 'failed' || m.status === 'review').length;
+    return _state('missions').filter(m => m.status === 'failed' && m.approval_status !== 'rejected').length;
   }
 
-  // Outbox: content drafts waiting for review.
+  // Outbox: everything waiting for the user's OK, including runs in review
+  // (MissionRunner marks them approval_status 'draft').
   function outbox() {
     return (typeof ContentQueue !== 'undefined' && ContentQueue.getCounts)
       ? (ContentQueue.getCounts().draft || 0)
@@ -107,7 +111,7 @@ const AlertCounts = (() => {
   // Keys grouped by their aggregating parent, so a surface can ask for "all
   // the Bridge dots" or "all the Settings dots" without hardcoding the list.
   const GROUPS = {
-    bridge: ['schematic', 'missions', 'outbox'],
+    bridge: ['schematic', 'missions'],
     settings: ['integrations', 'moderation', 'wallet', 'security'],
   };
 

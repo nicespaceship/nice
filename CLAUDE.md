@@ -382,7 +382,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `QualityGate` | `quality-gate.js` | Blueprint quality validation |
 | `BrowserTools` | `browser-tools.js` | Agent web browsing via browser-proxy edge function |
 | `MediaTools` | `media-tools.js` | Image/video generation tools for agents |
-| `ContentQueue` | `content-queue.js` | Social media content queue |
+| `ContentQueue` | `content-queue.js` | The Outbox's data: mission runs with an approval state plus local drafts. Loaded at sign-in and kept live (`watch`) for the badge and Home; `approve`/`reject` route runs in review through `MissionRunner` so every surface approves the same way |
 | `VirtualFS` | `virtual-fs.js` | Virtual file system for agent file operations |
 | `Skin` | `skin.js` | Skin system (CSS variable overrides) |
 | `Stacks` | `stacks.js` | Curated LLM bundle definitions for Stack Picker |
@@ -416,13 +416,14 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
-### View Modules (`app/js/views/`) — 26 views
+### View Modules (`app/js/views/`) — 27 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | Home (the landing: what needs you from AlertCounts, your spaceships from `Blueprints.getUserShips`, and two ways to start) |
 | `ChatView` | `chat.js` | `#/chat` | Chat (standalone chat with any model, no crew; greeting + conversation feed under the global prompt panel. The panel's Compare toggle, shown only here, sends one question to 2 or 3 enabled models the user can run and shows the answers side by side; the kept answer becomes the reply the conversation continues from) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
-| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/library` (Blueprints) and `#/outbox` (Outbox) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
+| `OutboxView` | `outbox.js` | `#/outbox` (`?tab=approved\|rejected`, `?item=<id>`, `?view=week`) | Outbox (everything the crew made: Needs you / Approved / Rejected tabs, the list beside the open item at ≥1024px and taking turns below, approve / edit / reject / copy / export, and a week view where dragging an item to another day saves it. Approvals go through `ContentQueue.approve`, which hands runs in review to `MissionRunner`) |
+| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/library` (Blueprints) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Operations / Log; old `?tab=outbox` links redirect to `#/outbox`; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |

@@ -8,8 +8,9 @@ import AxeBuilder from '@axe-core/playwright';
  *   #/           → HomeView ('Home') — what needs you, your spaceships
  *   #/chat       → ChatView ('Chat') — standalone chat, no crew
  *   #/crew       → CrewView ('Crew') — one spaceship's crew as cards, recent runs, approvals
- *   #/outbox, #/library → BlueprintsView on its Outbox / Blueprints tab
- *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Outbox | Operations | Log
+ *   #/outbox     → OutboxView ('Outbox') — results waiting for review, approved, rejected; week view
+ *   #/library    → BlueprintsView on its Blueprints tab
+ *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
  *   #/security   → SecurityView ('Security') — Security | Integrations | Wallet
  *   #/settings   → SettingsView ('Settings')
  *   #/theme-editor → ThemeCreatorView ('Theme Editor')
@@ -92,6 +93,16 @@ test.describe('Smoke Tests', () => {
     }
 
     expect(errors.length).toBe(0);
+  });
+
+  test('outbox has its own page and old bridge links land on it', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { window.location.hash = '#/bridge?tab=outbox'; });
+    await page.waitForFunction(() => location.hash === '#/outbox');
+    await expect(page.locator('.ob-signin')).toBeVisible();
+    await page.evaluate(() => { window.location.hash = '#/bridge'; });
+    await expect(page.locator('.bp-type-tab[data-tab="missions"]')).toBeVisible();
+    await expect(page.locator('.bp-type-tab[data-tab="outbox"]')).toHaveCount(0);
   });
 
   test('command palette opens and closes', async ({ page }) => {
