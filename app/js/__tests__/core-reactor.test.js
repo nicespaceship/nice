@@ -13,15 +13,30 @@ import { fileURLToPath } from 'url';
 
 const __dirname_local = dirname(fileURLToPath(import.meta.url));
 
-const THEMES = {
+const STUB_THEMES = {
   nice: { id: 'nice', reactor: false },
   'hal-9000': { id: 'hal-9000', reactor: { html: () => '<div class="hal-eye"></div>' } },
 };
+let THEMES = STUB_THEMES;
 let active = 'nice';
 globalThis.Theme = {
   current: () => active,
   getTheme: (id) => THEMES[id] || null,
 };
+
+// The real THEMES SSOT: evaluate only the Theme IIFE out of nice.js (the
+// rest of the file boots the app). Reactor markup builders are stubbed.
+function loadRealThemes() {
+  const src = readFileSync(resolve(__dirname_local, '..', 'nice.js'), 'utf-8');
+  const start = src.indexOf('const Theme = (() => {');
+  const end = src.indexOf('\n})();', start) + '\n})();'.length;
+  const stubs = 'const DefaultCore = { html: () => "<i class=default-core></i>" };'
+    + 'const HalCore = { html: () => "<i class=hal-core></i>" };'
+    + 'const JarvisHUD = { hud: () => "<i class=jv-hud></i>", arcReactor: () => "" };';
+  // eslint-disable-next-line no-new-func
+  const RealTheme = new Function(stubs + src.slice(start, end) + '\nreturn Theme;')();
+  return Object.fromEntries(RealTheme.THEMES.map(t => [t.id, t]));
+}
 
 function loadCoreReactor() {
   const code = readFileSync(resolve(__dirname_local, '..', 'lib/core-reactor.js'), 'utf-8');
@@ -36,6 +51,7 @@ const visible = () => document.documentElement.classList.contains('reactor-visib
 const reactor = () => document.getElementById('jv-pp-reactor');
 
 beforeEach(() => {
+  THEMES = STUB_THEMES;
   active = 'nice';
   CoreReactor.setVisible(false);
   CoreReactor.paint();
@@ -78,5 +94,34 @@ describe('CoreReactor visibility follows the theme', () => {
     CoreReactor.setVisible(false);
     CoreReactor.paint();
     expect(visible()).toBe(false);
+  });
+});
+
+describe('THEMES SSOT', () => {
+  const real = loadRealThemes();
+
+  it('turns the reactor off for both NICE themes', () => {
+    expect(real.nice.reactor).toBe(false);
+    expect(real['nice-dark'].reactor).toBe(false);
+  });
+
+  it('keeps a reactor on every other theme, and CoreReactor shows it', () => {
+    const others = Object.keys(real).filter(id => id !== 'nice' && id !== 'nice-dark');
+    expect(others.length).toBeGreaterThanOrEqual(10);
+    THEMES = real;
+    for (const id of others) {
+      expect(typeof real[id].reactor.html).toBe('function');
+      active = id;
+      CoreReactor.paint();
+      CoreReactor.setVisible(true);
+      expect(visible()).toBe(true);
+      expect(reactor().innerHTML).not.toBe('');
+    }
+    for (const id of ['nice', 'nice-dark']) {
+      active = id;
+      CoreReactor.paint();
+      expect(visible()).toBe(false);
+      expect(reactor().innerHTML).toBe('');
+    }
   });
 });
