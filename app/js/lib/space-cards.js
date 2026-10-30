@@ -112,8 +112,34 @@ const SpaceCards = (() => {
     const ids = [..._live.keys()];
     _live.clear();
     ids.forEach(id => _emit({ kind: 'live', model: id }));
+    // The conversation changed: nothing left on screen to approve against.
+    [..._approvals.keys()].forEach(id => answer(id, false));
   }
   function busy() { return _live.size > 0; }
+
+  /* ── Approvals: a card waiting for the user's OK before NICE runs a
+     command its reply asked for ([EXEC] in review mode). The card shows
+     Approve / Deny; the answer resolves the promise the command waits on. */
+  const _approvals = new Map(); // id → { action, resolve }
+  function requestApproval(id, action) {
+    return new Promise(resolve => {
+      const earlier = _approvals.get(id);
+      if (earlier) earlier.resolve(false);
+      _approvals.set(id, { action, resolve });
+      _emit({ kind: 'approval', model: id });
+    });
+  }
+  function approval(id) {
+    const a = _approvals.get(id);
+    return a ? a.action : null;
+  }
+  function answer(id, ok) {
+    const a = _approvals.get(id);
+    if (!a) return;
+    _approvals.delete(id);
+    a.resolve(!!ok);
+    _emit({ kind: 'approval', model: id });
+  }
   // A card's thread changed outside a live reply (a note joined it).
   function changed(id) { _emit({ kind: 'thread', model: id }); }
 
@@ -239,7 +265,7 @@ const SpaceCards = (() => {
     DEFAULT_MODEL, EVENT, VERSION,
     label, provider, poolLabel, planAllows, available,
     defaultSelection, selected, toggle,
-    live, setLive, endLive, endAll, busy, changed,
+    live, setLive, endLive, endAll, busy, changed, requestApproval, approval, answer,
     threads, historyFor, offCard, idFromLabel, tagLegacy,
   };
 })();

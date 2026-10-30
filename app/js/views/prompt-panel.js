@@ -517,15 +517,16 @@ const PromptPanel = (() => {
 
   /* Approval context for EXEC dispatch: review mode comes from the active
      ship's behaviors (Missions always run on a Ship); the prompt reuses the
-     shared monitor approval UI. */
-  function _execApprovalCtx() {
+     shared monitor approval UI unless the caller shows its own (a Space card
+     asks on the card). */
+  function _execApprovalCtx(onApprovalNeeded) {
     const ships = State.get('spaceships') || [];
     const spaceshipId = ships[0]?.id;
     let approvalMode = null;
     if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
       approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
     }
-    return { approvalMode, onApprovalNeeded: _monitorApproval };
+    return { approvalMode, onApprovalNeeded: onApprovalNeeded || _monitorApproval };
   }
 
   /* Register the EXEC actions as real bus commands. Called once from init()
@@ -672,7 +673,7 @@ const PromptPanel = (() => {
   };
 
   /* ── Execute EXEC actions from LLM responses (thin adapter over the bus) ── */
-  async function _executeExec(action, params) {
+  async function _executeExec(action, params, onApprovalNeeded) {
     if (!State.get('user')) return { ok: false, msg: 'Not signed in' };
     const spec = _EXEC_COMMANDS[action];
     if (!spec || typeof ToolRegistry === 'undefined') return { ok: false, msg: `Unknown action: ${action}` };
@@ -681,7 +682,7 @@ const PromptPanel = (() => {
       if (params[i] !== undefined && params[i] !== '') input[name] = params[i];
     });
     try {
-      return await ToolRegistry.execute(spec.id, input, _execApprovalCtx());
+      return await ToolRegistry.execute(spec.id, input, _execApprovalCtx(onApprovalNeeded));
     } catch (e) {
       if (e && e.declined) return { ok: false, msg: 'Cancelled: approval declined.' };
       return { ok: false, msg: e.message || 'Action failed' };
@@ -2337,8 +2338,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(text);
     if (!execs || !execs.length) return;
     const epoch = _cardEpoch;
+    // A command that needs the user's OK asks on this card, beside the reply
+    // that requested it, rather than on the monitor behind the cards.
+    const askOnCard = (action) => SpaceCards.requestApproval(id, action);
     for (const ex of execs) {
-      const res = await _executeExec(ex.action, ex.params);
+      const res = await _executeExec(ex.action, ex.params, askOnCard);
       if (epoch !== _cardEpoch) return;
       _messages.push(_cardReply(id, { text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`, note: true }));
     }
@@ -2349,10 +2353,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _abortCards() {
     const hadCalls = _cardCalls.size > 0 || (typeof SpaceCards !== 'undefined' && SpaceCards.busy());
     _cardEpoch++;
+    // Ends live cards and declines approvals still waiting on the old chat.
+    if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
     if (!hadCalls) return;
     _cardCalls.forEach(ctrl => { try { ctrl.abort(); } catch { /* already settled */ } });
     _cardCalls.clear();
-    if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
     _setSending(false);
     const sendBtn = _panel?.querySelector('#nice-ai-send');
     if (sendBtn) sendBtn.disabled = false;

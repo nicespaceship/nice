@@ -156,6 +156,27 @@ describe('ChatView', () => {
     expect(card(el, 'grok-4-3').querySelector('.space-reply').textContent).toBe('Half an ans');
   });
 
+  it('asks for approval on the card and hands the answer back', async () => {
+    messages = [
+      { role: 'user', text: 'Plan my launch', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'On it.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    const asked = SpaceCards.requestApproval('gemini-2-5-flash', { tool: 'Create Mission', input: { title: 'Write <b>a</b> tagline' } });
+    await frame();
+    const box = card(el, 'gemini-2-5-flash').querySelector('.space-approval');
+    expect(box.textContent).toContain('Create Mission needs your approval.');
+    expect(box.textContent).toContain('Write <b>a</b> tagline');
+    expect(box.querySelector('b')).toBeNull();
+    expect(card(el, 'gemini-2-5-flash').querySelector('.space-dot').dataset.dot).toBe('busy');
+    box.querySelector('[data-act="approve"]').click();
+    await expect(asked).resolves.toBe(true);
+    await frame();
+    expect(card(el, 'gemini-2-5-flash').querySelector('.space-approval')).toBeNull();
+    // Selecting text or reading doesn't count: the click went to the button only.
+    expect(card(el, 'gemini-2-5-flash').classList.contains('is-selected')).toBe(true);
+  });
+
   it('gives a free user the free card and a note about plans', () => {
     Subscription.isPro = () => false;
     mount();

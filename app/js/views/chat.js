@@ -98,7 +98,7 @@ const ChatView = (() => {
   }
 
   function _state(id, thread, live, isSelected) {
-    if (live) return 'busy';
+    if (live || SpaceCards.approval(id)) return 'busy';
     const last = thread[thread.length - 1];
     const lastReply = last && [...last.replies].reverse().find(r => !r.note);
     if (lastReply && lastReply.error) return 'stop';
@@ -107,12 +107,31 @@ const ChatView = (() => {
 
   const _STATUS = { busy: 'Thinking', stop: 'Last reply failed', go: 'Ready', off: '' };
 
+  // A command this card's reply asked for, waiting on the user's OK.
+  function _approvalHTML(id, action) {
+    const detail = Object.values(action.input || {})
+      .filter(v => v !== undefined && v !== null && v !== '')
+      .map(v => (typeof v === 'string' ? v : JSON.stringify(v)))
+      .join(' · ');
+    const titleId = `space-approval-${id}`;
+    return `
+      <div class="space-approval" role="group" aria-labelledby="${Utils.escAttr(titleId)}">
+        <p class="space-approval-title" id="${Utils.escAttr(titleId)}">${_esc(action.tool || 'This action')} needs your approval.</p>
+        ${detail ? `<p class="space-approval-detail">${_esc(detail.length > 160 ? detail.slice(0, 157) + '…' : detail)}</p>` : ''}
+        <div class="space-approval-acts">
+          <button type="button" class="space-approve" data-act="approve">Approve</button>
+          <button type="button" class="space-deny" data-act="deny">Deny</button>
+        </div>
+      </div>`;
+  }
+
   function _cardHTML(id, ctx) {
     const thread = ctx.threads[id] || [];
     const live = SpaceCards.live(id);
     const isSelected = ctx.selected.includes(id);
     const expanded = _expanded.has(id) && thread.length > 0;
     const state = _state(id, thread, live, isSelected);
+    const pending = SpaceCards.approval(id);
     const sub = [SpaceCards.provider(id), SpaceCards.poolLabel(id)].filter(Boolean).join(' · ');
 
     let body;
@@ -141,9 +160,10 @@ const ChatView = (() => {
             <span class="space-card-sub">${_esc(sub)}</span>
           </span>
           <span class="space-dot" data-dot="${state}" aria-hidden="true"></span>
-          ${_STATUS[state] ? `<span class="sr-only">${_STATUS[state]}</span>` : ''}
+          ${_STATUS[state] ? `<span class="sr-only">${pending ? 'Waiting for your approval' : _STATUS[state]}</span>` : ''}
         </button>
         <div class="space-card-body" id="space-body-${_esc(id)}">${body}</div>
+        ${pending ? _approvalHTML(id, pending) : ''}
         <div class="space-card-foot">
           <span>${live ? (live.text ? 'Writing…' : '') : _esc(_time(lastTs))}</span>
           ${more}
@@ -229,7 +249,8 @@ const ChatView = (() => {
   }
   function _restoreFocus(key) {
     const card = key && _cardEl(key.model);
-    if (card) card.querySelector(`[data-act="${key.act}"]`)?.focus();
+    // A control that went away (an answered approval) hands focus to the card.
+    if (card) (card.querySelector(`[data-act="${key.act}"]`) || card.querySelector('[data-act="toggle"]'))?.focus();
   }
 
   /* ── Reactor ──
@@ -327,6 +348,7 @@ const ChatView = (() => {
       return;
     }
     if (act === 'toggle') { SpaceCards.toggle(id); return; }
+    if (act === 'approve' || act === 'deny') { SpaceCards.answer(id, act === 'approve'); return; }
     // The rest of a collapsed card toggles it too, except links, buttons
     // and a click that ends a text selection.
     if (card.classList.contains('is-expanded')) return;

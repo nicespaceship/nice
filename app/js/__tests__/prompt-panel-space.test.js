@@ -212,6 +212,52 @@ describe('Sending from the panel on Space', () => {
     expect(PromptPanel.messages().some(m => m.to || m.modelId)).toBe(false);
   });
 
+  describe('a reply that asks NICE to run a command', () => {
+    let run;
+    beforeEach(() => {
+      State.set('spaceships', [{ id: 's1' }]); // review mode is the default
+      run = vi.fn(async (input) => ({ ok: true, msg: `Mission created: ${input.title}` }));
+      ToolRegistry.register({ id: 'create-mission', name: 'Create Mission', sideEffect: true, execute: run });
+      globalThis.fetch = vi.fn(async (url, init) => {
+        calls.push(JSON.parse(init.body));
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'On it. [EXEC: create_mission | Write a tagline]' }] }) };
+      });
+    });
+    const id = 'gemini-2-5-flash';
+
+    it('asks on the card, not behind it, and runs the command once approved', async () => {
+      send('Plan my launch');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      expect(SpaceCards.approval(id)).toMatchObject({ tool: 'Create Mission', input: { title: 'Write a tagline' } });
+      expect(monitorOpen()).toBe(false);
+      expect(document.querySelector('.monitor-approval')).toBeNull();
+      expect(run).not.toHaveBeenCalled();
+      SpaceCards.answer(id, true);
+      await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: id, note: true, text: '**Done:** Mission created: Write a tagline' }));
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(SpaceCards.approval(id)).toBeNull();
+    });
+
+    it('records a denial on the card and runs nothing', async () => {
+      send('Plan my launch');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      SpaceCards.answer(id, false);
+      await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: id, note: true }));
+      expect(PromptPanel.messages().slice(-1)[0].text).toContain('Cancelled');
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    it('drops the question when another conversation opens', async () => {
+      send('Plan my launch');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      PromptPanel._reload();
+      expect(SpaceCards.approval(id)).toBeNull();
+      await new Promise(r => setTimeout(r, 0));
+      expect(run).not.toHaveBeenCalled();
+      expect(PromptPanel.messages().some(m => m.note)).toBe(false);
+    });
+  });
+
   it('sends an @mention to the agent, not the cards', async () => {
     localStorage.setItem(Utils.KEYS.mcShip, 's1');
     State.set('spaceships', [{ id: 's1', slot_assignments: { 0: 'a1' } }]);
