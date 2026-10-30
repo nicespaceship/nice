@@ -544,7 +544,8 @@ GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security a
 - `google-oauth` edge function (same flow as every `*-oauth`): the app POSTs `/start` with the user's JWT → the function returns the consent URL and sets a browser-binding cookie → Google consent → `/callback` stores tokens only for the JWT's user, and only in the browser that started (shared in `_shared/oauth-session.ts`). `GET /authorize?user_id=` is retired (410): it trusted a user id from the URL.
 - MCP servers: gmail-mcp (read + send/draft/reply), calendar-mcp (read + create/update/delete events), drive-mcp (read + create/update/upload files)
 - `mcp-gateway` auto-refreshes expired OAuth tokens before tool calls
-- **Requested scopes** (hardcoded in [auth-modal.js](app/js/lib/auth-modal.js:208)):
+- **Two Google apps.** "Sign in with Google" (Supabase Auth) uses a sign-in-only Google Cloud project, published for everyone, that asks only for email and profile. The integrations use the `nice-spaceship` project, which stays in Testing until Google verifies its scopes (Testing expires refresh tokens after 7 days and admits only listed test users).
+- **Integration scopes** (`GOOGLE_SCOPES` in the `google-oauth` function, nice-functions):
   - `https://www.googleapis.com/auth/gmail.modify` — full mailbox access except delete
   - `https://www.googleapis.com/auth/calendar` — full calendar access
   - `https://www.googleapis.com/auth/drive.file` — files created or opened by the app
