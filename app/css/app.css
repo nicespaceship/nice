@@ -1226,8 +1226,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 
 /* Sidebar top — two states share the top of the sidebar:
-   - Collapsed: the .side-rail icon stack (NICE opener + new-chat).
-   - Open: the .side-header — NICE wordmark (Bridge CTA) + theme toggle.
+   - Collapsed: the .side-rail icon stack (NICE mark for Home + expand).
+   - Open: the .side-header — NICE wordmark (Home) + theme and collapse.
    Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
    light strip — see theme.css) anchor on .side-header. */
 
@@ -1286,7 +1286,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 
-/* Primary destinations (Home, Chat, Outbox, Library) and the user's
+/* Primary destinations (Space, Ship, Blueprints) and the user's
    spaceships. Both stay on the collapsed rail as icons; labels, section
    titles and the chats list need the open width. */
 .side-primary,
@@ -2101,7 +2101,7 @@ html:not([data-theme]) .app-main,
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   OUTBOX (#/outbox) — results waiting for review and approved work.
+   SHIP (#/ship) — results waiting for review and approved work.
    Phones and tablets show the list or the open item; at 1024px and up
    they sit side by side.
 ───────────────────────────────────────────────────────────────── */

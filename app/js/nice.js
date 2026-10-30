@@ -1791,8 +1791,9 @@ const NICE = (() => {
     Router.on('/blueprints', { ...BlueprintsView, title: 'Blueprints' });  // the Bridge's Blueprints tab, titled for the nav
     // Their old names, so bookmarks and links in old notifications still land.
     const renamed = (from, to, title) => Router.on(from, { title, render: () => {
-      const q = (window.location.hash.split('?')[1] || '');
-      location.replace('#' + to + (q ? '?' + q : ''));
+      const hash = window.location.hash;
+      const q = hash.includes('?') ? hash.slice(hash.indexOf('?')) : '';
+      location.replace('#' + to + q);
     } });
     renamed('/chat', '/space', 'Space');
     renamed('/outbox', '/ship', 'Ship');
@@ -1810,8 +1811,9 @@ const NICE = (() => {
     Router.on('/bridge/spaceships/:id', SpaceshipDetailView);
 
     // Legacy redirects → bridge
-    Router.on('/blueprints/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
-    Router.on('/blueprints/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
+    Router.on('/blueprints/agents', { title: 'Blueprints', render: () => { location.hash = '#/blueprints?tab=agent'; } });
+    Router.on('/blueprints/agents/new', AgentBuilderView);
+    Router.on('/blueprints/spaceships', { title: 'Blueprints', render: () => { location.hash = '#/blueprints?tab=spaceship'; } });
     Router.on('/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
     Router.on('/agents/new', AgentBuilderView);
     Router.on('/agents/:id', AgentDetailView);

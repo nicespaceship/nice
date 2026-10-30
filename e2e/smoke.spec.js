@@ -155,6 +155,10 @@ test.describe('Smoke Tests', () => {
       await expect(tabbar.locator('.tab', { hasText: label })).toBeVisible();
     }
     await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
+    // The NICE mark top left is Home here too; the menu has its own button.
+    await expect(page.locator('#app-mobile-bar .mobile-bar-btn-nice')).toHaveAttribute('href', '#/');
+    await page.locator('#mobile-sidebar-toggle').click();
+    await expect(page.locator('#app-sidebar')).toHaveClass(/\bopen\b/);
   });
 });
 

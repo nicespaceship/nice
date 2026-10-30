@@ -417,7 +417,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
 ### View Modules (`app/js/views/`) — 27 views
-Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Space** (`#/space`, the crew's workspace), **Ship** (`#/ship`, where finished work goes out), **Blueprints** (`#/blueprints`, templates a crew starts from); the NICE mark is Home. The default look is a plain application: no sci-fi or spaceship imagery or wording outside the optional themes (The Matrix, HAL-9000, and so on).
+Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Space** (`#/space`, the crew's workspace), **Ship** (`#/ship`, where finished work goes out), **Blueprints** (`#/blueprints`, templates a crew starts from); the NICE mark is Home. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). The nav icons follow it already; much default copy still says spaceship, Commander and the like.
 
 | View | File | Route(s) | Title |
 |------|------|----------|-------|

@@ -112,11 +112,11 @@ const HomeView = (() => {
         </section>
         <section class="home-starts" aria-label="Start something">
           <a class="widget-card home-start" href="#/space">
-            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-chat"/></svg></span>
+            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-space"/></svg></span>
             <span class="home-start-text"><b>Ask anything</b><span>Chat with any model. No crew needed.</span></span>
           </a>
           <a class="widget-card home-start" href="#/blueprints">
-            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-library"/></svg></span>
+            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg></span>
             <span class="home-start-text"><b>Browse Blueprints</b><span>Spaceships and agents for your kind of business.</span></span>
           </a>
         </section>
