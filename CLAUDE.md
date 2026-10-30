@@ -178,7 +178,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 |---|---|---|---|
 | **Mission-grade chat** (ship-level) | [prompt-panel.js:725](app/js/views/prompt-panel.js:725) → `MissionRunner.run` | ✅ | Full Run state machine, audit, cancel, analytics |
 | **Agent-with-tools chat** | `@mention` in the prompt panel, or a crew card's message box via `PromptPanel.sendToAgent` → `AgentExecutor.converse` | ❌ | Request-response, `ship_log` persistence only |
-| **Top-level NICE chat** | `#/space` → `_callDirectLLM` (Compare: `_sendCompare` runs the same `_callEdgeLLM` once per chosen model) | ❌ | Request-response, no persistence beyond message history |
+| **Top-level NICE chat** (Space) | `#/space` → `PromptPanel._sendToCards` → `_callEdgeLLM` once per selected model card, each with its own thread and abort signal (other routes without a ship: `_callDirectLLM`) | ❌ | Request-response, no persistence beyond message history (one flat list per conversation, tagged per model by `SpaceCards`) |
 
 **Rationale for the split:** casual chat surfaces are latency-sensitive and ephemeral. Forcing a `mission_runs` INSERT before each LLM call adds round-trip latency and bloats the table with throwaway rows. Audit, cancel, and analytics features that depend on Runs apply only to mission-grade chat today, and that's currently fine — there's no user demand for cancel/audit/analytics on casual chat.
 
@@ -349,7 +349,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 70 modules
+### Lib Modules (`app/js/lib/`) — 71 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -416,6 +416,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain`. Default `spaceship` noun is **Project**; the sci-fi themes (hal-9000, grid, matrix, lcars, jarvis, cyberpunk, rx-78-2, 16bit) override it back to Spaceship; Office says Assignment for `mission` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
+| `SpaceCards` | `space-cards.js` | SSOT for Space's model cards: which models get a card (`available`: switched on ∩ the plan can run, never NICE Auto), the selection the prompt goes to (`selected`/`toggle`, persisted in `Utils.KEYS.spaceCards`, defaults to the free model), live per-card state, and each card's thread inside the flat conversation (`threads`, `historyFor`; `tagLegacy` puts pre-card conversations on the card of the model that answered, or the default card) |
 
 ### View Modules (`app/js/views/`) — 27 views
 Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Space** (`#/space`, the crew's workspace), **Ship** (`#/ship`, where finished work goes out), **Blueprints** (`#/blueprints`, templates a crew starts from); the NICE mark is Home. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). The nav icons follow it already, and the default look calls a spaceship a project (see the ontology above); Commander and other sci-fi words in default copy are still to go.
@@ -423,7 +424,7 @@ Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Spa
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` (the NICE mark; no Home nav item) | Home (the landing: what needs you from AlertCounts, your projects from `Blueprints.getUserShips`, and two ways to start) |
-| `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (where the crew works; today the standalone chat with any model, no crew, until the card workspace lands; greeting + conversation feed under the global prompt panel. The panel's Compare toggle, shown only here, sends one question to 2 or 3 enabled models the user can run and shows the answers side by side; the kept answer becomes the reply the conversation continues from) |
+| `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (the main workspace: rows of portrait model cards, one per model the user switched on that their plan can run, above the global prompt panel. A card shows its model's latest exchange in the current conversation, a status dot (go / busy / stop) and "Show all" for the whole thread. Clicking a card adds it to the prompt or takes it out; the prompt goes to every selected card in parallel, one card by default (Gemini 2.5 Flash). The panel shows "To …" in place of the model dropdown here. Themes with a reactor keep it in a slot above the cards) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
 | `OutboxView` | `outbox.js` | `#/ship` (`?tab=approved\|rejected`, `?item=<id>`, `?view=week`; `#/outbox` forwards) | Ship (where finished work goes out; everything the crew made: Needs you / Approved / Rejected tabs, the list beside the open item at ≥1024px and taking turns below, approve / edit / reject / copy / export, and a week view where dragging an item to another day saves it. Approvals go through `ContentQueue.approve`, which hands runs in review to `MissionRunner`) |
 | `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/blueprints` (titled Blueprints; `#/library` forwards) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Operations / Log; old `?tab=outbox` links redirect to `#/ship`; Blueprints sub-tabs: Projects (spaceships) / Agents / Active / Workshop. Projects + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed projects + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
@@ -479,7 +480,7 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 
-**NICE Auto (per-message chat routing).** The prompt panel's model dropdown defaults to `nice-auto`, resolved client-side per message by `LLMConfig.routeAuto`: the active stack's `niceAutoRouting` wins for categories it explicitly declares; otherwise a preference ladder routes by prompt kind (code / longcontext / reasoning / writing / casual). **Ladders never leave the free + standard pools** — Claude/Premium models are reachable through Auto only via a stack-declared route. Casual chat always lands on free Gemini Flash. This is a separate resolver from per-agent LLMs (`LLMConfig.forBlueprint` + ModelIntel): agents keep their assigned models, and the server-side `nice-auto` alias in `nice-ai` stays reserved for NICE-1.
+**NICE Auto (per-message chat routing).** The prompt panel's model dropdown defaults to `nice-auto`, resolved client-side per message by `LLMConfig.routeAuto`: the active stack's `niceAutoRouting` wins for categories it explicitly declares; otherwise a preference ladder routes by prompt kind (code / longcontext / reasoning / writing / casual). **Ladders never leave the free + standard pools** — Claude/Premium models are reachable through Auto only via a stack-declared route. Casual chat always lands on free Gemini Flash. Space hides the dropdown: its prompt goes to the selected model cards, never through Auto. This is a separate resolver from per-agent LLMs (`LLMConfig.forBlueprint` + ModelIntel): agents keep their assigned models, and the server-side `nice-auto` alias in `nice-ai` stays reserved for NICE-1.
 
 ### Token Credit System
 - Three independent pools: **Standard**, **Claude**, **Premium** — each tied to its own subscription
@@ -503,7 +504,8 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 | `nice-budget` | Cost tracker budget data |
 | `nice-bp-activated` | Activated blueprint IDs |
 | `nice-favorites` | Sidebar favorites |
-| `nice-ai-messages` | Prompt panel conversation history |
+| `nice-ai-messages` | Prompt panel conversation history (on Space, user turns carry `to` and replies `modelId`) |
+| `nice-space-cards` | Space: the model cards the prompt goes to |
 
 ## Testing
 
@@ -519,9 +521,9 @@ Coverage areas:
 - **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`
 - **Agents + missions**: `agent-executor`, `mission-runner`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`, `workflow-engine` (triage / pipeline / parallel / quality_loop replace the deleted MissionRouter)
 - **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
-- **Views**: `home-view`, `missions-view`
+- **Views**: `home-view`, `missions-view`, `chat-view` (Space's model cards)
 - **Onboarding**: `onboarding`
-- **Prompt panel**: `attachment-utils`
+- **Prompt panel**: `attachment-utils`, `prompt-panel-space` (sending to the selected cards), `space-cards`
 - **Other**: `content-queue`
 
 ### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 22 tests
@@ -569,6 +571,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
+| Space model cards | `SpaceCards` (`space-cards.js`) | Card set, selection, live state and per-model threads; ChatView draws, PromptPanel sends |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
 | Top-banner height | `--app-banner-height` CSS var on `<html>` | `nice.js` stacks the sign-in and update banners in one fixed strip (`#app-banners`), measures it via `ResizeObserver`, and writes the var; sidebar / mobile-bar / hud-panel / app-main / toasts consume via `var(--app-banner-height, 0px)`. No magic pixel numbers |
 
