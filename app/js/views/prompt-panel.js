@@ -2271,12 +2271,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     return _cardReply(id, { text, error: true, ...(billing ? { billing: true } : {}), ...(extra || {}) });
   }
 
-  // One Wallet toast per pool and reason, however many cards hit it at once.
+  // One Wallet toast per reason, however many cards hit it at once. Pool
+  // problems (out of tokens, add-on missing) differ per pool; a plan problem
+  // (no Pro, payment past due) is one problem whatever the model.
+  const _PLAN_WIDE_CODES = ['subscription_required', 'past_due'];
   function _billingToastOnce(err, id, shown) {
     if (!err || err.status !== 402 || !err.body || !err.body.code) return;
     if (typeof Subscription === 'undefined' || !Subscription.handleBillingError) return;
-    const pool = (typeof TokenConfig !== 'undefined' && TokenConfig.poolFor(id)) || '';
-    const key = err.body.code + '|' + pool;
+    const code = err.body.code;
+    const pool = err.body.pool || (typeof TokenConfig !== 'undefined' && TokenConfig.poolFor(id)) || '';
+    const key = _PLAN_WIDE_CODES.includes(code) ? code : code + '|' + pool;
     if (shown.has(key)) return;
     shown.add(key);
     Subscription.handleBillingError(err.body);

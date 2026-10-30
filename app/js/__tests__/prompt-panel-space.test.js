@@ -236,6 +236,24 @@ describe('Sending to the selected cards', () => {
     expect(Subscription.handleBillingError).toHaveBeenCalledTimes(1);
   });
 
+  it('raises one toast for a plan problem shared by models in different pools', async () => {
+    globalThis.fetch = vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body);
+      calls.push(body);
+      if (body.model === 'gemini-2-5-flash') {
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+      }
+      return { ok: false, status: 402, text: async () => JSON.stringify({ error: 'Upgrade to NICE Pro to use this model.', code: 'subscription_required' }) };
+    });
+    Subscription.getAddons = () => ['claude'];
+    SpaceCards.toggle('grok-4-3');          // standard pool
+    SpaceCards.toggle('claude-4-6-sonnet'); // claude pool
+    PromptPanel._sendToCards('Name my bakery');
+    await settled();
+    expect(PromptPanel.messages().filter(m => m.billing)).toHaveLength(2);
+    expect(Subscription.handleBillingError).toHaveBeenCalledTimes(1);
+  });
+
   it('reads a card reply aloud once, not again when the monitor opens', async () => {
     CoreVoice.canSpeak = () => true;
     CoreVoice.speak = vi.fn();
