@@ -212,14 +212,14 @@
           <p class="lp-index"><span>02</span>Inside NICE</p>
           <div class="lp-head-row">
             <h2 class="lp-h2" id="inside-title">Your command center</h2>
-            <p class="lp-head-note">Home shows what needs you. Each spaceship shows its crew as cards. Space gives every model you turn on its own card. The Outbox holds everything the crew made.</p>
+            <p class="lp-head-note">Home shows what needs you. Each project shows its crew as cards. Space gives every model you turn on its own card. Ship holds the crew's finished work until you approve it.</p>
           </div>
         </header>
 
         <div class="lp-tabs" role="tablist" aria-label="Inside NICE">
           <button type="button" role="tab" id="tab-crew" aria-controls="panel-crew" aria-selected="true">The crew</button>
           <button type="button" role="tab" id="tab-space" aria-controls="panel-space" aria-selected="false" tabindex="-1">Space</button>
-          <button type="button" role="tab" id="tab-outbox" aria-controls="panel-outbox" aria-selected="false" tabindex="-1">The Outbox</button>
+          <button type="button" role="tab" id="tab-outbox" aria-controls="panel-outbox" aria-selected="false" tabindex="-1">Ship</button>
         </div>
 
         <div class="lp-window">
@@ -231,12 +231,11 @@
             <nav class="lp-mock-side" aria-label="The app's sidebar (example)">
               <p class="lp-mock-brand"><img src="/assets/nice-mark-light.svg" alt="" width="16" height="16" />NICE</p>
               <ul>
-                <li>Home</li>
                 <li>Space</li>
-                <li>Outbox <b>3</b></li>
-                <li>Library</li>
+                <li>Ship <b>3</b></li>
+                <li>Blueprints</li>
               </ul>
-              <p class="lp-mock-label">Spaceships</p>
+              <p class="lp-mock-label">Projects</p>
               <ul>
                 <li class="is-on"><i>TG</i>The Galley</li>
                 <li><i>TL</i>The Loft</li>
@@ -248,7 +247,7 @@
               <div class="lp-mock-head">
                 <span class="lp-mock-ship">TG</span>
                 <div>
-                  <p class="lp-overline">Spaceship</p>
+                  <p class="lp-overline">Project</p>
                   <p class="lp-mock-title">The Galley</p>
                   <p class="lp-mock-sub">A restaurant crew, 6 agents on 6 models</p>
                 </div>
@@ -395,7 +394,7 @@
         <dl class="lp-notes">
           <div>
             <dt>NICE Auto</dt>
-            <dd>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning.</dd>
+            <dd>When you ask NICE itself outside Space, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning. In Space, you choose the models.</dd>
           </div>
           <div>
             <dt>Space</dt>
@@ -486,7 +485,7 @@
             </article>
             <article class="lp-entry" id="codex-crew-cards" data-group="Your crew">
               <h3>Crew cards</h3>
-              <p>Each spaceship shows its crew as a table of cards. A card's frame takes the color of the lab behind its model, so you see at a glance who is thinking with what.</p>
+              <p>Each project shows its crew as a table of cards. A card's frame takes the color of the lab behind its model, so you see at a glance who is thinking with what.</p>
               <p>A card shows the agent's role, model and tools, whether it is working right now, its latest exchange, and a box to message it directly. A diagram view shows the same crew as a schematic.</p>
             </article>
             <article class="lp-entry" id="codex-library" data-group="Your crew">
@@ -532,7 +531,8 @@
             </article>
             <article class="lp-entry" id="codex-auto" data-group="Models">
               <h3>NICE Auto</h3>
-              <p>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning. It stays on the models your plan includes, so it never spends what you didn't choose to.</p>
+              <p>When you ask NICE itself outside Space, rather than a crew, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning. It stays on the models your plan includes, so it never spends what you didn't choose to.</p>
+              <p>Space doesn't use it: there you pick the models yourself, one card at a time.</p>
             </article>
             <article class="lp-entry" id="codex-space" data-group="Models">
               <h3>Space</h3>
