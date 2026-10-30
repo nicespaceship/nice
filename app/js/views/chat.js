@@ -279,12 +279,19 @@ const ChatView = (() => {
   function _focusKey() {
     const a = document.activeElement;
     const card = a && a.closest ? a.closest('.space-card') : null;
-    return card && a.dataset.act ? { model: card.dataset.model, act: a.dataset.act } : null;
+    return card && a.dataset.act ? { model: card.dataset.model, act: a.dataset.act, token: a.dataset.token } : null;
   }
   function _restoreFocus(key) {
     const card = key && _cardEl(key.model);
-    // A control that went away (an answered approval) hands focus to the card.
-    if (card) (card.querySelector(`[data-act="${key.act}"]`) || card.querySelector('[data-act="toggle"]'))?.focus();
+    if (!card) return;
+    // Focus goes back to the same control. Approve and Deny only count if
+    // they belong to the same request: focus never lands on the next
+    // command's Approve, so one keypress can't approve two things. A control
+    // that went away (an answered approval) hands focus to the card.
+    const same = key.token
+      ? card.querySelector(`[data-act="${key.act}"][data-token="${key.token}"]`)
+      : card.querySelector(`[data-act="${key.act}"]`);
+    (same || card.querySelector('[data-act="toggle"]'))?.focus();
   }
 
   /* ── Reactor ──

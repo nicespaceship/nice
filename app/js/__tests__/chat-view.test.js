@@ -186,6 +186,24 @@ describe('ChatView', () => {
     expect(card(el, 'gemini-2-5-flash').classList.contains('is-selected')).toBe(true);
   });
 
+  it('never moves focus onto the next command\'s Approve button', async () => {
+    messages = [
+      { role: 'user', text: 'Plan', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'On it.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    SpaceCards.requestApproval('gemini-2-5-flash', { tool: 'Create Mission', input: { title: 'First' } });
+    await frame();
+    const first = card(el, 'gemini-2-5-flash').querySelector('[data-act="approve"]');
+    first.focus();
+    first.click();
+    // The next command asks before the card redraws.
+    SpaceCards.requestApproval('gemini-2-5-flash', { tool: 'Create Mission', input: { title: 'Second' } });
+    await frame();
+    expect(document.activeElement.dataset.act).toBe('toggle');
+    expect(card(el, 'gemini-2-5-flash').querySelector('.space-approval-detail').textContent).toBe('Second');
+  });
+
   it('offers Retry on a failed latest reply, the Wallet for billing, and nothing for a file it cannot read', () => {
     messages = [
       { role: 'user', text: 'Go', to: ['gemini-2-5-flash', 'grok-4-3', 'deepseek-v4-flash'], v: 2 },
