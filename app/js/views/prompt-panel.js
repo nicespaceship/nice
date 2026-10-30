@@ -110,9 +110,9 @@ const PromptPanel = (() => {
   let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
-  let _suppressMonitorAutoHide = false; // armed when opening a chat that also navigates to #/
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
+  let _onSpaceCards = null;  // SpaceCards selection listener (the "To …" label)
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -286,18 +286,27 @@ const PromptPanel = (() => {
   /* ── Load/save messages (localStorage for persistence across refreshes) ──
      Both gate on Utils.hasAuthSession — anonymous visits keep chat in
      memory only, so a shared browser doesn't leak the prior account's
-     history. ChatView's feed reads the same key and uses the same
-     gate; if you add another reader, gate it too. */
+     history. ChatView's cards read these messages through messages()
+     and keep the same gate; if you add another reader, gate it too.
+     Conversations from before Space's model cards are tagged with the
+     model that answered as they load (SpaceCards.tagLegacy). */
   function _loadMessages() {
     if (!Utils.hasAuthSession()) { _messages = []; return; }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       _messages = raw ? JSON.parse(raw) : [];
     } catch { _messages = []; }
+    if (!Array.isArray(_messages)) _messages = [];
+    if (typeof SpaceCards !== 'undefined') SpaceCards.tagLegacy(_messages);
   }
 
   function _saveMessages() {
     if (!Utils.hasAuthSession()) return;
+    // Everything written from here on is in the card-era shape; a message
+    // without a card tag is NICE's own reply (see SpaceCards).
+    if (typeof SpaceCards !== 'undefined') {
+      for (const m of _messages) if (m && !m.v) m.v = SpaceCards.VERSION;
+    }
     try {
       // Attachments carry base64 payloads or full text-file contents that
       // can exceed the 5MB localStorage quota after a few messages. Strip
@@ -1834,9 +1843,22 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_pendingAttachments.length >= AttachmentUtils.MAX_COUNT) return;
 
     // Ensure the selected model can read this modality. Text files don't
-    // need any capability — they're inlined as text.
+    // need any capability — they're inlined as text. On Space the selected
+    // cards are the models: one that reads the file is enough, and a card
+    // that can't says so on its own card when the prompt goes out.
     const cap = AttachmentUtils.requiredCapability(kind);
-    if (!_ensureModelForCapability(cap)) return;
+    if (cap && _isStandaloneChat() && typeof SpaceCards !== 'undefined') {
+      if (!SpaceCards.selected().some(id => _modelHasCapability(id, cap))) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({
+            title: 'No selected model reads this file',
+            message: `Select a model that reads ${_CAP_NOUNS[cap] || cap}, such as Gemini 2.5 Flash, then attach it again.`,
+            type: 'warning',
+          });
+        }
+        return;
+      }
+    } else if (!_ensureModelForCapability(cap)) return;
 
     try {
       if (kind === 'text') {
@@ -1944,13 +1966,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       signal = _abortCtrl.signal;
     }
 
-    // Build conversation history from _messages (last 20 turns). The most
+    // Build conversation history (last 20 turns): a Space card passes its
+    // own thread as opts.thread, everything else reads _messages. The most
     // recent message is usually the user turn that triggered this call —
     // drop it from the "past" slice so we don't emit the same turn twice
     // when we append `userText` below.
-    const past = _messages.slice(-20);
+    const past = (opts.thread || _messages).slice(-20);
     const lastPast = past[past.length - 1];
-    const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
+    const lastIsCurrent = !opts.thread && !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
     // A comparison joins the history as the answer the user kept; an
     // undecided one is left out.
     const historyMsgs = (lastIsCurrent ? past.slice(0, -1) : past)
@@ -1983,7 +2006,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // model id and billing/gating stay per-real-model. Candidates are the
     // enabled models that can also read every staged attachment; the router's
     // final fallback is Gemini Flash, the multimodal catch-all.
-    if (sel.auto && typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
+    if (sel.auto && !opts.modelOverride && typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
       const caps = new Set();
       for (const a of currentAttachments) {
         const c = AttachmentUtils.requiredCapability(a.kind);
@@ -2068,12 +2091,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (res.status === 402 && body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
           Subscription.handleBillingError(body);
         }
-        throw new Error(body?.error || errBody || ('HTTP ' + res.status));
+        const err = new Error(body?.error || errBody || ('HTTP ' + res.status));
+        err.status = res.status;
+        if (body?.code) err.code = body.code;
+        throw err;
       }
 
       // Stream: parse SSE chunks as they arrive
       if (wantStream && res.headers.get('content-type')?.includes('text/event-stream')) {
-        return await _parseSSEStream(res, opts, modelLabel, _activityTokens);
+        return { ...(await _parseSSEStream(res, opts, modelLabel, _activityTokens)), modelId: model };
       }
 
       // Non-stream fallback
@@ -2084,7 +2110,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       }
       const text = _contentText(data.content);
       if (opts.onChunk && text) opts.onChunk(text);
-      return { text, model: modelLabel };
+      return { text, model: modelLabel, modelId: model };
     } finally {
       if (_activity) _activity.end({ totalTokens: _activityTokens.total });
     }
@@ -2195,148 +2221,160 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     return true;
   }
 
-  /* ── Compare (standalone chat) ──
-     One question to two or three models at once. The answers land side by
-     side in one monitor card and the user keeps one, which becomes the
-     reply the conversation continues from. Each model goes through the same
-     nice-ai call as a normal message (_callEdgeLLM), so billing, persona and
-     errors behave the same; each call gets its own abort signal so the
-     calls don't cancel each other. */
-  const COMPARE_MAX = 3;
-  // Default picks favour different providers, cheapest first.
-  const COMPARE_PREFS = ['gemini-2-5-flash', 'claude-4-6-sonnet', 'grok-4-3', 'gpt-5-mini', 'deepseek-v4-flash',
-    'kimi-k2-6', 'nemotron-3-super', 'gpt-oss-120b', 'gemini-2-5-pro', 'claude-4-7-opus', 'gpt-5-4-pro', 'openai-o3'];
-  let _compareOn = false;
-  let _compareModels = [];
-
-  function _canonicalModel(id) {
-    return (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
-  }
+  /* ── Space: one prompt, the selected model cards ──
+     Space (#/space) shows a card per model the user can run; the prompt
+     goes to the cards they selected (SpaceCards). Each card gets its own
+     nice-ai call (_callEdgeLLM) with its own thread as history and its own
+     abort signal, so the cards answer in parallel and a failure (a 402, a
+     provider error, a file the model can't read) stays on its card.
+     Replies are tagged with the model that wrote them. Casual chat surface:
+     no mission_runs row, like the rest of the top-level NICE chat. */
+  const _cardCalls = new Map(); // modelId → AbortController
+  // Bumped whenever the conversation changes under in-flight calls (new or
+  // opened chat, teardown) so a late reply never lands in the wrong one.
+  let _cardEpoch = 0;
 
   function _isStandaloneChat() {
     const path = (location.hash || '#/').replace('#', '').split('?')[0] || '/';
     return path === '/space' && !_routeAgent && !_routeShip;
   }
 
-  // Enabled models the user can send a message on right now, in default order.
-  function _compareCandidates() {
-    const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
-    const pools = ((typeof State !== 'undefined' && State.get('token_balance')) || {}).pools || {};
-    const addons = (typeof Subscription !== 'undefined' && Subscription.getAddons) ? Subscription.getAddons() : [];
-    const rank = (id) => { const i = COMPARE_PREFS.indexOf(id); return i < 0 ? COMPARE_PREFS.length : i; };
-    const ids = [...new Set(Object.keys(enabled).filter(id => enabled[id]).map(_canonicalModel))];
-    return ids
-      .filter(id => typeof TokenConfig === 'undefined' || TokenConfig.canRunModel(pools, id, addons))
-      .sort((a, b) => rank(a) - rank(b));
-  }
+  const _CAP_NOUNS = { vision: 'images', pdf: 'PDFs', audio: 'audio', video: 'video' };
 
-  function _compareLabel(id) {
-    const m = (typeof ModelCatalog !== 'undefined') ? ModelCatalog.getById(id) : null;
-    return m ? m.name : id;
-  }
-
-  function _comparePool(id) {
-    if (typeof TokenConfig === 'undefined' || TokenConfig.isFreeModel(id)) return 'Free';
-    const pool = TokenConfig.poolFor(id);
-    return (pool && TokenConfig.POOLS[pool] && TokenConfig.POOLS[pool].label) || 'Paid';
-  }
-
-  function _compareActive() {
-    return _compareOn && _isStandaloneChat() && _compareModels.length >= 2;
-  }
-
-  // The model already chosen in the dropdown leads, then the default order.
-  function _defaultCompareModels(candidates) {
-    const sel = _getSelectedModel();
-    const picks = [];
-    const selected = sel && !sel.auto ? _canonicalModel(sel.id) : null;
-    if (selected && candidates.includes(selected)) picks.push(selected);
-    for (const id of candidates) {
-      if (picks.length >= COMPARE_MAX) break;
-      if (!picks.includes(id)) picks.push(id);
-    }
-    return picks;
-  }
-
-  function _setCompare(on) {
-    _compareOn = on;
-    if (on) {
-      const candidates = _compareCandidates();
-      _compareModels = _compareModels.filter(id => candidates.includes(id));
-      if (_compareModels.length < 2) _compareModels = _defaultCompareModels(candidates);
-    }
-    _renderCompareBar();
-  }
-
-  function _renderCompareBar() {
-    const btn = _panel?.querySelector('#nice-ai-compare');
-    const bar = _panel?.querySelector('#nice-ai-compare-bar');
-    const modelSelect = _panel?.querySelector('#nice-ai-model');
-    const available = _isStandaloneChat();
-    if (btn) {
-      btn.hidden = !available;
-      btn.setAttribute('aria-pressed', String(_compareOn));
-    }
-    const on = available && _compareOn;
-    if (modelSelect) modelSelect.hidden = on;
-    if (!bar) return;
-    bar.hidden = !on;
-    if (!on) { bar.innerHTML = ''; return; }
-    const candidates = _compareCandidates();
-    if (candidates.length < 2) {
-      bar.innerHTML = '<p class="nice-ai-compare-note">Compare needs two models you can run. Gemini 2.5 Flash is free; NICE Pro adds more, such as Grok, DeepSeek and Kimi. <a href="#/wallet">See plans</a></p>';
-      return;
-    }
-    const chips = _compareModels.map(id => `
-      <span class="nice-ai-compare-chip">
-        <span>${_esc(_compareLabel(id))}</span><small>${_esc(_comparePool(id))}</small>
-        <button type="button" class="nice-ai-compare-remove" data-model="${_escAttr(id)}" aria-label="Remove ${_escAttr(_compareLabel(id))}"${_compareModels.length <= 2 ? ' disabled' : ''}>×</button>
-      </span>`).join('');
-    const rest = candidates.filter(id => !_compareModels.includes(id));
-    const add = (_compareModels.length < COMPARE_MAX && rest.length)
-      ? `<select class="nice-ai-compare-add" id="nice-ai-compare-add" aria-label="Add a model to compare" data-allow-zoom>
-          <option value="">+ Add model</option>
-          ${rest.map(id => `<option value="${_escAttr(id)}">${_esc(_compareLabel(id))} · ${_esc(_comparePool(id))}</option>`).join('')}
-        </select>`
-      : '';
-    bar.innerHTML = `<span class="nice-ai-compare-label">Compare</span>${chips}${add}`;
-  }
-
-  function _sendCompare(text, sendBtn) {
-    const models = _compareModels.slice(0, COMPARE_MAX);
-    // Start every call before the comparison joins _messages, so each call's
-    // history still ends with this user turn (see _callEdgeLLM).
-    const calls = models.map(id => _callEdgeLLM(text, { modelOverride: id, abortSignal: new AbortController().signal }));
-    const msg = {
-      role: 'assistant', type: 'compare', agent: 'NICE', text: '', picked: null, ts: Date.now(),
-      answers: models.map(id => ({ model: id, label: _compareLabel(id), pool: _comparePool(id), text: '', pending: true })),
+  function _cardReply(id, fields) {
+    return {
+      role: 'assistant', agent: 'NICE', model: SpaceCards.label(id), modelId: id,
+      ts: Date.now(), v: SpaceCards.VERSION, ...fields,
     };
-    _removeMonitorThinking();
-    _messages.push(msg);
+  }
+
+  // A short failure line for the card. Billing (402) also raised the Wallet
+  // toast inside _callEdgeLLM; the card keeps a link to it.
+  function _cardError(id, err) {
+    let text = typeof err === 'string' ? err : ((err && err.message) || 'This model could not answer.');
+    text = text.replace(/\s+/g, ' ').trim();
+    if (text.length > 160) text = text.slice(0, 157) + '…';
+    const billing = !!(err && typeof err === 'object' && err.status === 402);
+    return _cardReply(id, billing ? { text, error: true, billing: true } : { text, error: true });
+  }
+
+  function _isAbort(err) {
+    return !!err && (err.name === 'AbortError' || /abort/i.test(err.message || ''));
+  }
+
+  function _sendToCards(text, attachments = []) {
+    if (typeof SpaceCards === 'undefined') return false;
+    const cards = SpaceCards.available();
+    const targets = SpaceCards.selected(cards);
+    if (!targets.length) return false;
+
+    // Each card's history is read before this prompt joins the conversation.
+    const threads = targets.map(id => SpaceCards.historyFor(_messages, id, cards));
+    const userMsg = { role: 'user', text, ts: Date.now(), to: targets.slice(), v: SpaceCards.VERSION };
+    if (attachments.length) userMsg.attachments = attachments;
+    _messages.push(userMsg);
     _saveMessages();
-    _renderMonitor();
-    _showMonitor();
-    let left = calls.length;
-    calls.forEach((call, i) => {
-      Promise.resolve(call)
+
+    const sendBtn = _panel?.querySelector('#nice-ai-send');
+    _setSending(true);
+    if (sendBtn) sendBtn.disabled = true;
+
+    const epoch = _cardEpoch;
+    const single = targets.length === 1;
+    const caps = new Set(attachments.map(a => AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
+    let left = targets.length;
+
+    targets.forEach((id, i) => {
+      const finish = (reply) => {
+        if (epoch !== _cardEpoch) return;
+        _cardCalls.delete(id);
+        if (reply) { _messages.push(reply); _saveMessages(); }
+        SpaceCards.endLive(id);
+        if (--left === 0) {
+          _setSending(false);
+          if (sendBtn) sendBtn.disabled = false;
+        }
+      };
+
+      const missing = [...caps].filter(c => !_modelHasCapability(id, c));
+      if (missing.length) {
+        const what = missing.map(c => _CAP_NOUNS[c] || c).join(' or ');
+        finish(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`));
+        return;
+      }
+
+      const ctrl = new AbortController();
+      _cardCalls.set(id, ctrl);
+      SpaceCards.setLive(id, { text: '' });
+      const onChunk = (chunk) => {
+        if (epoch !== _cardEpoch) return;
+        SpaceCards.setLive(id, { text: ((SpaceCards.live(id) || {}).text || '') + chunk });
+      };
+
+      _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk })
         .then(res => {
-          msg.answers[i].text = (res && res.text) || '';
-          if (!msg.answers[i].text) msg.answers[i].error = 'No answer came back.';
+          if (!res) return finish(_cardError(id, 'NICE could not reach the model service. Check your connection and try again.'));
+          if (!res.text) return finish(_cardError(id, 'No answer came back. Try again.'));
+          finish(_cardReply(id, { text: res.text }));
+          if (single && epoch === _cardEpoch) _afterSingleReply(id, res.text);
         })
-        .catch(err => { msg.answers[i].error = (err && err.message) || 'This model could not answer.'; })
-        .finally(() => {
-          msg.answers[i].pending = false;
-          _saveMessages();
-          _renderMonitor();
-          if (--left === 0) {
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
-          }
+        .catch(err => {
+          if (_isAbort(err)) return;
+          finish(_cardError(id, err));
         });
     });
+    return true;
   }
 
-  // Keeping an answer makes it the reply the conversation continues from.
+  // One card answered on its own: the reply acts like the old single-model
+  // chat (theme markers, EXEC commands, voice, preview). Several cards at
+  // once skip this so parallel answers never run the same command twice.
+  async function _afterSingleReply(id, text) {
+    const { clean, execs } = _parseActions(text);
+    _ttsSpeak(clean);
+    if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(text);
+    if (!execs || !execs.length) return;
+    const epoch = _cardEpoch;
+    for (const ex of execs) {
+      const res = await _executeExec(ex.action, ex.params);
+      if (epoch !== _cardEpoch) return;
+      _messages.push(_cardReply(id, { text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`, note: true }));
+    }
+    _saveMessages();
+    SpaceCards.changed(id);
+  }
+
+  function _abortCards() {
+    const hadCalls = _cardCalls.size > 0 || (typeof SpaceCards !== 'undefined' && SpaceCards.busy());
+    _cardEpoch++;
+    if (!hadCalls) return;
+    _cardCalls.forEach(ctrl => { try { ctrl.abort(); } catch { /* already settled */ } });
+    _cardCalls.clear();
+    if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
+    _setSending(false);
+    const sendBtn = _panel?.querySelector('#nice-ai-send');
+    if (sendBtn) sendBtn.disabled = false;
+  }
+
+  // "To Gemini 2.5 Flash" / "To 3 models" beside the send button on Space,
+  // where the cards replace the model dropdown.
+  function _renderTargets() {
+    const label = _panel?.querySelector('#nice-ai-targets');
+    const modelSelect = _panel?.querySelector('#nice-ai-model');
+    const on = _isStandaloneChat() && typeof SpaceCards !== 'undefined';
+    if (modelSelect) modelSelect.hidden = on;
+    if (!label) return;
+    label.hidden = !on;
+    if (!on) { label.textContent = ''; label.removeAttribute('title'); return; }
+    const targets = SpaceCards.selected();
+    const names = targets.map(SpaceCards.label);
+    label.textContent = targets.length === 1 ? `To ${names[0]}` : `To ${targets.length} models`;
+    label.title = names.join(', ');
+  }
+
+  /* Comparisons saved before Space's cards replaced Compare still render on
+     the monitor (and each answer also shows on its model's card). Keeping an
+     answer makes it the reply the conversation continues from. */
   function _pickCompareAnswer(msgIndex, answerIndex) {
     const msg = _messages[msgIndex];
     const ans = msg && msg.type === 'compare' ? msg.answers[answerIndex] : null;
@@ -2478,6 +2516,21 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       input.value = '';
       input.style.height = '36px';
       return;
+    }
+
+    // Space: the prompt goes to the selected model cards and the replies
+    // land on them. NICE still answers @mentions, navigation and missions
+    // itself, on the monitor below. The pre-check runs once: its intents
+    // act as they are detected (a theme switch, a queued command).
+    let spacePreCheck = null;
+    if (!forcedAgent && _isStandaloneChat() && !_parseMention(text) && !_parseShipMention(text)) {
+      spacePreCheck = _getResponse(text);
+      if (!spacePreCheck.autoMission && !spacePreCheck.isNav && _sendToCards(text, sentAttachments)) {
+        input.value = '';
+        input.style.height = '36px';
+        _panel?.querySelector('.nice-ai-input-container')?.classList.remove('has-text');
+        return;
+      }
     }
 
     // Add user message and show on monitor
@@ -2728,7 +2781,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     } else {
       // Direct LLM with streaming. Pre-check intent first so imperative
       // tasks ("write me a tagline") and navigation short-circuit the model.
-      const preCheck = _getResponse(text);
+      // Space already ran the pre-check before deciding against its cards.
+      const preCheck = spacePreCheck || _getResponse(text);
       if (preCheck.autoMission) {
         _executeAutoMission(preCheck.title, sendBtn);
         return;
@@ -2743,8 +2797,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }, delay);
-      } else if (_compareActive()) {
-        _sendCompare(text, sendBtn);
       } else {
         // Streaming LLM call
         let _streamEl = null;
@@ -2773,7 +2825,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
-            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, ts: Date.now() });
+            // Tag the exchange with the model that answered, so it shows on
+            // that model's card on Space like any other model chat.
+            const modelId = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(result.modelId) : result.modelId;
+            if (modelId && !userMsg.to) userMsg.to = [modelId];
+            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, modelId, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
 
@@ -2996,7 +3052,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         </div>
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
-          <div class="nice-ai-compare-bar" id="nice-ai-compare-bar" hidden></div>
           <div class="nice-ai-input-row">
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
@@ -3005,10 +3060,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
-              <button type="button" class="nice-ai-compare-btn" id="nice-ai-compare" aria-pressed="false" title="Compare models: send one question to several models" hidden>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="9.5" y="5" width="5" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>
-                <span>Compare</span>
-              </button>
+              <span class="nice-ai-targets" id="nice-ai-targets" aria-live="polite" hidden></span>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model" data-allow-zoom>
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
@@ -3142,18 +3194,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Model select change → guard against switching to a non-vision model
     // while images are staged.
     _panel.querySelector('#nice-ai-model')?.addEventListener('change', _onModelSelectChange);
-    _panel.querySelector('#nice-ai-compare')?.addEventListener('click', () => _setCompare(!_compareOn));
-    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('click', (e) => {
-      const rm = e.target.closest('.nice-ai-compare-remove');
-      if (!rm || _compareModels.length <= 2) return;
-      _compareModels = _compareModels.filter(id => id !== rm.dataset.model);
-      _renderCompareBar();
-    });
-    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('change', (e) => {
-      if (e.target.id !== 'nice-ai-compare-add' || !e.target.value) return;
-      if (_compareModels.length < COMPARE_MAX) _compareModels.push(e.target.value);
-      _renderCompareBar();
-    });
+    // Space: the "To …" label follows the card selection.
+    if (typeof SpaceCards !== 'undefined') {
+      _onSpaceCards = (e) => { if (e.detail && e.detail.kind === 'selection') _renderTargets(); };
+      document.addEventListener(SpaceCards.EVENT, _onSpaceCards);
+    }
 
     // Textarea auto-resize + keyboard + @mention
     const textarea = _panel.querySelector('#nice-ai-input');
@@ -3236,14 +3281,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       setTimeout(() => {
         if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
       }, 150);
-      // Auto-hide monitor when user navigates via sidebar — unless this
-      // hashchange is the one _showConversation() triggered to land on #/
-      // before revealing the chat's full monitor.
-      if (_suppressMonitorAutoHide) {
-        _suppressMonitorAutoHide = false;
-      } else if (_isMonitorActive()) {
-        _hideMonitor();
-      }
+      // Auto-hide monitor when user navigates via sidebar
+      if (_isMonitorActive()) _hideMonitor();
     };
     window.addEventListener('hashchange', _onHashChange);
 
@@ -3652,8 +3691,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // often lands after this panel's init() has already built the
     // dropdown from the initial (free-only) enabled_models state.
     if (typeof State !== 'undefined' && State.on) {
-      State.on('enabled_models', () => { _populateModelDropdown(); _renderCompareBar(); });
-      State.on('token_balance', () => _renderCompareBar());
+      State.on('enabled_models', () => { _populateModelDropdown(); _renderTargets(); });
     }
     // Theme voice: stop playback on theme change, sync mute button + reactor.
     // Skip the stop for themes that ship a `voice.intro` — Theme.set fires
@@ -3686,6 +3724,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function destroy() {
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+    _abortCards();
     _userPickedModel = false;
     _lastModelValue = null;
     // Stop speech recognition & mic
@@ -3701,6 +3740,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
     if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
     if (_onCapsLockKey) { document.removeEventListener('keydown', _onCapsLockKey); _onCapsLockKey = null; }
+    if (_onSpaceCards) { document.removeEventListener(SpaceCards.EVENT, _onSpaceCards); _onSpaceCards = null; }
     if (_panelResizeObserver) { _panelResizeObserver.disconnect(); _panelResizeObserver = null; }
     window.removeEventListener('resize', _updateChatBottomInset);
     document.documentElement.style.removeProperty('--chat-bottom-inset');
@@ -3890,7 +3930,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   function syncRoute() {
     _updateRouteContext();
-    _renderCompareBar();
+    _renderTargets();
     const path = (location.hash || '#/').replace('#', '') || '/';
     // Reset manual flag when navigating to a different route
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
@@ -3935,35 +3975,30 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function setContext(ctx) { _ideContext = ctx; }
   function getContext() { return _ideContext; }
 
+  // The conversation in STORAGE_KEY changed under us (new chat, opened or
+  // deleted chat): drop replies still on their way and redraw Space.
   function _reload() {
+    _abortCards();
     _loadMessages();
-    // Re-render the chat view if we're on it
     if (window.location.hash === '#/space') {
       const el = document.getElementById('app-view');
       if (el && typeof ChatView !== 'undefined') ChatView.render(el);
     }
   }
 
-  /* Open a stored conversation in the full-screen monitor. Called by the
-     sidebar Chats list. Loads the messages already written to STORAGE_KEY,
-     lands on Home (the monitor's home base), and reveals the full monitor.
-     When navigation is needed, arms _suppressMonitorAutoHide so the
-     resulting hashchange doesn't immediately close what we just opened. */
+  /* Open a stored conversation on Space, each model's thread on its card.
+     Called by the sidebar Chats list after it writes the conversation to
+     STORAGE_KEY. */
   function _showConversation() {
-    const onHome = window.location.hash === '#/' || window.location.hash === '';
-    if (onHome) {
-      // Already home: refresh the feed underneath so it's consistent once the
-      // monitor closes (Router won't re-render for the same hash).
-      _reload();
-    } else {
-      _loadMessages();
-      if (_messages.length) _suppressMonitorAutoHide = true;
-      window.location.hash = '#/'; // Router renders Home fresh from STORAGE_KEY
-    }
-    _renderMonitor();
-    if (_messages.length) _showMonitor(true);
-    else _hideMonitor();
+    _hideMonitor();
+    if (window.location.hash === '#/space') { _reload(); return; }
+    _abortCards();
+    _loadMessages();
+    window.location.hash = '#/space'; // Router renders Space from the loaded messages
   }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare, _detectIntent };
+  // The current conversation, for Space's cards. Same auth gate as the store.
+  function messages() { return _messages; }
+
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _sendToCards, _renderTargets, _isStandaloneChat, messages, _detectIntent };
 })();

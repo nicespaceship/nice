@@ -1,204 +1,213 @@
 /**
- * ChatView integration tests
- * Tests the standalone chat view (#/space): greeting and conversation feed.
+ * ChatView (#/space): the model cards. Pinned here:
+ *   - one card per model the user switched on and can run, no NICE Auto,
+ *   - the free model is the one selected card by default,
+ *   - clicking a card toggles it and the choice persists,
+ *   - each card shows its own thread; old conversations land on cards,
+ *   - status dots (go / busy / stop / none), notes for free users and guests,
+ *   - everything user-written is escaped, listeners go away on destroy.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { installViewMocks, loadModule } from './helpers/view-harness.js';
 
-const __dirname_local = dirname(fileURLToPath(import.meta.url));
+const __dir = dirname(fileURLToPath(import.meta.url));
 
-// ── Mock environment ──
-const _store = {};
-const mockLocalStorage = {
-  getItem: (key) => _store[key] ?? null,
-  setItem: (key, val) => { _store[key] = String(val); },
-  removeItem: (key) => { delete _store[key]; },
-  clear: () => { Object.keys(_store).forEach(k => delete _store[k]); },
-  get length() { return Object.keys(_store).length; },
-  key: (i) => Object.keys(_store)[i] ?? null,
-};
-Object.defineProperty(globalThis, 'localStorage', { value: mockLocalStorage, writable: true });
+installViewMocks();
+loadModule('lib/llm-config.js');
+loadModule('lib/token-config.js');
+// model-catalog.js is UMD: hide `module` so it assigns the browser global.
+new Function('module', 'self', readFileSync(resolve(__dir, '../lib/model-catalog.js'), 'utf-8'))(undefined, globalThis);
+loadModule('lib/space-cards.js');
+loadModule('views/chat.js');
 
-if (!globalThis.crypto) globalThis.crypto = {};
-if (!globalThis.crypto.randomUUID) {
-  globalThis.crypto.randomUUID = () => 'test-' + Math.random().toString(36).slice(2, 10);
-}
-
-// Mock State
-globalThis.State = (() => {
-  const _data = {};
-  const _listeners = {};
-  return {
-    get: (key) => _data[key],
-    set: (key, val) => { _data[key] = val; (_listeners[key] || []).forEach(fn => fn(val)); },
-    on: (key, fn) => { _listeners[key] = _listeners[key] || []; _listeners[key].push(fn); },
-    off: (key, fn) => { _listeners[key] = (_listeners[key] || []).filter(f => f !== fn); },
-    _reset: () => { Object.keys(_data).forEach(k => delete _data[k]); Object.keys(_listeners).forEach(k => delete _listeners[k]); },
-  };
-})();
-
-// Mock SB
-globalThis.SB = {
-  client: null, isReady: () => false, isOnline: () => true,
-  db: () => ({ list: async () => [], create: async () => ({}), update: async () => ({}), get: async () => null }),
-  realtime: { subscribe: () => null, unsubscribe: () => {} },
-};
-
-// Mock Router
-globalThis.Router = { navigate: vi.fn(), path: () => '/', on: () => {}, init: () => {} };
-
-// Mock Utils
-globalThis.Utils = {
-  esc: (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
-  timeAgo: () => 'just now',
-  // ChatView gates chat-history reads on this. Tests want the gate to PASS
-  // by default (so the existing assertions about message rendering still
-  // hold); the leak case is covered by an explicit "no auth" test below.
-  hasAuthSession: () => true,
-  KEYS: {
-    aiMessages: 'nice-ai-messages',
-    conversations: 'nice-conversations',
-    activeConv: 'nice-active-conv',
-  },
-};
-
-// Mock PromptPanel
+let messages = [];
 globalThis.PromptPanel = {
-  init: () => {}, show: () => {}, hide: () => {}, syncRoute: () => {},
-  prefill: () => {}, toggle: () => {}, destroy: () => {},
+  messages: () => messages,
+  _md: (t) => `<p>${Utils.esc(t)}</p>`,
 };
+globalThis.CoreReactor = { setVisible: vi.fn() };
 
-globalThis.Notify = { send: () => {}, init: () => {} };
+const frame = () => new Promise(r => requestAnimationFrame(() => r()));
+const card = (el, id) => el.querySelector(`.space-card[data-model="${id}"]`);
+const ids = (el) => [...el.querySelectorAll('.space-card')].map(c => c.dataset.model);
 
-// Load ChatView
-function loadScriptGlobal(relativePath) {
-  const absPath = resolve(__dirname_local, '..', relativePath);
-  let code = readFileSync(absPath, 'utf-8');
-  code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
-  eval(code);
+let el;
+function mount() {
+  el = document.createElement('div');
+  document.body.appendChild(el);
+  ChatView.render(el);
+  return el;
 }
 
 beforeEach(() => {
-  mockLocalStorage.clear();
-  globalThis.State._reset();
-  document.body.innerHTML = '<div id="test-el"></div>';
+  messages = [];
+  localStorage.setItem('sb-test-auth-token', '{"access_token":"tok"}');
+  globalThis.Subscription = { isPro: () => true, getAddons: () => [] };
+  State.set('user', { id: 'u1', email: 'pilot@test.com' });
+  State.set('enabled_models', { 'gemini-2-5-flash': true, 'grok-4-3': true, 'deepseek-v4-flash': true, 'claude-4-6-sonnet': true, 'nice-auto': true });
+});
+afterEach(() => {
+  ChatView.destroy();
+  SpaceCards.endAll();
+  delete globalThis.Subscription;
 });
 
-// Load after mocks are in place
-loadScriptGlobal('views/chat.js');
-
 describe('ChatView', () => {
-  it('has title "Space"', () => {
+  it('is titled Space', () => {
     expect(ChatView.title).toBe('Space');
   });
 
-  it('renders without crashing when State is empty', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'pilot@test.com' });
-    expect(() => ChatView.render(el)).not.toThrow();
-    expect(el.innerHTML.length).toBeGreaterThan(0);
+  it('shows a card for each model the user can run, never NICE Auto', () => {
+    mount();
+    // Claude needs the Claude add-on, so it gets no card.
+    expect(ids(el)).toEqual(['gemini-2-5-flash', 'grok-4-3', 'deepseek-v4-flash']);
+    expect(card(el, 'grok-4-3').querySelector('.space-card-name').textContent).toBe('Grok 4.3');
+    expect(card(el, 'grok-4-3').querySelector('.space-card-sub').textContent).toBe('xAI · Standard');
   });
 
-  it('renders greeting with display name', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'pilot@test.com', user_metadata: { display_name: 'TestPilot' } });
-    ChatView.render(el);
-    expect(el.innerHTML).toContain('TestPilot');
+  it('selects only the free model by default, with a go dot', () => {
+    mount();
+    const gem = card(el, 'gemini-2-5-flash');
+    expect(gem.classList.contains('is-selected')).toBe(true);
+    expect(gem.querySelector('.space-card-head').getAttribute('aria-pressed')).toBe('true');
+    expect(gem.querySelector('.space-dot').dataset.dot).toBe('go');
+    expect(el.querySelectorAll('.space-card.is-selected')).toHaveLength(1);
+    expect(card(el, 'grok-4-3').querySelector('.space-dot').dataset.dot).toBe('off');
   });
 
-  it('handles missing user gracefully', () => {
-    const el = document.getElementById('test-el');
-    expect(() => ChatView.render(el)).not.toThrow();
+  it('toggles a card on click and keeps the choice', async () => {
+    mount();
+    card(el, 'grok-4-3').querySelector('.space-card-body').click();
+    await frame();
+    expect(card(el, 'grok-4-3').classList.contains('is-selected')).toBe(true);
+    expect(JSON.parse(localStorage.getItem(Utils.KEYS.spaceCards))).toEqual(['gemini-2-5-flash', 'grok-4-3']);
+    ChatView.destroy();
+    mount();
+    expect(el.querySelectorAll('.space-card.is-selected')).toHaveLength(2);
   });
 
-  it('renders the chat-home container', () => {
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    const wrap = el.querySelector('.chat-home');
-    expect(wrap).toBeTruthy();
+  it("shows each model's latest exchange on its own card, escaped", () => {
+    messages = [
+      { role: 'user', text: 'Name it <b>now</b>', to: ['gemini-2-5-flash', 'grok-4-3'], v: 2 },
+      { role: 'assistant', text: 'Rise & Co.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+      { role: 'assistant', text: 'Crumb Theory', modelId: 'grok-4-3', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    expect(card(el, 'gemini-2-5-flash').querySelector('.space-reply').textContent).toBe('Rise & Co.');
+    expect(card(el, 'grok-4-3').querySelector('.space-reply').textContent).toBe('Crumb Theory');
+    expect(card(el, 'grok-4-3').querySelector('.space-ask').textContent).toContain('Name it <b>now</b>');
+    expect(el.querySelector('.space-ask b')).toBeNull();
+    expect(card(el, 'deepseek-v4-flash').querySelector('.space-reply')).toBeNull();
   });
 
-  it('shows greeting in empty state', () => {
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    const greeting = el.querySelector('.chat-home-greeting');
-    expect(greeting).toBeTruthy();
-    expect(greeting.textContent).toMatch(/Good (morning|afternoon|evening)/);
+  it('puts an old single-thread conversation on the card of the model that answered', () => {
+    messages = SpaceCards.tagLegacy([
+      { role: 'user', text: 'Hi' },
+      { role: 'assistant', text: 'Hello from Grok', agent: 'NICE', model: 'NICE Auto → Grok 4.3' },
+      { role: 'user', text: 'Still there?' },
+      { role: 'assistant', text: 'From an unknown model', agent: 'NICE', model: 'Retired Model 1' },
+    ]);
+    mount();
+    expect(card(el, 'grok-4-3').textContent).toContain('Hello from Grok');
+    expect(card(el, 'gemini-2-5-flash').textContent).toContain('From an unknown model');
   });
 
-  it('does not render action pills', () => {
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    const pills = el.querySelectorAll('.chat-pill');
-    expect(pills.length).toBe(0);
+  it('expands a card to its whole thread and back', async () => {
+    messages = [
+      { role: 'user', text: 'One', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'First answer', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+      { role: 'user', text: 'Two', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'Second answer', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    expect(card(el, 'gemini-2-5-flash').textContent).not.toContain('First answer');
+    card(el, 'gemini-2-5-flash').querySelector('.space-more').click();
+    const open = card(el, 'gemini-2-5-flash');
+    expect(open.classList.contains('is-expanded')).toBe(true);
+    expect(open.textContent).toContain('First answer');
+    expect(open.querySelector('.space-more').getAttribute('aria-expanded')).toBe('true');
+    // Reading an open card doesn't toggle its selection.
+    open.querySelector('.space-card-body').click();
+    await frame();
+    expect(card(el, 'gemini-2-5-flash').classList.contains('is-selected')).toBe(true);
   });
 
-  it('renders conversation when messages exist', () => {
-    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-      { role: 'user', text: 'hello', ts: Date.now() },
-      { role: 'assistant', text: 'Hi there', agent: 'NICE', ts: Date.now() },
-    ]));
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    const feed = el.querySelector('.chat-home-feed');
-    expect(feed).toBeTruthy();
-    expect(feed.innerHTML).toContain('hello');
+  it('marks a thinking card busy and a failed one stop, with a Wallet link for billing', async () => {
+    messages = [
+      { role: 'user', text: 'Go', to: ['grok-4-3', 'deepseek-v4-flash'], v: 2 },
+      { role: 'assistant', text: 'Your Standard pool is empty.', modelId: 'deepseek-v4-flash', error: true, billing: true, agent: 'NICE', v: 2 },
+    ];
+    mount();
+    SpaceCards.setLive('grok-4-3', { text: '' });
+    await frame();
+    expect(card(el, 'grok-4-3').querySelector('.space-dot').dataset.dot).toBe('busy');
+    expect(card(el, 'grok-4-3').textContent).toContain('Thinking');
+    const ds = card(el, 'deepseek-v4-flash');
+    expect(ds.querySelector('.space-dot').dataset.dot).toBe('stop');
+    expect(ds.querySelector('.space-err').textContent).toContain('Your Standard pool is empty.');
+    expect(ds.querySelector('.space-err a').getAttribute('href')).toBe('#/wallet');
+    SpaceCards.setLive('grok-4-3', { text: 'Half an ans' });
+    await frame();
+    expect(card(el, 'grok-4-3').querySelector('.space-reply').textContent).toBe('Half an ans');
   });
 
-  it('renders for user without display_name', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'someone@example.com' });
-    expect(() => ChatView.render(el)).not.toThrow();
-    expect(el.innerHTML).toContain('someone');
+  it('gives a free user the free card and a note about plans', () => {
+    Subscription.isPro = () => false;
+    mount();
+    expect(ids(el)).toEqual(['gemini-2-5-flash']);
+    expect(el.querySelector('.space-note').textContent).toContain('More models come with a plan');
+    expect(el.querySelector('.space-note a').getAttribute('href')).toBe('#/wallet');
   });
 
-  it('has a destroy method that does not throw', () => {
-    expect(() => ChatView.destroy()).not.toThrow();
+  it('links to the AI models settings', () => {
+    mount();
+    expect(el.querySelector('a.space-link').getAttribute('href')).toBe('#/security?tab=models');
   });
 
-  it('renders greeting without buttons when no messages', () => {
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    // No messages = empty greeting, no buttons in ChatView itself
-    const greeting = el.querySelector('.chat-home-greeting');
-    expect(greeting).toBeTruthy();
+  it('offers a new chat once there is one, through the sidebar button', () => {
+    messages = [{ role: 'user', text: 'Hi', to: ['gemini-2-5-flash'], v: 2 }];
+    const side = document.createElement('button');
+    side.id = 'side-chat-new';
+    const onNew = vi.fn();
+    side.addEventListener('click', onNew);
+    document.body.appendChild(side);
+    mount();
+    el.querySelector('[data-act="new"]').click();
+    expect(onNew).toHaveBeenCalledTimes(1);
   });
 
-  it('shows new chat button when messages exist', () => {
-    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-      { role: 'user', text: 'test', ts: Date.now() },
-    ]));
-    const el = document.getElementById('test-el');
-    ChatView.render(el);
-    const newBtn = el.querySelector('#chat-home-new');
-    expect(newBtn).toBeTruthy();
-  });
-
-  // Regression: signed-out cockpit on a shared browser was rendering the
-  // previous account's chat history straight from localStorage (observed on
-  // prod 2026-05-05). ChatView now gates the read on Utils.hasAuthSession.
-  describe('signed-out cache leak gate', () => {
-    it('suppresses chat history when Utils.hasAuthSession returns false', () => {
-      const original = Utils.hasAuthSession;
-      Utils.hasAuthSession = () => false;
-      try {
-        mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-          { role: 'user', text: 'leaked from prior account', ts: Date.now() },
-          { role: 'assistant', text: 'leaked reply', agent: 'NICE', ts: Date.now() },
-        ]));
-        const el = document.getElementById('test-el');
-        ChatView.render(el);
-        // Empty-state greeting renders, the leaked content does not.
-        expect(el.innerHTML).not.toContain('leaked from prior account');
-        expect(el.innerHTML).not.toContain('leaked reply');
-        expect(el.querySelector('#chat-home-new')).toBeNull();
-        expect(el.querySelector('.chat-home-greeting')).toBeTruthy();
-      } finally {
-        Utils.hasAuthSession = original;
-      }
+  describe('signed out', () => {
+    beforeEach(() => {
+      localStorage.removeItem('sb-test-auth-token');
+      State.set('user', null);
     });
+
+    it('still shows the free card, asks the visitor to sign in, and never shows a cached chat', () => {
+      messages = [
+        { role: 'user', text: 'leaked from prior account', to: ['gemini-2-5-flash'], v: 2 },
+        { role: 'assistant', text: 'leaked reply', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+      ];
+      Subscription.isPro = () => false;
+      mount();
+      expect(ids(el)).toEqual(['gemini-2-5-flash']);
+      expect(el.innerHTML).not.toContain('leaked');
+      expect(el.querySelector('.space-note').textContent).toContain('Sign in');
+      expect(el.querySelector('[data-act="new"]')).toBeNull();
+    });
+  });
+
+  it('stops listening on destroy', async () => {
+    mount();
+    ChatView.destroy();
+    const before = el.innerHTML;
+    SpaceCards.setLive('grok-4-3', { text: 'late' });
+    card(el, 'grok-4-3').querySelector('.space-card-body').click();
+    await frame();
+    expect(el.innerHTML).toBe(before);
+    expect(SpaceCards.selected()).toEqual(['gemini-2-5-flash']);
   });
 });

@@ -1072,8 +1072,8 @@ const NICE = (() => {
     _setActiveConvId(id);
     localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(conv.messages || []));
     _renderChatsList();
-    // Opened from the sidebar Chats list: reveal the conversation in the
-    // full-screen monitor (handles landing on #/ and the reveal ordering).
+    // Opened from the sidebar Chats list: show the conversation on Space,
+    // each model's thread on its card.
     if (openMonitor && typeof PromptPanel !== 'undefined' && PromptPanel._showConversation) {
       PromptPanel._showConversation();
       return;
@@ -1788,8 +1788,8 @@ const NICE = (() => {
   /* ── Register routes ── */
   function _initRoutes() {
     // Primary destinations (sidebar + mobile tab bar). Home is the NICE
-    // mark. Space is where the crew works (standalone chat until the card
-    // workspace lands), Ship is where finished work goes out, and Blueprints
+    // mark. Space is the workspace (a card per model, the prompt goes to the
+    // selected cards), Ship is where finished work goes out, and Blueprints
     // opens the Bridge's Blueprints tab until it gets its own view.
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
     Router.on('/space', ChatView);
