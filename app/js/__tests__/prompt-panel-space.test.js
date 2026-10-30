@@ -620,6 +620,18 @@ describe('PromptPanel._compareCardHTML (comparisons saved before cards)', () => 
   });
 });
 
+describe('The monitor and odd stored messages', () => {
+  it('opens on a stored comparison that has no text of its own', () => {
+    localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify([
+      { role: 'user', text: 'q', ts: 1 },
+      { role: 'assistant', type: 'compare', answers: [{ model: 'grok-4-3', label: 'Grok 4.3', text: 'B' }], ts: 4 },
+    ]));
+    PromptPanel._reload();
+    expect(() => PromptPanel.toggle()).not.toThrow();
+    expect(monitorOpen()).toBe(true);
+  });
+});
+
 describe('PromptPanel._md lists', () => {
   it('puts no line breaks between list items or under the list', () => {
     const html = PromptPanel._md('Ideas:\n\n- Morning ritual\n- Neighborhood\n\n1. One\n2. Two\n\nWant more?');

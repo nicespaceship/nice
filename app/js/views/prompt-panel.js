@@ -445,6 +445,9 @@ const PromptPanel = (() => {
 
   /* ── Parse [ACTION: label | route], [THEME: name], and [EXEC: action | params] from response text ── */
   function _parseActions(text) {
+    // Stored messages can lack text (an old comparison saved before it
+    // filled in); treat that as empty rather than break the monitor.
+    text = typeof text === 'string' ? text : '';
     const actions = [];
     const regex = /\[ACTION:\s*(.+?)\s*\|\s*(.+?)\s*\]/g;
     let match;
