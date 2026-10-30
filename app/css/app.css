@@ -77,7 +77,7 @@
   --fw-regular: 400;
   --fw-medium:  600;
   --fw-bold:    700;
-  --fw-black:   900;  /* brand wordmark only (Orbitron Black) — not for prose/UI */
+  --fw-black:   900;  /* NICE SPACESHIP wordmark only (Orbitron Black); not for prose/UI */
 
   /* ─── Card-scoped typography (visual artifacts, not prose) ──────
      Cards are TCG-style collectibles; the 11px prose floor does not
@@ -1249,7 +1249,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-rail-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-rail-btn .icon { width:24px; height:24px; }
-.side-rail-nice-logo { width:30px; height:30px; display:block; }
+/* The NICE mark is a 79:64 tile, so its logos size by height. */
+.side-rail-nice-logo { height:24px; width:auto; aspect-ratio:79/64; display:block; }
 .side-rail-expand .icon { transform:scaleX(-1); }
 
 /* Open header — NICE wordmark (Bridge CTA) on the left, theme toggle on
@@ -1269,10 +1270,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   transition:color .15s;
 }
 .side-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
-.side-brand-logo { width:26px; height:26px; display:block; flex-shrink:0; }
+.side-brand-logo { height:21px; width:auto; aspect-ratio:79/64; display:block; flex-shrink:0; }
 .side-brand-text {
-  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-black);
-  letter-spacing:var(--tracking-wordmark); text-transform:uppercase; line-height:1;
+  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps); text-transform:uppercase; line-height:1;
 }
 .side-theme-btn {
   display:flex; align-items:center; justify-content:center;
@@ -1828,7 +1829,7 @@ html:not([data-theme]) .app-main,
 }
 .mobile-bar-btn-nice:hover { color:var(--accent); opacity:.85; }
 .mobile-bar-nice-logo {
-  width:28px; height:28px; fill:currentColor; display:block;
+  height:22px; width:auto; aspect-ratio:79/64; fill:currentColor; display:block;
 }
 .app-mobile-bar .app-brand-text {
   font-family:var(--font-brand, var(--font-h)); font-size:var(--text-sm); font-weight:var(--fw-bold);

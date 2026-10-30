@@ -76,7 +76,7 @@
   --font-h:       'Inter', sans-serif;
   --font-b:       'Inter', sans-serif;
   --font-m:       'Fira Code', monospace;
-  --font-brand:   'Orbitron', sans-serif;
+  --font-brand:   'Figtree', 'Inter', sans-serif;  /* the NICE wordmark; NICE SPACESHIP keeps Orbitron */
   --radius:       10px;
   --scan:         0;
   --border-width: 1px;
