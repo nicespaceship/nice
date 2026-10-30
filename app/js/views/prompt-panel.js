@@ -1191,7 +1191,7 @@ const PromptPanel = (() => {
     if (/how many (agent|crew)/i.test(lower) || /agent count/i.test(lower)) {
       const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
       const slotted = _getSlottedAgents();
-      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''} in your fleet.${slotted.length ? ' ' + slotted.length + ' currently assigned to crew slots.' : ''}` };
+      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''}.${slotted.length ? ' ' + slotted.length + ' currently assigned to crew slots.' : ''}` };
     }
 
     if (/mission.*(running|active|progress|status)/i.test(lower) || /running mission/i.test(lower) || /how many mission/i.test(lower)) {
@@ -1371,8 +1371,9 @@ const PromptPanel = (() => {
     const genericSearch = lower.match(/^(?:find|search|search for|look for|look up)\s+(.+)/i);
     if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) return { type: 'search', response: _handleSearch(genericSearch[1].trim()) };
 
+    // Whole words only: "review", "preview" and "overview" are not "view".
     const navPrefixes = ['go to', 'take me to', 'open', 'show', 'show me', 'navigate to', 'switch to', 'view'];
-    const isNavRequest = navPrefixes.some(p => lower.startsWith(p) || lower.includes(p));
+    const isNavRequest = navPrefixes.some(p => new RegExp(`\\b${p.replace(/ /g, '\\s+')}\\b`).test(lower));
 
     // Authoring verbs → the specific builder/board command. These run BEFORE
     // the fuzzy nav resolve so "build an agent" opens the Builder rather than
@@ -1384,8 +1385,10 @@ const PromptPanel = (() => {
       return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
     // "build me a spaceship for my bakery" / "set up a project for my
     // business" → Crew Designer (describe → design → deploy), seeded with
-    // any business context already typed.
-    const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:spaceship|space\s?ship|ship|project|crew|team|fleet)\b(.*)$/i);
+    // any business context already typed. "project" counts only at the end
+    // or before for/to/around: "create a project plan" is a request for the
+    // model, not for a new crew.
+    const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:(?:spaceship|space\s?ship|ship|crew|team|fleet)\b|project(?=\s*[.!?]?\s*$|\s+(?:for|to|around)\b))(.*)$/i);
     if (shipBuild) {
       let seed = shipBuild[1].trim()
         .replace(/^(?:for|to|around)\s+/i, '')
@@ -1405,8 +1408,8 @@ const PromptPanel = (() => {
     if (/^(export|download)\s+(data|backup)/i.test(lower))
       return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
-    if (/^(pause|stop|disable)\s+(spaceship|ship|project)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_ship()} paused. All agents on standby.` };
-    if (/^(resume|start|enable|activate)\s+(spaceship|ship|project)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_ship()} resumed. Agents resuming operations.` };
+    if (/^(pause|stop|disable)\s+(?:(?:spaceship|ship)\b|project\s*[.!]?\s*$)/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_ship()} paused. All agents on standby.` };
+    if (/^(resume|start|enable|activate)\s+(?:(?:spaceship|ship)\b|project\s*[.!]?\s*$)/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_ship()} resumed. Agents resuming operations.` };
     if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
       return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
@@ -3958,5 +3961,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare, _detectIntent };
 })();

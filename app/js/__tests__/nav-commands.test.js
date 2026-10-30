@@ -131,7 +131,9 @@ describe('NavCommands', () => {
     it('matches singular/plural via substring (agents ↔ agent, ships ↔ spaceship)', () => {
       expect(NavCommands.resolve('agent').id).toBe('open-agents');
       expect(NavCommands.resolve('spaceships').id).toBe('open-shipyard');
-      expect(NavCommands.resolve('projects').id).toBe('open-shipyard');
+      // "project" is everyday business language, so it is not a nav keyword:
+      // a request about a project plan must reach the model.
+      expect(NavCommands.resolve('show me a sample project charter')).toBeNull();
     });
 
     it('ignores nav verbs and function words, scoring only content tokens', () => {
