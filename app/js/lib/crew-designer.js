@@ -166,7 +166,7 @@ const CrewDesigner = (() => {
     try {
       const proposal = await _callAI(_data.userPrompt);
       _data.proposal = proposal;
-      _data.shipName = proposal.spaceship?.name || `Custom ${Terminology.label('spaceship', { lowercase: true })}`;
+      _data.shipName = proposal.spaceship?.name || `Custom ${Terminology.label('spaceship')}`;
       _data.shipDescription = proposal.spaceship?.description || '';
       _data.shipCategory = proposal.spaceship?.category || 'Custom';
       _data.flowPattern = proposal.spaceship?.flow_pattern || 'sequential';
@@ -626,7 +626,7 @@ Rules:
 
       // shipData for local State/localStorage (full details)
       const shipData = {
-        name: _data.shipName || `Custom ${Terminology.label('spaceship', { lowercase: true })}`,
+        name: _data.shipName || `Custom ${Terminology.label('spaceship')}`,
         category: _data.shipCategory || 'Custom',
         description: _data.shipDescription || '',
         status: 'deployed',

@@ -1765,7 +1765,7 @@ const NICE = (() => {
       }
 
       const shipName = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship(shipId))
-        ? Blueprints.getSpaceship(shipId).name : `My ${Terminology.label('spaceship', { lowercase: true })}`;
+        ? Blueprints.getSpaceship(shipId).name : `My ${Terminology.label('spaceship')}`;
 
       const { ship: created } = await Blueprints.findOrCreateActiveShip(shipId, () => ({
         user_id: user.id,

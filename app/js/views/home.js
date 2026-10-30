@@ -59,7 +59,7 @@ const HomeView = (() => {
   function _status(needs, ships) {
     if (needs.length) return 'Here is what needs you.';
     if (ships.length) return 'Nothing needs you right now.';
-    return `Start with a chat, or put ${_a()} ${_ship({ lowercase: true })} to work for your business.`;
+    return `Start with a chat, or set up ${_a()} ${_ship({ lowercase: true })} for your business.`;
   }
 
   function render(el) {
