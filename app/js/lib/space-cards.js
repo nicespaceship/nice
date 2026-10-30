@@ -10,7 +10,8 @@
      prompt   { role:'user', to:['gemini-2-5-flash', 'grok-4-3'] }
      reply    { role:'assistant', modelId:'grok-4-3', model:'Grok 4.3' }
    Untagged messages are NICE's own replies (slash commands, navigation,
-   agent chats) and sit on no card. `v: 2` marks a message written in
+   agent chats, missions) and sit on no card: the prompt panel's monitor
+   shows them (offCard). `v: 2` marks a message written in
    this shape; tagLegacy() upgrades older single-thread conversations as
    they load, putting each reply in the card of the model that answered
    it, or the default card.
@@ -197,10 +198,12 @@ const SpaceCards = (() => {
     return null;
   }
 
-  // A reply from the old top-level chat: NICE answered on a model, or the
-  // model call failed. Agent chats and slash commands stay off the cards.
+  // A model's answer from the old top-level chat: NICE answered on a named
+  // model. Agent chats, slash commands, mission results and NICE's own
+  // error notes ("**Connection Error:**", "**Mission failed:**") stay with
+  // the monitor.
   function _wasModelReply(m) {
-    return m.role === 'assistant' && m.type !== 'compare' && m.agent === 'NICE' && !!(m.model || m.error);
+    return m.role === 'assistant' && m.type !== 'compare' && m.agent === 'NICE' && !!m.model && !m.error;
   }
 
   function tagLegacy(messages) {
@@ -226,11 +229,17 @@ const SpaceCards = (() => {
     return list;
   }
 
+  // NICE's own replies in a conversation: the ones no card shows.
+  function offCard(messages) {
+    return (messages || []).filter(m => m && (m.role === 'assistant' || m.role === 'system')
+      && !m.modelId && m.type !== 'compare');
+  }
+
   return {
     DEFAULT_MODEL, EVENT, VERSION,
     label, provider, poolLabel, planAllows, available,
     defaultSelection, selected, toggle,
     live, setLive, endLive, endAll, busy, changed,
-    threads, historyFor, idFromLabel, tagLegacy,
+    threads, historyFor, offCard, idFromLabel, tagLegacy,
   };
 })();

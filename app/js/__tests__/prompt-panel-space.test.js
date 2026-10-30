@@ -38,7 +38,7 @@ loadModule('lib/space-cards.js');
 loadModule('views/prompt-panel.js');
 
 globalThis.CoreReactor = { init() {}, setState() {} };
-globalThis.CoreVoice = { stop() {}, isSpeaking: () => false, isMuted: () => false, canSpeak: () => false };
+globalThis.CoreVoice = { stop() {}, isSpeaking: () => false, isMuted: () => false, canSpeak: () => false, getConfig: () => null };
 
 const ENABLED = { 'gemini-2-5-flash': true, 'grok-4-3': true, 'deepseek-v4-flash': true, 'claude-4-6-sonnet': true, 'nice-auto': true };
 
@@ -175,6 +175,56 @@ describe('Sending to the selected cards', () => {
 
 describe('Sending from the panel on Space', () => {
   beforeEach(() => { State.set('user', { id: 'u1', email: 'pilot@test.com' }); });
+  afterEach(() => { delete globalThis.Blueprints; delete globalThis.ShipLog; });
+
+  it("answers slash commands itself on the monitor, then hides it when a prompt goes to the cards", async () => {
+    send('/help');
+    expect(calls).toHaveLength(0);
+    expect(monitorOpen()).toBe(true);
+    const help = PromptPanel.messages().slice(-2);
+    expect(help[0].to).toBeUndefined();
+    expect(help[1].modelId).toBeUndefined();
+    send('Name my bakery');
+    expect(monitorOpen()).toBe(false);
+    await settled();
+    expect(calls.map(c => c.model)).toEqual(['gemini-2-5-flash']);
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash' });
+  });
+
+  it('keeps navigation with NICE', () => {
+    vi.useFakeTimers();
+    try {
+      send('create a mission');
+      expect(monitorOpen()).toBe(true);
+      // The reply lands after a short beat, then the command runs.
+      vi.advanceTimersByTime(1000);
+    } finally { vi.useRealTimers(); }
+    expect(PromptPanel.messages().slice(-1)[0].text).toContain('Opening Missions');
+    expect(calls).toHaveLength(0);
+    expect(PromptPanel.messages().some(m => m.to || m.modelId)).toBe(false);
+  });
+
+  it('keeps auto-missions with NICE', async () => {
+    send('write me a tagline');
+    expect(monitorOpen()).toBe(true);
+    await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0].text).toContain('Mission Created'));
+    expect(calls).toHaveLength(0);
+    expect(PromptPanel.messages().some(m => m.to || m.modelId)).toBe(false);
+  });
+
+  it('sends an @mention to the agent, not the cards', async () => {
+    localStorage.setItem(Utils.KEYS.mcShip, 's1');
+    State.set('spaceships', [{ id: 's1', slot_assignments: { 0: 'a1' } }]);
+    State.set('agents', [{ id: 'a1', name: 'Scout', config: { role: 'Research' } }]);
+    globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? { id: 'a1', name: 'Scout', config: {} } : null) };
+    globalThis.ShipLog = { execute: vi.fn(async () => ({ content: 'Found 3 leads', agent: 'Scout' })) };
+    send('@Scout find leads');
+    expect(monitorOpen()).toBe(true);
+    await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0].text).toBe('Found 3 leads'));
+    expect(ShipLog.execute).toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
+    expect(SpaceCards.offCard(PromptPanel.messages())).toHaveLength(1);
+  });
 
   it('frees the cards when the server error merely mentions an abort', async () => {
     globalThis.fetch = vi.fn(async (url, init) => {
@@ -213,6 +263,45 @@ describe('The "To …" label', () => {
     expect(document.getElementById('nice-ai-targets').hidden).toBe(true);
     expect(document.getElementById('nice-ai-model').hidden).toBe(false);
     expect(document.getElementById('nice-ai-compare')).toBeNull();
+  });
+});
+
+describe('Opening a stored conversation from the sidebar', () => {
+  const store = (msgs) => localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(msgs));
+
+  it("shows NICE's own replies on the monitor, over the cards", () => {
+    store([
+      { role: 'user', text: 'Name it', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'Rise & Co.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+      { role: 'user', text: '@Scout find leads', v: 2 },
+      { role: 'assistant', text: 'Found 3 leads', agent: 'Scout', v: 2 },
+    ]);
+    PromptPanel._showConversation();
+    expect(monitorOpen()).toBe(true);
+    expect(document.getElementById('nice-monitor-content').textContent).toContain('Found 3 leads');
+  });
+
+  it('opens straight onto the cards when every reply sits on one', () => {
+    store([
+      { role: 'user', text: 'Name it', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'Rise & Co.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ]);
+    PromptPanel._showConversation();
+    expect(monitorOpen()).toBe(false);
+    expect(SpaceCards.threads(PromptPanel.messages())['gemini-2-5-flash']).toHaveLength(1);
+  });
+
+  it('lands on Space from another page and keeps the monitor up', async () => {
+    // The full panel this time: its hashchange handler closes the monitor on
+    // navigation, except for the hop this open makes.
+    PromptPanel.destroy();
+    PromptPanel.init();
+    history.replaceState(null, '', '#/crew');
+    store([{ role: 'user', text: '/help', v: 2 }, { role: 'assistant', text: 'Slash commands', agent: null, v: 2 }]);
+    PromptPanel._showConversation();
+    expect(location.hash).toBe('#/space');
+    await new Promise(r => setTimeout(r, 0));
+    expect(monitorOpen()).toBe(true);
   });
 });
 

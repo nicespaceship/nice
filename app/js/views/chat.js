@@ -166,11 +166,15 @@ const ChatView = (() => {
     if (!ctx.signedIn) note = '<a href="#/profile">Sign in</a> to start chatting.';
     else if (!_isPro()) note = 'More models come with a plan. <a href="#/wallet">See plans</a>';
     else if (ctx.cards.length > 1) note = 'Select cards to choose which models answer.';
-    const hasChat = _messages().some(m => m && m.role === 'user');
+    const msgs = _messages();
+    const hasChat = msgs.some(m => m && m.role === 'user');
+    // NICE's own replies (agents, commands, missions) live on the monitor.
+    const hasNice = SpaceCards.offCard(msgs).length > 0;
     return `
       <div class="space-bar">
         <p class="space-note">${note}</p>
         <div class="space-bar-acts">
+          ${hasNice ? '<button type="button" class="space-link" data-act="full">Show full chat</button>' : ''}
           ${hasChat ? '<button type="button" class="space-link" data-act="new">New chat</button>' : ''}
           <a class="space-link" href="#/security?tab=models">Manage models</a>
         </div>
@@ -300,6 +304,10 @@ const ChatView = (() => {
       document.getElementById('side-chat-new')?.click();
       return;
     }
+    if (act === 'full') {
+      if (typeof PromptPanel !== 'undefined' && PromptPanel.toggle) PromptPanel.toggle();
+      return;
+    }
     const card = e.target.closest('.space-card');
     if (!card) return;
     const id = card.dataset.model;
@@ -344,6 +352,8 @@ const ChatView = (() => {
     _listen(_el, 'click', _onClick);
     _listen(document, SpaceCards.EVENT, _onCards);
     _listen(document, 'nice:theme-change', () => _queue('*'));
+    // Any message saved (a NICE reply too) can change the bar and the cards.
+    _listen(document, 'nice:chat-saved', () => _queue('*'));
     _listen(_el, 'scroll', _onScroll, { passive: true });
     _listen(window, 'resize', _anchorReactor);
     if (window.ResizeObserver) {

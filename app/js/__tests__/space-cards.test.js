@@ -157,14 +157,21 @@ describe('SpaceCards.tagLegacy', () => {
       { role: 'user', text: 'Hi' },
       { role: 'assistant', text: 'Hello', agent: 'NICE', model: 'NICE Auto → Grok 4.3' },
       { role: 'user', text: 'And you?' },
-      { role: 'assistant', text: 'Hey', agent: 'NICE', model: 'Gemini 2.5 Flash' },
+      { role: 'assistant', text: 'Hey', agent: 'NICE', model: 'Retired Model 1' },
+    ]);
+    expect(msgs.map(m => m.to || m.modelId)).toEqual([['grok-4-3'], 'grok-4-3', ['gemini-2-5-flash'], 'gemini-2-5-flash']);
+    expect(msgs.every(m => m.v === SpaceCards.VERSION)).toBe(true);
+  });
+
+  it("keeps NICE's own error notes off the cards", () => {
+    const msgs = SpaceCards.tagLegacy([
       { role: 'user', text: 'Again' },
       { role: 'assistant', text: '**Connection Error:** timeout', agent: 'NICE', error: true },
+      { role: 'user', text: 'write me a tagline' },
+      { role: 'assistant', text: '**Mission failed:** no agent [ACTION: Open missions | /missions]', agent: 'NICE', error: true },
     ]);
-    expect(msgs.map(m => m.to || m.modelId)).toEqual([
-      ['grok-4-3'], 'grok-4-3', ['gemini-2-5-flash'], 'gemini-2-5-flash', ['gemini-2-5-flash'], 'gemini-2-5-flash',
-    ]);
-    expect(msgs.every(m => m.v === SpaceCards.VERSION)).toBe(true);
+    expect(msgs.map(m => m.to || m.modelId)).toEqual([undefined, undefined, undefined, undefined]);
+    expect(SpaceCards.offCard(msgs).map(m => m.text.slice(0, 12))).toEqual(['**Connection', '**Mission fa']);
   });
 
   it('spreads an old comparison over its models and leaves agent chats and slash commands off the cards', () => {

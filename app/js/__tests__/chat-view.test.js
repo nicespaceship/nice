@@ -28,6 +28,7 @@ let messages = [];
 globalThis.PromptPanel = {
   messages: () => messages,
   _md: (t) => `<p>${Utils.esc(t)}</p>`,
+  toggle: vi.fn(),
 };
 globalThis.CoreReactor = { setVisible: vi.fn() };
 
@@ -178,6 +179,18 @@ describe('ChatView', () => {
     mount();
     el.querySelector('[data-act="new"]').click();
     expect(onNew).toHaveBeenCalledTimes(1);
+  });
+
+  it("links to the full chat while NICE's own replies are in it", async () => {
+    messages = [{ role: 'user', text: 'Hi', to: ['gemini-2-5-flash'], v: 2 }];
+    mount();
+    expect(el.querySelector('[data-act="full"]')).toBeNull();
+    messages.push({ role: 'user', text: '/help', v: 2 }, { role: 'assistant', text: 'Slash commands', agent: null, v: 2 });
+    document.dispatchEvent(new CustomEvent('nice:chat-saved'));
+    await frame();
+    el.querySelector('[data-act="full"]').click();
+    expect(PromptPanel.toggle).toHaveBeenCalledTimes(1);
+    expect(el.textContent).not.toContain('Slash commands');
   });
 
   describe('signed out', () => {

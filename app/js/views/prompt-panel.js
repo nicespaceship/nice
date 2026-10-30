@@ -110,6 +110,7 @@ const PromptPanel = (() => {
   let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
+  let _suppressMonitorAutoHide = false; // armed when opening a chat that also navigates to #/space
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
   let _onSpaceCards = null;  // SpaceCards selection listener (the "To …" label)
@@ -2270,6 +2271,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (attachments.length) userMsg.attachments = attachments;
     _messages.push(userMsg);
     _saveMessages();
+    // The replies land on the cards; a monitor left open by a slash command
+    // or an agent chat would sit on top of them.
+    _hideMonitor();
 
     const sendBtn = _panel?.querySelector('#nice-ai-send');
     _setSending(true);
@@ -3279,8 +3283,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       setTimeout(() => {
         if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
       }, 150);
-      // Auto-hide monitor when user navigates via sidebar
-      if (_isMonitorActive()) _hideMonitor();
+      // Auto-hide monitor when user navigates via sidebar — unless this
+      // hashchange is the one _showConversation() triggered to land on
+      // Space with NICE's replies already up.
+      if (_suppressMonitorAutoHide) _suppressMonitorAutoHide = false;
+      else if (_isMonitorActive()) _hideMonitor();
     };
     window.addEventListener('hashchange', _onHashChange);
 
@@ -3986,13 +3993,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   /* Open a stored conversation on Space, each model's thread on its card.
      Called by the sidebar Chats list after it writes the conversation to
-     STORAGE_KEY. */
+     STORAGE_KEY. When it also holds NICE's own replies (agents, commands,
+     missions), the monitor opens over the cards as before; Back returns to
+     the cards, and Space links back to the monitor while those replies exist. */
   function _showConversation() {
-    _hideMonitor();
-    if (window.location.hash === '#/space') { _reload(); return; }
-    _abortCards();
-    _loadMessages();
-    window.location.hash = '#/space'; // Router renders Space from the loaded messages
+    const onSpace = window.location.hash === '#/space';
+    if (onSpace) _reload();
+    else { _abortCards(); _loadMessages(); }
+    const niceReplies = typeof SpaceCards !== 'undefined' ? SpaceCards.offCard(_messages).length > 0 : _messages.length > 0;
+    if (!onSpace) {
+      _suppressMonitorAutoHide = niceReplies;
+      window.location.hash = '#/space'; // Router renders Space from the loaded messages
+    }
+    if (niceReplies) { _renderMonitor(); _showMonitor(true); }
+    else _hideMonitor();
   }
 
   // The current conversation, for Space's cards. Same auth gate as the store.
