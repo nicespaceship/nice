@@ -93,7 +93,8 @@ const ChatView = (() => {
   }
 
   function _exchangeHTML(id, ex, live, latest) {
-    const canRetry = latest && !live && !!ex.ask;
+    // Retry sends again, so it needs a signed-in user (PromptPanel checks too).
+    const canRetry = latest && !live && !!ex.ask && !!State.get('user');
     let replies = ex.replies.map(r => _replyHTML(id, r, canRetry && r.model === id && !!r.msg)).join('');
     if (live) {
       replies += live.text

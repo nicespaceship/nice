@@ -201,6 +201,17 @@ describe('ChatView', () => {
     expect(card(el, 'deepseek-v4-flash').querySelector('[data-act="retry"], .space-err a')).toBeNull();
   });
 
+  it('offers no Retry without a signed-in user', () => {
+    State.set('user', null);
+    messages = [
+      { role: 'user', text: 'Go', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'Provider timed out', modelId: 'gemini-2-5-flash', error: true, agent: 'NICE', v: 2 },
+    ];
+    mount();
+    expect(card(el, 'gemini-2-5-flash').textContent).toContain('Provider timed out');
+    expect(card(el, 'gemini-2-5-flash').querySelector('[data-act="retry"]')).toBeNull();
+  });
+
   it('streams quietly and tells screen readers once when a card answers', async () => {
     messages = [{ role: 'user', text: 'Go', to: ['gemini-2-5-flash'], v: 2 }];
     mount();

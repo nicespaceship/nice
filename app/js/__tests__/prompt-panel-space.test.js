@@ -168,6 +168,7 @@ describe('Sending to the selected cards', () => {
         ? { ok: false, status: 500, text: async () => JSON.stringify({ error: 'Provider timed out' }) }
         : { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Crumb Theory' }] }) };
     });
+    State.set('user', { id: 'u1' });
     PromptPanel._sendToCards('Name my bakery');
     await settled();
     expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ error: true, text: 'Provider timed out' });
@@ -178,6 +179,44 @@ describe('Sending to the selected cards', () => {
     expect(calls[1].model).toBe('gemini-2-5-flash');
     expect(calls[1].messages.map(m => m.role)).toEqual(['user']);
     expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(false);
+  });
+
+  it('retries a failed card while another card is still answering', async () => {
+    let releaseGrok;
+    let geminiCalls = 0;
+    globalThis.fetch = vi.fn((url, init) => {
+      const body = JSON.parse(init.body);
+      calls.push(body);
+      if (body.model === 'grok-4-3') return new Promise(r => { releaseGrok = r; });
+      return Promise.resolve(++geminiCalls === 1
+        ? { ok: false, status: 500, text: async () => JSON.stringify({ error: 'Provider blew up' }) }
+        : { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Gemini on retry' }] }) });
+    });
+    State.set('user', { id: 'u1' });
+    SpaceCards.toggle('grok-4-3');
+    PromptPanel._sendToCards('Name my bakery');
+    await vi.waitFor(() => expect(PromptPanel.messages().some(m => m.error)).toBe(true));
+    expect(SpaceCards.live('grok-4-3')).toBeTruthy();
+    expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(true);
+    await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0].text).toBe('Gemini on retry'));
+    // Grok is still out, so the panel stays locked.
+    expect(document.getElementById('nice-ai-send').disabled).toBe(true);
+    expect(PromptPanel.retryCard('grok-4-3')).toBe(false);
+    releaseGrok({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Grok, late' }] }) });
+    await settled();
+    expect(document.getElementById('nice-ai-send').disabled).toBe(false);
+  });
+
+  it('does not retry for a signed-out visitor', async () => {
+    globalThis.fetch = vi.fn(async (url, init) => {
+      calls.push(JSON.parse(init.body));
+      return { ok: false, status: 500, text: async () => JSON.stringify({ error: 'Provider blew up' }) };
+    });
+    PromptPanel._sendToCards('Name my bakery');
+    await settled();
+    State.set('user', null);
+    expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(false);
+    expect(calls).toHaveLength(1);
   });
 
   it('raises one billing toast for cards that share an empty pool', async () => {

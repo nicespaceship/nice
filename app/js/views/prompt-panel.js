@@ -2299,9 +2299,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   }
 
   // Ask one card again after its latest reply failed: the failed reply goes
-  // and the same prompt goes back out to that model alone.
+  // and the same prompt goes back out to that model alone. Other cards may
+  // still be answering; this one must be idle, and nothing outside the cards
+  // (an agent chat, a mission) may be in flight. Signed-out visitors can't
+  // send, so they can't retry either.
   function retryCard(id) {
-    if (_sending || typeof SpaceCards === 'undefined') return false;
+    if (typeof SpaceCards === 'undefined' || !State.get('user')) return false;
+    if (_cardCalls.has(id) || SpaceCards.live(id)) return false;
+    if (_sending && !_cardCalls.size) return false;
     const cards = SpaceCards.available();
     if (!cards.includes(id)) return false;
     const thread = SpaceCards.threads(_messages, cards)[id] || [];
@@ -2329,12 +2334,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const single = targets.length === 1;
     const caps = new Set(attachments.map(a => AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
     const billed = new Set();
-    let left = targets.length;
+    // Every target counts as in flight from here, in the module-wide map, so
+    // the panel unlocks only when the last card call ends, whichever send or
+    // retry it belongs to.
+    const ctrls = targets.map(id => {
+      const ctrl = new AbortController();
+      _cardCalls.set(id, ctrl);
+      return ctrl;
+    });
 
     targets.forEach((id, i) => {
+      const ctrl = ctrls[i];
       const finish = (reply) => {
         if (epoch !== _cardEpoch) return;
-        _cardCalls.delete(id);
+        if (_cardCalls.get(id) === ctrl) _cardCalls.delete(id);
         if (reply) {
           _messages.push(reply);
           // Cards speak for themselves (see _afterSingleReply); the monitor
@@ -2343,7 +2356,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _saveMessages();
         }
         SpaceCards.endLive(id, reply && reply.error ? 'failed' : 'answered');
-        if (--left === 0) {
+        if (!_cardCalls.size) {
           _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }
@@ -2356,8 +2369,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         return;
       }
 
-      const ctrl = new AbortController();
-      _cardCalls.set(id, ctrl);
       SpaceCards.setLive(id, { text: '' });
       const onChunk = (chunk) => {
         if (epoch !== _cardEpoch) return;
