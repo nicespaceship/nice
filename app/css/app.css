@@ -1598,9 +1598,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    indicator dots (--dot-* in theme.css). --mono / --mono-ink replace the
    colors views paint inline (rarity, category, provider): inline styles
    read `var(--mono, <color>)`, so only NICE defines them and every other
-   theme keeps its literal color. --tint works the same way for shared
-   hover washes. `:not([data-theme])` covers the paint
-   window before nice.js sets the attribute (see --app-surface below). */
+   theme keeps its literal color; --mono-line does the same for frames.
+   --tint works the same way for shared hover washes. `:not([data-theme])`
+   covers the paint window before nice.js sets the attribute (see
+   --app-surface below). */
 html:not([data-theme]),
 :is([data-theme="nice"],[data-theme="nice-dark"]) {
   --color-success:var(--text);
@@ -1612,6 +1613,7 @@ html:not([data-theme]),
   --on-accent:var(--bg);
   --mono:var(--text);
   --mono-ink:var(--bg);
+  --mono-line:var(--border-hi); /* decorative frames, e.g. a card's rarity border */
   --tint:color-mix(in srgb, var(--text) 6%, transparent); /* neutral hover/selected wash */
   --bg-pattern:none;
 }
@@ -1764,10 +1766,10 @@ html:not([data-theme]) .app-main,
    base card border is var(--border)=transparent in CORE, so the frame takes
    --border-hi to stay visible. Mythic's rainbow border animation stops. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.blueprint-card, .blueprint-card-grid, .blueprint-card-compact, .blueprint-card-mini, .bpl-row)[data-rarity] {
-  border-color:var(--border-hi); animation:none;
+  border-color:var(--mono-line); animation:none;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.blueprint-card, .blueprint-card-grid, .blueprint-card-compact)[data-rarity]::before { background:none; animation:none; }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity] .blueprint-card-art::after { border-color:var(--border-hi); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity] .blueprint-card-art::after { border-color:var(--mono-line); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mythic-badge-animated { animation:none; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.blueprint-card-art, .blueprint-card-grid-art, .blueprint-card-compact-art, .blueprint-card-mini-art) svg :is(circle, rect, path, polygon, ellipse)[fill]:not([fill="none"]) { fill:var(--text); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.blueprint-card-art, .blueprint-card-grid-art, .blueprint-card-compact-art, .blueprint-card-mini-art) svg [stroke]:not([stroke="none"]) { stroke:var(--text); }
@@ -1791,7 +1793,7 @@ html:not([data-theme]) .app-main,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .schematic-stack-row[data-status="recent"] .schematic-row-node { background:var(--dot-go); border-color:var(--dot-go); }
 /* Third-party integration logos render in grayscale. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .mcp-catalog-icon-svg { filter:grayscale(1); }
-:is([data-theme="nice"],[data-theme="nice-dark"]) :is(.rarity-mythic, .computing-inv-card[data-rarity]) { animation:none; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(.rarity-mythic, .computing-inv-card[data-rarity], .computing-inv-card[data-rarity]:hover) { animation:none; }
 /* Links in running text can't lean on color, so they are ink with an
    underline (WCAG 1.4.1). This also outranks component rules that drop the
    underline, like the sign-up modal's Terms and Privacy links. Native
@@ -3849,9 +3851,9 @@ html:not([data-theme]) .app-main,
 .mc-composer-intent:focus { outline:none; border-color:var(--border-hi); }
 .mc-composer-intent:disabled { opacity:.5; cursor:wait; }
 .mc-composer-error {
-  padding:10px 14px; border:1px solid var(--color-danger, #ef4444);
+  padding:10px 14px; border:1px solid var(--color-error);
   border-radius:var(--radius); font-size:var(--text-sm);
-  color:var(--color-danger, #ef4444);
+  color:var(--color-error);
   background:color-mix(in srgb, var(--color-error) 8%, transparent);
 }
 .mc-composer-actions {
@@ -9496,7 +9498,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-family:var(--font-m); font-size:var(--text-2xs); font-weight:var(--fw-bold);
   padding:2px 6px; border-radius:3px; line-height:1;
   border:1px solid transparent;
-  background:var(--crew-class-color, var(--text-muted)); color:#fff;
+  background:var(--mono, var(--crew-class-color, var(--text-muted))); color:var(--mono-ink, #fff);
 }
 .bp-drawer-crew-class-1 { --crew-class-color:#94a3b8; }
 .bp-drawer-crew-class-2 { --crew-class-color:#b6dff9; }

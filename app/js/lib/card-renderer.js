@@ -878,7 +878,7 @@ const CardRenderer = (() => {
       art = slotDiagramArt(artClassId, serial, slotOpts);
     }
 
-    return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:var(--mono, ${badgeColor})">
+    return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:var(--mono-line, ${badgeColor})">
       <span class="blueprint-card-mini-name">${name}</span>
       <div class="blueprint-card-mini-art">${art}</div>
       <span class="blueprint-card-mini-badge" style="background:var(--mono, ${badgeColor});color:var(--mono-ink, ${contrastText(badgeColor)})">${badgeLabel}</span>
