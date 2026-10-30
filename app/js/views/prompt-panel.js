@@ -1371,9 +1371,8 @@ const PromptPanel = (() => {
     const genericSearch = lower.match(/^(?:find|search|search for|look for|look up)\s+(.+)/i);
     if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) return { type: 'search', response: _handleSearch(genericSearch[1].trim()) };
 
-    // Whole words only: "review", "preview" and "overview" are not "view".
     const navPrefixes = ['go to', 'take me to', 'open', 'show', 'show me', 'navigate to', 'switch to', 'view'];
-    const isNavRequest = navPrefixes.some(p => new RegExp(`\\b${p.replace(/ /g, '\\s+')}\\b`).test(lower));
+    const isNavRequest = navPrefixes.some(p => lower.startsWith(p) || lower.includes(p));
 
     // Authoring verbs → the specific builder/board command. These run BEFORE
     // the fuzzy nav resolve so "build an agent" opens the Builder rather than
@@ -1414,6 +1413,11 @@ const PromptPanel = (() => {
       return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
       return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
+
+    // "Open projects" (a suggestion chip) opens the project blueprints.
+    // "project" is not a nav keyword, so this one phrasing is matched whole.
+    if (/^(?:open|show|go to|view)\s+(?:my\s+)?(?:projects|spaceships)\s*$/i.test(lower))
+      return _cmd('open-shipyard', { reply: `Opening ${_ship({ plural: true })}.`, isNav: true, navLabel: _ship({ plural: true }) });
 
     // Navigation — resolve against the registry. Only act when the phrasing
     // signals navigation (a nav verb) or the whole input is one word, so

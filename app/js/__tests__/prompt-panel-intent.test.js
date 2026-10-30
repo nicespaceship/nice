@@ -13,9 +13,13 @@ loadModule('lib/terminology.js');
 loadModule('lib/nav-commands.js');
 loadModule('views/prompt-panel.js');
 
+// Anything the panel acts on itself instead of asking the model: a nav or
+// designer command, or an auto-created mission.
 const handledByPanel = (text) => {
   const r = PromptPanel._detectIntent(text);
-  return r && (r.isNav || r.commandId === 'open-crew-designer') ? r.commandId : null;
+  if (!r) return null;
+  if (r.type === 'auto-mission') return 'auto-mission';
+  return r.isNav || r.commandId === 'open-crew-designer' ? r.commandId : null;
 };
 
 describe('PromptPanel._detectIntent', () => {
@@ -31,6 +35,10 @@ describe('PromptPanel._detectIntent', () => {
     'Preview the project announcement',
     'can you review this code',
     'Stop project creep on the redesign',
+    'Review my resume',
+    'Write a review of my bakery',
+    'Draft an overview of Q3 sales',
+    'Write an interview guide for designers',
   ])('sends "%s" to the model', (text) => {
     expect(handledByPanel(text)).toBeNull();
   });
@@ -43,6 +51,7 @@ describe('PromptPanel._detectIntent', () => {
     ['show me agents', 'open-agents'],
     ['open settings', 'open-settings'],
     ['go to missions', 'open-missions'],
+    ['Open projects', 'open-shipyard'],
   ])('handles "%s" itself', (text, commandId) => {
     expect(handledByPanel(text)).toBe(commandId);
   });
