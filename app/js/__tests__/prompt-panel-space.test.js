@@ -298,7 +298,7 @@ describe('Sending from the panel on Space', () => {
       expect(monitorOpen()).toBe(false);
       expect(document.querySelector('.monitor-approval')).toBeNull();
       expect(run).not.toHaveBeenCalled();
-      SpaceCards.answer(id, true);
+      SpaceCards.answer(id, true, SpaceCards.approval(id).token);
       await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: id, note: true, text: '**Done:** Mission created: Write a tagline' }));
       expect(run).toHaveBeenCalledTimes(1);
       expect(SpaceCards.approval(id)).toBeNull();
@@ -307,10 +307,27 @@ describe('Sending from the panel on Space', () => {
     it('records a denial on the card and runs nothing', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
-      SpaceCards.answer(id, false);
+      SpaceCards.answer(id, false, SpaceCards.approval(id).token);
       await vi.waitFor(() => expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: id, note: true }));
       expect(PromptPanel.messages().slice(-1)[0].text).toContain('Cancelled');
       expect(run).not.toHaveBeenCalled();
+    });
+
+    it('answers only the request the buttons were drawn for (a double click runs one command)', async () => {
+      globalThis.fetch = vi.fn(async (url, init) => {
+        calls.push(JSON.parse(init.body));
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Two. [EXEC: create_mission | First one] [EXEC: create_mission | Second one]' }] }) };
+      });
+      send('Plan two things');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      const first = SpaceCards.approval(id).token;
+      expect(SpaceCards.answer(id, true, first)).toBe(true);
+      await vi.waitFor(() => expect(SpaceCards.approval(id)?.input).toEqual({ title: 'Second one' }));
+      // The second click of the double click still carries the first token.
+      expect(SpaceCards.answer(id, true, first)).toBe(false);
+      await new Promise(r => setTimeout(r, 0));
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(SpaceCards.approval(id)).toBeTruthy();
     });
 
     it('drops the question when the chat is cleared', async () => {

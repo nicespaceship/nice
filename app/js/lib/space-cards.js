@@ -114,32 +114,38 @@ const SpaceCards = (() => {
     _live.clear();
     ids.forEach(id => _emit({ kind: 'live', model: id }));
     // The conversation changed: nothing left on screen to approve against.
-    [..._approvals.keys()].forEach(id => answer(id, false));
+    [..._approvals.entries()].forEach(([id, a]) => answer(id, false, a.token));
   }
   function busy() { return _live.size > 0; }
 
   /* ── Approvals: a card waiting for the user's OK before NICE runs a
      command its reply asked for ([EXEC] in review mode). The card shows
-     Approve / Deny; the answer resolves the promise the command waits on. */
-  const _approvals = new Map(); // id → { action, resolve }
+     Approve / Deny; the answer resolves the promise the command waits on.
+     Each request carries a token the buttons echo back, so an answer only
+     settles the request it was shown for: the second click of a double
+     click can't approve the next command in the queue. */
+  const _approvals = new Map(); // id → { action, resolve, token }
+  let _approvalSeq = 0;
   function requestApproval(id, action) {
     return new Promise(resolve => {
       const earlier = _approvals.get(id);
       if (earlier) earlier.resolve(false);
-      _approvals.set(id, { action, resolve });
+      _approvals.set(id, { action, resolve, token: ++_approvalSeq });
       _emit({ kind: 'approval', model: id });
     });
   }
+  // The pending request: { tool, input, token }, or null.
   function approval(id) {
     const a = _approvals.get(id);
-    return a ? a.action : null;
+    return a ? { ...a.action, token: a.token } : null;
   }
-  function answer(id, ok) {
+  function answer(id, ok, token) {
     const a = _approvals.get(id);
-    if (!a) return;
+    if (!a || a.token !== token) return false;
     _approvals.delete(id);
     a.resolve(!!ok);
     _emit({ kind: 'approval', model: id });
+    return true;
   }
   // A card's thread changed outside a live reply (a note joined it).
   function changed(id) { _emit({ kind: 'thread', model: id }); }

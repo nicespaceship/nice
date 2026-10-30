@@ -125,8 +125,8 @@ const ChatView = (() => {
         <p class="space-approval-title" id="${Utils.escAttr(titleId)}">${_esc(action.tool || 'This action')} needs your approval.</p>
         ${detail ? `<p class="space-approval-detail">${_esc(detail.length > 160 ? detail.slice(0, 157) + '…' : detail)}</p>` : ''}
         <div class="space-approval-acts">
-          <button type="button" class="space-approve" data-act="approve">Approve</button>
-          <button type="button" class="space-deny" data-act="deny">Deny</button>
+          <button type="button" class="space-approve" data-act="approve" data-token="${Utils.escAttr(String(action.token))}">Approve</button>
+          <button type="button" class="space-deny" data-act="deny" data-token="${Utils.escAttr(String(action.token))}">Deny</button>
         </div>
       </div>`;
   }
@@ -370,7 +370,8 @@ const ChatView = (() => {
       return;
     }
     if (act === 'toggle') { SpaceCards.toggle(id); return; }
-    if (act === 'approve' || act === 'deny') { SpaceCards.answer(id, act === 'approve'); return; }
+    // The token ties the click to the request these buttons were drawn for.
+    if (act === 'approve' || act === 'deny') { SpaceCards.answer(id, act === 'approve', Number(actEl.dataset.token)); return; }
     if (act === 'retry') {
       if (typeof PromptPanel !== 'undefined' && PromptPanel.retryCard) PromptPanel.retryCard(id);
       return;

@@ -170,8 +170,16 @@ describe('ChatView', () => {
     expect(box.textContent).toContain('Write <b>a</b> tagline');
     expect(box.querySelector('b')).toBeNull();
     expect(card(el, 'gemini-2-5-flash').querySelector('.space-dot').dataset.dot).toBe('busy');
-    box.querySelector('[data-act="approve"]').click();
+    const approve = box.querySelector('[data-act="approve"]');
+    approve.click();
     await expect(asked).resolves.toBe(true);
+    // A second click on the same button, after the next command asked, is
+    // not an answer to that command.
+    const next = SpaceCards.requestApproval('gemini-2-5-flash', { tool: 'Create Mission', input: { title: 'Second' } });
+    approve.click();
+    expect(SpaceCards.approval('gemini-2-5-flash')).toMatchObject({ input: { title: 'Second' } });
+    SpaceCards.answer('gemini-2-5-flash', false, SpaceCards.approval('gemini-2-5-flash').token);
+    await expect(next).resolves.toBe(false);
     await frame();
     expect(card(el, 'gemini-2-5-flash').querySelector('.space-approval')).toBeNull();
     // Selecting text or reading doesn't count: the click went to the button only.
