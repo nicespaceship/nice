@@ -25,6 +25,9 @@
 const CoreReactor = (() => {
   const ID = 'jv-pp-reactor';
   let _audioCtx = null, _src = null, _analyser = null, _data = null, _rafId = null;
+  // What the current view asked for. The reactor actually shows only when
+  // the active theme has one, so a theme switch can re-evaluate it.
+  let _wantVisible = false;
 
   function _el() { return document.getElementById(ID); }
 
@@ -51,16 +54,26 @@ const CoreReactor = (() => {
     return el;
   }
 
+  // A theme opts out with `reactor:false` (NICE) or by registering none.
+  function _hasReactor(theme) {
+    return !!(theme && theme.reactor && typeof theme.reactor.html === 'function');
+  }
+
+  function _applyVisible() {
+    document.documentElement.classList.toggle('reactor-visible', _wantVisible && _hasReactor(_activeTheme()));
+  }
+
   /**
    * Re-render the reactor markup from the active theme's `reactor.html()`.
-   * Themes without a registered reactor leave the element empty (and CSS
-   * hides it via `display:none` inheritance from `.jv-pp-reactor`).
+   * Themes without a reactor leave the element empty and keep it hidden.
+   * Theme.set calls this on every switch, so visibility is re-evaluated
+   * here too: HAL → NICE hides the reactor, NICE → HAL brings it back.
    */
   function paint() {
     const el = mount();
     const theme = _activeTheme();
-    const fn = theme && theme.reactor && theme.reactor.html;
-    el.innerHTML = (typeof fn === 'function') ? fn() : '';
+    el.innerHTML = _hasReactor(theme) ? theme.reactor.html() : '';
+    _applyVisible();
   }
 
   function setState(state) {
@@ -193,11 +206,13 @@ const CoreReactor = (() => {
   /**
    * Toggle reactor visibility globally. Default is hidden (see CSS base
    * rule on `.jv-pp-reactor`); views that want the reactor as their
-   * centerpiece (Home / Schematic / SpaceshipDetail) opt in on render.
+   * centerpiece (Space / Schematic / SpaceshipDetail) opt in on render.
    * Router default-hides on every route change so there's no leakage.
+   * A theme without a reactor (NICE) never shows it, whatever the view asks.
    */
   function setVisible(visible) {
-    document.documentElement.classList.toggle('reactor-visible', !!visible);
+    _wantVisible = !!visible;
+    _applyVisible();
   }
 
   return { init, mount, paint, setState, setVol, attachAnalyser, detachAnalyser, setVisible };

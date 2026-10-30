@@ -22,9 +22,11 @@ const Theme = (() => {
     // NICE — the default theme. Monochrome: black, white and grays only;
     // color appears only as indicator dots (--dot-* in theme.css). --accent
     // is ink, so CTAs, active nav and selection read black on white.
+    // `reactor:false` keeps the centerpiece reactor off (CoreReactor never
+    // shows it while a reactor-less theme is active).
     { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#0a0a0a', preview:['#ffffff','#0a0a0a','#a3a3a3'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#0a0a0a','--accent2':'#262626','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
-      reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
+      reactor:false,
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
@@ -37,7 +39,7 @@ const Theme = (() => {
     // keeps it out of the main dock row.
     { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#fafafa', preview:['#0a0a0a','#fafafa','#737373'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#fafafa','--accent2':'#e5e5e5','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
-      reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
+      reactor:false,
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
@@ -286,7 +288,8 @@ const Theme = (() => {
     if (typeof Terminology !== 'undefined' && Terminology.applyDOM) Terminology.applyDOM();
     document.dispatchEvent(new CustomEvent('nice:theme-change', { detail: { theme: name } }));
     // Repaint the centerpiece reactor with the new theme's markup. Themes
-    // without a registered `reactor` clear it (CoreReactor handles both).
+    // without a reactor (`reactor:false`, e.g. NICE) clear it and hide it,
+    // and the next theme with one shows it again (CoreReactor handles all).
     if (typeof CoreReactor !== 'undefined' && CoreReactor.paint) CoreReactor.paint();
     // Stop any in-flight TTS so the prior theme's voice doesn't keep talking
     // after the user swaps. Speech for the new theme will start fresh on the
