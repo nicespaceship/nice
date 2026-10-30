@@ -505,6 +505,20 @@ describe('PromptPanel._compareCardHTML (comparisons saved before cards)', () => 
   });
 });
 
+describe('PromptPanel._md lists', () => {
+  it('puts no line breaks between list items or under the list', () => {
+    const html = PromptPanel._md('Ideas:\n\n- Morning ritual\n- Neighborhood\n\n1. One\n2. Two\n\nWant more?');
+    expect(html).toContain('<ul><li>Morning ritual</li><li>Neighborhood</li></ul>');
+    expect(html).toContain('<ol><li class="monitor-ol-item">One</li><li class="monitor-ol-item">Two</li></ol>');
+    expect(html).not.toMatch(/<\/(ul|ol)><br>/);
+    expect(html).toContain('Want more?');
+  });
+
+  it('keeps line breaks in ordinary text', () => {
+    expect(PromptPanel._md('Line one\nLine two')).toBe('<p>Line one<br>Line two</p>');
+  });
+});
+
 describe('PromptPanel._contentText', () => {
   it('joins the text parts of nice-ai content', () => {
     expect(PromptPanel._contentText([{ type: 'text', text: 'Hello ' }, { type: 'image', url: 'x' }, { type: 'text', text: 'there' }])).toBe('Hello there');

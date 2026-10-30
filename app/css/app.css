@@ -5721,8 +5721,6 @@ html:has(.space-reactor) .jv-pp-reactor {
 .space-reply ul,
 .space-reply ol { margin:6px 0; padding-left:18px; }
 .space-reply li { margin-bottom:2px; }
-/* _md turns the newlines between list items into <br>; the items already break. */
-.space-reply :is(ul, ol) > br { display:none; }
 .space-reply .monitor-h { margin:10px 0 4px; font-size:var(--text-sm); color:var(--text); }
 .space-reply .monitor-code-block { padding:8px 10px; font-size:var(--text-xs); }
 .space-reply.is-note { font-size:var(--text-xs); color:var(--text-muted); }

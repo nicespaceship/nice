@@ -164,10 +164,13 @@ const PromptPanel = (() => {
     s = s.replace(/^#\s+(.+)$/gm, '<h3 class="monitor-h">$1</h3>');
     // Numbered lists: 1. text, 2. text, etc.
     s = s.replace(/^\d+\.\s+(.+)$/gm, '<li class="monitor-ol-item">$1</li>');
-    s = s.replace(/(<li class="monitor-ol-item">.*<\/li>\n?)+/g, (m) => '<ol>' + m + '</ol>');
+    // The newlines between items go, or the <br> pass below puts a blank
+    // line between every item (and one under the list).
+    s = s.replace(/(<li class="monitor-ol-item">.*<\/li>\n?)+/g, (m) => '<ol>' + m.replace(/\n/g, '') + '</ol>');
     // Bullet lists: lines starting with - or •
     s = s.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>(?:(?!class=).)*<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>');
+    s = s.replace(/(<li>(?:(?!class=).)*<\/li>\n?)+/g, (m) => '<ul>' + m.replace(/\n/g, '') + '</ul>');
+    s = s.replace(/(<\/(?:ul|ol)>)\n(?!\n)/g, '$1');
     // Paragraphs: double newlines
     s = s.replace(/\n{2,}/g, '</p><p>');
     // Single newlines → <br>
