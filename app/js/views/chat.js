@@ -22,6 +22,7 @@ const ChatView = (() => {
   let _anchored = false;         // this view set --reactor-x/y on <html>
   let _said = [];                // screen-reader lines waiting for the next frame
   const _drawn = new Map();      // card id → the markup it shows now ('bar' too)
+  let _status = null;            // the screen-reader status line (on <body>)
 
   /* ── Data ── */
   function _messages() {
@@ -336,12 +337,13 @@ const ChatView = (() => {
 
   /* Screen readers: #app-view is a polite live region, and redrawing a
      streaming card every frame would read it out over and over. The cards
-     sit in an aria-live="off" wrapper instead, and this status line says
-     once what happened: a card answered, failed, or needs an approval. */
+     sit in an aria-live="off" wrapper instead, and one status line says
+     once what happened: a card answered, failed, or needs an approval. The
+     line lives on <body>, outside #app-view, so no outer live region
+     announces it a second time. */
   function _speak() {
-    const status = _el && _el.querySelector('.space-status');
-    if (!status || !_said.length) return;
-    status.textContent = _said.join(' ');
+    if (!_status || !_said.length) return;
+    _status.textContent = _said.join(' ');
     _said = [];
   }
 
@@ -451,7 +453,14 @@ const ChatView = (() => {
     if (_el !== el) _expanded.clear();
     _el = el;
     _said = [];
-    el.innerHTML = '<div class="space" aria-live="off"></div><p class="space-status sr-only" role="status"></p>';
+    el.innerHTML = '<div class="space" aria-live="off"></div>';
+    if (!_status || !_status.isConnected) {
+      _status = document.createElement('p');
+      _status.id = 'space-status';
+      _status.className = 'sr-only';
+      _status.setAttribute('role', 'status');
+      document.body.appendChild(_status);
+    }
     _paint();
     _bind();
   }
@@ -459,6 +468,7 @@ const ChatView = (() => {
   function destroy() {
     _unbind();
     _releaseReactor();
+    if (_status) { _status.remove(); _status = null; }
     _expanded.clear();
     _el = null;
   }

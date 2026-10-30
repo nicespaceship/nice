@@ -216,8 +216,12 @@ describe('ChatView', () => {
     messages = [{ role: 'user', text: 'Go', to: ['gemini-2-5-flash'], v: 2 }];
     mount();
     expect(el.querySelector('.space').getAttribute('aria-live')).toBe('off');
-    const status = el.querySelector('.space-status');
+    // The status line sits outside the view (a polite live region in the
+    // app), so it is announced once, by itself.
+    const status = document.getElementById('space-status');
     expect(status.getAttribute('role')).toBe('status');
+    expect(el.contains(status)).toBe(false);
+    expect(status.parentElement).toBe(document.body);
     SpaceCards.setLive('gemini-2-5-flash', { text: 'Half' });
     await frame();
     expect(card(el, 'gemini-2-5-flash').getAttribute('aria-busy')).toBe('true');
@@ -314,6 +318,7 @@ describe('ChatView', () => {
   it('stops listening on destroy', async () => {
     mount();
     ChatView.destroy();
+    expect(document.getElementById('space-status')).toBeNull();
     const before = el.innerHTML;
     SpaceCards.setLive('grok-4-3', { text: 'late' });
     card(el, 'grok-4-3').querySelector('.space-card-body').click();
