@@ -1,6 +1,6 @@
 /**
  * HomeView tests
- * Home (#/) leads with what needs the user, then their spaceships, then the
+ * Home (#/) leads with what needs the user, then their projects, then the
  * two ways to start. Counts come from AlertCounts; ships from
  * Blueprints.getUserShips.
  */
@@ -33,11 +33,15 @@ globalThis.Utils = {
   },
 };
 
+// Stub vocabulary mirrors the default look: a spaceship reads as "Project".
+const _NOUNS = { mission: ['Mission', 'Missions'], spaceship: ['Project', 'Projects'] };
 globalThis.Terminology = {
   label: (noun, opts = {}) => {
-    const word = opts.plural ? 'Missions' : 'Mission';
+    const [one, many] = _NOUNS[noun] || [noun, noun + 's'];
+    const word = opts.plural ? many : one;
     return opts.lowercase ? word.toLowerCase() : word;
   },
+  article: () => 'a',
 };
 
 let counts = {};
@@ -110,13 +114,15 @@ describe('HomeView', () => {
   it('does not repeat the name when the category matches it', () => {
     ships = [{ id: 'b', name: 'Bakery', category: 'Bakery' }];
     HomeView.render(el);
-    expect(el.querySelector('.home-ship-meta').textContent).toBe('Spaceship');
+    expect(el.querySelector('.home-ship-meta').textContent).toBe('Project');
   });
 
   it('offers Blueprints when the user has no spaceship', () => {
     HomeView.render(el);
     expect(el.querySelector('.home-ship')).toBeNull();
     expect(el.querySelector('.home-empty a').getAttribute('href')).toBe('#/blueprints?tab=spaceship');
+    expect(el.querySelector('.home-empty a').textContent).toBe('Choose a project');
+    expect(el.querySelector('#home-ships-title').textContent).toBe('Your projects');
   });
 
   it('escapes spaceship names', () => {

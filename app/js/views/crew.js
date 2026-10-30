@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Crew (#/crew, #/crew?ship=<id>)
-   One spaceship's crew as a table of cards. Each card shows who the agent
+   One project's (spaceship's) crew as a table of cards. Each card shows who the agent
    is, the model it runs on (the frame takes that provider's color), the
    tools it works through, what it is doing right now, its latest exchange,
    and a box to message it directly. Beside the cards: the ship's recent
@@ -139,13 +139,15 @@ const CrewView = (() => {
   }
 
   function _emptyHTML() {
+    const ship = _esc(Terminology.label('spaceship', { lowercase: true }));
+    const a = Terminology.article('spaceship');
     return `
       <div class="crew-wrap">
         <div class="widget-card crew-empty">
-          <h1>No spaceship yet</h1>
-          <p>A spaceship is a crew of AI agents built for one kind of business. Pick one from Blueprints and its crew shows up here.</p>
+          <h1>No ${ship} yet</h1>
+          <p>${a === 'an' ? 'An' : 'A'} ${ship} gives you a crew of AI agents built for one kind of business. Pick one from Blueprints and its crew shows up here.</p>
           <div class="crew-empty-acts">
-            <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Find a spaceship</a>
+            <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Choose ${a} ${ship}</a>
             <a class="btn btn-sm" href="#/space">Ask anything instead</a>
           </div>
         </div>
@@ -164,7 +166,8 @@ const CrewView = (() => {
     if (!_shipId) { el.innerHTML = _emptyHTML(); return; }
 
     const ship = Blueprints.getUserShips().find(s => String(s.id) === String(_shipId)) || {};
-    const shipName = ship.name || 'Spaceship';
+    const shipNoun = Terminology.label('spaceship');
+    const shipName = ship.name || shipNoun;
     _crew = Blueprints.getShipCrew(_shipId);
     const staffed = _crew.filter(m => m.agent);
     const models = new Set(staffed.map(m => _modelId(m.agent)));
@@ -176,7 +179,7 @@ const CrewView = (() => {
         <header class="crew-head">
           <span class="crew-ship-mark" aria-hidden="true">${_esc(Utils.initials(shipName))}</span>
           <div class="crew-head-text">
-            <p class="crew-eyebrow">Spaceship</p>
+            <p class="crew-eyebrow">${_esc(shipNoun)}</p>
             <h1>${_esc(shipName)}</h1>
             <p>${_esc(staffed.length + (staffed.length === 1 ? ' agent' : ' agents') + ' on ' + models.size + (models.size === 1 ? ' model' : ' models') + (open ? ', ' + open + (open === 1 ? ' open station' : ' open stations') : ''))}</p>
           </div>

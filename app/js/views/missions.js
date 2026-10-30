@@ -263,7 +263,7 @@ const MissionsView = (() => {
         const delBtn = e.target.closest('.mc-card-delete');
         if (!delBtn) return;
         const missionId = delBtn.dataset.id;
-        if (!confirm(`Delete this ${_Nl()}? This also removes all associated ship-log entries and cannot be undone.`)) return;
+        if (!confirm(`Delete this ${_Nl()}? This also removes all associated log entries and cannot be undone.`)) return;
         delBtn.disabled = true;
         _selected.delete(missionId);
         _renderBatchBar();
@@ -440,7 +440,7 @@ const MissionsView = (() => {
     `;
     bar.querySelector('.mc-batch-delete')?.addEventListener('click', async () => {
       const n = _selected.size;
-      if (!confirm(`Delete ${n} ${_Nl()}${n === 1 ? '' : 's'}? This also removes all associated ship-log entries and cannot be undone.`)) return;
+      if (!confirm(`Delete ${n} ${_Nl()}${n === 1 ? '' : 's'}? This also removes all associated log entries and cannot be undone.`)) return;
       const ids = Array.from(_selected);
       _selected.clear();
       _renderBatchBar();
@@ -606,7 +606,9 @@ const MissionsView = (() => {
       const spaceships = State.get('spaceships') || [];
       const spaceshipId = spaceships[0]?.id;
       if (isReal && !spaceshipId) {
-        errEl.textContent = 'Activate a Spaceship first — Missions always run on a Ship.';
+        const ship = Terminology.label('spaceship', { lowercase: true });
+        const a = Terminology.article('spaceship');
+        errEl.textContent = `Activate ${a} ${ship} first. ${_Np()} always belong to ${a} ${ship}.`;
         btn.disabled = false; btn.textContent = `Create ${_N()}`;
         return;
       }

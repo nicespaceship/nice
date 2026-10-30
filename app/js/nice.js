@@ -19,7 +19,7 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
+    { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'0 0 0 1px rgba(15,82,186,0.06)','--glow-hi':'0 0 12px rgba(15,82,186,0.08)','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
@@ -31,7 +31,7 @@ const Theme = (() => {
     // surfaces flip to near-black. Pairs with the moon/sun toggle in the HUD
     // dock — `Theme.toggleDarkLight` swaps nice ↔ nice-dark, same pattern as
     // office ↔ office-dark. builtin:false keeps it out of the main dock row.
-    { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
+    { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'0 0 0 1px rgba(15,82,186,0.12)','--glow-hi':'0 0 12px rgba(15,82,186,0.18)','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
@@ -944,24 +944,29 @@ const NICE = (() => {
      One link per spaceship the user runs (catalog activations plus Crew
      Designer ships, the same set the crew view's picker offers), each
      opening that ship's crew view. Router skips these links (their href
-     carries ?ship=), so this module highlights the one on screen. */
+     carries ?ship=), so this module highlights the one on screen. The
+     heading and the add link read the noun from Terminology ("Projects"
+     in the default look), so the list redraws on theme change. */
   function _renderSidebarShips() {
     const el = document.getElementById('side-ships');
     if (!el) return;
     const esc = Utils.esc;
     const ships = (typeof Blueprints !== 'undefined' && Blueprints.getUserShips) ? Blueprints.getUserShips() : [];
+    const noun = Terminology.label('spaceship');
+    const nounLower = Terminology.label('spaceship', { lowercase: true });
+    const addLabel = ships.length ? `New ${nounLower}` : `Add ${Terminology.article('spaceship')} ${nounLower}`;
     el.innerHTML = `
-      <div class="sidebar-section-label">Spaceships<span class="nav-alert-dot" id="side-ships-alert-dot" hidden></span></div>
+      <div class="sidebar-section-label">${esc(Terminology.label('spaceship', { plural: true }))}<span class="nav-alert-dot" id="side-ships-alert-dot" hidden></span></div>
       ${ships.map(s => {
-        const name = s.name || 'Spaceship';
+        const name = s.name || noun;
         return `<a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${esc(s.id)}" title="${esc(name)}">
           <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(name))}</b>
           <span>${esc(name)}</span>
         </a>`;
       }).join('')}
-      <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${ships.length ? 'New spaceship' : 'Get a spaceship'}">
+      <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${esc(addLabel)}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
-        <span>${ships.length ? 'New spaceship' : 'Get a spaceship'}</span>
+        <span>${esc(addLabel)}</span>
       </a>`;
     _highlightSidebarShip();
     _updateAlertIndicators();
@@ -982,6 +987,7 @@ const NICE = (() => {
     _renderSidebarShips();
     State.on('spaceships', _renderSidebarShips);
     State.on('user', _renderSidebarShips);
+    document.addEventListener('nice:theme-change', _renderSidebarShips);
     window.addEventListener('nice:navsync', _highlightSidebarShip);
     window.addEventListener('storage', (e) => { if (e.key === Utils.KEYS.mcShip) _highlightSidebarShip(); });
   }
@@ -1759,7 +1765,7 @@ const NICE = (() => {
       }
 
       const shipName = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship(shipId))
-        ? Blueprints.getSpaceship(shipId).name : 'My Ship';
+        ? Blueprints.getSpaceship(shipId).name : `My ${Terminology.label('spaceship', { lowercase: true })}`;
 
       const { ship: created } = await Blueprints.findOrCreateActiveShip(shipId, () => ({
         user_id: user.id,

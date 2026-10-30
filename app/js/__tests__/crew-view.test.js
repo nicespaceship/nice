@@ -75,6 +75,8 @@ describe('CrewView', () => {
     CrewView.render(el);
     expect(el.querySelector('.crew-empty a[href="#/blueprints?tab=spaceship"]')).not.toBeNull();
     expect(el.querySelector('.crew-card')).toBeNull();
+    expect(el.querySelector('.crew-empty h1').textContent).toBe('No project yet');
+    expect(el.querySelector('.crew-empty a.btn-primary').textContent).toBe('Choose a project');
   });
 
   it('renders one card per crew member, framed in its provider color', () => {
