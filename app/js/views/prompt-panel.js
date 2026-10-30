@@ -2290,6 +2290,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
     // Each card's history is read before this prompt joins the conversation.
     const threads = targets.map(id => SpaceCards.historyFor(_messages, id, cards));
+    // A card still waiting on an approval moves on: the command it asked
+    // about is skipped, and says so under the reply that asked.
+    targets.forEach(id => {
+      const pending = SpaceCards.approval(id);
+      if (pending) SpaceCards.answer(id, 'skipped', pending.token);
+    });
     const userMsg = { role: 'user', text, ts: Date.now(), to: targets.slice(), v: SpaceCards.VERSION };
     if (attachments.length) userMsg.attachments = attachments;
     _messages.push(userMsg);
@@ -2407,12 +2413,35 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const epoch = _cardEpoch;
     // A command that needs the user's OK asks on this card, beside the reply
     // that requested it, rather than on the monitor behind the cards.
-    const askOnCard = (action) => SpaceCards.requestApproval(id, action);
-    for (const ex of execs) {
+    let skipped = false;
+    const askOnCard = async (action) => {
+      const answer = await SpaceCards.requestApproval(id, action);
+      if (answer === 'skipped') { skipped = true; return false; }
+      return answer;
+    };
+    for (const [i, ex] of execs.entries()) {
       const res = await _executeExec(ex.action, ex.params, askOnCard);
       if (epoch !== _cardEpoch) return;
+      if (skipped) {
+        // The user moved on: this command and the rest of the reply's
+        // commands don't run, and nobody turned them down.
+        _noteOnCard(id, reply, `**Skipped:** ${_commandList(execs.slice(i).map(e => e.action))} did not run because you sent this card a new prompt first.`);
+        return;
+      }
       _noteOnCard(id, reply, res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`);
     }
+  }
+
+  // "Create Mission", "Create Mission and Run Mission" from EXEC action ids.
+  function _commandList(actions) {
+    const names = [];
+    for (const action of actions) {
+      const spec = _EXEC_COMMANDS[action];
+      const tool = spec && typeof ToolRegistry !== 'undefined' && ToolRegistry.get ? ToolRegistry.get(spec.id) : null;
+      const name = (tool && tool.name) || String(action).replace(/_/g, ' ');
+      if (!names.includes(name)) names.push(name);
+    }
+    return names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : (names[0] || '');
   }
 
   // Several cards answered at once, so no command ran (see above). A reply
@@ -2420,18 +2449,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // created it" standing. (The persona prompt that teaches EXEC is built in
   // nice-ai, so the client can't tell these calls not to ask.)
   function _noteUnrunCommands(id, reply) {
-    const names = [];
+    const actions = [];
     const re = /\[EXEC:\s*(\w+)/g;
     let m;
-    while ((m = re.exec(reply.text || '')) !== null) {
-      const spec = _EXEC_COMMANDS[m[1]];
-      const tool = spec && typeof ToolRegistry !== 'undefined' && ToolRegistry.get ? ToolRegistry.get(spec.id) : null;
-      const name = (tool && tool.name) || m[1].replace(/_/g, ' ');
-      if (!names.includes(name)) names.push(name);
-    }
-    if (!names.length) return;
-    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
-    _noteOnCard(id, reply, `This model asked to run ${list}. Send to this card alone to run it.`);
+    while ((m = re.exec(reply.text || '')) !== null) actions.push(m[1]);
+    if (!actions.length) return;
+    _noteOnCard(id, reply, `This model asked to run ${_commandList(actions)}. Send to this card alone to run it.`);
   }
 
   // A note from NICE on one card's exchange: a command's result, or a

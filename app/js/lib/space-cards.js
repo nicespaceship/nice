@@ -139,11 +139,13 @@ const SpaceCards = (() => {
     const a = _approvals.get(id);
     return a ? { ...a.action, token: a.token } : null;
   }
+  // ok: true (approve), false (deny), or 'skipped' (a new prompt went to the
+  // card first: the command neither ran nor was turned down).
   function answer(id, ok, token) {
     const a = _approvals.get(id);
     if (!a || a.token !== token) return false;
     _approvals.delete(id);
-    a.resolve(!!ok);
+    a.resolve(ok === 'skipped' ? 'skipped' : !!ok);
     _emit({ kind: 'approval', model: id });
     return true;
   }

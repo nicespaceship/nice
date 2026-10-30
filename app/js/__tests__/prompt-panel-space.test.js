@@ -388,6 +388,28 @@ describe('Sending from the panel on Space', () => {
       expect(t['grok-4-3'][0].replies.map(r => !!r.note)).toEqual([false, true]);
     });
 
+    it('skips the waiting command when a new prompt goes to the card, under the reply that asked', async () => {
+      let n = 0;
+      globalThis.fetch = vi.fn(async (url, init) => {
+        calls.push(JSON.parse(init.body));
+        const text = ++n === 1 ? 'On it. [EXEC: create_mission | Pending one]' : 'Plain answer.';
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text }] }) };
+      });
+      send('Plan my launch');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      send('Something else');
+      await settled();
+      await vi.waitFor(() => expect(PromptPanel.messages().some(m => m.note)).toBe(true));
+      expect(SpaceCards.approval(id)).toBeNull();
+      expect(run).not.toHaveBeenCalled();
+      const t = SpaceCards.threads(PromptPanel.messages())[id];
+      expect(t.map(ex => [ex.ask.text, ex.replies.map(r => r.text)])).toEqual([
+        ['Plan my launch', ['On it. [EXEC: create_mission | Pending one]', '**Skipped:** Create Mission did not run because you sent this card a new prompt first.']],
+        ['Something else', ['Plain answer.']],
+      ]);
+      expect(PromptPanel.messages().some(m => /declined/.test(m.text || ''))).toBe(false);
+    });
+
     it('drops the question when the chat is cleared', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
