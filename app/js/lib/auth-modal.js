@@ -206,13 +206,11 @@ const AuthModal = (() => {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
       if (typeof window._authStashReturn === 'function') window._authStashReturn();
+      // Sign-in asks Google only who you are. Gmail, Calendar and Drive are
+      // connected from Integrations, through a separate Google app.
       const { error } = await c.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: RETURN_URL,
-          scopes: 'email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file',
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-        }
+        options: { redirectTo: RETURN_URL },
       });
       if (error) throw error;
       close();
