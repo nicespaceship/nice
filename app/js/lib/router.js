@@ -98,18 +98,20 @@ const Router = (() => {
     const p = path();
     const match = _match(p);
 
-    if (!match) {
-      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`;
-      return;
-    }
-
-    // Teardown previous view safely
+    // Teardown previous view safely, a not-found page included: it replaces
+    // the view too, which must not keep its listeners or page furniture.
     if (_currentView && _currentView.destroy) {
       try { _currentView.destroy(); } catch(e) { console.error('[NICE] View destroy error:', e); }
     }
     // Clean up any scoped State subscriptions from the previous view
     if (typeof State !== 'undefined' && State.destroyScoped) {
       State.destroyScoped();
+    }
+
+    if (!match) {
+      _currentView = null;
+      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`;
+      return;
     }
 
     _currentView = match.view;

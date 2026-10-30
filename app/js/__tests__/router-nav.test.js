@@ -36,6 +36,27 @@ function current() {
   return [...document.querySelectorAll('[aria-current="page"]')].map(a => a.textContent);
 }
 
+describe('Router on a route with no view', () => {
+  it('tears down the previous view before showing Page Not Found', () => {
+    window.matchMedia = window.matchMedia || (() => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const destroy = vi.fn();
+    RealRouter.on('/space', { title: 'Space', render: (el) => { el.innerHTML = '<p>space</p>'; }, destroy });
+    history.replaceState(null, '', '#/space');
+    RealRouter.init(host);
+    expect(host.textContent).toBe('space');
+    history.replaceState(null, '', '#/no-such-place');
+    RealRouter.refresh();
+    expect(destroy).toHaveBeenCalledTimes(1);
+    expect(host.textContent).toContain('Page Not Found');
+    // Leaving the not-found page destroys nothing twice.
+    history.replaceState(null, '', '#/space');
+    RealRouter.refresh();
+    expect(destroy).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Router.syncNav', () => {
   it('marks the link for the current path active, with aria-current', () => {
     history.replaceState(null, '', '#/ship');
