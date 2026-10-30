@@ -424,7 +424,7 @@ Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Spa
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` (the NICE mark; no Home nav item) | Home (the landing: what needs you from AlertCounts, your projects from `Blueprints.getUserShips`, and two ways to start) |
-| `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (the main workspace: rows of portrait model cards, one per model the user switched on that their plan can run, above the global prompt panel. A card shows its model's latest exchange in the current conversation, a status dot (go / busy / stop) and "Show all" for the whole thread. Clicking a card adds it to the prompt or takes it out; the prompt goes to every selected card in parallel, one card by default (Gemini 2.5 Flash). The panel shows "To …" in place of the model dropdown here. A failed card offers Retry (billing failures link the Wallet); a command a reply asks for ([EXEC] in review mode) waits for Approve / Deny on that card. Cards are the models; the monitor stays NICE's own voice (agents, slash commands, navigation, missions): a card send closes it, a reopened chat holding such replies opens it, and "Show full chat" brings it back. Themes with a reactor keep it in a slot above the cards) |
+| `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (the main workspace: rows of portrait model cards, one per model the user switched on that their plan can run, above the global prompt panel. A card shows its model's latest exchange in the current conversation, a status dot (go / busy / stop) and "Show all" for the whole thread. Clicking a card adds it to the prompt or takes it out; the prompt goes to every selected card in parallel, one card by default (Gemini 2.5 Flash). The panel shows "To …" in place of the model dropdown here. A failed card offers Retry, even while other cards are still answering (billing failures link the Wallet); a command a reply asks for ([EXEC] in review mode) waits for Approve / Deny on that card, a new prompt to the card skips it, and a reply from a multi-card send runs no command but says so on its card. Cards are the models; the monitor stays NICE's own voice (agents, slash commands, navigation, missions): a card send closes it, a reopened chat holding such replies opens it, and "Show full chat" brings it back. Themes with a reactor keep it in a slot above the cards) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
 | `OutboxView` | `outbox.js` | `#/ship` (`?tab=approved\|rejected`, `?item=<id>`, `?view=week`; `#/outbox` forwards) | Ship (where finished work goes out; everything the crew made: Needs you / Approved / Rejected tabs, the list beside the open item at ≥1024px and taking turns below, approve / edit / reject / copy / export, and a week view where dragging an item to another day saves it. Approvals go through `ContentQueue.approve`, which hands runs in review to `MissionRunner`) |
 | `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/blueprints` (titled Blueprints; `#/library` forwards) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Operations / Log; old `?tab=outbox` links redirect to `#/ship`; Blueprints sub-tabs: Projects (spaceships) / Agents / Active / Workshop. Projects + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed projects + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
@@ -514,7 +514,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
-Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 91 files, ~2127 tests. Counts drift with each feature — verify with `npm test`.
+Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 100 files, 2318 tests (2026-10-30). Counts drift with each feature — verify with `npm test`.
 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
@@ -526,7 +526,7 @@ Coverage areas:
 - **Prompt panel**: `attachment-utils`, `prompt-panel-space` (sending to the selected cards), `space-cards`
 - **Other**: `content-queue`
 
-### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 22 tests
+### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 38 tests
 ```bash
 npm run test:e2e
 ```
