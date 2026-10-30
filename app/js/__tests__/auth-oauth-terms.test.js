@@ -125,6 +125,19 @@ describe('AuthModal — signup terms gate', () => {
     await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
   });
 
+  // Sign-in runs on a Google app published for everyone, which can't grant
+  // Gmail, Calendar or Drive; asking for them would fail every sign-in.
+  it('asks Google only who you are, from both sign-in surfaces', async () => {
+    document.getElementById('am-google-btn').click();
+    await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
+    await ProfileView._handleOAuth('google');
+    for (const [{ options }] of signInWithOAuth.mock.calls) {
+      expect(options.scopes).toBeUndefined();
+      expect(options.queryParams).toBeUndefined();
+    }
+    expect(signInWithOAuth).toHaveBeenCalledTimes(2);
+  });
+
   // Supabase appends '#access_token=…' to the return address. A '#' already in
   // it (the old '/app/#/') hid the tokens from the client and sign-in failed.
   it.each(['am-google-btn', 'am-github-btn'])('%s returns to an address without a #', async (id) => {
