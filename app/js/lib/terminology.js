@@ -2,7 +2,8 @@
    MODULE: Terminology — SSOT for theme-aware noun labels
    Internal schema keeps canonical `mission` / `agent` / `spaceship` /
    `crew` / `captain` nouns. Per-theme overrides surface user-visible
-   strings — sci-fi themes render "Mission" / "Assignment" for Office.
+   strings: the default look calls a spaceship a "Project", the sci-fi
+   themes keep "Spaceship", and Office says "Assignment" for a mission.
    The Theme module owns sentence-level personality (copy.labels); this
    module owns the noun SSOT, called at render time by views and once
    per theme change by applyDOM() against static `data-term` elements.
@@ -11,14 +12,16 @@ const Terminology = (() => {
   /*
    * Per-theme noun dictionary. Every noun defines `{ singular, plural }`.
    * The `default` entry is the fallback used by every theme that does not
-   * declare an override. Real-world themes (office, office-dark) replace
-   * sci-fi vocabulary with workplace vocabulary.
+   * declare an override. The default look (nice, nice-dark) and the
+   * real-world themes (office, office-dark) speak plain product language;
+   * the sci-fi themes opt back into "Spaceship" so their fiction holds.
    */
+  const SPACESHIP = { singular: 'Spaceship', plural: 'Spaceships' };
   const NOUNS = {
     default: {
       mission:   { singular: 'Mission',   plural: 'Missions' },
       agent:     { singular: 'Agent',     plural: 'Agents' },
-      spaceship: { singular: 'Spaceship', plural: 'Spaceships' },
+      spaceship: { singular: 'Project',   plural: 'Projects' },
       crew:      { singular: 'Crew',      plural: 'Crew' },
       captain:   { singular: 'Captain',   plural: 'Captains' },
     },
@@ -28,6 +31,14 @@ const Terminology = (() => {
     'office-dark': {
       mission:   { singular: 'Assignment', plural: 'Assignments' },
     },
+    'hal-9000':  { spaceship: SPACESHIP },
+    grid:        { spaceship: SPACESHIP },
+    matrix:      { spaceship: SPACESHIP },
+    lcars:       { spaceship: SPACESHIP },
+    jarvis:      { spaceship: SPACESHIP },
+    cyberpunk:   { spaceship: SPACESHIP },
+    'rx-78-2':   { spaceship: SPACESHIP },
+    '16bit':     { spaceship: SPACESHIP },
   };
 
   function _activeTheme() {
@@ -52,6 +63,8 @@ const Terminology = (() => {
    *   Terminology.label('mission', { plural: true })     → "Missions"
    *   Terminology.label('mission', { lowercase: true })  → "mission"
    *   Terminology.label('mission', { theme: 'office' })  → "Assignment"
+   *   Terminology.label('spaceship')                     → "Project"
+   *   Terminology.label('spaceship', { theme: 'matrix' }) → "Spaceship"
    */
   function label(noun, opts = {}) {
     const theme  = opts.theme || _activeTheme();
