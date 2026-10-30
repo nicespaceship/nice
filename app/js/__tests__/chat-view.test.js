@@ -266,6 +266,22 @@ describe('ChatView', () => {
     expect(el.textContent).not.toContain('Slash commands');
   });
 
+  it('keeps text selected in one card when another card gets its reply', async () => {
+    messages = [
+      { role: 'user', text: 'Go', to: ['gemini-2-5-flash', 'grok-4-3'], v: 2 },
+      { role: 'assistant', text: 'Gemini says something long enough to select.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    const geminiBefore = card(el, 'gemini-2-5-flash');
+    const grokBefore = card(el, 'grok-4-3');
+    messages.push({ role: 'assistant', text: 'Grok, late', modelId: 'grok-4-3', agent: 'NICE', v: 2 });
+    document.dispatchEvent(new CustomEvent('nice:chat-saved'));
+    await frame();
+    expect(card(el, 'gemini-2-5-flash')).toBe(geminiBefore);
+    expect(card(el, 'grok-4-3')).not.toBe(grokBefore);
+    expect(card(el, 'grok-4-3').textContent).toContain('Grok, late');
+  });
+
   it('draws itself again when the monitor closes', async () => {
     mount();
     CoreReactor.setVisible.mockClear();

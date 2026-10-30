@@ -21,6 +21,7 @@ const ChatView = (() => {
   let _anchorFrame = 0;
   let _anchored = false;         // this view set --reactor-x/y on <html>
   let _said = [];                // screen-reader lines waiting for the next frame
+  const _drawn = new Map();      // card id → the markup it shows now ('bar' too)
 
   /* ── Data ── */
   function _messages() {
@@ -213,15 +214,26 @@ const ChatView = (() => {
     if (!space) return;
     const ctx = _context();
     const focus = _focusKey();
+    _drawn.clear();
+    const draw = (key, html) => { _drawn.set(key, html); return html; };
     const grid = ctx.cards.length
-      ? `<div class="space-grid">${ctx.cards.map(id => _cardHTML(id, ctx)).join('')}</div>`
+      ? `<div class="space-grid">${ctx.cards.map(id => draw(id, _cardHTML(id, ctx))).join('')}</div>`
       : '<p class="space-none">Turn on a model in <a href="#/security?tab=models">Manage models</a> to start.</p>';
     space.innerHTML = `
-      ${_barHTML(ctx)}
+      ${draw('bar', _barHTML(ctx))}
       ${_reactorShows() ? '<div class="space-reactor" aria-hidden="true"></div>' : ''}
       ${grid}`;
     _restoreFocus(focus);
     _anchorReactor();
+  }
+
+  // Redraw only the cards whose markup changed (a reply landed, a note
+  // joined, the selection moved), so text selected in another card stays
+  // selected. A different set of cards means a full paint.
+  function _paintChanged(ctx) {
+    const shown = _el ? [..._el.querySelectorAll('.space-card')].map(c => c.dataset.model) : [];
+    if (shown.join('|') !== ctx.cards.join('|')) { _paint(); return; }
+    ctx.cards.forEach(id => _paintCard(id, ctx));
   }
 
   function _cardEl(id) {
@@ -233,9 +245,12 @@ const ChatView = (() => {
   function _paintCard(id, ctx = _context()) {
     const old = _cardEl(id);
     if (!old) return _paint();
+    const html = _cardHTML(id, ctx);
+    if (_drawn.get(id) === html) return;
+    _drawn.set(id, html);
     const focus = _focusKey();
     const tmp = document.createElement('div');
-    tmp.innerHTML = _cardHTML(id, ctx);
+    tmp.innerHTML = html;
     old.replaceWith(tmp.firstElementChild);
     _restoreFocus(focus);
   }
@@ -243,8 +258,11 @@ const ChatView = (() => {
   function _paintBar(ctx = _context()) {
     const bar = _el && _el.querySelector('.space-bar');
     if (!bar) return;
+    const html = _barHTML(ctx);
+    if (_drawn.get('bar') === html) return;
+    _drawn.set('bar', html);
     const tmp = document.createElement('div');
-    tmp.innerHTML = _barHTML(ctx);
+    tmp.innerHTML = html;
     bar.replaceWith(tmp.firstElementChild);
   }
 
@@ -308,7 +326,8 @@ const ChatView = (() => {
       if (ids.has('*')) _paint();
       else {
         const ctx = _context();
-        ids.forEach(id => _paintCard(id, ctx));
+        if (ids.has('cards')) _paintChanged(ctx);
+        else ids.forEach(id => _paintCard(id, ctx));
         _paintBar(ctx);
       }
       _speak();
@@ -336,7 +355,7 @@ const ChatView = (() => {
     const name = d.model ? SpaceCards.label(d.model) : '';
     if (d.kind === 'live' && d.outcome) _said.push(d.outcome === 'failed' ? `${name} could not answer.` : `${name} answered.`);
     if (d.kind === 'approval' && SpaceCards.approval(d.model)) _said.push(`${name} needs your approval to run ${SpaceCards.approval(d.model).tool}.`);
-    _queue(d.kind === 'selection' ? '*' : d.model);
+    _queue(d.kind === 'selection' ? 'cards' : d.model);
   }
 
   function _onClick(e) {
@@ -394,7 +413,7 @@ const ChatView = (() => {
     // State.on calls back at once with the current value; that one is
     // already painted.
     let ready = false;
-    const onState = () => { if (ready) _queue('*'); };
+    const onState = () => { if (ready) _queue('cards'); };
     State.on('enabled_models', onState);
     State.on('user', onState);
     ready = true;
@@ -402,8 +421,8 @@ const ChatView = (() => {
     _listen(_el, 'click', _onClick);
     _listen(document, SpaceCards.EVENT, _onCards);
     _listen(document, 'nice:theme-change', () => _queue('*'));
-    // Any message saved (a NICE reply too) can change the bar and the cards.
-    _listen(document, 'nice:chat-saved', () => _queue('*'));
+    // Any message saved (a NICE reply too) can change the bar and some cards.
+    _listen(document, 'nice:chat-saved', () => _queue('cards'));
     // The monitor hides the reactor while it is open; a paint made under it
     // left the reactor slot out.
     _listen(document, 'nice:monitor-closed', () => _queue('*'));
