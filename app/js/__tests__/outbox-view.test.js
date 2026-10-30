@@ -1,5 +1,5 @@
 /**
- * OutboxView (#/outbox): results waiting for the user's OK, approved work
+ * OutboxView (#/ship): results waiting for the user's OK, approved work
  * and rejected work, as a list beside the open item, plus a week view.
  * Runs on the real ContentQueue (setup.js) so approvals take the same path
  * as the app: runs in review go to MissionRunner, local drafts don't.
@@ -50,7 +50,7 @@ beforeEach(() => {
   vi.spyOn(ContentQueue, 'load').mockImplementation(async () => State.get('content-queue') || []);
   State.set('user', { id: 'u1' });
   State.set('content-queue', ITEMS());
-  history.replaceState(null, '', '#/outbox');
+  history.replaceState(null, '', '#/ship');
   document.body.innerHTML = '<div id="app-view"></div>';
   el = document.getElementById('app-view');
 });
@@ -72,7 +72,7 @@ describe('OutboxView', () => {
   it('waits for sign-in to resolve, then keeps a linked item until the queue loads', async () => {
     State.set('user', undefined);
     State.set('content-queue', []);
-    history.replaceState(null, '', '#/outbox?item=run-2');
+    history.replaceState(null, '', '#/ship?item=run-2');
     OutboxView.render(el);
     expect(el.querySelector('.ob-signin')).toBeNull();
     expect(el.querySelector('.ob-empty').textContent).toBe('Loading…');
@@ -80,7 +80,7 @@ describe('OutboxView', () => {
     State.set('user', { id: 'u1' });
     await flush();
     expect(el.querySelector('.ob-detail').dataset.id).toBe('run-2');
-    expect(location.hash).toBe('#/outbox?item=run-2');
+    expect(location.hash).toBe('#/ship?item=run-2');
   });
 
   it('lists what needs the user, counts every tab and opens the first item', async () => {
@@ -101,12 +101,12 @@ describe('OutboxView', () => {
     await flush();
     el.querySelectorAll('.ob-row')[1].click();
     expect(el.querySelector('.ob-detail').dataset.id).toBe('run-2');
-    expect(location.hash).toBe('#/outbox?item=run-2');
+    expect(location.hash).toBe('#/ship?item=run-2');
     expect(el.querySelectorAll('.ob-row')[1].getAttribute('aria-current')).toBe('true');
   });
 
   it('says when approving lets a paused crew continue', async () => {
-    history.replaceState(null, '', '#/outbox?item=run-2');
+    history.replaceState(null, '', '#/ship?item=run-2');
     OutboxView.render(el);
     await flush();
     expect(el.querySelector('[data-ob="approve"]').textContent).toBe('Approve and continue');
@@ -149,7 +149,7 @@ describe('OutboxView', () => {
   });
 
   it('offers copy on approved work and explains publishing is not live yet', async () => {
-    history.replaceState(null, '', '#/outbox?tab=approved');
+    history.replaceState(null, '', '#/ship?tab=approved');
     OutboxView.render(el);
     await flush();
     expect(rows()).toEqual(['Lemon tart post']);
@@ -179,7 +179,7 @@ describe('OutboxView', () => {
 
   it('lays the week out by day and saves a drag to another day', async () => {
     const reschedule = vi.spyOn(ContentQueue, 'reschedule').mockResolvedValue();
-    history.replaceState(null, '', '#/outbox?view=week');
+    history.replaceState(null, '', '#/ship?view=week');
     OutboxView.render(el);
     await flush();
     expect(el.querySelectorAll('.ob-day')).toHaveLength(7);
@@ -223,7 +223,7 @@ describe('OutboxView', () => {
     let finish;
     MissionRunner.isResumableGate = (run) => !!run.gate;
     MissionRunner.approveRun.mockImplementationOnce(() => new Promise(r => { finish = r; }));
-    history.replaceState(null, '', '#/outbox?item=run-2');
+    history.replaceState(null, '', '#/ship?item=run-2');
     OutboxView.render(el);
     await flush();
     expect(el.querySelector('[data-ob="edit"]')).toBeNull();
@@ -242,10 +242,10 @@ describe('OutboxView', () => {
     click('[data-ob="approve"]');
     await flush();
     OutboxView.destroy();
-    history.replaceState(null, '', '#/chat');
+    history.replaceState(null, '', '#/space');
     finish({ resumed: false, persisted: true });
     await flush();
-    expect(location.hash).toBe('#/chat');
+    expect(location.hash).toBe('#/space');
   });
 
   it('still reports a failed approval after the user moved on', async () => {
@@ -296,7 +296,7 @@ describe('OutboxView', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     const label = async (when) => {
       vi.setSystemTime(when);
-      history.replaceState(null, '', '#/outbox?view=week');
+      history.replaceState(null, '', '#/ship?view=week');
       OutboxView.render(el);
       await flush();
       return el.querySelector('.ob-week-nav h2').textContent;
@@ -315,7 +315,7 @@ describe('OutboxView', () => {
     await flush();
     expect(el.querySelector('.ob-detail')).toBeNull();
     el.querySelectorAll('.ob-row')[1].click();
-    expect(push).toHaveBeenCalledWith(null, '', '#/outbox?item=run-2');
+    expect(push).toHaveBeenCalledWith(null, '', '#/ship?item=run-2');
     expect(el.querySelector('.ob-layout').classList.contains('has-sel')).toBe(true);
     click('[data-ob="back"]');
     expect(back).toHaveBeenCalled();
@@ -323,7 +323,7 @@ describe('OutboxView', () => {
   });
 
   it('opens an item from the week in the list', async () => {
-    history.replaceState(null, '', '#/outbox?view=week');
+    history.replaceState(null, '', '#/ship?view=week');
     OutboxView.render(el);
     await flush();
     el.querySelector('.ob-pill[data-id="run-2"]').click();

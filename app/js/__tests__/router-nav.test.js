@@ -20,15 +20,15 @@ const RealRouter = (() => {
 beforeEach(() => {
   document.body.innerHTML = `
     <nav>
-      <a class="side-link" data-nav="home" href="#/">Home</a>
-      <a class="side-link" data-nav="chat" href="#/chat">Chat</a>
-      <a class="side-link" data-nav="outbox" href="#/outbox">Outbox</a>
+      <a class="side-brand" data-home-link href="#/">NICE</a>
+      <a class="side-link" data-nav="space" href="#/space">Space</a>
+      <a class="side-link" data-nav="ship" href="#/ship">Ship</a>
       <a class="side-link side-ship" data-ship="s1" href="#/crew?ship=s1">Bakery</a>
     </nav>
     <nav class="app-tabbar">
-      <a class="tab" href="#/">Home</a>
+      <a class="tab" href="#/space">Space</a>
       <a class="tab" href="#/crew">Crew</a>
-      <a class="tab" href="#/outbox">Outbox</a>
+      <a class="tab" href="#/ship">Ship</a>
     </nav>`;
 });
 
@@ -38,19 +38,29 @@ function current() {
 
 describe('Router.syncNav', () => {
   it('marks the link for the current path active, with aria-current', () => {
-    history.replaceState(null, '', '#/outbox');
+    history.replaceState(null, '', '#/ship');
     RealRouter.syncNav();
-    expect(current()).toEqual(['Outbox', 'Outbox']);
-    expect(document.querySelector('[data-nav="outbox"]').classList.contains('active')).toBe(true);
-    expect(document.querySelector('[data-nav="home"]').classList.contains('active')).toBe(false);
+    expect(current()).toEqual(['Ship', 'Ship']);
+    expect(document.querySelector('[data-nav="ship"]').classList.contains('active')).toBe(true);
+    expect(document.querySelector('[data-nav="space"]').classList.contains('active')).toBe(false);
   });
 
   it('follows a replaceState to another route', () => {
-    history.replaceState(null, '', '#/outbox');
+    history.replaceState(null, '', '#/ship');
     RealRouter.syncNav();
     history.replaceState(null, '', '#/bridge?tab=missions');
     RealRouter.syncNav();
     expect(current()).toEqual([]);
+  });
+
+  it('marks the NICE mark current on Home only, without .active', () => {
+    history.replaceState(null, '', '#/');
+    RealRouter.syncNav();
+    expect(current()).toEqual(['NICE']);
+    expect(document.querySelector('[data-home-link]').classList.contains('active')).toBe(false);
+    history.replaceState(null, '', '#/ship');
+    RealRouter.syncNav();
+    expect(document.querySelector('[data-home-link]').hasAttribute('aria-current')).toBe(false);
   });
 
   it('never highlights spaceship links (their href carries ?ship=)', () => {

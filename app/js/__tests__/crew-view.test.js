@@ -73,7 +73,7 @@ describe('CrewView', () => {
   it('shows the empty state when the user runs no spaceship', () => {
     shipId = null;
     CrewView.render(el);
-    expect(el.querySelector('.crew-empty a[href="#/library?tab=spaceship"]')).not.toBeNull();
+    expect(el.querySelector('.crew-empty a[href="#/blueprints?tab=spaceship"]')).not.toBeNull();
     expect(el.querySelector('.crew-card')).toBeNull();
   });
 

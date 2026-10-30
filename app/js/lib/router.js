@@ -230,6 +230,13 @@ const Router = (() => {
       _setCurrent(a, href === p || href === seg);
     });
 
+    // Home has no nav item; the NICE mark links there. It gets aria-current
+    // only (no .active), so the mark looks the same on every page.
+    document.querySelectorAll('[data-home-link]').forEach(a => {
+      if (p === '/') a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+
     window.dispatchEvent(new CustomEvent('nice:navsync', { detail: { path: p } }));
   }
 

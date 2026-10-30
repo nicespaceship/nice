@@ -2,7 +2,7 @@
  * PromptPanel Compare (standalone chat): one question to two or three
  * models, answers side by side, keep one. Pinned here:
  *   - which models are offered (enabled and runnable right now),
- *   - the Compare strip only appears in standalone chat (#/chat),
+ *   - the Compare strip only appears in standalone chat (#/space),
  *   - the comparison card's states (writing, answered, error, kept),
  *   - nice-ai's non-stream `content` array is flattened to text.
  * Mounted via the same _buildDOM() seam as the model-dropdown tests.
@@ -40,7 +40,7 @@ beforeEach(() => {
   globalThis.Subscription = { getAddons: () => [] };
   State.set('enabled_models', { 'gemini-2-5-flash': true, 'grok-4-3': true, 'deepseek-v4-flash': true, 'claude-4-6-sonnet': true });
   State.set('token_balance', { pools: STANDARD });
-  history.replaceState(null, '', '#/chat');
+  history.replaceState(null, '', '#/space');
   PromptPanel._buildDOM();
 });
 afterEach(() => {

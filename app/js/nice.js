@@ -827,8 +827,9 @@ const NICE = (() => {
     _applySidebarDefault(sidebar);
     _mobileMQ.addEventListener('change', () => _applySidebarDefault(sidebar));
 
-    // Collapsed rail — the NICE mark expands the sidebar again.
-    document.getElementById('side-rail-nice')?.addEventListener('click', (e) => {
+    // Collapsed rail — the NICE mark goes Home (a plain link); the button
+    // under it expands the sidebar again.
+    document.getElementById('side-rail-expand')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       sidebar.classList.add('open');
@@ -958,7 +959,7 @@ const NICE = (() => {
           <span>${esc(name)}</span>
         </a>`;
       }).join('')}
-      <a href="#/library?tab=spaceship" class="side-link side-ship-new" title="${ships.length ? 'New spaceship' : 'Get a spaceship'}">
+      <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${ships.length ? 'New spaceship' : 'Get a spaceship'}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
         <span>${ships.length ? 'New spaceship' : 'Get a spaceship'}</span>
       </a>`;
@@ -1033,7 +1034,7 @@ const NICE = (() => {
     // Idempotency: if the active chat is already empty, just focus it
     // instead of piling up duplicate "New Chat" entries.
     if (active && (active.messages || []).length === 0) {
-      window.location.hash = '#/chat';
+      window.location.hash = '#/space';
       if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
       _renderChatsList();
       return;
@@ -1053,7 +1054,7 @@ const NICE = (() => {
     localStorage.setItem(Utils.KEYS.aiMessages, '[]');
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
-    window.location.hash = '#/chat';
+    window.location.hash = '#/space';
   }
 
   function _loadConversation(id, openMonitor) {
@@ -1072,7 +1073,7 @@ const NICE = (() => {
       return;
     }
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-    window.location.hash = '#/chat';
+    window.location.hash = '#/space';
   }
 
   function _saveActiveConversation() {
@@ -1133,7 +1134,7 @@ const NICE = (() => {
         _setActiveConvId('');
         localStorage.setItem(Utils.KEYS.aiMessages, '[]');
         if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-        window.location.hash = '#/chat';
+        window.location.hash = '#/space';
       }
     }
     _renderChatsList();
@@ -1255,8 +1256,8 @@ const NICE = (() => {
     if (chatsToggle) {
       chatsToggle.addEventListener('click', (e) => {
         if (e.target.closest('#side-chat-new')) return;
-        if (window.location.hash !== '#/chat') {
-          window.location.hash = '#/chat';
+        if (window.location.hash !== '#/space') {
+          window.location.hash = '#/space';
         }
       });
     }
@@ -1780,12 +1781,23 @@ const NICE = (() => {
 
   /* ── Register routes ── */
   function _initRoutes() {
-    // Primary destinations (sidebar + mobile tab bar). Library opens the
-    // Bridge's Blueprints tab until it gets its own view.
+    // Primary destinations (sidebar + mobile tab bar). Home is the NICE
+    // mark. Space is where the crew works (standalone chat until the card
+    // workspace lands), Ship is where finished work goes out, and Blueprints
+    // opens the Bridge's Blueprints tab until it gets its own view.
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
-    Router.on('/chat', ChatView);                    // Standalone chat, no crew
-    Router.on('/outbox', OutboxView);                // Results waiting for review, and approved work
-    Router.on('/library', BlueprintsView);
+    Router.on('/space', ChatView);
+    Router.on('/ship', OutboxView);                  // Results waiting for review, and approved work
+    Router.on('/blueprints', { ...BlueprintsView, title: 'Blueprints' });  // the Bridge's Blueprints tab, titled for the nav
+    // Their old names, so bookmarks and links in old notifications still land.
+    const renamed = (from, to, title) => Router.on(from, { title, render: () => {
+      const hash = window.location.hash;
+      const q = hash.includes('?') ? hash.slice(hash.indexOf('?')) : '';
+      location.replace('#' + to + q);
+    } });
+    renamed('/chat', '/space', 'Space');
+    renamed('/outbox', '/ship', 'Ship');
+    renamed('/library', '/blueprints', 'Blueprints');
     Router.on('/crew', CrewView);                    // One spaceship's crew as cards
     Router.on('/bridge', BlueprintsView);            // Bridge
     Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=schematic'; } });
@@ -1799,9 +1811,9 @@ const NICE = (() => {
     Router.on('/bridge/spaceships/:id', SpaceshipDetailView);
 
     // Legacy redirects → bridge
-    Router.on('/blueprints', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
-    Router.on('/blueprints/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
-    Router.on('/blueprints/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
+    Router.on('/blueprints/agents', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=agent'); } });
+    Router.on('/blueprints/agents/new', AgentBuilderView);
+    Router.on('/blueprints/spaceships', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=spaceship'); } });
     Router.on('/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
     Router.on('/agents/new', AgentBuilderView);
     Router.on('/agents/:id', AgentDetailView);

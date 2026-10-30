@@ -1494,7 +1494,7 @@ const PromptPanel = (() => {
   /* ── Contextual suggestion chips ── */
   const _ROUTE_SUGGESTIONS = {
     '#/':           ['How many agents do I have?', 'Show missions', 'Switch to cyberpunk'],
-    '#/chat':       ['What can NICE do for me?', 'Help me write an email', 'Switch to cyberpunk'],
+    '#/space':      ['What can NICE do for me?', 'Help me write an email', 'Switch to cyberpunk'],
     '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
     '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
@@ -2195,7 +2195,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   function _isStandaloneChat() {
     const path = (location.hash || '#/').replace('#', '').split('?')[0] || '/';
-    return path === '/chat' && !_routeAgent && !_routeShip;
+    return path === '/space' && !_routeAgent && !_routeShip;
   }
 
   // Enabled models the user can send a message on right now, in default order.
@@ -3886,7 +3886,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const onCodeMode = path.startsWith('/code') &&
       (/tab=code/.test(location.hash) || !/tab=/.test(location.hash));
     const onCrew = /^\/crew(\?|$)/.test(path);
-    const showByDefault = path === '/chat' || onCrew || onSchematic || onCodeMode;
+    const showByDefault = path === '/space' || onCrew || onSchematic || onCodeMode;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
     _maybeAutoExpandSchematicChat();
@@ -3918,7 +3918,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _reload() {
     _loadMessages();
     // Re-render the chat view if we're on it
-    if (window.location.hash === '#/chat') {
+    if (window.location.hash === '#/space') {
       const el = document.getElementById('app-view');
       if (el && typeof ChatView !== 'undefined') ChatView.render(el);
     }

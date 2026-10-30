@@ -1226,14 +1226,14 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 
 /* Sidebar top — two states share the top of the sidebar:
-   - Collapsed: the .side-rail icon stack (NICE opener + new-chat).
-   - Open: the .side-header — NICE wordmark (Bridge CTA) + theme toggle.
+   - Collapsed: the .side-rail icon stack (NICE mark for Home + expand).
+   - Open: the .side-header — NICE wordmark (Home) + theme and collapse.
    Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
    light strip — see theme.css) anchor on .side-header. */
 
 /* Collapsed rail — vertical icon stack, shown only when the sidebar is
-   closed. The NICE icon opens the menu (double-click → Bridge); the chat
-   icon starts a new chat. */
+   closed. The NICE mark goes Home; the button under it opens the menu
+   (the collapse icon, mirrored to point outward). */
 .side-rail { display:none; }
 .app-sidebar:not(.open) .side-rail {
   display:flex; flex-direction:column; align-items:center; gap:4px;
@@ -1250,6 +1250,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-rail-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-rail-btn .icon { width:24px; height:24px; }
 .side-rail-nice-logo { width:30px; height:30px; display:block; }
+.side-rail-expand .icon { transform:scaleX(-1); }
 
 /* Open header — NICE wordmark (Bridge CTA) on the left, theme toggle on
    the right. Hidden on the collapsed rail. The wordmark stays monochrome
@@ -1285,7 +1286,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 
-/* Primary destinations (Home, Chat, Outbox, Library) and the user's
+/* Primary destinations (Space, Ship, Blueprints) and the user's
    spaceships. Both stay on the collapsed rail as icons; labels, section
    titles and the chats list need the open width. */
 .side-primary,
@@ -1816,7 +1817,6 @@ html:not([data-theme]) .app-main,
   max-width:180px; overflow:hidden; text-overflow:ellipsis;
   text-decoration:none;
 }
-.mobile-bar-theme:hover { opacity:.8; }
 @media (max-width:768px) {
   .mobile-bar-theme { display:inline-block; }
 }
@@ -1842,7 +1842,8 @@ html:not([data-theme]) .app-main,
   .app-sidebar.open { width:280px; transform:translateX(0); }
   .app-mobile-bar { transition:transform .3s ease; }
   .app-sidebar.open ~ .app-mobile-bar { transform:translateX(280px); }
-  .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle { visibility:hidden; }
+  .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle,
+  .app-sidebar.open ~ .app-mobile-bar .mobile-bar-btn-nice { visibility:hidden; }
   .app-sidebar.open ~ .app-main { margin-left:0; transform:translateX(280px); transition:transform .3s ease; }
   .app-main { margin-left:0; margin-top:calc(48px + var(--app-banner-height, 0px)); }
   .app-sidebar.open ~ .nice-ai { left:50%; width:calc(100% - 48px); }
@@ -2100,7 +2101,7 @@ html:not([data-theme]) .app-main,
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   OUTBOX (#/outbox) — results waiting for review and approved work.
+   SHIP (#/ship) — results waiting for review and approved work.
    Phones and tablets show the list or the open item; at 1024px and up
    they sit side by side.
 ───────────────────────────────────────────────────────────────── */

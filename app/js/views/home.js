@@ -2,7 +2,7 @@
    NICE — Home (#/)
    The landing. Leads with anything waiting on the user (results to review,
    failed runs, crew trouble), then their spaceships, then the two
-   ways to start: chat with a model, or find a spaceship in the Library.
+   ways to start: chat with a model, or find a spaceship in Blueprints.
    Counts come from AlertCounts so Home, the sidebar badges and the Bridge
    tabs always agree.
 ═══════════════════════════════════════════════════════════════════ */
@@ -39,7 +39,7 @@ const HomeView = (() => {
     const missionWord = Terminology.label('mission', { lowercase: true });
     const items = [];
     const waiting = _count('outbox');
-    if (waiting) items.push({ text: `${_plural(waiting, 'result', 'results')} waiting for your review`, cta: 'Review', href: '#/outbox' });
+    if (waiting) items.push({ text: `${_plural(waiting, 'result', 'results')} waiting for your review`, cta: 'Review', href: '#/ship' });
     const failed = _count('missions');
     if (failed) items.push({ text: `${_plural(failed, missionWord + ' run', missionWord + ' runs')} failed`, cta: 'See why', href: '#/bridge?tab=missions' });
     const crew = _count('schematic');
@@ -92,7 +92,7 @@ const HomeView = (() => {
       </div>` : `
       <div class="widget-card home-empty">
         <p>A spaceship is a crew of AI agents built for one kind of business. Pick one, and its crew gets to work on your ${_esc(Terminology.label('mission', { plural: true, lowercase: true }))}.</p>
-        <a class="btn btn-primary btn-sm" href="#/library?tab=spaceship">Find a spaceship</a>
+        <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Find a spaceship</a>
       </div>`;
 
     el.innerHTML = `
@@ -106,18 +106,18 @@ const HomeView = (() => {
         <section class="home-section" aria-labelledby="home-ships-title">
           <div class="home-section-head">
             <h2 id="home-ships-title">Your spaceships</h2>
-            ${ships.length ? '<a class="btn btn-sm" href="#/library?tab=spaceship">New spaceship</a>' : ''}
+            ${ships.length ? '<a class="btn btn-sm" href="#/blueprints?tab=spaceship">New spaceship</a>' : ''}
           </div>
           ${shipsHTML}
         </section>
         <section class="home-starts" aria-label="Start something">
-          <a class="widget-card home-start" href="#/chat">
-            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-chat"/></svg></span>
+          <a class="widget-card home-start" href="#/space">
+            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-space"/></svg></span>
             <span class="home-start-text"><b>Ask anything</b><span>Chat with any model. No crew needed.</span></span>
           </a>
-          <a class="widget-card home-start" href="#/library">
-            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-library"/></svg></span>
-            <span class="home-start-text"><b>Browse the Library</b><span>Spaceships and agents for your kind of business.</span></span>
+          <a class="widget-card home-start" href="#/blueprints">
+            <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg></span>
+            <span class="home-start-text"><b>Browse Blueprints</b><span>Spaceships and agents for your kind of business.</span></span>
           </a>
         </section>
       </div>`;

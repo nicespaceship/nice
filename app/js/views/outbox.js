@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Outbox (#/outbox, #/outbox?tab=approved&item=<id>&view=week)
+   NICE — Ship (#/ship, #/ship?tab=approved&item=<id>&view=week)
    Everything the crew made, and anything waiting for the user's OK.
    Wide screens show the list beside the open item; on phones and tablets
    the list and the item take turns. The week view lays the same items
@@ -11,7 +11,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const OutboxView = (() => {
-  const title = 'Outbox';
+  const title = 'Ship';
   const _esc = Utils.esc;
   // Titles and ids can come from model output: anything inside a quoted
   // attribute goes through escAttr, which also escapes quotes.
@@ -119,7 +119,7 @@ const OutboxView = (() => {
     if (_mode === 'week') qs.set('view', 'week');
     if (_sel && _mode === 'list') qs.set('item', _sel);
     const q = qs.toString();
-    return '#/outbox' + (q ? '?' + q : '');
+    return '#/ship' + (q ? '?' + q : '');
   }
 
   function _syncHash() {
@@ -179,7 +179,7 @@ const OutboxView = (() => {
       <div class="ob-wrap">
         <header class="ob-head">
           <div class="ob-head-text">
-            <h1>Outbox</h1>
+            <h1>Ship</h1>
             <p>Everything your ${_esc(Terminology.label('crew', { lowercase: true }))} made, and anything waiting for your OK.</p>
           </div>
           <div class="ob-head-acts">
@@ -190,7 +190,7 @@ const OutboxView = (() => {
             ${counts.approved ? '<button type="button" class="btn btn-sm" data-ob="export">Export approved</button>' : ''}
           </div>
         </header>
-        <div class="ob-tabs" role="tablist" aria-label="Outbox">
+        <div class="ob-tabs" role="tablist" aria-label="Ship">
           ${_TABS.map(t => `<button type="button" role="tab" class="ob-tab" data-ob="tab" data-tab="${t.id}" aria-selected="${t.id === _tab}">${_esc(t.label)}${counts[t.id] ? `<span class="ob-count">${counts[t.id]}</span>` : ''}</button>`).join('')}
         </div>
         ${typeChips}
@@ -204,7 +204,7 @@ const OutboxView = (() => {
     return `
       <div class="ob-wrap">
         <div class="widget-card ob-signin">
-          <h1>Outbox</h1>
+          <h1>Ship</h1>
           <p>When your ${_esc(Terminology.label('crew', { lowercase: true }))} finishes something that needs your OK, it waits here. Sign in to see yours.</p>
           <button type="button" class="btn btn-primary btn-sm" data-ob="signin">Sign in</button>
         </div>
@@ -220,7 +220,7 @@ const OutboxView = (() => {
       <div class="ob-empty">
         <b>Nothing needs you right now</b>
         <p>When your ${_esc(Terminology.label('crew', { lowercase: true }))} finishes something that needs your OK, it shows up here and on Home.</p>
-        ${hasShip ? '' : '<a class="btn btn-sm btn-primary" href="#/library?tab=spaceship">Find a spaceship</a>'}
+        ${hasShip ? '' : '<a class="btn btn-sm btn-primary" href="#/blueprints?tab=spaceship">Find a spaceship</a>'}
       </div>`;
   }
 
