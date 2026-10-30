@@ -20,6 +20,7 @@ const ChatView = (() => {
   let _frame = 0;
   let _anchorFrame = 0;
   let _anchored = false;         // this view set --reactor-x/y on <html>
+  let _said = [];                // screen-reader lines waiting for the next frame
 
   /* ── Data ── */
   function _messages() {
@@ -154,11 +155,11 @@ const ChatView = (() => {
     const last = thread[thread.length - 1];
     const lastTs = last ? ((last.replies[last.replies.length - 1] || {}).ts || (last.ask && last.ask.ts)) : 0;
     const more = thread.length
-      ? `<button type="button" class="space-more" data-act="expand" aria-expanded="${expanded}" aria-controls="space-body-${_esc(id)}">${expanded ? 'Show less' : 'Show all'}</button>`
+      ? `<button type="button" class="space-more" data-act="expand" aria-expanded="${expanded}" aria-controls="${Utils.escAttr('space-body-' + id)}">${expanded ? 'Show less' : 'Show all'}</button>`
       : '';
 
     return `
-      <article class="space-card${isSelected ? ' is-selected' : ''}${expanded ? ' is-expanded' : ''}" data-model="${_esc(id)}" data-state="${state}">
+      <article class="space-card${isSelected ? ' is-selected' : ''}${expanded ? ' is-expanded' : ''}" data-model="${Utils.escAttr(id)}" data-state="${state}"${live ? ' aria-busy="true"' : ''}>
         <button type="button" class="space-card-head" data-act="toggle" aria-pressed="${isSelected}">
           <span class="space-card-names">
             <span class="space-card-name">${_esc(SpaceCards.label(id))}</span>
@@ -167,7 +168,7 @@ const ChatView = (() => {
           <span class="space-dot" data-dot="${state}" aria-hidden="true"></span>
           ${_STATUS[state] ? `<span class="sr-only">${pending ? 'Waiting for your approval' : _STATUS[state]}</span>` : ''}
         </button>
-        <div class="space-card-body" id="space-body-${_esc(id)}">${body}</div>
+        <div class="space-card-body" id="${Utils.escAttr('space-body-' + id)}">${body}</div>
         ${pending ? _approvalHTML(id, pending) : ''}
         <div class="space-card-foot">
           <span>${live ? (live.text ? 'Writing…' : '') : _esc(_time(lastTs))}</span>
@@ -207,18 +208,17 @@ const ChatView = (() => {
   }
 
   function _paint() {
-    if (!_el) return;
+    const space = _el && _el.querySelector('.space');
+    if (!space) return;
     const ctx = _context();
     const focus = _focusKey();
     const grid = ctx.cards.length
       ? `<div class="space-grid">${ctx.cards.map(id => _cardHTML(id, ctx)).join('')}</div>`
       : '<p class="space-none">Turn on a model in <a href="#/security?tab=models">Manage models</a> to start.</p>';
-    _el.innerHTML = `
-      <div class="space">
-        ${_barHTML(ctx)}
-        ${_reactorShows() ? '<div class="space-reactor" aria-hidden="true"></div>' : ''}
-        ${grid}
-      </div>`;
+    space.innerHTML = `
+      ${_barHTML(ctx)}
+      ${_reactorShows() ? '<div class="space-reactor" aria-hidden="true"></div>' : ''}
+      ${grid}`;
     _restoreFocus(focus);
     _anchorReactor();
   }
@@ -304,11 +304,25 @@ const ChatView = (() => {
       _frame = 0;
       const ids = _queued;
       _queued = new Set();
-      if (ids.has('*')) { _paint(); return; }
-      const ctx = _context();
-      ids.forEach(id => _paintCard(id, ctx));
-      _paintBar(ctx);
+      if (ids.has('*')) _paint();
+      else {
+        const ctx = _context();
+        ids.forEach(id => _paintCard(id, ctx));
+        _paintBar(ctx);
+      }
+      _speak();
     });
+  }
+
+  /* Screen readers: #app-view is a polite live region, and redrawing a
+     streaming card every frame would read it out over and over. The cards
+     sit in an aria-live="off" wrapper instead, and this status line says
+     once what happened: a card answered, failed, or needs an approval. */
+  function _speak() {
+    const status = _el && _el.querySelector('.space-status');
+    if (!status || !_said.length) return;
+    status.textContent = _said.join(' ');
+    _said = [];
   }
 
   function _onScroll() {
@@ -318,6 +332,9 @@ const ChatView = (() => {
 
   function _onCards(e) {
     const d = (e && e.detail) || {};
+    const name = d.model ? SpaceCards.label(d.model) : '';
+    if (d.kind === 'live' && d.outcome) _said.push(d.outcome === 'failed' ? `${name} could not answer.` : `${name} answered.`);
+    if (d.kind === 'approval' && SpaceCards.approval(d.model)) _said.push(`${name} needs your approval to run ${SpaceCards.approval(d.model).tool}.`);
     _queue(d.kind === 'selection' ? '*' : d.model);
   }
 
@@ -409,6 +426,8 @@ const ChatView = (() => {
     _unbind();
     if (_el !== el) _expanded.clear();
     _el = el;
+    _said = [];
+    el.innerHTML = '<div class="space" aria-live="off"></div><p class="space-status sr-only" role="status"></p>';
     _paint();
     _bind();
   }

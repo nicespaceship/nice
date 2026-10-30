@@ -105,8 +105,9 @@ const SpaceCards = (() => {
     _live.set(id, { ...(_live.get(id) || {}), ...patch });
     _emit({ kind: 'live', model: id });
   }
-  function endLive(id) {
-    if (_live.delete(id)) _emit({ kind: 'live', model: id });
+  // outcome ('answered' | 'failed') is how the call ended, for announcing.
+  function endLive(id, outcome) {
+    if (_live.delete(id)) _emit({ kind: 'live', model: id, outcome });
   }
   function endAll() {
     const ids = [..._live.keys()];

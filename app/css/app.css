@@ -5688,9 +5688,9 @@ html:has(.space-reactor) .jv-pp-reactor {
 /* Status dot: go = selected and ready, busy = thinking, stop = failed,
    none = not selected. Tokens come from the theme, with fallbacks. */
 .space-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.space-dot[data-dot="go"]   { background:var(--dot-go, #16a34a); }
-.space-dot[data-dot="busy"] { background:var(--dot-busy, #ea580c); animation:space-dot-pulse 1s ease-in-out infinite; }
-.space-dot[data-dot="stop"] { background:var(--dot-stop, #dc2626); }
+.space-dot[data-dot="go"]   { background:var(--dot-go, var(--color-success)); }
+.space-dot[data-dot="busy"] { background:var(--dot-busy, var(--color-warning)); animation:space-dot-pulse 1s ease-in-out infinite; }
+.space-dot[data-dot="stop"] { background:var(--dot-stop, var(--color-error)); }
 @keyframes space-dot-pulse { 50% { opacity:.35; } }
 
 /* Body: the latest exchange, cut off with a fade; "Show all" opens the
@@ -5783,9 +5783,6 @@ html:has(.space-reactor) .jv-pp-reactor {
   .space-card-body { padding:10px 10px 0; }
   .space-approval { margin:8px 10px 0; padding:8px 10px; }
   .space-card-foot { min-height:34px; padding:6px 10px; }
-}
-@media (max-width:359px) {
-  .space-grid { grid-template-columns:minmax(0, 1fr); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

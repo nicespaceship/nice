@@ -193,6 +193,23 @@ describe('ChatView', () => {
     expect(card(el, 'deepseek-v4-flash').querySelector('[data-act="retry"], .space-err a')).toBeNull();
   });
 
+  it('streams quietly and tells screen readers once when a card answers', async () => {
+    messages = [{ role: 'user', text: 'Go', to: ['gemini-2-5-flash'], v: 2 }];
+    mount();
+    expect(el.querySelector('.space').getAttribute('aria-live')).toBe('off');
+    const status = el.querySelector('.space-status');
+    expect(status.getAttribute('role')).toBe('status');
+    SpaceCards.setLive('gemini-2-5-flash', { text: 'Half' });
+    await frame();
+    expect(card(el, 'gemini-2-5-flash').getAttribute('aria-busy')).toBe('true');
+    expect(status.textContent).toBe('');
+    messages.push({ role: 'assistant', text: 'Whole answer', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 });
+    SpaceCards.endLive('gemini-2-5-flash', 'answered');
+    await frame();
+    expect(card(el, 'gemini-2-5-flash').hasAttribute('aria-busy')).toBe(false);
+    expect(status.textContent).toBe('Gemini 2.5 Flash answered.');
+  });
+
   it('gives a free user the free card and a note about plans', () => {
     Subscription.isPro = () => false;
     mount();

@@ -2335,7 +2335,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _lastSpokenTs = reply.ts;
           _saveMessages();
         }
-        SpaceCards.endLive(id);
+        SpaceCards.endLive(id, reply && reply.error ? 'failed' : 'answered');
         if (--left === 0) {
           _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
