@@ -147,7 +147,7 @@ const MissionRunner = (() => {
         ', agent_name=' + (mission.agent_name || 'none');
       const msg =
         'Could not resolve an agent for this mission (' + detail + '). ' +
-        'Reassign the mission to an agent on the ship\'s crew, or rebuild ' +
+        'Reassign the mission to an agent on the ' + Terminology.label('spaceship', { lowercase: true }) + '\'s crew, or rebuild ' +
         'the mission template in Mission Composer.';
       const now = new Date().toISOString();
       await SB.db('mission_runs').update(missionId, {
@@ -1271,7 +1271,7 @@ const MissionRunner = (() => {
     spec = spec || {};
     const user = State.get('user');
     if (!user?.id) throw new Error('Sign in to start a mission.');
-    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    if (!spec.spaceshipId) throw new Error(`Missions always belong to ${Terminology.article('spaceship')} ${Terminology.label('spaceship', { lowercase: true })}.`);
     const shape = spec.shape || 'simple';
     const plan = spec.plan || {};
 
@@ -1324,7 +1324,7 @@ const MissionRunner = (() => {
     spec = spec || {};
     const user = State.get('user');
     if (!user?.id) throw new Error('Sign in to schedule a mission.');
-    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    if (!spec.spaceshipId) throw new Error(`Missions always belong to ${Terminology.article('spaceship')} ${Terminology.label('spaceship', { lowercase: true })}.`);
     if (!spec.schedule || !spec.schedule.cron) throw new Error('A schedule needs a cron expression.');
     // Pro-only: unattended scheduled execution is a NICE Pro perk. Block
     // creating or enabling an ACTIVE schedule for non-Pro users; allow
@@ -1335,7 +1335,7 @@ const MissionRunner = (() => {
     // pre-check and show the upgrade prompt; this enforces it.
     const willBeActive = spec.schedule.enabled !== false;
     if (willBeActive && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
-      throw new Error('NICE Pro is required to run missions on a schedule. Upgrade to automate your fleet.');
+      throw new Error(`NICE Pro is required to run missions on a schedule. Upgrade to automate your ${Terminology.label('spaceship', { plural: true, lowercase: true })}.`);
     }
     const row = {
       title: spec.title,

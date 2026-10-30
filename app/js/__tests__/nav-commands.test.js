@@ -100,6 +100,20 @@ describe('NavCommands', () => {
       expect(missions.keywords).toContain(Terminology.label('mission', { plural: true, lowercase: true }));
     });
 
+    it('resolves the themed spaceship noun into the blueprint and create labels', () => {
+      const find = (id) => NavCommands.list().find(c => c.id === id);
+      expect(find('open-shipyard').label).toBe('Project blueprints');
+      expect(find('new-spaceship').label).toBe('New project');
+      const theme = globalThis.Theme;
+      globalThis.Theme = { ...theme, current: () => 'matrix' };
+      try {
+        expect(find('open-shipyard').label).toBe('Spaceship blueprints');
+        expect(find('new-spaceship').label).toBe('New spaceship');
+      } finally {
+        globalThis.Theme = theme;
+      }
+    });
+
     it('preserves canonical labels for non-mission commands', () => {
       const bridge = NavCommands.list().find(c => c.id === 'open-bridge');
       expect(bridge.label).toBe('Bridge');
@@ -117,6 +131,7 @@ describe('NavCommands', () => {
     it('matches singular/plural via substring (agents ↔ agent, ships ↔ spaceship)', () => {
       expect(NavCommands.resolve('agent').id).toBe('open-agents');
       expect(NavCommands.resolve('spaceships').id).toBe('open-shipyard');
+      expect(NavCommands.resolve('projects').id).toBe('open-shipyard');
     });
 
     it('ignores nav verbs and function words, scoring only content tokens', () => {

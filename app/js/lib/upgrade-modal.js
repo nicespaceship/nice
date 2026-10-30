@@ -48,9 +48,9 @@ const UpgradeModal = (() => {
           </thead>
           <tbody>
             <tr>
-              <th>Active spaceships</th>
+              <th>Active ${_esc(Terminology.label('spaceship', { plural: true, lowercase: true }))}</th>
               <td>1</td>
-              <td><strong>Run a fleet</strong></td>
+              <td><strong>Unlimited</strong></td>
             </tr>
             <tr>
               <th>Free models</th>
@@ -156,7 +156,7 @@ const UpgradeModal = (() => {
     const hash = location.hash || '';
     if (hash.includes('upgrade=success')) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Welcome to Pro!', message: 'Your subscription is active. You can now run a fleet of spaceships.', type: 'success' });
+        Notify.send({ title: 'Welcome to Pro!', message: `Your subscription is active. You can now run as many ${Terminology.label('spaceship', { plural: true, lowercase: true })} as you need.`, type: 'success' });
       }
       const cleanHash = hash.replace(/[?&]upgrade=success/, '').replace(/\?$/, '');
       history.replaceState(null, '', location.pathname + cleanHash);

@@ -343,7 +343,7 @@ const SetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="wiz-close-done">Close</button>
-        <button class="btn btn-sm btn-primary" id="wiz-view-ship">View Spaceship</button>
+        <button class="btn btn-sm btn-primary" id="wiz-view-ship">View ${_esc(Terminology.label('spaceship', { lowercase: true }))}</button>
       `;
       actions.querySelector('#wiz-close-done').addEventListener('click', close);
       actions.querySelector('#wiz-view-ship').addEventListener('click', () => {
@@ -579,7 +579,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 2. Create spaceship
-    setStatus('Deploying spaceship...');
+    setStatus(`Deploying ${Terminology.label('spaceship', { lowercase: true })}...`);
     // Numeric slot keys match the catalog convention (slot.id = position
     // index) so downstream readers find slots via positional lookup.
     const slotAssignments = {};

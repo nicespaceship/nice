@@ -38,7 +38,7 @@ const Onboarding = (() => {
     { event: EVENTS.SIGNUP_COMPLETE,        label: 'Signed up' },
     { event: EVENTS.WIZARD_START,           label: 'Opened wizard' },
     { event: EVENTS.WIZARD_COMPLETE,        label: 'Completed wizard' },
-    { event: EVENTS.FIRST_SPACESHIP,        label: 'First spaceship' },
+    { event: EVENTS.FIRST_SPACESHIP,        label: 'First project' },
     { event: EVENTS.FIRST_MISSION_START,    label: 'Ran first mission' },
     { event: EVENTS.FIRST_MISSION_COMPLETE, label: 'Finished first mission' },
   ];

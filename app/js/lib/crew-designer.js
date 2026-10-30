@@ -166,7 +166,7 @@ const CrewDesigner = (() => {
     try {
       const proposal = await _callAI(_data.userPrompt);
       _data.proposal = proposal;
-      _data.shipName = proposal.spaceship?.name || 'Custom Spaceship';
+      _data.shipName = proposal.spaceship?.name || `Custom ${Terminology.label('spaceship', { lowercase: true })}`;
       _data.shipDescription = proposal.spaceship?.description || '';
       _data.shipCategory = proposal.spaceship?.category || 'Custom';
       _data.flowPattern = proposal.spaceship?.flow_pattern || 'sequential';
@@ -385,7 +385,7 @@ Rules:
         <!-- Ship Header -->
         <div class="cd-ship-header">
           <div class="cd-ship-name-row">
-            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${_esc(_data.shipName)}" placeholder="Spaceship name">
+            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${_esc(_data.shipName)}" placeholder="${_esc(Terminology.label('spaceship'))} name">
             <span class="cd-flow-badge" title="${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')} flow">
               ${FLOW_ICONS[_data.flowPattern] || '→'} ${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')}
             </span>
@@ -394,7 +394,7 @@ Rules:
           <button class="btn cd-btn-secondary cd-regenerate" id="cd-regenerate">↻ Regenerate</button>
         </div>
 
-        ${overLimit ? `<div class="cd-warning">⚠ A spaceship holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
+        ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
 
         <!-- Crew Grid -->
         <div class="cd-section-label">Crew <span class="cd-count">${_data.editedAgents.length} agents</span></div>
@@ -620,13 +620,13 @@ Rules:
       }
 
       // 2. Create spaceship
-      setStatus('Building spaceship...');
+      setStatus(`Building ${Terminology.label('spaceship', { lowercase: true })}...`);
       const slotAssignments = {};
       createdAgentIds.forEach((id, i) => { slotAssignments[i] = id; });
 
       // shipData for local State/localStorage (full details)
       const shipData = {
-        name: _data.shipName || 'Custom Spaceship',
+        name: _data.shipName || `Custom ${Terminology.label('spaceship', { lowercase: true })}`,
         category: _data.shipCategory || 'Custom',
         description: _data.shipDescription || '',
         status: 'deployed',

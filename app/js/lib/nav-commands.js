@@ -54,7 +54,7 @@ const NavCommands = (() => {
     { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
     { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents list manage',                                     desc: 'Open the Agents roster.' },
     { id: 'open-agent-builder',     name: 'New Agent',         kind: 'nav', route: '/blueprints/agents/new', icon: '#icon-plus',      skinKey: 'newAgent',          keywords: 'create new agent builder',                               desc: 'Open the Agent Builder.' },
-    { id: 'open-shipyard',          name: 'Shipyard',          kind: 'nav', route: '/blueprints/spaceships', icon: '#icon-spaceship', skinKey: 'nav.spaceships',    keywords: 'spaceships shipyard fleet ships',                        desc: 'Open the Shipyard.' },
+    { id: 'open-shipyard',          name: 'Project Blueprints', kind: 'nav', route: '/blueprints/spaceships', icon: '#icon-spaceship', skinKey: 'nav.spaceships',    keywords: 'spaceships shipyard fleet ships projects',               desc: 'Open the project blueprints.' },
     { id: 'open-missions',          name: 'Missions',          kind: 'nav', route: '/missions',              icon: '#icon-task',      skinKey: 'nav.missions',      keywords: 'missions tasks assignments queue jobs',                  desc: 'Open the mission board.' },
     { id: 'open-blueprint-catalog', name: 'Blueprint Catalog', kind: 'nav', route: '/blueprints',            icon: '#icon-blueprint', skinKey: 'nav.blueprints',    keywords: 'blueprints catalog agents orchestrator templates',       desc: 'Open the Blueprint catalog.' },
     { id: 'open-operations',        name: 'Operations',        kind: 'nav', route: '/analytics',             icon: '#icon-analytics', skinKey: 'nav.analytics',     keywords: 'operations analytics charts stats performance',          desc: 'Open Operations analytics.' },
@@ -69,11 +69,11 @@ const NavCommands = (() => {
     { id: 'open-workflows',         name: 'Workflows',         kind: 'nav', route: '/workflows',             icon: '#icon-build',     skinKey: 'nav.workflows',     keywords: 'workflows pipelines automation nodes',                   desc: 'Open Workflows.' },
     // ── UI actions ──
     { id: 'create-agent',      name: 'Create Agent',       kind: 'action', icon: '#icon-plus',      keywords: 'new create agent build',                          desc: 'Open the Agent Builder.',           run: () => _navigate('#/bridge/agents/new') },
-    { id: 'new-spaceship',     name: 'New Spaceship',      kind: 'action', icon: '#icon-spaceship', keywords: 'new create spaceship fleet',                      desc: 'Open the Shipyard to add a spaceship.', run: () => _navigate('#/bridge/spaceships') },
+    { id: 'new-spaceship',     name: 'New Project',        kind: 'action', icon: '#icon-spaceship', keywords: 'new create spaceship fleet project',              desc: 'Open Blueprints to add a project.', run: () => _navigate('#/bridge/spaceships') },
     { id: 'cycle-theme',       name: 'Toggle Theme',       kind: 'action', icon: '#icon-settings',  keywords: 'theme dark light switch hud',                     desc: 'Cycle to the next theme.',          run: _cycleTheme },
     { id: 'show-shortcuts',    name: 'Keyboard Shortcuts', kind: 'action', icon: '#icon-build',     keywords: 'keyboard shortcuts help keys',                    desc: 'Show keyboard shortcuts.',          run: () => { if (typeof Keyboard !== 'undefined') Keyboard.showHelp(); } },
-    { id: 'open-setup-wizard', name: 'Setup Wizard',       kind: 'action', icon: '#icon-zap',       keywords: 'setup wizard guided questionnaire new spaceship', desc: 'Launch the guided Setup Wizard.',   run: () => { if (typeof SetupWizard !== 'undefined') SetupWizard.open(); } },
-    { id: 'open-crew-designer', name: 'Crew Designer',     kind: 'action', icon: '#icon-spaceship', keywords: 'crew designer build team spaceship describe deploy',
+    { id: 'open-setup-wizard', name: 'Setup Wizard',       kind: 'action', icon: '#icon-zap',       keywords: 'setup wizard guided questionnaire new spaceship project', desc: 'Launch the guided Setup Wizard.',   run: () => { if (typeof SetupWizard !== 'undefined') SetupWizard.open(); } },
+    { id: 'open-crew-designer', name: 'Crew Designer',     kind: 'action', icon: '#icon-spaceship', keywords: 'crew designer build team spaceship project describe deploy',
       desc: 'Open the Crew Designer to design a crew from a business description.',
       schema: { type: 'object', properties: { prompt: { type: 'string', description: 'Business description to seed the design (optional)' } } },
       run: (p) => {
@@ -109,18 +109,30 @@ const NavCommands = (() => {
     };
   }
 
+  // Active spaceship noun (themed): "Project" in the default look.
+  function _shipNoun() {
+    const has = typeof Terminology !== 'undefined';
+    return {
+      singular:    has ? Terminology.label('spaceship') : 'Project',
+      lower:       has ? Terminology.label('spaceship', { lowercase: true }) : 'project',
+    };
+  }
+
   /* Project commands into display descriptors for a front-end. Resolves
      Terminology + Skin per call so theme-aware labels are never frozen.
      Returns { id, label, keywords, icon, kind } — execute via
      ToolRegistry.execute(id). */
   function list() {
     const m = _missionNoun();
+    const sh = _shipNoun();
     const skinOn = typeof Skin !== 'undefined' && Skin.isActive();
     return COMMANDS.map(c => {
       let label = c.name;
       let keywords = c.keywords;
       if (c.id === 'open-missions') { label = m.plural; keywords = `missions tasks assignments queue jobs ${m.pluralLower}`; }
       else if (c.id === 'open-log') { keywords = `log audit captain history events ${m.pluralLower} operations`; }
+      else if (c.id === 'open-shipyard') { label = `${sh.singular} blueprints`; }
+      else if (c.id === 'new-spaceship') { label = `New ${sh.lower}`; }
       if (skinOn && c.skinKey) label = Skin.text(c.skinKey, label);
       return { id: c.id, label, keywords, icon: c.icon, kind: c.kind };
     });

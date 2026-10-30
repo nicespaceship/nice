@@ -14,25 +14,28 @@
 
 const Subscription = (() => {
 
-  /* ── Plan Definitions ── */
+  /* ── Plan Definitions ──
+     `ships` and `desc` read the spaceship noun from Terminology at access
+     time ("project" in the default look), so they follow the theme. */
+  const _shipWord = (opts) => Terminology.label('spaceship', Object.assign({ lowercase: true }, opts));
   const PLANS = {
     free: {
       id: 'free',
       price: 0,
-      ships: '1 spaceship',
+      get ships() { return `1 ${_shipWord()}`; },
       label: 'Free',
       icon: '',
       color: '#94a3b8',
-      desc: 'Gemini 2.5 Flash. One active spaceship with every crew slot.',
+      get desc() { return `Gemini 2.5 Flash. One active ${_shipWord()} with every crew slot.`; },
     },
     pro: {
       id: 'pro',
       price: 9.99,
-      ships: 'Unlimited spaceships',
+      get ships() { return `Unlimited ${_shipWord({ plural: true })}`; },
       label: 'Pro',
       icon: '',
       color: '#f59e0b',
-      desc: 'Run a fleet of spaceships. 1,000 standard tokens a month. All non-flagship models.',
+      get desc() { return `Run as many ${_shipWord({ plural: true })} as you need at once. 1,000 standard tokens a month. All non-flagship models.`; },
     },
   };
 
