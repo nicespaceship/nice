@@ -12,10 +12,10 @@ const AuditLogView = (() => {
     { value: 'all',        label: 'All',        icon: '◈', color: 'var(--accent)' },
     { value: 'navigation', label: 'Navigation', icon: '⌖', color: 'var(--text-muted)' },
     { value: 'agent',      label: 'Agent',      icon: '⚙', color: 'var(--accent)' },
-    { value: 'mission',    label: 'Mission',    icon: '⚡', color: '#22c55e' },
-    { value: 'spaceship',  get label() { return Terminology.label('spaceship'); }, icon: '◇', color: '#6366f1' },
-    { value: 'system',     label: 'System',     icon: '⊚', color: '#f59e0b' },
-    { value: 'auth',       label: 'Auth',       icon: '⊕', color: '#06b6d4' },
+    { value: 'mission',    label: 'Mission',    icon: '⚡', color: 'var(--mono, #22c55e)' },
+    { value: 'spaceship',  get label() { return Terminology.label('spaceship'); }, icon: '◇', color: 'var(--mono, #6366f1)' },
+    { value: 'system',     label: 'System',     icon: '⊚', color: 'var(--mono, #f59e0b)' },
+    { value: 'auth',       label: 'Auth',       icon: '⊕', color: 'var(--mono, #06b6d4)' },
   ];
 
   const ICONS = {

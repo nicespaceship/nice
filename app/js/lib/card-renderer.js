@@ -653,8 +653,10 @@ const CardRenderer = (() => {
     const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
 
     // ── Rarity badge — same treatment for ALL rarities ──
+    // Inline colors go through var(--mono, …): only the monochrome NICE
+    // theme defines --mono / --mono-ink, every other theme keeps the hex.
     const badgeClass = rarity === 'mythic' ? ' mythic-badge-animated' : '';
-    const badgeStyle = `style="background:${rarityColor};color:${contrastText(rarityColor)};border:1px solid transparent"`;
+    const badgeStyle = `style="background:var(--mono, ${rarityColor});color:var(--mono-ink, ${contrastText(rarityColor)});border:1px solid transparent"`;
 
     // ── Art ──
     // Ship cards on the front use the ported marketing inside-stage
@@ -729,7 +731,7 @@ const CardRenderer = (() => {
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity}</span>`
-        : `<span class="blueprint-card-grid-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity}</span>`;
+        : `<span class="blueprint-card-grid-badge" style="background:var(--mono, ${rarityColor});color:var(--mono-ink, ${contrastText(rarityColor)});border-color:transparent">${rarity}</span>`;
       dataAttrs += ` data-rarity="${rarity.toLowerCase()}" data-bp-id="${data.id}"`;
       if (data.stats) {
         const lbls = ['Spd','Acc','Cap','Pwr'], keys = ['spd','acc','cap','pwr'];
@@ -743,7 +745,7 @@ const CardRenderer = (() => {
       const shipSlots = BlueprintUtils.getCrewDefs(data);
       const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
       art = slotDiagramArt(artClassId, serial, slotOpts);
-      badgeHTML = `<span class="blueprint-card-grid-badge" style="background:${shipRarityColor};color:${contrastText(shipRarityColor)};border-color:transparent">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-grid-badge" style="background:var(--mono, ${shipRarityColor});color:var(--mono-ink, ${contrastText(shipRarityColor)});border-color:transparent">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-bp-id="${data.id}"`;
     }
 
@@ -780,7 +782,7 @@ const CardRenderer = (() => {
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-compact-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="blueprint-card-compact-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity.toUpperCase()}</span>`;
+        : `<span class="blueprint-card-compact-badge" style="background:var(--mono, ${rarityColor});color:var(--mono-ink, ${contrastText(rarityColor)});border-color:transparent">${rarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${rarityLower}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
 
       const config = data.config || {};
@@ -807,7 +809,7 @@ const CardRenderer = (() => {
       const shipSlots = BlueprintUtils.getCrewDefs(data);
       const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
       art = slotDiagramArt(artClassId, serial, slotOpts);
-      badgeHTML = `<span class="blueprint-card-compact-badge" style="background:${shipRarityColor};color:${contrastText(shipRarityColor)};border-color:transparent">${shipRarity}</span>`;
+      badgeHTML = `<span class="blueprint-card-compact-badge" style="background:var(--mono, ${shipRarityColor});color:var(--mono-ink, ${contrastText(shipRarityColor)});border-color:transparent">${shipRarity}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-status="${data.status || ''}"`;
 
       const members = data._members || [];
@@ -876,10 +878,10 @@ const CardRenderer = (() => {
       art = slotDiagramArt(artClassId, serial, slotOpts);
     }
 
-    return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:${badgeColor}">
+    return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:var(--mono, ${badgeColor})">
       <span class="blueprint-card-mini-name">${name}</span>
       <div class="blueprint-card-mini-art">${art}</div>
-      <span class="blueprint-card-mini-badge" style="background:${badgeColor};color:${contrastText(badgeColor)}">${badgeLabel}</span>
+      <span class="blueprint-card-mini-badge" style="background:var(--mono, ${badgeColor});color:var(--mono-ink, ${contrastText(badgeColor)})">${badgeLabel}</span>
     </div>`;
   }
 

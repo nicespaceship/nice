@@ -328,7 +328,7 @@ const AgentDetailView = (() => {
 
   function _roleColor(role) {
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
-    return colors[role] || 'var(--accent)';
+    return colors[role] ? `var(--mono, ${colors[role]})` : 'var(--accent)';
   }
 
 

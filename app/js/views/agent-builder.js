@@ -772,7 +772,7 @@ const AgentBuilderView = (() => {
     const memory = document.getElementById('b-memory')?.dataset.val === '1';
     const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
     const info = BlueprintUtils.getRarityInfo({ config: { tools, memory, temperature: temp }, llm_engine: model, type });
-    el.innerHTML = `<span class="rarity-badge rarity-${info.name.toLowerCase()}" style="border-color:${info.color}">${info.name}</span>`;
+    el.innerHTML = `<span class="rarity-badge rarity-${info.name.toLowerCase()}" style="border-color:var(--mono, ${info.color})">${info.name}</span>`;
   }
 
   async function _submitAgent(existingAgent) {

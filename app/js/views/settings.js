@@ -620,8 +620,8 @@ const SettingsView = (() => {
     if (planNameEl) planNameEl.textContent = planLabel;
     if (planBadgeEl) {
       planBadgeEl.textContent = tier.label;
-      planBadgeEl.style.color = tier.color;
-      planBadgeEl.style.borderColor = tier.color;
+      planBadgeEl.style.color = `var(--mono, ${tier.color})`;
+      planBadgeEl.style.borderColor = `var(--mono, ${tier.color})`;
     }
 
     // LLM connections
