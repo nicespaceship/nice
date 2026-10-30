@@ -1235,6 +1235,7 @@ const PromptPanel = (() => {
     const lower = text.toLowerCase().trim();
 
     if (lower === '/clear') {
+      _abortCards();
       _messages = [];
       _activeConversation = null;
       _saveMessages();
@@ -2090,12 +2091,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         // actionable billing toast (with its Wallet CTA), the same as the
         // ship-log and agent-executor surfaces, instead of rendering it as a
         // generic "Connection Error" the user can't act on.
-        if (res.status === 402 && body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+        // Space raises the toast itself (once per pool across its cards).
+        if (res.status === 402 && body && body.code && opts.billingToast !== false && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
           Subscription.handleBillingError(body);
         }
         const err = new Error(body?.error || errBody || ('HTTP ' + res.status));
         err.status = res.status;
         if (body?.code) err.code = body.code;
+        if (body) err.body = body;
         throw err;
       }
 
@@ -2250,14 +2253,26 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     };
   }
 
-  // A short failure line for the card. Billing (402) also raised the Wallet
-  // toast inside _callEdgeLLM; the card keeps a link to it.
-  function _cardError(id, err) {
+  // A short failure line for the card. A billing failure (402) keeps a link
+  // to the Wallet; `extra` marks failures a retry can't fix (cap: the model
+  // can't read the attached file).
+  function _cardError(id, err, extra) {
     let text = typeof err === 'string' ? err : ((err && err.message) || 'This model could not answer.');
     text = text.replace(/\s+/g, ' ').trim();
     if (text.length > 160) text = text.slice(0, 157) + '…';
     const billing = !!(err && typeof err === 'object' && err.status === 402);
-    return _cardReply(id, billing ? { text, error: true, billing: true } : { text, error: true });
+    return _cardReply(id, { text, error: true, ...(billing ? { billing: true } : {}), ...(extra || {}) });
+  }
+
+  // One Wallet toast per pool and reason, however many cards hit it at once.
+  function _billingToastOnce(err, id, shown) {
+    if (!err || err.status !== 402 || !err.body || !err.body.code) return;
+    if (typeof Subscription === 'undefined' || !Subscription.handleBillingError) return;
+    const pool = (typeof TokenConfig !== 'undefined' && TokenConfig.poolFor(id)) || '';
+    const key = err.body.code + '|' + pool;
+    if (shown.has(key)) return;
+    shown.add(key);
+    Subscription.handleBillingError(err.body);
   }
 
   function _sendToCards(text, attachments = []) {
@@ -2272,6 +2287,29 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (attachments.length) userMsg.attachments = attachments;
     _messages.push(userMsg);
     _saveMessages();
+    _askCards(targets, text, attachments, threads);
+    return true;
+  }
+
+  // Ask one card again after its latest reply failed: the failed reply goes
+  // and the same prompt goes back out to that model alone.
+  function retryCard(id) {
+    if (_sending || typeof SpaceCards === 'undefined') return false;
+    const cards = SpaceCards.available();
+    if (!cards.includes(id)) return false;
+    const thread = SpaceCards.threads(_messages, cards)[id] || [];
+    const last = thread[thread.length - 1];
+    const failed = last && last.ask ? last.replies.filter(r => r.error && r.model === id && r.msg) : [];
+    if (!failed.length) return false;
+    failed.forEach(r => { const i = _messages.indexOf(r.msg); if (i !== -1) _messages.splice(i, 1); });
+    _saveMessages();
+    _askCards([id], last.ask.text || '', last.ask.attachments || [], [SpaceCards.historyFor(_messages, id, cards)]);
+    return true;
+  }
+
+  // The prompt already sits in the conversation; each target card gets its
+  // own call with its own thread (`threads[i]`) and lands its own reply.
+  function _askCards(targets, text, attachments, threads) {
     // The replies land on the cards; a monitor left open by a slash command
     // or an agent chat would sit on top of them.
     _hideMonitor();
@@ -2283,13 +2321,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const epoch = _cardEpoch;
     const single = targets.length === 1;
     const caps = new Set(attachments.map(a => AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
+    const billed = new Set();
     let left = targets.length;
 
     targets.forEach((id, i) => {
       const finish = (reply) => {
         if (epoch !== _cardEpoch) return;
         _cardCalls.delete(id);
-        if (reply) { _messages.push(reply); _saveMessages(); }
+        if (reply) {
+          _messages.push(reply);
+          // Cards speak for themselves (see _afterSingleReply); the monitor
+          // must not read this reply out again the next time it renders.
+          _lastSpokenTs = reply.ts;
+          _saveMessages();
+        }
         SpaceCards.endLive(id);
         if (--left === 0) {
           _setSending(false);
@@ -2300,7 +2345,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const missing = [...caps].filter(c => !_modelHasCapability(id, c));
       if (missing.length) {
         const what = missing.map(c => _CAP_NOUNS[c] || c).join(' or ');
-        finish(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`));
+        finish(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`, { cap: true }));
         return;
       }
 
@@ -2312,27 +2357,29 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         SpaceCards.setLive(id, { text: ((SpaceCards.live(id) || {}).text || '') + chunk });
       };
 
-      _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk })
+      _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk, billingToast: false })
         .then(res => {
           if (!res) return finish(_cardError(id, 'NICE could not reach the model service. Check your connection and try again.'));
           if (!res.text) return finish(_cardError(id, 'No answer came back. Try again.'));
-          finish(_cardReply(id, { text: res.text }));
-          if (single && epoch === _cardEpoch) _afterSingleReply(id, res.text);
+          const reply = _cardReply(id, { text: res.text });
+          finish(reply);
+          if (single && epoch === _cardEpoch) _afterSingleReply(id, reply);
         })
         .catch(err => {
           // Only our own abort (the conversation changed) is silent. A server
           // error that happens to say "aborted" is a failure like any other.
           if (ctrl.signal.aborted || epoch !== _cardEpoch) return;
+          _billingToastOnce(err, id, billed);
           finish(_cardError(id, err));
         });
     });
-    return true;
   }
 
   // One card answered on its own: the reply acts like the old single-model
   // chat (theme markers, EXEC commands, voice, preview). Several cards at
   // once skip this so parallel answers never run the same command twice.
-  async function _afterSingleReply(id, text) {
+  async function _afterSingleReply(id, reply) {
+    const text = reply.text;
     const { clean, execs } = _parseActions(text);
     _ttsSpeak(clean);
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(text);
@@ -2344,7 +2391,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     for (const ex of execs) {
       const res = await _executeExec(ex.action, ex.params, askOnCard);
       if (epoch !== _cardEpoch) return;
-      _messages.push(_cardReply(id, { text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`, note: true }));
+      const note = _cardReply(id, { text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`, note: true });
+      _messages.push(note);
+      _lastSpokenTs = note.ts;
     }
     _saveMessages();
     SpaceCards.changed(id);
@@ -2374,6 +2423,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     label.hidden = !on;
     if (!on) { label.textContent = ''; label.removeAttribute('title'); return; }
     const targets = SpaceCards.selected();
+    // No model on: Space says so in place of the cards, and a send asks the
+    // user to turn one on.
+    if (!targets.length) { label.hidden = true; label.textContent = ''; label.removeAttribute('title'); return; }
     const names = targets.map(SpaceCards.label);
     label.textContent = targets.length === 1 ? `To ${names[0]}` : `To ${targets.length} models`;
     label.title = names.join(', ');
@@ -2532,7 +2584,17 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     let spacePreCheck = null;
     if (!forcedAgent && _isStandaloneChat() && !_parseMention(text) && !_parseShipMention(text)) {
       spacePreCheck = _getResponse(text);
-      if (!spacePreCheck.autoMission && !spacePreCheck.isNav && _sendToCards(text, sentAttachments)) {
+      if (!spacePreCheck.autoMission && !spacePreCheck.isNav) {
+        if (!_sendToCards(text, sentAttachments)) {
+          // No model is on: keep what they typed and attached, and say how
+          // to turn one on.
+          _pendingAttachments = sentAttachments;
+          _renderAttachments();
+          if (typeof Notify !== 'undefined') {
+            Notify.send({ title: 'No model is on', message: 'Turn on a model in Manage models, then send again.', type: 'warning' });
+          }
+          return;
+        }
         input.value = '';
         input.style.height = '36px';
         _panel?.querySelector('.nice-ai-input-container')?.classList.remove('has-text');
@@ -3795,7 +3857,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function startFlow(flowDef) {
     // flowDef: { steps: [{ key, question, chips }], onComplete(answers), onCancel() }
     _activeFlow = { steps: flowDef.steps, currentStep: 0, answers: {}, onComplete: flowDef.onComplete, onCancel: flowDef.onCancel };
-    // Clear previous messages and show first question
+    // Clear previous messages and show first question; replies or approvals
+    // still out for the old conversation must not land in this one.
+    _abortCards();
     _messages = [];
     const first = flowDef.steps[0];
     _messages.push({ role: 'assistant', text: first.question, agent: 'NICE', ts: Date.now(), chips: first.chips });
@@ -4017,5 +4081,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The current conversation, for Space's cards. Same auth gate as the store.
   function messages() { return _messages; }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, _renderTargets, _isStandaloneChat, messages, _detectIntent };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent };
 })();

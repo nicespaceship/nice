@@ -5627,11 +5627,14 @@ html[data-theme] .nice-ai-input:focus-visible {
   padding:0; border:0; background:none; cursor:pointer;
   font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
 }
+.space-retry { padding:0; border:0; background:none; cursor:pointer; font:inherit; }
 .space-link,
+.space-retry,
 .space-note a,
 .space-none a,
 .space-err a { color:var(--text); text-decoration:underline; text-underline-offset:3px; }
 .space-link:hover,
+.space-retry:hover,
 .space-note a:hover,
 .space-none a:hover,
 .space-err a:hover { color:var(--text-muted); }

@@ -150,7 +150,8 @@ const SpaceCards = (() => {
   /* ── Threads ──
      Each card's thread is a list of exchanges: { ask, replies[] }, where
      ask is the user message (null when a reply has no prompt before it)
-     and each reply is { model, text, error, billing, note, ts }. A thread
+     and each reply is { model, text, error, billing, capability, note, ts,
+     msg } (msg: the stored message, absent for old comparison answers). A thread
      whose model has no card shows on the default card, so nothing in the
      conversation disappears when a model is switched off. */
   function _home(cards) {
@@ -183,7 +184,7 @@ const SpaceCards = (() => {
         addReply(place(m.modelId), {
           model: _canon(m.modelId), text: m.text || '', ts: m.ts,
           error: m.error ? (m.text || 'This model could not answer.') : null,
-          billing: !!m.billing, note: !!m.note,
+          billing: !!m.billing, capability: !!m.cap, note: !!m.note, msg: m,
         });
       }
     }

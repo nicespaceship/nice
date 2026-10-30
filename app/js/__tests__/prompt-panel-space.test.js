@@ -160,6 +160,72 @@ describe('Sending to the selected cards', () => {
     expect(grok.text).toContain("can't read images");
   });
 
+  it('retries a failed card with the same prompt, alone', async () => {
+    let n = 0;
+    globalThis.fetch = vi.fn(async (url, init) => {
+      calls.push(JSON.parse(init.body));
+      return ++n === 1
+        ? { ok: false, status: 500, text: async () => JSON.stringify({ error: 'Provider timed out' }) }
+        : { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Crumb Theory' }] }) };
+    });
+    PromptPanel._sendToCards('Name my bakery');
+    await settled();
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ error: true, text: 'Provider timed out' });
+    expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(true);
+    await settled();
+    const msgs = PromptPanel.messages();
+    expect(msgs.map(m => m.text)).toEqual(['Name my bakery', 'Crumb Theory']);
+    expect(calls[1].model).toBe('gemini-2-5-flash');
+    expect(calls[1].messages.map(m => m.role)).toEqual(['user']);
+    expect(PromptPanel.retryCard('gemini-2-5-flash')).toBe(false);
+  });
+
+  it('raises one billing toast for cards that share an empty pool', async () => {
+    globalThis.fetch = vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body);
+      calls.push(body);
+      if (body.model === 'gemini-2-5-flash') {
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+      }
+      return { ok: false, status: 402, text: async () => JSON.stringify({ error: 'Your Standard pool is empty.', code: 'insufficient_tokens' }) };
+    });
+    SpaceCards.toggle('grok-4-3');
+    SpaceCards.toggle('deepseek-v4-flash');
+    PromptPanel._sendToCards('Name my bakery');
+    await settled();
+    expect(PromptPanel.messages().filter(m => m.billing).map(m => m.modelId).sort()).toEqual(['deepseek-v4-flash', 'grok-4-3']);
+    expect(Subscription.handleBillingError).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads a card reply aloud once, not again when the monitor opens', async () => {
+    CoreVoice.canSpeak = () => true;
+    CoreVoice.speak = vi.fn();
+    try {
+      PromptPanel._sendToCards('Name my bakery');
+      await settled();
+      await vi.waitFor(() => expect(CoreVoice.speak).toHaveBeenCalledTimes(1));
+      PromptPanel.toggle();
+      expect(monitorOpen()).toBe(true);
+      expect(CoreVoice.speak).toHaveBeenCalledTimes(1);
+    } finally {
+      CoreVoice.canSpeak = () => false;
+      delete CoreVoice.speak;
+    }
+  });
+
+  it('drops a reply still on its way when a guided flow takes over', async () => {
+    let release;
+    globalThis.fetch = vi.fn(() => new Promise(r => { release = r; }));
+    PromptPanel._sendToCards('Slow one');
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    PromptPanel.startFlow({ steps: [{ key: 'name', question: 'What is your business called?' }] });
+    expect(SpaceCards.busy()).toBe(false);
+    release({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'late' }] }) });
+    await new Promise(r => setTimeout(r, 0));
+    expect(PromptPanel.messages().map(m => m.text)).toEqual(['What is your business called?']);
+    PromptPanel.cancelFlow();
+  });
+
   it('drops replies still on their way when another conversation opens', async () => {
     let release;
     globalThis.fetch = vi.fn(() => new Promise(r => { release = r; }));
@@ -247,6 +313,16 @@ describe('Sending from the panel on Space', () => {
       expect(run).not.toHaveBeenCalled();
     });
 
+    it('drops the question when the chat is cleared', async () => {
+      send('Plan my launch');
+      await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
+      send('/clear');
+      expect(SpaceCards.approval(id)).toBeNull();
+      await new Promise(r => setTimeout(r, 0));
+      expect(run).not.toHaveBeenCalled();
+      expect(PromptPanel.messages()).toEqual([]);
+    });
+
     it('drops the question when another conversation opens', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());
@@ -256,6 +332,17 @@ describe('Sending from the panel on Space', () => {
       expect(run).not.toHaveBeenCalled();
       expect(PromptPanel.messages().some(m => m.note)).toBe(false);
     });
+  });
+
+  it('keeps the prompt and says how to turn a model on when none is on', () => {
+    State.set('enabled_models', {});
+    PromptPanel._renderTargets();
+    expect(document.getElementById('nice-ai-targets').hidden).toBe(true);
+    send('Name my bakery');
+    expect(calls).toHaveLength(0);
+    expect(document.getElementById('nice-ai-input').value).toBe('Name my bakery');
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'No model is on' }));
+    expect(PromptPanel.messages()).toEqual([]);
   });
 
   it('sends an @mention to the agent, not the cards', async () => {

@@ -29,6 +29,7 @@ globalThis.PromptPanel = {
   messages: () => messages,
   _md: (t) => `<p>${Utils.esc(t)}</p>`,
   toggle: vi.fn(),
+  retryCard: vi.fn(),
 };
 globalThis.CoreReactor = { setVisible: vi.fn() };
 
@@ -175,6 +176,21 @@ describe('ChatView', () => {
     expect(card(el, 'gemini-2-5-flash').querySelector('.space-approval')).toBeNull();
     // Selecting text or reading doesn't count: the click went to the button only.
     expect(card(el, 'gemini-2-5-flash').classList.contains('is-selected')).toBe(true);
+  });
+
+  it('offers Retry on a failed latest reply, the Wallet for billing, and nothing for a file it cannot read', () => {
+    messages = [
+      { role: 'user', text: 'Go', to: ['gemini-2-5-flash', 'grok-4-3', 'deepseek-v4-flash'], v: 2 },
+      { role: 'assistant', text: 'Provider timed out', modelId: 'gemini-2-5-flash', error: true, agent: 'NICE', v: 2 },
+      { role: 'assistant', text: 'Your Standard pool is empty.', modelId: 'grok-4-3', error: true, billing: true, agent: 'NICE', v: 2 },
+      { role: 'assistant', text: "DeepSeek V4 Flash can't read images.", modelId: 'deepseek-v4-flash', error: true, cap: true, agent: 'NICE', v: 2 },
+    ];
+    mount();
+    card(el, 'gemini-2-5-flash').querySelector('[data-act="retry"]').click();
+    expect(PromptPanel.retryCard).toHaveBeenCalledWith('gemini-2-5-flash');
+    expect(card(el, 'grok-4-3').querySelector('[data-act="retry"]')).toBeNull();
+    expect(card(el, 'grok-4-3').querySelector('.space-err a').getAttribute('href')).toBe('#/wallet');
+    expect(card(el, 'deepseek-v4-flash').querySelector('[data-act="retry"], .space-err a')).toBeNull();
   });
 
   it('gives a free user the free card and a note about plans', () => {

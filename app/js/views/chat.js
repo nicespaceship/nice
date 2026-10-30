@@ -65,11 +65,15 @@ const ChatView = (() => {
   }
 
   /* ── Markup ── */
-  function _replyHTML(id, r) {
+  function _replyHTML(id, r, canRetry) {
     const from = r.model && r.model !== id ? `<span class="space-from">${_esc(SpaceCards.label(r.model))}</span>` : '';
     if (r.error) {
-      const wallet = r.billing ? ' <a href="#/wallet">Open Wallet</a>' : '';
-      return `<p class="space-err">${from}${_esc(r.error)}${wallet}</p>`;
+      // Billing needs the Wallet, a file the model can't read needs another
+      // model; anything else may go through on a second try.
+      const next = r.billing ? ' <a href="#/wallet">Open Wallet</a>'
+        : (canRetry && !r.capability) ? ' <button type="button" class="space-retry" data-act="retry">Retry</button>'
+        : '';
+      return `<p class="space-err">${from}${_esc(r.error)}${next}</p>`;
     }
     const actions = _actions(r.text);
     const buttons = actions.length
@@ -87,8 +91,9 @@ const ChatView = (() => {
     return text + fileLine;
   }
 
-  function _exchangeHTML(id, ex, live) {
-    let replies = ex.replies.map(r => _replyHTML(id, r)).join('');
+  function _exchangeHTML(id, ex, live, latest) {
+    const canRetry = latest && !live && !!ex.ask;
+    let replies = ex.replies.map(r => _replyHTML(id, r, canRetry && r.model === id && !!r.msg)).join('');
     if (live) {
       replies += live.text
         ? `<div class="space-reply">${_md(_clean(live.text))}</div>`
@@ -141,9 +146,9 @@ const ChatView = (() => {
         : 'Select this card to add the model to your prompt.';
       body = `<p class="space-empty">${hint}</p>`;
     } else if (expanded) {
-      body = thread.map((ex, i) => _exchangeHTML(id, ex, i === thread.length - 1 ? live : null)).join('');
+      body = thread.map((ex, i) => _exchangeHTML(id, ex, i === thread.length - 1 ? live : null, i === thread.length - 1)).join('');
     } else {
-      body = _exchangeHTML(id, thread[thread.length - 1], live);
+      body = _exchangeHTML(id, thread[thread.length - 1], live, true);
     }
 
     const last = thread[thread.length - 1];
@@ -349,6 +354,10 @@ const ChatView = (() => {
     }
     if (act === 'toggle') { SpaceCards.toggle(id); return; }
     if (act === 'approve' || act === 'deny') { SpaceCards.answer(id, act === 'approve'); return; }
+    if (act === 'retry') {
+      if (typeof PromptPanel !== 'undefined' && PromptPanel.retryCard) PromptPanel.retryCard(id);
+      return;
+    }
     // The rest of a collapsed card toggles it too, except links, buttons
     // and a click that ends a text selection.
     if (card.classList.contains('is-expanded')) return;
