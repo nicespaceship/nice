@@ -302,6 +302,35 @@ describe('Sending to the selected cards', () => {
     PromptPanel.cancelFlow();
   });
 
+  it('ends a card that fails to start and unlocks the panel', async () => {
+    const setLive = SpaceCards.setLive;
+    SpaceCards.setLive = () => { throw new Error('Card could not start'); };
+    try {
+      PromptPanel._sendToCards('Name my bakery');
+    } finally { SpaceCards.setLive = setLive; }
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash', error: true, text: 'Card could not start' });
+    expect(document.getElementById('nice-ai-send').disabled).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('frees a panel stuck on an unfinished send when a new chat opens', async () => {
+    State.set('user', { id: 'u1' });
+    localStorage.setItem(Utils.KEYS.mcShip, 's1');
+    State.set('spaceships', [{ id: 's1', slot_assignments: { 0: 'a1' } }]);
+    State.set('agents', [{ id: 'a1', name: 'Scout', config: {} }]);
+    globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? { id: 'a1', name: 'Scout', config: {} } : null) };
+    globalThis.ShipLog = { execute: vi.fn(() => new Promise(() => {})) }; // never answers
+    try {
+      send('@Scout find leads');
+      expect(document.getElementById('nice-ai-send').disabled).toBe(true);
+      PromptPanel._reload();
+      expect(document.getElementById('nice-ai-send').disabled).toBe(false);
+      send('Name my bakery');
+      await settled();
+      expect(calls.map(c => c.model)).toEqual(['gemini-2-5-flash']);
+    } finally { delete globalThis.Blueprints; delete globalThis.ShipLog; }
+  });
+
   it('drops replies still on their way when another conversation opens', async () => {
     let release;
     globalThis.fetch = vi.fn(() => new Promise(r => { release = r; }));

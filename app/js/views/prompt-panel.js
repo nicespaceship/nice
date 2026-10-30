@@ -2346,26 +2346,26 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The prompt already sits in the conversation; each target card gets its
   // own call with its own thread (`threads[i]`) and lands its own reply.
   function _askCards(targets, text, attachments, threads) {
-    // The replies land on the cards; a monitor left open by a slash command
-    // or an agent chat would sit on top of them.
-    _hideMonitor();
-
-    const sendBtn = _panel?.querySelector('#nice-ai-send');
-    _setSending(true);
-    if (sendBtn) sendBtn.disabled = true;
-
     const epoch = _cardEpoch;
     const single = targets.length === 1;
-    const caps = new Set(attachments.map(a => AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
     const billed = new Set();
     // Every target counts as in flight from here, in the module-wide map, so
     // the panel unlocks only when the last card call ends, whichever send or
-    // retry it belongs to.
+    // retry it belongs to. They register before the panel locks, and a card
+    // that fails to start ends like any failed card, so nothing in between
+    // can leave the panel locked with no call to unlock it.
     const ctrls = targets.map(id => {
       const ctrl = new AbortController();
       _cardCalls.set(id, ctrl);
       return ctrl;
     });
+    const sendBtn = _panel?.querySelector('#nice-ai-send');
+    _setSending(true);
+    if (sendBtn) sendBtn.disabled = true;
+    // The replies land on the cards; a monitor left open by a slash command
+    // or an agent chat would sit on top of them.
+    _hideMonitor();
+    const caps = new Set((attachments || []).map(a => a && AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
 
     targets.forEach((id, i) => {
       const ctrl = ctrls[i];
@@ -2386,36 +2386,41 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         }
       };
 
-      const missing = [...caps].filter(c => !_modelHasCapability(id, c));
-      if (missing.length) {
-        const what = missing.map(c => _CAP_NOUNS[c] || c).join(' or ');
-        finish(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`, { cap: true }));
-        return;
-      }
+      // A card that fails to start ends like any failed card.
+      try {
+        const missing = [...caps].filter(c => !_modelHasCapability(id, c));
+        if (missing.length) {
+          const what = missing.map(c => _CAP_NOUNS[c] || c).join(' or ');
+          finish(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`, { cap: true }));
+          return;
+        }
 
-      SpaceCards.setLive(id, { text: '' });
-      const onChunk = (chunk) => {
-        if (epoch !== _cardEpoch) return;
-        SpaceCards.setLive(id, { text: ((SpaceCards.live(id) || {}).text || '') + chunk });
-      };
-
-      _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk, billingToast: false })
-        .then(res => {
-          if (!res) return finish(_cardError(id, 'NICE could not reach the model service. Check your connection and try again.'));
-          if (!res.text) return finish(_cardError(id, 'No answer came back. Try again.'));
-          const reply = _cardReply(id, { text: res.text });
-          finish(reply);
+        SpaceCards.setLive(id, { text: '' });
+        const onChunk = (chunk) => {
           if (epoch !== _cardEpoch) return;
-          if (single) _afterSingleReply(id, reply);
-          else _noteUnrunCommands(id, reply);
-        })
-        .catch(err => {
-          // Only our own abort (the conversation changed) is silent. A server
-          // error that happens to say "aborted" is a failure like any other.
-          if (ctrl.signal.aborted || epoch !== _cardEpoch) return;
-          _billingToastOnce(err, id, billed);
-          finish(_cardError(id, err));
-        });
+          SpaceCards.setLive(id, { text: ((SpaceCards.live(id) || {}).text || '') + chunk });
+        };
+
+        _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk, billingToast: false })
+          .then(res => {
+            if (!res) return finish(_cardError(id, 'NICE could not reach the model service. Check your connection and try again.'));
+            if (!res.text) return finish(_cardError(id, 'No answer came back. Try again.'));
+            const reply = _cardReply(id, { text: res.text });
+            finish(reply);
+            if (epoch !== _cardEpoch) return;
+            if (single) _afterSingleReply(id, reply);
+            else _noteUnrunCommands(id, reply);
+          })
+          .catch(err => {
+            // Only our own abort (the conversation changed) is silent. A server
+            // error that happens to say "aborted" is a failure like any other.
+            if (ctrl.signal.aborted || epoch !== _cardEpoch) return;
+            _billingToastOnce(err, id, billed);
+            finish(_cardError(id, err));
+          });
+      } catch (err) {
+        finish(_cardError(id, err));
+      }
     });
   }
 
@@ -2496,13 +2501,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   }
 
   function _abortCards() {
-    const hadCalls = _cardCalls.size > 0 || (typeof SpaceCards !== 'undefined' && SpaceCards.busy());
     _cardEpoch++;
     // Ends live cards and declines approvals still waiting on the old chat.
     if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
-    if (!hadCalls) return;
     _cardCalls.forEach(ctrl => { try { ctrl.abort(); } catch { /* already settled */ } });
     _cardCalls.clear();
+    // A new or reopened chat always starts with a free panel, even if a send
+    // got stuck on its way out.
     _setSending(false);
     const sendBtn = _panel?.querySelector('#nice-ai-send');
     if (sendBtn) sendBtn.disabled = false;
