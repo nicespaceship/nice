@@ -313,22 +313,90 @@ describe('Sending to the selected cards', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('frees a panel stuck on an unfinished send when a new chat opens', async () => {
-    State.set('user', { id: 'u1' });
-    localStorage.setItem(Utils.KEYS.mcShip, 's1');
-    State.set('spaceships', [{ id: 's1', slot_assignments: { 0: 'a1' } }]);
-    State.set('agents', [{ id: 'a1', name: 'Scout', config: {} }]);
-    globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? { id: 'a1', name: 'Scout', config: {} } : null) };
-    globalThis.ShipLog = { execute: vi.fn(() => new Promise(() => {})) }; // never answers
-    try {
+  describe('NICE sends still out when a new chat opens', () => {
+    const btn = () => document.getElementById('nice-ai-send');
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    let releaseCard;
+    beforeEach(() => {
+      State.set('user', { id: 'u1' });
+      localStorage.setItem(Utils.KEYS.mcShip, 's1');
+      State.set('spaceships', [{ id: 's1', slot_assignments: { 0: 'a1' } }]);
+      State.set('agents', [{ id: 'a1', name: 'Scout', config: {} }]);
+      globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? { id: 'a1', name: 'Scout', config: {} } : null) };
+      releaseCard = [];
+      globalThis.fetch = vi.fn((url, init) => new Promise(r => {
+        calls.push(JSON.parse(init.body));
+        const n = calls.length;
+        releaseCard.push(() => r({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Answer for call ' + n }] }) }));
+      }));
+    });
+    afterEach(() => { delete globalThis.Blueprints; delete globalThis.ShipLog; delete globalThis.AgentExecutor; });
+
+    it('drops an agent answer that comes back late, and keeps the card call holding the panel', async () => {
+      let scoutDone;
+      globalThis.ShipLog = { execute: vi.fn(() => new Promise(r => { scoutDone = () => r({ content: 'Scout result', agent: 'Scout' }); })) };
       send('@Scout find leads');
-      expect(document.getElementById('nice-ai-send').disabled).toBe(true);
-      PromptPanel._reload();
-      expect(document.getElementById('nice-ai-send').disabled).toBe(false);
-      send('Name my bakery');
+      expect(btn().disabled).toBe(true);
+      PromptPanel._reload();                 // the sidebar's New chat
+      expect(btn().disabled).toBe(false);
+      send('Name my bakery');                // card call 1 out
+      expect(btn().disabled).toBe(true);
+      scoutDone();                           // the old agent answers now
+      await tick();
+      expect(btn().disabled).toBe(true);     // the card still holds the panel
+      expect(PromptPanel.messages().some(m => m.text === 'Scout result')).toBe(false);
+      send('Again');                         // blocked: nothing overlaps call 1
+      expect(calls).toHaveLength(1);
+      releaseCard[0]();
       await settled();
-      expect(calls.map(c => c.model)).toEqual(['gemini-2-5-flash']);
-    } finally { delete globalThis.Blueprints; delete globalThis.ShipLog; }
+      expect(btn().disabled).toBe(false);
+      const t = SpaceCards.threads(PromptPanel.messages())['gemini-2-5-flash'];
+      expect(t.map(ex => [ex.ask.text, ex.replies.map(r => r.text)])).toEqual([['Name my bakery', ['Answer for call 1']]]);
+    });
+
+    it('starts a fresh agent conversation instead of sending into the old one', async () => {
+      const first = { send: vi.fn(() => new Promise(r => { first.finish = () => r({ text: 'Old agent reply', done: true }); })) };
+      const second = { send: vi.fn(async () => ({ text: 'New agent reply', done: true })) };
+      const controllers = [first, second];
+      globalThis.AgentExecutor = { converse: vi.fn(() => controllers.shift()) };
+      State.set('agents', [{ id: 'a1', name: 'Scout', config: { tools: ['web-search'] } }]);
+      globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? { id: 'a1', name: 'Scout', config: { tools: ['web-search'] } } : null) };
+      send('@Scout find leads');
+      PromptPanel._reload();
+      send('@Scout try again');
+      await vi.waitFor(() => expect(PromptPanel.messages().some(m => m.text === 'New agent reply')).toBe(true));
+      expect(AgentExecutor.converse).toHaveBeenCalledTimes(2);
+      expect(first.send).toHaveBeenCalledTimes(1);
+      first.finish();
+      await tick();
+      expect(PromptPanel.messages().some(m => m.text === 'Old agent reply')).toBe(false);
+      expect(btn().disabled).toBe(false);
+    });
+
+    it('aborts NICE\'s direct reply and drops what it brings back', async () => {
+      history.replaceState(null, '', '#/crew'); // no project: NICE answers directly
+      let signal;
+      globalThis.fetch = vi.fn((url, init) => { signal = init.signal; calls.push(JSON.parse(init.body)); return new Promise(() => {}); });
+      send('What is a good bakery name?');
+      await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+      localStorage.setItem(Utils.KEYS.aiMessages, '[]'); // what New chat writes first
+      PromptPanel._reload();
+      expect(signal.aborted).toBe(true);
+      await tick();
+      expect(PromptPanel.messages()).toEqual([]);
+      expect(btn().disabled).toBe(false);
+    });
+  });
+
+  it('frees the panel when setting up the cards throws', () => {
+    const requiredCapability = AttachmentUtils.requiredCapability;
+    AttachmentUtils.requiredCapability = () => { throw new Error('Could not read the attachment'); };
+    try {
+      PromptPanel._sendToCards('Look at this', [{ kind: 'image', name: 'shop.png', dataUrl: 'data:image/png;base64,AA' }]);
+    } finally { AttachmentUtils.requiredCapability = requiredCapability; }
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash', error: true, text: 'Could not read the attachment' });
+    expect(document.getElementById('nice-ai-send').disabled).toBe(false);
+    expect(calls).toHaveLength(0);
   });
 
   it('drops replies still on their way when another conversation opens', async () => {
