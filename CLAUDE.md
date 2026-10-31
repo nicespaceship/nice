@@ -514,7 +514,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
-Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 100 files, 2328 tests (2026-10-30). Counts drift with each feature — verify with `npm test`.
+Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 100 files, 2332 tests (2026-10-30). Counts drift with each feature — verify with `npm test`.
 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
