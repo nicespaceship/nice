@@ -35,6 +35,7 @@ loadModule('lib/token-config.js');
 // model-catalog.js is UMD: hide `module` so it assigns the browser global.
 new Function('module', 'self', readFileSync(resolve(__dir, '../lib/model-catalog.js'), 'utf-8'))(undefined, globalThis);
 loadModule('lib/space-cards.js');
+loadModule('lib/llm-activity.js');
 loadModule('views/prompt-panel.js');
 
 globalThis.CoreReactor = { init() {}, setState() {} };
@@ -787,6 +788,31 @@ describe('Sending from the panel on Space', () => {
     await settled();
     expect(calls).toHaveLength(2);
     expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash', text: 'Four.' });
+  });
+});
+
+describe('The model-call activity line', () => {
+  beforeEach(() => LLMActivity._reset());
+
+  it('never opens when the request fails to build', async () => {
+    const sanitize = Utils.sanitizeCallsign;
+    Utils.sanitizeCallsign = () => { throw new Error('Bad callsign'); };
+    try {
+      PromptPanel._sendToCards('Name my bakery');
+      await settled();
+    } finally { Utils.sanitizeCallsign = sanitize; }
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ error: true, text: 'Bad callsign' });
+    expect(LLMActivity.isActive()).toBe(false);
+  });
+
+  it('closes when a new chat aborts the call', async () => {
+    globalThis.fetch = vi.fn((url, init) => new Promise((res, rej) => {
+      init.signal.addEventListener('abort', () => { const e = new Error('The operation was aborted'); e.name = 'AbortError'; rej(e); });
+    }));
+    PromptPanel._sendToCards('Name my bakery');
+    await vi.waitFor(() => expect(LLMActivity.isActive()).toBe(true));
+    PromptPanel._reload();
+    await vi.waitFor(() => expect(LLMActivity.isActive()).toBe(false));
   });
 });
 

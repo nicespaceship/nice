@@ -2066,8 +2066,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           : opts.modelOverride)
       : sel.label;
     const wantStream = !!opts.onChunk;
-
-    const _activity = (typeof LLMActivity !== 'undefined') ? LLMActivity.start(model) : null;
     const _activityTokens = { total: 0 };
 
     // Request shape (Phase B of #221): chat mode delegates system-prompt
@@ -2106,7 +2104,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const headers = { 'Content-Type': 'application/json', 'apikey': SB._key };
     if (authHeader) headers['Authorization'] = authHeader;
 
+    // The activity handle opens inside the try, so the finally below always
+    // closes it, whatever throws.
+    let _activity = null;
     try {
+      if (typeof LLMActivity !== 'undefined') _activity = LLMActivity.start(model);
       const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
         method: 'POST',
         headers,
