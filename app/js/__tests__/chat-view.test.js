@@ -227,7 +227,7 @@ describe('ChatView', () => {
     mount();
     const c = card(el, 'gemini-2-5-flash');
     expect(c.querySelector('[data-act="retry"]')).toBeNull();
-    expect(c.querySelector('.space-retry-note').textContent).toBe('Attach notes.txt and <b>plan</b>.pdf and send again to retry.');
+    expect(c.querySelector('.space-retry-note').textContent).toBe('Attach notes.txt and <b>plan</b>.pdf again, then send to retry.');
     expect(c.querySelector('.space-retry-note b')).toBeNull();
   });
 

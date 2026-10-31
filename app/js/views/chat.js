@@ -81,7 +81,7 @@ const ChatView = (() => {
       // keeps only file names, so a prompt that had files asks for them
       // rather than retry without them.
       const next = r.billing ? ' <a href="#/wallet">Open Wallet</a>'
-        : (canRetry && !r.capability && lostFiles.length) ? ` <span class="space-retry-note">Attach ${_esc(_names(lostFiles))} and send again to retry.</span>`
+        : (canRetry && !r.capability && lostFiles.length) ? ` <span class="space-retry-note">Attach ${_esc(_names(lostFiles))} again, then send to retry.</span>`
         : (canRetry && !r.capability) ? ' <button type="button" class="space-retry" data-act="retry">Retry</button>'
         : '';
       return `<p class="space-err">${from}${_esc(r.error)}${next}</p>`;
