@@ -2373,7 +2373,9 @@ html:not([data-theme]) .app-main,
 .dot-g { background:var(--dot-go, var(--color-success)); }
 .dot-r { background:var(--dot-stop, var(--color-error)); }
 .dot-a { background:var(--dot-busy, var(--color-warning)); }
-.dot-i { background:var(--dot-info, var(--color-info)); }
+/* .dot-i is new; on main a .status-dot with no color class drew the accent
+   (theme.css), so that is what other themes keep. */
+.dot-i { background:var(--dot-info, var(--accent)); }
 
 
 /* ─────────────────────────────────────────────────────────────────
