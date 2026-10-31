@@ -683,7 +683,8 @@ const PromptPanel = (() => {
   };
   // Model text picks the action name, so only the map's own keys count:
   // "constructor" or "__proto__" must not resolve to Object's members.
-  const _isExecCommand = (action) => Object.hasOwn(_EXEC_COMMANDS, action);
+  // (hasOwnProperty.call, not Object.hasOwn: the build targets ES2020.)
+  const _isExecCommand = (action) => Object.prototype.hasOwnProperty.call(_EXEC_COMMANDS, action);
 
   /* ── Execute EXEC actions from LLM responses (thin adapter over the bus) ── */
   async function _executeExec(action, params, onApprovalNeeded) {
