@@ -4314,15 +4314,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const current = !!(opts && opts.current);
     const onSpace = window.location.hash === '#/space';
     if (current) {
-      // A send still out keeps its thinking, step or stream line on the
-      // monitor; redrawing would drop them, so it shows as it is.
+      // Redrawn from the conversation as it stands (card exchanges since the
+      // monitor last drew included); a send still out keeps its lines and a
+      // waiting approval through the redraw.
       const show = _niceReplies() || !!_niceSend;
       if (!onSpace) {
         _suppressMonitorAutoHide = show;
         window.location.hash = '#/space';
       }
       if (show) {
-        if (!_monitorContent?.children.length) _renderMonitor();
+        _renderMonitor();
         _showMonitor(true);
       }
       return;

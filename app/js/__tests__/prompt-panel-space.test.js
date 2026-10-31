@@ -453,6 +453,24 @@ describe('Sending to the selected cards', () => {
       expect(btn().disabled).toBe(false);
     });
 
+    it('shows the open chat as it stands when it is opened again', async () => {
+      globalThis.ShipLog = { execute: vi.fn(async () => ({ content: 'Scout result', agent: 'Scout' })) };
+      send('@Scout find leads');
+      await vi.waitFor(() => expect(btn().disabled).toBe(false));
+      // Back to the cards: they answer without redrawing the monitor.
+      document.querySelector('.app-main').classList.remove('monitor-active');
+      globalThis.fetch = vi.fn(async () => ({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Rise & Co.' }] }) }));
+      send('Name my bakery');
+      await settled();
+      history.replaceState(null, '', '#/ship');
+      PromptPanel._showConversation({ current: true });
+      const text = document.getElementById('nice-monitor-content').textContent;
+      expect(monitorOpen()).toBe(true);
+      expect(text).toContain('Scout result');
+      expect(text).toContain('Name my bakery');
+      expect(text).toContain('Rise & Co.');
+    });
+
     it("declines an old agent's approvals once a new chat opens, and stops the agent", async () => {
       let opts;
       globalThis.AgentExecutor = { converse: vi.fn((bp, o) => { opts = o; return { send: () => new Promise(() => {}) }; }) };
