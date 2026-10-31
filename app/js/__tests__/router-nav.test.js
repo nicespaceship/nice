@@ -80,6 +80,7 @@ describe('Router on a route with no view', () => {
       reduced = false; // animated swaps
       history.replaceState(null, '', '#/ship');
       RealRouter.init(host);           // first render is instant
+      spaceView.destroy.mockClear();   // the last test left Space drawn
       history.replaceState(null, '', '#/space');
       RealRouter.refresh();            // swap to Space waits 120ms
       vi.advanceTimersByTime(30);
@@ -88,7 +89,29 @@ describe('Router on a route with no view', () => {
       vi.advanceTimersByTime(500);
       expect(host.textContent).toContain('Page Not Found');
       expect(spaceView.render).not.toHaveBeenCalled();
+      // Space never drew, so it is not torn down either.
+      expect(spaceView.destroy).not.toHaveBeenCalled();
       expect(host.classList.contains('view-exit')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('tears down a view once, after its delayed swap drew it', () => {
+    vi.useFakeTimers();
+    try {
+      reduced = false;
+      history.replaceState(null, '', '#/ship');
+      RealRouter.init(host);
+      spaceView.destroy.mockClear();
+      history.replaceState(null, '', '#/space');
+      RealRouter.refresh();
+      vi.advanceTimersByTime(500);     // Space draws
+      expect(spaceView.render).toHaveBeenCalledTimes(1);
+      history.replaceState(null, '', '#/ship');
+      RealRouter.refresh();
+      history.replaceState(null, '', '#/no-such-place');
+      RealRouter.refresh();            // before Ship's swap draws
+      vi.advanceTimersByTime(500);
+      expect(spaceView.destroy).toHaveBeenCalledTimes(1);
     } finally { vi.useRealTimers(); }
   });
 });

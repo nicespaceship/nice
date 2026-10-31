@@ -15,6 +15,8 @@
 
 const Router = (() => {
   const _routes = [];
+  // The view whose render ran, so the one to tear down: a route replaced
+  // while its animated swap was still waiting never drew, and is not torn down.
   let _currentView = null;
   let _el = null;
 
@@ -122,12 +124,11 @@ const Router = (() => {
     if (_currentView && _currentView.destroy) {
       try { _currentView.destroy(); } catch(e) { console.error('[NICE] View destroy error:', e); }
     }
+    _currentView = null;
     // Clean up any scoped State subscriptions from the previous view
     if (typeof State !== 'undefined' && State.destroyScoped) {
       State.destroyScoped();
     }
-
-    _currentView = view;
 
     // Update page title in header
     const title = view.title || 'NICE';
@@ -164,6 +165,7 @@ const Router = (() => {
       // Instant swap (first render, reduced motion, or the not-found page)
       _el.innerHTML = '';
       _el.scrollTop = 0;
+      _currentView = view;
       try {
         if (view.render) view.render(_el, params);
       } catch (err) {
@@ -178,6 +180,7 @@ const Router = (() => {
         _el.innerHTML = '';
         _el.scrollTop = 0;
         _el.classList.remove('view-exit');
+        _currentView = view;
         try {
           if (view.render) view.render(_el, params);
         } catch (err) {
