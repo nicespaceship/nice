@@ -3998,12 +3998,19 @@ html:not([data-theme]) .app-main,
 .mc-age-fresh { border-left:3px solid var(--color-success); }
 .mc-age-stale { border-left:3px solid var(--color-warning); }
 .mc-age-overdue { border-left:3px solid var(--color-error); }
-/* NICE draws no colored edge, so age shows as a dot closing the card's top
-   row: busy (orange) once a mission is stale, stop (red) once overdue. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) :is(.mc-age-stale, .mc-age-overdue) .mc-card-top::after {
+/* NICE draws no colored edge. A dot closing the card's top row says what
+   the mission needs: red when it failed, orange while it waits for review,
+   green once it completed. Age only matters for work still in flight
+   (queued or running): orange once stale, red once overdue. Fresh in-flight
+   and cancelled missions show no dot. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:is([data-status="queued"], [data-status="running"]).mc-age-stale .mc-card-top::after,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:is([data-status="queued"], [data-status="running"]).mc-age-overdue .mc-card-top::after,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:is([data-status="failed"], [data-status="review"], [data-status="completed"]) .mc-card-top::after {
   content:''; width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--dot-busy);
 }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-age-overdue .mc-card-top::after { background:var(--dot-stop); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:is([data-status="queued"], [data-status="running"]).mc-age-overdue .mc-card-top::after,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card[data-status="failed"] .mc-card-top::after { background:var(--dot-stop); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card[data-status="completed"] .mc-card-top::after { background:var(--dot-go); }
 
 .mc-card-top { display:flex; align-items:center; gap:8px; }
 .mc-card-check { width:14px; height:14px; cursor:pointer; opacity:.4; transition:opacity .15s; }
