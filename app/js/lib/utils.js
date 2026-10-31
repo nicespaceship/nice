@@ -159,6 +159,7 @@ const Utils = (() => {
     shipState: 'nice-ship-state',
     favorites: 'nice-favorites',
     aiMessages: 'nice-ai-messages',
+    spaceCards: 'nice-space-cards',
     customAgents: 'nice-custom-agents',
     customShips: 'nice-custom-ships',
     contentQueue: 'nice-content-queue',

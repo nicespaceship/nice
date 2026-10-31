@@ -233,7 +233,7 @@
   // Entries are plain articles in the page (readable without this
   // script and by search engines). Here they become an index by group,
   // a search, one entry at a time with previous and next, and links
-  // like #codex/compare.
+  // like #codex/space.
   function codex() {
     const root = document.querySelector('[data-codex]');
     if (!root) return;
@@ -367,10 +367,15 @@
       if (e.key === 'Escape' && search.value) { search.value = ''; renderNav(); }
     });
 
+    // Entries renamed with the app keep their old links working. A Map, so
+    // a link like #codex/constructor can't reach an Object member.
+    const RENAMED = new Map([['compare', 'space'], ['outbox', 'ship'], ['library', 'blueprints'], ['spaceship', 'projects'], ['first-spaceship', 'first-project']]);
     function fromHash() {
       const m = /^#codex\/([\w-]+)$/.exec(location.hash);
       if (!m) return;
-      open(m[1], { focus: false });
+      const id = RENAMED.get(m[1]) || m[1];
+      if (id !== m[1]) history.replaceState(null, '', `#codex/${id}`);
+      open(id, { focus: false });
       document.getElementById('codex').scrollIntoView({ block: 'start' });
     }
     window.addEventListener('hashchange', fromHash);
@@ -381,10 +386,26 @@
     fromHash();
   }
 
+  /* ── Renamed sections ───────────────────────────────────────── */
+  // Sections renamed with the app keep their old links: #library lands on
+  // #blueprints.
+  function renamedSections() {
+    const RENAMED = new Map([['library', 'blueprints']]);
+    const go = () => {
+      const id = RENAMED.get(location.hash.slice(1));
+      if (!id) return;
+      history.replaceState(null, '', '#' + id);
+      document.getElementById(id)?.scrollIntoView({ block: 'start' });
+    };
+    window.addEventListener('hashchange', go);
+    go();
+  }
+
   starfield();
   header();
   mission();
   tabs();
   skins();
   codex();
+  renamedSections();
 })();

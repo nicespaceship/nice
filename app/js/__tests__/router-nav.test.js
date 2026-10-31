@@ -4,7 +4,7 @@
  * re-runs it after a view rewrites the URL with history.replaceState.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -35,6 +35,101 @@ beforeEach(() => {
 function current() {
   return [...document.querySelectorAll('[aria-current="page"]')].map(a => a.textContent);
 }
+
+describe('Router on a route with no view', () => {
+  // Routes register once: the router keeps the first match for a path.
+  const spaceView = { title: 'Space', render: vi.fn((el) => { el.innerHTML = '<p>space</p>'; }), destroy: vi.fn() };
+  RealRouter.on('/space', spaceView);
+  RealRouter.on('/ship', { title: 'Ship', render: (el) => { el.innerHTML = '<p>ship</p>'; } });
+  let host, reduced;
+  beforeEach(() => {
+    reduced = true;
+    window.matchMedia = () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} });
+    globalThis.CoreReactor = { setVisible: vi.fn() };
+    document.body.insertAdjacentHTML('beforeend', '<div id="app-fixed-tabs"><button>Schematic</button></div><h1 id="app-page-title"></h1>');
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    spaceView.render.mockClear();
+    spaceView.destroy.mockClear();
+  });
+  afterEach(() => { delete globalThis.CoreReactor; });
+
+  it('tears down the previous view and clears its page furniture before Page Not Found', () => {
+    history.replaceState(null, '', '#/space');
+    RealRouter.init(host);
+    expect(host.textContent).toBe('space');
+    CoreReactor.setVisible.mockClear();
+    history.replaceState(null, '', '#/no-such-place');
+    RealRouter.refresh();
+    expect(spaceView.destroy).toHaveBeenCalledTimes(1);
+    expect(host.textContent).toContain('Page Not Found');
+    expect(document.getElementById('app-fixed-tabs').children).toHaveLength(0);
+    expect(CoreReactor.setVisible).toHaveBeenCalledWith(false);
+    expect(document.title).toBe('Page Not Found — NICE');
+    expect(document.getElementById('app-page-title').textContent).toBe('Page Not Found');
+    expect(current()).toEqual([]);
+    // Leaving the not-found page destroys nothing twice.
+    history.replaceState(null, '', '#/space');
+    RealRouter.refresh();
+    expect(spaceView.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels the swap still waiting from the route before', () => {
+    vi.useFakeTimers();
+    try {
+      reduced = false; // animated swaps
+      history.replaceState(null, '', '#/ship');
+      RealRouter.init(host);           // first render is instant
+      spaceView.destroy.mockClear();   // the last test left Space drawn
+      history.replaceState(null, '', '#/space');
+      RealRouter.refresh();            // swap to Space waits 120ms
+      vi.advanceTimersByTime(30);
+      history.replaceState(null, '', '#/no-such-place');
+      RealRouter.refresh();
+      vi.advanceTimersByTime(500);
+      expect(host.textContent).toContain('Page Not Found');
+      expect(spaceView.render).not.toHaveBeenCalled();
+      // Space never drew, so it is not torn down either.
+      expect(spaceView.destroy).not.toHaveBeenCalled();
+      expect(host.classList.contains('view-exit')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('reports the view it has drawn, and none while a swap is on its way', () => {
+    vi.useFakeTimers();
+    try {
+      reduced = false;
+      history.replaceState(null, '', '#/space');
+      RealRouter.init(host);
+      expect(RealRouter.drawn()).toBe(spaceView);
+      history.replaceState(null, '', '#/ship');
+      RealRouter.refresh();
+      expect(RealRouter.drawn()).toBeNull();
+      vi.advanceTimersByTime(500);
+      expect(RealRouter.drawn().title).toBe('Ship');
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('tears down a view once, after its delayed swap drew it', () => {
+    vi.useFakeTimers();
+    try {
+      reduced = false;
+      history.replaceState(null, '', '#/ship');
+      RealRouter.init(host);
+      spaceView.destroy.mockClear();
+      history.replaceState(null, '', '#/space');
+      RealRouter.refresh();
+      vi.advanceTimersByTime(500);     // Space draws
+      expect(spaceView.render).toHaveBeenCalledTimes(1);
+      history.replaceState(null, '', '#/ship');
+      RealRouter.refresh();
+      history.replaceState(null, '', '#/no-such-place');
+      RealRouter.refresh();            // before Ship's swap draws
+      vi.advanceTimersByTime(500);
+      expect(spaceView.destroy).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); }
+  });
+});
 
 describe('Router.syncNav', () => {
   it('marks the link for the current path active, with aria-current', () => {

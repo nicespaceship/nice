@@ -4987,8 +4987,7 @@ html:not([data-theme]) .app-main,
 .monitor-compare-card.picked { border-color:var(--color-success); }
 .monitor-compare-card.dim { opacity:.6; }
 .monitor-compare-model { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--text); }
-.monitor-compare-model small,
-.nice-ai-compare-chip small {
+.monitor-compare-model small {
   font-size:var(--text-2xs); font-weight:var(--fw-medium); color:var(--text-muted);
   padding:0 7px; border:1px solid var(--border); border-radius:999px; white-space:nowrap;
 }
@@ -5344,38 +5343,13 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted);
 }
 
-/* Compare toggle (toolbar) and the strip of compared models above the input */
-.nice-ai-compare-btn {
-  display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px;
-  border:1px solid var(--border); background:transparent; color:var(--text-muted);
-  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-medium); cursor:pointer;
+/* Space: the models the prompt goes to, in place of the model dropdown */
+.nice-ai-targets {
+  max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
 }
-.nice-ai-compare-btn:hover { color:var(--text); border-color:var(--accent); }
-.nice-ai-compare-btn[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:var(--bg); }
-.nice-ai-compare-btn[hidden],
+.nice-ai-targets[hidden],
 .nice-ai-model-select[hidden] { display:none; }
-.nice-ai-compare-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:2px 2px 8px; }
-.nice-ai-compare-bar[hidden] { display:none; }
-.nice-ai-compare-label {
-  font-size:var(--text-xs); font-weight:var(--fw-bold); letter-spacing:var(--tracking-caps);
-  text-transform:uppercase; color:var(--text-muted); margin-right:2px;
-}
-.nice-ai-compare-chip {
-  display:inline-flex; align-items:center; gap:6px; padding:2px 4px 2px 10px; border-radius:999px;
-  border:1px solid var(--border); background:var(--surface2); font-size:var(--text-xs); color:var(--text);
-}
-.nice-ai-compare-remove {
-  width:20px; height:20px; border:0; border-radius:50%; background:transparent; color:var(--text-muted);
-  font-size:var(--text-sm); line-height:1; cursor:pointer;
-}
-.nice-ai-compare-remove:hover:not(:disabled) { color:var(--text); background:var(--surface); }
-.nice-ai-compare-remove:disabled { opacity:.35; cursor:default; }
-.nice-ai-compare-add {
-  padding:3px 8px; border-radius:999px; border:1px dashed var(--border); background:transparent;
-  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-xs); cursor:pointer;
-}
-.nice-ai-compare-note { margin:0; font-size:var(--text-xs); color:var(--text-muted); line-height:var(--lh-base); }
-.nice-ai-compare-note a { color:var(--accent); }
 
 /* Attachment chip row — sits above the textarea when files are staged.
    Three chip variants share the row: image thumbs (56×56 square), file
@@ -5708,76 +5682,193 @@ html[data-theme] .nice-ai-input:focus-visible {
 .pro-upgrade-btn { background:var(--color-info); border:none; }
 
 /* ═══════════════════════════════════════════════════════════════
-   Chat Home (Claude-style default page)
+   Space (#/space): model cards above the docked prompt panel
+   Workspace cards, not TCG collectibles: they hold prose (model
+   replies), so they use the prose type scale, not --card-text-*.
+   Monochrome by default: a selected card gets an ink border and an
+   inverted header; the only color is the status dot. Other themes
+   restyle them through their own tokens.
 ═══════════════════════════════════════════════════════════════ */
-.chat-home {
-  display:flex; flex-direction:column;
-  height:100%; overflow:hidden;
-  max-width:720px; margin:0 auto;
-  padding:0 20px;
-  /* Natural `margin:0 auto` centering inside .app-main. Previously this
-     applied a negative-left offset to viewport-anchor the block "to
-     match the reactor" (PR #146). Once the reactor itself moved off
-     viewport-anchoring and onto app-main-anchoring (so it lines up
-     with the bridge tabs + prompt panel), the offset became the bug —
-     the greeting + chips drifted left of the reactor + prompt panel
-     they're stacked with. */
+.app-view-content:has(> .space) {
+  padding-bottom:calc(var(--chat-bottom-inset, 140px) + 24px);
+  scroll-padding-bottom:calc(var(--chat-bottom-inset, 140px) + 24px);
+}
+.space {
+  /* Paints above the fixed core reactor (z-index:0 in .app-main). */
+  position:relative; z-index:1;
+  display:flex; flex-direction:column; gap:16px;
+  max-width:1280px; margin:0 auto;
+}
+.space-bar {
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:8px 20px; min-height:28px;
+}
+.space-note,
+.space-none { margin:0; font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-base); color:var(--text-muted); }
+.space-bar-acts { display:flex; align-items:center; gap:16px; margin-left:auto; }
+.space-link {
+  padding:0; border:0; background:none; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
+}
+.space-retry { padding:0; border:0; background:none; cursor:pointer; font:inherit; }
+.space-retry-note { color:var(--text-muted); }
+.space-link,
+.space-retry,
+.space-note a,
+.space-none a,
+.space-err a { color:var(--text); text-decoration:underline; text-underline-offset:3px; }
+.space-link:hover,
+.space-retry:hover,
+.space-note a:hover,
+.space-none a:hover,
+.space-err a:hover { color:var(--text-muted); }
+
+/* Reactor slot: themes with a centerpiece reactor anchor it here. ChatView
+   writes --reactor-x/y as the view scrolls, and --space-reactor-clip as the
+   distance from the reactor's top to the view's top edge, so whatever
+   scrolls above the view is cut off like the rest of the content. Only the
+   top edge clips: a theme's rings may spill past the box on other sides. */
+html:has(.space-reactor) { --space-reactor-size:168px; }
+html:has(.space-reactor) .jv-pp-reactor {
+  width:var(--space-reactor-size); height:var(--space-reactor-size);
+  clip-path:inset(var(--space-reactor-clip, 0px) -100vmax -100vmax -100vmax);
+}
+.space-reactor { flex-shrink:0; height:var(--space-reactor-size); }
+
+.space-grid {
+  display:grid; gap:16px; align-items:start;
+  grid-template-columns:repeat(auto-fill, minmax(208px, 1fr));
+}
+.space-card {
+  display:flex; flex-direction:column; min-width:0;
+  aspect-ratio:5 / 7; overflow:hidden;
+  border:2px solid var(--border); border-radius:calc(var(--radius) + 2px);
+  /* Opaque even where --surface is a tint (Matrix rain, HUD glass): the
+     tint sits on the page color so replies stay readable. */
+  background-color:var(--bg); background-image:linear-gradient(var(--surface), var(--surface));
+  color:var(--text); cursor:pointer;
+  transition:border-color .15s;
+}
+.space-card:hover { border-color:var(--border-hi, var(--text-muted)); }
+.space-card.is-selected { border-color:var(--text); }
+.space-card.is-expanded { grid-column:1 / -1; aspect-ratio:auto; cursor:auto; }
+/* Waiting on an approval: the card grows to keep the reply that asked in
+   view above the buttons, instead of squeezing it out of a fixed card. */
+.space-card.has-approval { aspect-ratio:auto; }
+.space-card.has-approval:not(.is-expanded) .space-card-body { max-height:160px; }
+
+.space-card-head {
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:12px 14px; border:0; border-bottom:1px solid var(--border);
+  background:transparent; color:inherit; text-align:left; cursor:pointer;
+  font-family:var(--font-b);
+}
+.space-card.is-selected .space-card-head { background:var(--text); color:var(--bg); border-bottom-color:var(--text); }
+.space-card-head:focus-visible { outline:2px solid var(--text); outline-offset:-5px; }
+.space-card.is-selected .space-card-head:focus-visible { outline-color:var(--bg); }
+.space-card-names { display:flex; flex-direction:column; flex:1; min-width:0; }
+.space-card-name,
+.space-card-sub { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.space-card-name { font-family:var(--font-h); font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); }
+.space-card-sub { font-size:var(--text-xs); line-height:var(--lh-snug); color:var(--text-muted); }
+.space-card.is-selected .space-card-sub { color:inherit; }
+
+/* Status dot: go = selected and ready, busy = thinking, stop = failed,
+   none = not selected. Tokens come from the theme, with fallbacks. */
+.space-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.space-dot[data-dot="go"]   { background:var(--dot-go, var(--color-success)); }
+.space-dot[data-dot="busy"] { background:var(--dot-busy, var(--color-warning)); animation:space-dot-pulse 1s ease-in-out infinite; }
+.space-dot[data-dot="stop"] { background:var(--dot-stop, var(--color-error)); }
+@keyframes space-dot-pulse { 50% { opacity:.35; } }
+
+/* Body: the latest exchange, cut off with a fade; "Show all" opens the
+   card across the row with the whole thread (the page stays the only
+   scroller). */
+.space-card-body {
+  flex:1; min-height:0; overflow:hidden; padding:12px 14px 0;
+  font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-base);
+  color:var(--text); overflow-wrap:anywhere;
+}
+.space-card:not(.is-expanded) .space-card-body {
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+          mask-image:linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+}
+.space-empty,
+.space-wait,
+.space-err { margin:0; }
+.space-empty,
+.space-wait { color:var(--text-muted); }
+.space-ex + .space-ex { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.space-ask,
+.space-files { margin:0 0 8px; font-size:var(--text-xs); color:var(--text-muted); }
+.space-ask { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.space-card.is-expanded .space-ask { display:block; -webkit-line-clamp:unset; }
+.space-card.is-expanded .space-ex { max-width:72ch; }
+.space-reply p { margin:0 0 8px; }
+.space-reply p:last-child { margin-bottom:0; }
+.space-reply ul,
+.space-reply ol { margin:6px 0; padding-left:18px; }
+.space-reply li { margin-bottom:2px; }
+.space-reply .monitor-h { margin:10px 0 4px; font-size:var(--text-sm); color:var(--text); }
+.space-reply .monitor-code-block { padding:8px 10px; font-size:var(--text-xs); }
+.space-reply.is-note { font-size:var(--text-xs); color:var(--text-muted); }
+.space-reply + .space-reply,
+.space-reply + .space-err,
+.space-err + .space-reply { margin-top:10px; }
+.space-from { display:block; margin-bottom:2px; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-muted); }
+.space-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.space-action {
+  padding:4px 10px; border:1px solid var(--text); border-radius:999px; background:transparent; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text);
+}
+.space-action:hover { background:var(--text); color:var(--bg); }
+
+/* A command the reply asked for, waiting on the user's OK. Sits outside
+   the faded body so the buttons are always in view. */
+.space-approval {
+  display:flex; flex-direction:column; gap:6px; margin:8px 14px 0; padding:10px 12px;
+  border:1px solid var(--text); border-radius:var(--radius);
+  font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-snug); color:var(--text);
+}
+.space-approval-title,
+.space-approval-detail { margin:0; overflow-wrap:anywhere; }
+.space-approval-title { font-weight:var(--fw-bold); }
+.space-approval-detail { font-size:var(--text-xs); color:var(--text-muted); }
+.space-approval-acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+.space-approve,
+.space-deny {
+  padding:5px 14px; border:1px solid var(--text); border-radius:999px; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-bold);
+}
+.space-approve { background:var(--text); color:var(--bg); }
+.space-deny { background:transparent; color:var(--text); }
+.space-approve:hover,
+.space-deny:hover { opacity:.85; }
+
+.space-card-foot {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  min-height:38px; padding:8px 14px;
+  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
+}
+.space-more {
+  padding:4px 0; border:0; background:none; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-medium);
+  color:var(--text); text-decoration:underline; text-underline-offset:3px;
 }
 
-/* Empty state — greeting anchored above the HUD/reactor */
-.chat-home-empty {
-  flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:flex-start;
-  min-height:0; position:relative;
-  padding-top:48px;
+@media (prefers-reduced-motion:reduce) {
+  .space-dot[data-dot="busy"] { animation:none; }
 }
-.chat-home-greeting {
-  font-family:var(--font-b); font-size:var(--text-2xl); font-weight:var(--fw-bold);
-  line-height:var(--lh-tight); letter-spacing:var(--tracking-display);
-  color:var(--text); text-align:center; position:relative; z-index:2;
-}
-/* Persona-flavored suggestion chips below the greeting. Each theme
-   supplies 3 prompts via THEMES[id].chips; clicking one prefills the
-   global PromptPanel. */
-.chat-home-chips {
-  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
-  margin-top:20px; max-width:560px; position:relative; z-index:2;
-}
-.chat-home-chip {
-  font-family:var(--font-b); font-size:var(--text-sm);
-  color:var(--text-muted);
-  background:var(--surface, transparent); border:1px solid var(--border);
-  border-radius:var(--radius); height:26px; padding:0 12px;
-  display:inline-flex; align-items:center; cursor:pointer;
-  transition:color .15s, border-color .15s, background-color .15s;
-}
-.chat-home-chip:hover {
-  color:var(--text); border-color:var(--border-hi, var(--accent));
-  background:color-mix(in srgb, var(--text) 6%, transparent);
-}
-
-/* Conversation state */
-.chat-home-conv {
-  flex:1; display:flex; flex-direction:column;
-  min-height:0; padding-top:12px;
-}
-.chat-home-new-btn {
-  display:flex; align-items:center; gap:4px; align-self:flex-end;
-  padding:6px 12px; border-radius:var(--radius);
-  background:none; border:1px solid var(--border);
-  color:var(--text-muted); font-family:var(--font-b);
-  font-size:var(--text-xs); cursor:pointer; margin-bottom:12px;
-  transition:all .2s;
-}
-.chat-home-new-btn:hover { border-color:var(--accent); color:var(--text); }
-.chat-home-feed {
-  flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
-  padding-bottom:16px;
-}
-
-/* Input wrap — legacy, no longer used */
-@media (max-width:600px) {
-  .chat-home-greeting { font-size:var(--text-lg); }
+/* Phone: two columns of cards, a smaller reactor slot. */
+@media (max-width:640px) {
+  .space { gap:12px; padding:4px 4px 0; }
+  html:has(.space-reactor) { --space-reactor-size:112px; }
+  .space-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+  .space-card-head { gap:8px; padding:10px; }
+  .space-card-name { font-size:var(--text-sm); }
+  .space-card-body { padding:10px 10px 0; }
+  .space-approval { margin:8px 10px 0; padding:8px 10px; }
+  .space-card-foot { min-height:34px; padding:6px 10px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

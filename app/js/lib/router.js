@@ -11,10 +11,13 @@
  * @property {function(): Object.<string,string>} query — Parse query params from window.location.search
  * @property {function(): Object.<string,string>} hashQuery — Parse query params after the hash path
  * @property {function(HTMLElement): void} init — Start the router, rendering into the given container element
+ * @property {function(): ?Object} drawn — The view the router has drawn (null while a swap is on its way)
  */
 
 const Router = (() => {
   const _routes = [];
+  // The view whose render ran, so the one to tear down: a route replaced
+  // while its animated swap was still waiting never drew, and is not torn down.
   let _currentView = null;
   let _el = null;
 
@@ -93,29 +96,43 @@ const Router = (() => {
     return null;
   }
 
-  /* Render the matched view */
+  // A path with no view gets this page, through the same steps as a view.
+  function _notFound(p) {
+    return {
+      title: 'Page Not Found',
+      render: (el) => { el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`; },
+    };
+  }
+
+  let _swapTimer = 0; // the animated swap still waiting to draw the last route
+
+  /* Render the matched view (or the not-found page) */
   function _render() {
     const p = path();
     const match = _match(p);
+    const view = match ? match.view : _notFound(p);
+    const params = match ? match.params : {};
 
-    if (!match) {
-      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`;
-      return;
+    // A newer route wins: a swap still waiting from the last one must not
+    // draw its view over this one.
+    if (_swapTimer) {
+      clearTimeout(_swapTimer);
+      _swapTimer = 0;
+      _el.classList.remove('view-exit');
     }
 
     // Teardown previous view safely
     if (_currentView && _currentView.destroy) {
       try { _currentView.destroy(); } catch(e) { console.error('[NICE] View destroy error:', e); }
     }
+    _currentView = null;
     // Clean up any scoped State subscriptions from the previous view
     if (typeof State !== 'undefined' && State.destroyScoped) {
       State.destroyScoped();
     }
 
-    _currentView = match.view;
-
     // Update page title in header
-    const title = match.view.title || 'NICE';
+    const title = view.title || 'NICE';
     const titleEl = document.getElementById('app-page-title');
     if (titleEl) titleEl.textContent = title;
     document.title = `${title} — NICE`;
@@ -145,12 +162,13 @@ const Router = (() => {
     // CoreReactor.setVisible(true) in their render hook.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(false);
 
-    if (reducedMotion || !hasContent) {
-      // Instant swap (first render or reduced motion)
+    if (reducedMotion || !hasContent || !match) {
+      // Instant swap (first render, reduced motion, or the not-found page)
       _el.innerHTML = '';
       _el.scrollTop = 0;
+      _currentView = view;
       try {
-        if (match.view.render) match.view.render(_el, match.params);
+        if (view.render) view.render(_el, params);
       } catch (err) {
         console.error('[NICE] View render error on ' + p + ':', err);
         _el.innerHTML = _renderError(p, err);
@@ -158,12 +176,14 @@ const Router = (() => {
     } else {
       // Animated transition
       _el.classList.add('view-exit');
-      setTimeout(() => {
+      _swapTimer = setTimeout(() => {
+        _swapTimer = 0;
         _el.innerHTML = '';
         _el.scrollTop = 0;
         _el.classList.remove('view-exit');
+        _currentView = view;
         try {
-          if (match.view.render) match.view.render(_el, match.params);
+          if (view.render) view.render(_el, params);
         } catch (err) {
           console.error('[NICE] View render error on ' + p + ':', err);
           _el.innerHTML = _renderError(p, err);
@@ -246,6 +266,14 @@ const Router = (() => {
     _updateNav(path());
   }
 
+  /* The view the router has drawn, or null while a swap is still on its
+     way. A view that redraws itself from outside the router (Space on a new
+     chat) checks this first, so it never draws over a view the router owns
+     and then goes untorn-down. */
+  function drawn() {
+    return _currentView;
+  }
+
   /* Re-render the current view (e.g. after a theme change so any
      theme-specific DOM the previous view rendered gets rebuilt fresh). */
   function refresh() {
@@ -261,5 +289,5 @@ const Router = (() => {
     _render();
   }
 
-  return { on, navigate, path, query, hashQuery, init, refresh, syncNav };
+  return { on, navigate, path, query, hashQuery, init, refresh, syncNav, drawn };
 })();

@@ -110,9 +110,10 @@ const PromptPanel = (() => {
   let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
-  let _suppressMonitorAutoHide = false; // armed when opening a chat that also navigates to #/
+  let _suppressMonitorAutoHide = false; // armed when opening a chat that also navigates to #/space
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
+  let _onSpaceCards = null;  // SpaceCards selection listener (the "To …" label)
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -163,10 +164,13 @@ const PromptPanel = (() => {
     s = s.replace(/^#\s+(.+)$/gm, '<h3 class="monitor-h">$1</h3>');
     // Numbered lists: 1. text, 2. text, etc.
     s = s.replace(/^\d+\.\s+(.+)$/gm, '<li class="monitor-ol-item">$1</li>');
-    s = s.replace(/(<li class="monitor-ol-item">.*<\/li>\n?)+/g, (m) => '<ol>' + m + '</ol>');
+    // The newlines between items go, or the <br> pass below puts a blank
+    // line between every item (and one under the list).
+    s = s.replace(/(<li class="monitor-ol-item">.*<\/li>\n?)+/g, (m) => '<ol>' + m.replace(/\n/g, '') + '</ol>');
     // Bullet lists: lines starting with - or •
     s = s.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>(?:(?!class=).)*<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>');
+    s = s.replace(/(<li>(?:(?!class=).)*<\/li>\n?)+/g, (m) => '<ul>' + m.replace(/\n/g, '') + '</ul>');
+    s = s.replace(/(<\/(?:ul|ol)>)\n(?!\n)/g, '$1');
     // Paragraphs: double newlines
     s = s.replace(/\n{2,}/g, '</p><p>');
     // Single newlines → <br>
@@ -286,18 +290,27 @@ const PromptPanel = (() => {
   /* ── Load/save messages (localStorage for persistence across refreshes) ──
      Both gate on Utils.hasAuthSession — anonymous visits keep chat in
      memory only, so a shared browser doesn't leak the prior account's
-     history. ChatView's feed reads the same key and uses the same
-     gate; if you add another reader, gate it too. */
+     history. ChatView's cards read these messages through messages()
+     and keep the same gate; if you add another reader, gate it too.
+     Conversations from before Space's model cards are tagged with the
+     model that answered as they load (SpaceCards.tagLegacy). */
   function _loadMessages() {
     if (!Utils.hasAuthSession()) { _messages = []; return; }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       _messages = raw ? JSON.parse(raw) : [];
     } catch { _messages = []; }
+    if (!Array.isArray(_messages)) _messages = [];
+    if (typeof SpaceCards !== 'undefined') SpaceCards.tagLegacy(_messages);
   }
 
   function _saveMessages() {
     if (!Utils.hasAuthSession()) return;
+    // Everything written from here on is in the card-era shape; a message
+    // without a card tag is NICE's own reply (see SpaceCards).
+    if (typeof SpaceCards !== 'undefined') {
+      for (const m of _messages) if (m && !m.v) m.v = SpaceCards.VERSION;
+    }
     try {
       // Attachments carry base64 payloads or full text-file contents that
       // can exceed the 5MB localStorage quota after a few messages. Strip
@@ -349,9 +362,13 @@ const PromptPanel = (() => {
 
   function _hideMonitor() {
     if (!_appMain) return;
+    const wasOpen = _appMain.classList.contains('monitor-active');
     _appMain.classList.remove('monitor-active');
     _appMain.classList.remove('monitor-on-schematic');
     _miniExpanded = false;
+    // The view underneath may have drawn itself while covered (Space places
+    // its reactor by what is visible); let it look again.
+    if (wasOpen) document.dispatchEvent(new CustomEvent('nice:monitor-closed'));
   }
 
   function _isOnSchematicInView() {
@@ -428,6 +445,9 @@ const PromptPanel = (() => {
 
   /* ── Parse [ACTION: label | route], [THEME: name], and [EXEC: action | params] from response text ── */
   function _parseActions(text) {
+    // Stored messages can lack text (an old comparison saved before it
+    // filled in); treat that as empty rather than break the monitor.
+    text = typeof text === 'string' ? text : '';
     const actions = [];
     const regex = /\[ACTION:\s*(.+?)\s*\|\s*(.+?)\s*\]/g;
     let match;
@@ -473,7 +493,13 @@ const PromptPanel = (() => {
 
   /* Shared inline approval prompt — used by the agent-with-tools chat AND by
      EXEC commands dispatched through the bus. Resolves true (approve) /
-     false (deny). */
+     false (deny). A prompt still waiting when the chat moves on is declined
+     (_declineApprovals), so the tool call behind it never hangs; one still
+     waiting survives a redraw of the monitor (_renderMonitor). */
+  const _pendingApprovals = new Map(); // settle → its prompt on the monitor
+  function _declineApprovals() {
+    [..._pendingApprovals.keys()].forEach(settle => settle(false));
+  }
   function _monitorApproval(action) {
     return new Promise((resolve) => {
       _removeMonitorThinking();
@@ -489,33 +515,33 @@ const PromptPanel = (() => {
           '<button class="btn btn-sm btn-primary" id="monitor-approve">Approve</button>' +
           '<button class="btn btn-sm" id="monitor-deny">Deny</button>' +
         '</div>';
+      const settle = (ok, label) => {
+        if (!_pendingApprovals.delete(settle)) return;
+        approvalEl.remove();
+        if (label) _addMonitorThinking(label);
+        resolve(ok);
+      };
+      _pendingApprovals.set(settle, approvalEl);
       _monitorContent?.appendChild(approvalEl);
       const monitorEl = document.getElementById('nice-monitor');
       if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
-      document.getElementById('monitor-approve')?.addEventListener('click', () => {
-        approvalEl.remove();
-        _addMonitorThinking('Executing approved action…');
-        resolve(true);
-      });
-      document.getElementById('monitor-deny')?.addEventListener('click', () => {
-        approvalEl.remove();
-        _addMonitorThinking('Finding an alternative…');
-        resolve(false);
-      });
+      approvalEl.querySelector('#monitor-approve')?.addEventListener('click', () => settle(true, 'Executing approved action…'));
+      approvalEl.querySelector('#monitor-deny')?.addEventListener('click', () => settle(false, 'Finding an alternative…'));
     });
   }
 
   /* Approval context for EXEC dispatch: review mode comes from the active
      ship's behaviors (Missions always run on a Ship); the prompt reuses the
-     shared monitor approval UI. */
-  function _execApprovalCtx() {
+     shared monitor approval UI unless the caller shows its own (a Space card
+     asks on the card). */
+  function _execApprovalCtx(onApprovalNeeded) {
     const ships = State.get('spaceships') || [];
     const spaceshipId = ships[0]?.id;
     let approvalMode = null;
     if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
       approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
     }
-    return { approvalMode, onApprovalNeeded: _monitorApproval };
+    return { approvalMode, onApprovalNeeded: onApprovalNeeded || _monitorApproval };
   }
 
   /* Register the EXEC actions as real bus commands. Called once from init()
@@ -660,18 +686,22 @@ const PromptPanel = (() => {
     activate_blueprint: { id: 'activate-blueprint', params: ['blueprintId'] },
     run_mission:        { id: 'run-mission',        params: ['missionId'] },
   };
+  // Model text picks the action name, so only the map's own keys count:
+  // "constructor" or "__proto__" must not resolve to Object's members.
+  // (hasOwnProperty.call, not Object.hasOwn: the build targets ES2020.)
+  const _isExecCommand = (action) => Object.prototype.hasOwnProperty.call(_EXEC_COMMANDS, action);
 
   /* ── Execute EXEC actions from LLM responses (thin adapter over the bus) ── */
-  async function _executeExec(action, params) {
+  async function _executeExec(action, params, onApprovalNeeded) {
     if (!State.get('user')) return { ok: false, msg: 'Not signed in' };
-    const spec = _EXEC_COMMANDS[action];
+    const spec = _isExecCommand(action) ? _EXEC_COMMANDS[action] : null;
     if (!spec || typeof ToolRegistry === 'undefined') return { ok: false, msg: `Unknown action: ${action}` };
     const input = {};
     spec.params.forEach((name, i) => {
       if (params[i] !== undefined && params[i] !== '') input[name] = params[i];
     });
     try {
-      return await ToolRegistry.execute(spec.id, input, _execApprovalCtx());
+      return await ToolRegistry.execute(spec.id, input, _execApprovalCtx(onApprovalNeeded));
     } catch (e) {
       if (e && e.declined) return { ok: false, msg: 'Cancelled: approval declined.' };
       return { ok: false, msg: e.message || 'Action failed' };
@@ -709,7 +739,7 @@ const PromptPanel = (() => {
   }
 
   /* ── Auto-mission: create mission, assign agent, run, stream result ── */
-  async function _executeAutoMission(title, sendBtn) {
+  async function _executeAutoMission(title, sendToken) {
     const user = State.get('user');
     const agents = State.get('agents') || [];
     const agent = _pickBestAgent(title, agents);
@@ -717,11 +747,12 @@ const PromptPanel = (() => {
 
     // Show creation message
     _removeMonitorThinking();
-    _messages.push({
+    const createdMsg = {
       role: 'assistant',
       text: `**Mission Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
       agent: 'NICE', ts: Date.now(),
-    });
+    };
+    _messages.push(createdMsg);
     _saveMessages();
     _renderMonitor();
 
@@ -739,11 +770,10 @@ const PromptPanel = (() => {
     const spaceshipId = spaceships[0]?.id;
     if (!spaceshipId) {
       const need = _needShip();
-      _messages[_messages.length - 1].text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
+      createdMsg.text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
       _saveMessages();
       _renderMonitor();
-      _setSending(false);
-      if (sendBtn) sendBtn.disabled = false;
+      _endNiceSend(sendToken);
       return;
     }
     let mission = null;
@@ -757,38 +787,49 @@ const PromptPanel = (() => {
       missions.push(mission);
       State.set('missions', [...missions]);
     } catch (e) {
+      if (!_inCurrentChat(sendToken)) return;
       // Update message with error
-      _messages[_messages.length - 1].text += `\n\n**Error creating mission:** ${e.message}`;
+      createdMsg.text += `\n\n**Error creating mission:** ${e.message}`;
       _saveMessages();
       _renderMonitor();
-      _setSending(false);
-      if (sendBtn) sendBtn.disabled = false;
+      _endNiceSend(sendToken);
       return;
     }
 
-    // Run MissionRunner
+    // A new chat opened meanwhile: this mission's news isn't for it.
+    if (!_inCurrentChat(sendToken)) return;
+
+    // Run MissionRunner. The run can take minutes: whichever way it ends,
+    // a chat opened meanwhile doesn't get its result.
     if (mission && mission.id && typeof MissionRunner !== 'undefined') {
+      let result;
       try {
-        const result = await MissionRunner.run(mission.id);
-        if (result && result.content) {
-          _messages.push({
-            role: 'assistant',
-            text: result.content,
-            agent: agentName,
-            ts: Date.now(),
-          });
-        } else {
-          _messages.push({
-            role: 'assistant',
-            text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
-            agent: 'NICE', ts: Date.now(),
-          });
-        }
+        result = await MissionRunner.run(mission.id);
       } catch (e) {
+        if (!_inCurrentChat(sendToken)) return;
         _messages.push({
           role: 'assistant',
           text: `**Mission failed:** ${e.message}\n[ACTION: View Missions | #/missions]`,
           agent: 'NICE', ts: Date.now(), error: true,
+        });
+        _saveMessages();
+        _renderMonitor();
+        _endNiceSend(sendToken);
+        return;
+      }
+      if (!_inCurrentChat(sendToken)) return;
+      if (result && result.content) {
+        _messages.push({
+          role: 'assistant',
+          text: result.content,
+          agent: agentName,
+          ts: Date.now(),
+        });
+      } else {
+        _messages.push({
+          role: 'assistant',
+          text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
+          agent: 'NICE', ts: Date.now(),
         });
       }
     } else {
@@ -801,8 +842,7 @@ const PromptPanel = (() => {
 
     _saveMessages();
     _renderMonitor();
-    _setSending(false);
-    if (sendBtn) sendBtn.disabled = false;
+    _endNiceSend(sendToken);
   }
 
   /**
@@ -817,7 +857,7 @@ const PromptPanel = (() => {
    * we resolve it to the user's matching `user_spaceships` row so the
    * mission_runs.spaceship_id FK is satisfied.
    */
-  async function _runShipChat(text, bpId, sendBtn, attachments) {
+  async function _runShipChat(text, bpId, sendToken, attachments) {
     const user = State.get('user');
     const ships = State.get('spaceships') || [];
 
@@ -839,8 +879,7 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _setSending(false);
-      if (sendBtn) sendBtn.disabled = false;
+      _endNiceSend(sendToken);
       return;
     }
 
@@ -879,6 +918,7 @@ const PromptPanel = (() => {
       missions.push(run);
       State.set('missions', [...missions]);
     } catch (err) {
+      if (!_inCurrentChat(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -887,13 +927,17 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _setSending(false);
-      if (sendBtn) sendBtn.disabled = false;
+      _endNiceSend(sendToken);
       return;
     }
 
+    if (!_inCurrentChat(sendToken)) return;
+
     // Update the monitor thinking label as dispatch phases progress
+    // Progress can trail the run it reports on: only the send still out may
+    // relabel the thinking line, never a later one in the same chat.
     const _onDispatchProgress = ({ label }) => {
+      if (!_isLiveSend(sendToken)) return;
       const el = document.getElementById('monitor-thinking');
       if (el) {
         const lbl = el.querySelector('.monitor-thinking-label');
@@ -907,6 +951,7 @@ const PromptPanel = (() => {
     try {
       result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress, attachments });
     } catch (err) {
+      if (!_inCurrentChat(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -915,11 +960,11 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _setSending(false);
-      if (sendBtn) sendBtn.disabled = false;
+      _endNiceSend(sendToken);
       return;
     }
 
+    if (!_inCurrentChat(sendToken)) return;
     _removeMonitorThinking();
 
     // Pull the final row to read the persisted result + status (the in-
@@ -927,6 +972,7 @@ const PromptPanel = (() => {
     // completed status flip from _runDag).
     let finalRow = null;
     try { finalRow = await SB.db('mission_runs').get(run.id); } catch { /* ignore */ }
+    if (!_inCurrentChat(sendToken)) return;
     const status = finalRow?.status || result?.status || 'completed';
     // DAG path: result?.finalOutput. Non-DAG captain path: result?.content.
     // finalRow.result is the authoritative persisted value; in-memory result is fallback.
@@ -940,6 +986,7 @@ const PromptPanel = (() => {
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
 
+    if (!_inCurrentChat(sendToken)) return;
     const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
 
     if (routingMeta?.chosen_agent_name) {
@@ -972,8 +1019,7 @@ const PromptPanel = (() => {
 
     _saveMessages();
     _renderMonitor();
-    _setSending(false);
-    if (sendBtn) sendBtn.disabled = false;
+    _endNiceSend(sendToken);
   }
 
   function _renderMonitor() {
@@ -1065,7 +1111,16 @@ const PromptPanel = (() => {
       }
     }
 
+    // What is still live on the monitor survives the redraw: the same
+    // elements go back under the conversation, so a waiting approval keeps
+    // its buttons and its settle, and a NICE send still out keeps its
+    // thinking, step or stream line updating.
+    const waiting = new Set(_pendingApprovals.values());
+    const live = [..._monitorContent.children].filter(el =>
+      waiting.has(el) || (_niceSend && _SEND_LINE_IDS.includes(el.id)));
     _monitorContent.innerHTML = html;
+    live.forEach(el => _monitorContent.appendChild(el));
+    waiting.forEach(el => { if (!el.isConnected) _monitorContent.appendChild(el); });
     _showMonitor();
 
     // Bind action buttons directly (safety net for delegated handler)
@@ -1140,6 +1195,12 @@ const PromptPanel = (() => {
 
   function _removeMonitorThinking() {
     document.getElementById('monitor-thinking')?.remove();
+  }
+
+  // The lines a NICE send keeps on the monitor while it is out.
+  const _SEND_LINE_IDS = ['monitor-thinking', 'monitor-step-indicator', 'monitor-stream'];
+  function _removeSendLines() {
+    _SEND_LINE_IDS.forEach(id => document.getElementById(id)?.remove());
   }
 
   function _renderNavOnMonitor(label) {
@@ -1224,6 +1285,7 @@ const PromptPanel = (() => {
     const lower = text.toLowerCase().trim();
 
     if (lower === '/clear') {
+      _abortSends();
       _messages = [];
       _activeConversation = null;
       _saveMessages();
@@ -1834,9 +1896,22 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_pendingAttachments.length >= AttachmentUtils.MAX_COUNT) return;
 
     // Ensure the selected model can read this modality. Text files don't
-    // need any capability — they're inlined as text.
+    // need any capability — they're inlined as text. On Space the selected
+    // cards are the models: one that reads the file is enough, and a card
+    // that can't says so on its own card when the prompt goes out.
     const cap = AttachmentUtils.requiredCapability(kind);
-    if (!_ensureModelForCapability(cap)) return;
+    if (cap && _isStandaloneChat() && typeof SpaceCards !== 'undefined') {
+      if (!SpaceCards.selected().some(id => _modelHasCapability(id, cap))) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({
+            title: 'No selected model reads this file',
+            message: `Select a model that reads ${_CAP_NOUNS[cap] || cap}, such as Gemini 2.5 Flash, then attach it again.`,
+            type: 'warning',
+          });
+        }
+        return;
+      }
+    } else if (!_ensureModelForCapability(cap)) return;
 
     try {
       if (kind === 'text') {
@@ -1944,13 +2019,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       signal = _abortCtrl.signal;
     }
 
-    // Build conversation history from _messages (last 20 turns). The most
+    // Build conversation history (last 20 turns): a Space card passes its
+    // own thread as opts.thread, everything else reads _messages. The most
     // recent message is usually the user turn that triggered this call —
     // drop it from the "past" slice so we don't emit the same turn twice
     // when we append `userText` below.
-    const past = _messages.slice(-20);
+    const past = (opts.thread || _messages).slice(-20);
     const lastPast = past[past.length - 1];
-    const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
+    const lastIsCurrent = !opts.thread && !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
     // A comparison joins the history as the answer the user kept; an
     // undecided one is left out.
     const historyMsgs = (lastIsCurrent ? past.slice(0, -1) : past)
@@ -1983,7 +2059,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // model id and billing/gating stay per-real-model. Candidates are the
     // enabled models that can also read every staged attachment; the router's
     // final fallback is Gemini Flash, the multimodal catch-all.
-    if (sel.auto && typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
+    if (sel.auto && !opts.modelOverride && typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
       const caps = new Set();
       for (const a of currentAttachments) {
         const c = AttachmentUtils.requiredCapability(a.kind);
@@ -2008,8 +2084,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           : opts.modelOverride)
       : sel.label;
     const wantStream = !!opts.onChunk;
-
-    const _activity = (typeof LLMActivity !== 'undefined') ? LLMActivity.start(model) : null;
     const _activityTokens = { total: 0 };
 
     // Request shape (Phase B of #221): chat mode delegates system-prompt
@@ -2048,7 +2122,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const headers = { 'Content-Type': 'application/json', 'apikey': SB._key };
     if (authHeader) headers['Authorization'] = authHeader;
 
+    // The activity handle opens inside the try, so the finally below always
+    // closes it, whatever throws.
+    let _activity = null;
     try {
+      if (typeof LLMActivity !== 'undefined') _activity = LLMActivity.start(model);
       const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
         method: 'POST',
         headers,
@@ -2065,15 +2143,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         // actionable billing toast (with its Wallet CTA), the same as the
         // ship-log and agent-executor surfaces, instead of rendering it as a
         // generic "Connection Error" the user can't act on.
-        if (res.status === 402 && body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+        // Space raises the toast itself (once per pool across its cards).
+        if (res.status === 402 && body && body.code && opts.billingToast !== false && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
           Subscription.handleBillingError(body);
         }
-        throw new Error(body?.error || errBody || ('HTTP ' + res.status));
+        const err = new Error(body?.error || errBody || ('HTTP ' + res.status));
+        err.status = res.status;
+        if (body?.code) err.code = body.code;
+        if (body) err.body = body;
+        throw err;
       }
 
       // Stream: parse SSE chunks as they arrive
       if (wantStream && res.headers.get('content-type')?.includes('text/event-stream')) {
-        return await _parseSSEStream(res, opts, modelLabel, _activityTokens);
+        return { ...(await _parseSSEStream(res, opts, modelLabel, _activityTokens)), modelId: model };
       }
 
       // Non-stream fallback
@@ -2084,7 +2167,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       }
       const text = _contentText(data.content);
       if (opts.onChunk && text) opts.onChunk(text);
-      return { text, model: modelLabel };
+      return { text, model: modelLabel, modelId: model };
     } finally {
       if (_activity) _activity.end({ totalTokens: _activityTokens.total });
     }
@@ -2195,148 +2278,383 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     return true;
   }
 
-  /* ── Compare (standalone chat) ──
-     One question to two or three models at once. The answers land side by
-     side in one monitor card and the user keeps one, which becomes the
-     reply the conversation continues from. Each model goes through the same
-     nice-ai call as a normal message (_callEdgeLLM), so billing, persona and
-     errors behave the same; each call gets its own abort signal so the
-     calls don't cancel each other. */
-  const COMPARE_MAX = 3;
-  // Default picks favour different providers, cheapest first.
-  const COMPARE_PREFS = ['gemini-2-5-flash', 'claude-4-6-sonnet', 'grok-4-3', 'gpt-5-mini', 'deepseek-v4-flash',
-    'kimi-k2-6', 'nemotron-3-super', 'gpt-oss-120b', 'gemini-2-5-pro', 'claude-4-7-opus', 'gpt-5-4-pro', 'openai-o3'];
-  let _compareOn = false;
-  let _compareModels = [];
-
-  function _canonicalModel(id) {
-    return (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
-  }
+  /* ── Space: one prompt, the selected model cards ──
+     Space (#/space) shows a card per model the user can run; the prompt
+     goes to the cards they selected (SpaceCards). Each card gets its own
+     nice-ai call (_callEdgeLLM) with its own thread as history and its own
+     abort signal, so the cards answer in parallel and a failure (a 402, a
+     provider error, a file the model can't read) stays on its card.
+     Replies are tagged with the model that wrote them. Casual chat surface:
+     no mission_runs row, like the rest of the top-level NICE chat. */
+  const _cardCalls = new Map(); // modelId → AbortController
+  // modelId → how many prompts went to that card: a reply's commands stop as
+  // soon as their card has been sent a newer prompt.
+  const _cardPrompts = new Map();
+  // Bumped whenever the conversation changes under in-flight calls (new or
+  // opened chat, teardown) so a late reply never lands in the wrong one.
+  let _cardEpoch = 0;
 
   function _isStandaloneChat() {
     const path = (location.hash || '#/').replace('#', '').split('?')[0] || '/';
     return path === '/space' && !_routeAgent && !_routeShip;
   }
 
-  // Enabled models the user can send a message on right now, in default order.
-  function _compareCandidates() {
-    const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
-    const pools = ((typeof State !== 'undefined' && State.get('token_balance')) || {}).pools || {};
-    const addons = (typeof Subscription !== 'undefined' && Subscription.getAddons) ? Subscription.getAddons() : [];
-    const rank = (id) => { const i = COMPARE_PREFS.indexOf(id); return i < 0 ? COMPARE_PREFS.length : i; };
-    const ids = [...new Set(Object.keys(enabled).filter(id => enabled[id]).map(_canonicalModel))];
-    return ids
-      .filter(id => typeof TokenConfig === 'undefined' || TokenConfig.canRunModel(pools, id, addons))
-      .sort((a, b) => rank(a) - rank(b));
+  const _CAP_NOUNS = { vision: 'images', pdf: 'PDFs', audio: 'audio', video: 'video' };
+
+  function _cardReply(id, fields) {
+    return {
+      role: 'assistant', agent: 'NICE', model: SpaceCards.label(id), modelId: id,
+      ts: Date.now(), v: SpaceCards.VERSION, ...fields,
+    };
   }
 
-  function _compareLabel(id) {
-    const m = (typeof ModelCatalog !== 'undefined') ? ModelCatalog.getById(id) : null;
-    return m ? m.name : id;
+  // A short failure line for the card. A billing failure (402) keeps a link
+  // to the Wallet; `extra` marks failures a retry can't fix (cap: the model
+  // can't read the attached file).
+  function _cardError(id, err, extra) {
+    let text = typeof err === 'string' ? err : ((err && err.message) || 'This model could not answer.');
+    text = text.replace(/\s+/g, ' ').trim();
+    if (text.length > 160) text = text.slice(0, 157) + '…';
+    const billing = !!(err && typeof err === 'object' && err.status === 402);
+    return _cardReply(id, { text, error: true, ...(billing ? { billing: true } : {}), ...(extra || {}) });
   }
 
-  function _comparePool(id) {
-    if (typeof TokenConfig === 'undefined' || TokenConfig.isFreeModel(id)) return 'Free';
-    const pool = TokenConfig.poolFor(id);
-    return (pool && TokenConfig.POOLS[pool] && TokenConfig.POOLS[pool].label) || 'Paid';
+  // One Wallet toast per reason, however many cards hit it at once. Pool
+  // problems (out of tokens, add-on missing) differ per pool; a plan problem
+  // (no Pro, payment past due) is one problem whatever the model.
+  const _PLAN_WIDE_CODES = ['subscription_required', 'past_due'];
+  function _billingToastOnce(err, id, shown) {
+    if (!err || err.status !== 402 || !err.body || !err.body.code) return;
+    if (typeof Subscription === 'undefined' || !Subscription.handleBillingError) return;
+    const code = err.body.code;
+    const pool = err.body.pool || (typeof TokenConfig !== 'undefined' && TokenConfig.poolFor(id)) || '';
+    const key = _PLAN_WIDE_CODES.includes(code) ? code : code + '|' + pool;
+    if (shown.has(key)) return;
+    shown.add(key);
+    Subscription.handleBillingError(err.body);
   }
 
-  function _compareActive() {
-    return _compareOn && _isStandaloneChat() && _compareModels.length >= 2;
+  function _sendToCards(text, attachments = []) {
+    if (typeof SpaceCards === 'undefined') return false;
+    const cards = SpaceCards.available();
+    const targets = SpaceCards.selected(cards);
+    if (!targets.length) return false;
+
+    // Each card's history is read before this prompt joins the conversation.
+    const threads = targets.map(id => SpaceCards.historyFor(_messages, id, cards));
+    // A card still waiting on an approval moves on: the command it asked
+    // about is skipped, and says so under the reply that asked. A command
+    // already running finishes; the reply's later ones are skipped too.
+    targets.forEach(id => {
+      _cardPrompts.set(id, (_cardPrompts.get(id) || 0) + 1);
+      const pending = SpaceCards.approval(id);
+      if (pending) SpaceCards.answer(id, 'skipped', pending.token);
+    });
+    const userMsg = { role: 'user', text, ts: Date.now(), to: targets.slice(), v: SpaceCards.VERSION };
+    if (attachments.length) userMsg.attachments = attachments;
+    _messages.push(userMsg);
+    _saveMessages();
+    _askCards(targets, text, attachments, threads);
+    return true;
   }
 
-  // The model already chosen in the dropdown leads, then the default order.
-  function _defaultCompareModels(candidates) {
-    const sel = _getSelectedModel();
-    const picks = [];
-    const selected = sel && !sel.auto ? _canonicalModel(sel.id) : null;
-    if (selected && candidates.includes(selected)) picks.push(selected);
-    for (const id of candidates) {
-      if (picks.length >= COMPARE_MAX) break;
-      if (!picks.includes(id)) picks.push(id);
-    }
-    return picks;
+  // Ask one card again after its latest reply failed: the failed reply goes
+  // and the same prompt goes back out to that model alone. Other cards may
+  // still be answering; this one must be idle, and nothing outside the cards
+  // (an agent chat, a mission) may be in flight. Signed-out visitors can't
+  // send, so they can't retry either.
+  function retryCard(id) {
+    if (typeof SpaceCards === 'undefined' || !State.get('user')) return false;
+    if (_cardCalls.has(id) || SpaceCards.live(id)) return false;
+    if (_niceSend) return false;
+    const cards = SpaceCards.available();
+    if (!cards.includes(id)) return false;
+    const thread = SpaceCards.threads(_messages, cards)[id] || [];
+    const last = thread[thread.length - 1];
+    const failed = last && last.ask ? last.replies.filter(r => r.error && r.model === id && r.msg) : [];
+    if (!failed.length) return false;
+    // A reloaded prompt whose files are gone can't go out again as it was;
+    // the card asks for them instead.
+    if (SpaceCards.lostFiles(last.ask).length) return false;
+    failed.forEach(r => { const i = _messages.indexOf(r.msg); if (i !== -1) _messages.splice(i, 1); });
+    _saveMessages();
+    _askCards([id], last.ask.text || '', last.ask.attachments || [], [SpaceCards.historyFor(_messages, id, cards)]);
+    return true;
   }
 
-  function _setCompare(on) {
-    _compareOn = on;
-    if (on) {
-      const candidates = _compareCandidates();
-      _compareModels = _compareModels.filter(id => candidates.includes(id));
-      if (_compareModels.length < 2) _compareModels = _defaultCompareModels(candidates);
-    }
-    _renderCompareBar();
-  }
+  // The prompt already sits in the conversation; each target card gets its
+  // own call with its own thread (`threads[i]`) and lands its own reply.
+  function _askCards(targets, text, attachments, threads) {
+    const epoch = _cardEpoch;
+    const single = targets.length === 1;
+    const billed = new Set();
+    // Every target counts as in flight from here, in the module-wide map, so
+    // the panel unlocks only when the last card call ends, whichever send or
+    // retry it belongs to (see _syncSending). They register before anything
+    // else runs, and every way out below ends them, so nothing can leave the
+    // panel locked with no call to unlock it.
+    const ctrls = targets.map(id => {
+      const ctrl = new AbortController();
+      _cardCalls.set(id, ctrl);
+      return ctrl;
+    });
+    const finish = (id, ctrl, reply) => {
+      if (epoch !== _cardEpoch) return;
+      if (_cardCalls.get(id) === ctrl) _cardCalls.delete(id);
+      if (reply) {
+        _messages.push(reply);
+        // Cards speak for themselves (see _afterSingleReply); the monitor
+        // must not read this reply out again the next time it renders.
+        _lastSpokenTs = reply.ts;
+        _saveMessages();
+      }
+      SpaceCards.endLive(id, reply && reply.error ? 'failed' : 'answered');
+      _syncSending();
+    };
 
-  function _renderCompareBar() {
-    const btn = _panel?.querySelector('#nice-ai-compare');
-    const bar = _panel?.querySelector('#nice-ai-compare-bar');
-    const modelSelect = _panel?.querySelector('#nice-ai-model');
-    const available = _isStandaloneChat();
-    if (btn) {
-      btn.hidden = !available;
-      btn.setAttribute('aria-pressed', String(_compareOn));
-    }
-    const on = available && _compareOn;
-    if (modelSelect) modelSelect.hidden = on;
-    if (!bar) return;
-    bar.hidden = !on;
-    if (!on) { bar.innerHTML = ''; return; }
-    const candidates = _compareCandidates();
-    if (candidates.length < 2) {
-      bar.innerHTML = '<p class="nice-ai-compare-note">Compare needs two models you can run. Gemini 2.5 Flash is free; NICE Pro adds more, such as Grok, DeepSeek and Kimi. <a href="#/wallet">See plans</a></p>';
+    let caps;
+    try {
+      _syncSending();
+      // The replies land on the cards; a monitor left open by a slash
+      // command or an agent chat would sit on top of them.
+      _hideMonitor();
+      caps = new Set((attachments || []).map(a => a && AttachmentUtils.requiredCapability(a.kind)).filter(Boolean));
+    } catch (err) {
+      targets.forEach((id, i) => finish(id, ctrls[i], _cardError(id, err)));
       return;
     }
-    const chips = _compareModels.map(id => `
-      <span class="nice-ai-compare-chip">
-        <span>${_esc(_compareLabel(id))}</span><small>${_esc(_comparePool(id))}</small>
-        <button type="button" class="nice-ai-compare-remove" data-model="${_escAttr(id)}" aria-label="Remove ${_escAttr(_compareLabel(id))}"${_compareModels.length <= 2 ? ' disabled' : ''}>×</button>
-      </span>`).join('');
-    const rest = candidates.filter(id => !_compareModels.includes(id));
-    const add = (_compareModels.length < COMPARE_MAX && rest.length)
-      ? `<select class="nice-ai-compare-add" id="nice-ai-compare-add" aria-label="Add a model to compare" data-allow-zoom>
-          <option value="">+ Add model</option>
-          ${rest.map(id => `<option value="${_escAttr(id)}">${_esc(_compareLabel(id))} · ${_esc(_comparePool(id))}</option>`).join('')}
-        </select>`
-      : '';
-    bar.innerHTML = `<span class="nice-ai-compare-label">Compare</span>${chips}${add}`;
-  }
 
-  function _sendCompare(text, sendBtn) {
-    const models = _compareModels.slice(0, COMPARE_MAX);
-    // Start every call before the comparison joins _messages, so each call's
-    // history still ends with this user turn (see _callEdgeLLM).
-    const calls = models.map(id => _callEdgeLLM(text, { modelOverride: id, abortSignal: new AbortController().signal }));
-    const msg = {
-      role: 'assistant', type: 'compare', agent: 'NICE', text: '', picked: null, ts: Date.now(),
-      answers: models.map(id => ({ model: id, label: _compareLabel(id), pool: _comparePool(id), text: '', pending: true })),
-    };
-    _removeMonitorThinking();
-    _messages.push(msg);
-    _saveMessages();
-    _renderMonitor();
-    _showMonitor();
-    let left = calls.length;
-    calls.forEach((call, i) => {
-      Promise.resolve(call)
-        .then(res => {
-          msg.answers[i].text = (res && res.text) || '';
-          if (!msg.answers[i].text) msg.answers[i].error = 'No answer came back.';
-        })
-        .catch(err => { msg.answers[i].error = (err && err.message) || 'This model could not answer.'; })
-        .finally(() => {
-          msg.answers[i].pending = false;
-          _saveMessages();
-          _renderMonitor();
-          if (--left === 0) {
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
-          }
-        });
+    targets.forEach((id, i) => {
+      const ctrl = ctrls[i];
+      const done = (reply) => finish(id, ctrl, reply);
+      // A card that fails to start ends like any failed card.
+      try {
+        const missing = [...caps].filter(c => !_modelHasCapability(id, c));
+        if (missing.length) {
+          const what = missing.map(c => _CAP_NOUNS[c] || c).join(' or ');
+          done(_cardError(id, `${SpaceCards.label(id)} can't read ${what}. Remove the file or pick a model that can.`, { cap: true }));
+          return;
+        }
+
+        SpaceCards.setLive(id, { text: '' });
+        const onChunk = (chunk) => {
+          if (epoch !== _cardEpoch) return;
+          SpaceCards.setLive(id, { text: ((SpaceCards.live(id) || {}).text || '') + chunk });
+        };
+
+        _callEdgeLLM(text, { modelOverride: id, abortSignal: ctrl.signal, thread: threads[i], attachments, onChunk, billingToast: false })
+          .then(res => {
+            if (!res) return done(_cardError(id, 'NICE could not reach the model service. Check your connection and try again.'));
+            if (!res.text) return done(_cardError(id, 'No answer came back. Try again.'));
+            const reply = _cardReply(id, { text: res.text });
+            done(reply);
+            if (epoch !== _cardEpoch) return;
+            if (single) _afterSingleReply(id, reply);
+            else _noteUnrunCommands(id, reply);
+          })
+          .catch(err => {
+            // Only our own abort (the conversation changed) is silent. A server
+            // error that happens to say "aborted" is a failure like any other.
+            if (ctrl.signal.aborted || epoch !== _cardEpoch) return;
+            _billingToastOnce(err, id, billed);
+            done(_cardError(id, err));
+          });
+      } catch (err) {
+        done(_cardError(id, err));
+      }
     });
   }
 
-  // Keeping an answer makes it the reply the conversation continues from.
+  // One card answered on its own: the reply acts like the old single-model
+  // chat (theme markers, EXEC commands, voice, preview). Several cards at
+  // once skip this so parallel answers never run the same command twice.
+  async function _afterSingleReply(id, reply) {
+    const text = reply.text;
+    const { clean, execs: asked } = _parseActions(text);
+    _ttsSpeak(clean);
+    if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(text);
+    // A marker naming no real command has nothing to run or report.
+    const execs = (asked || []).filter(ex => _isExecCommand(ex.action));
+    if (!execs.length) return;
+    const epoch = _cardEpoch;
+    // A command that needs the user's OK asks on this card, beside the reply
+    // that requested it, rather than on the monitor behind the cards.
+    let skipped = false;
+    const askOnCard = async (action) => {
+      const answer = await SpaceCards.requestApproval(id, action);
+      if (answer === 'skipped') { skipped = true; return false; }
+      return answer;
+    };
+    // The user moved on once this card has a newer prompt: the rest of the
+    // reply's commands don't run, and nobody turned them down.
+    const prompt = _cardPrompts.get(id) || 0;
+    const skip = (rest) => _noteOnCard(id, reply, `**Skipped:** ${_commandList(rest.map(e => e.action))} did not run because you sent this card a new prompt first.`);
+    for (const [i, ex] of execs.entries()) {
+      if ((_cardPrompts.get(id) || 0) !== prompt) { skip(execs.slice(i)); return; }
+      const res = await _executeExec(ex.action, ex.params, askOnCard);
+      if (epoch !== _cardEpoch) return;
+      if (skipped) { skip(execs.slice(i)); return; }
+      _noteOnCard(id, reply, res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`);
+    }
+  }
+
+  // "Create Mission", "Create Mission and Run Mission" from EXEC action ids.
+  function _commandList(actions) {
+    const names = [];
+    for (const action of actions) {
+      if (!_isExecCommand(action)) continue;
+      const spec = _EXEC_COMMANDS[action];
+      const tool = spec && typeof ToolRegistry !== 'undefined' && ToolRegistry.get ? ToolRegistry.get(spec.id) : null;
+      const name = (tool && tool.name) || String(action).replace(/_/g, ' ');
+      if (!names.includes(name)) names.push(name);
+    }
+    return names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : (names[0] || '');
+  }
+
+  // Several cards answered at once, so no command ran (see above). A reply
+  // that asked for one says so on its card rather than leave its "Done, I
+  // created it" standing. (The persona prompt that teaches EXEC is built in
+  // nice-ai, so the client can't tell these calls not to ask.)
+  function _noteUnrunCommands(id, reply) {
+    const actions = [];
+    const re = /\[EXEC:\s*(\w+)/g;
+    let m;
+    while ((m = re.exec(reply.text || '')) !== null) if (_isExecCommand(m[1])) actions.push(m[1]);
+    if (!actions.length) return;
+    _noteOnCard(id, reply, `This model asked to run ${_commandList(actions)}. Send to this card alone to run it.`);
+  }
+
+  // A note from NICE on one card's exchange: a command's result, or a
+  // command it didn't run. It goes right after the reply it belongs to (and
+  // that reply's earlier notes), so a newer prompt to the card never adopts it.
+  function _noteOnCard(id, reply, text) {
+    let at = _messages.indexOf(reply);
+    if (at === -1) return null;
+    at++;
+    while (at < _messages.length && _messages[at] && _messages[at].note && _messages[at].modelId === id) at++;
+    const note = _cardReply(id, { text, note: true });
+    _messages.splice(at, 0, note);
+    // The monitor reads out an unread last message; notes are not for reading out.
+    if (at === _messages.length - 1) _lastSpokenTs = note.ts;
+    _saveMessages();
+    SpaceCards.changed(id);
+    return note;
+  }
+
+  // The conversation changed under every send still out (a new, opened or
+  // cleared chat, a guided flow, teardown): cards and NICE's own sends alike
+  // are cut loose, and whatever they bring back later is dropped. With no
+  // current send left, the panel is free.
+  function _abortSends() {
+    _cardEpoch++;
+    // Ends live cards and declines approvals still waiting on the old chat.
+    if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
+    _cardCalls.forEach(ctrl => { try { ctrl.abort(); } catch { /* already settled */ } });
+    _cardCalls.clear();
+    _chatEpoch++;
+    _niceSend = null;
+    if (_abortCtrl) { try { _abortCtrl.abort(); } catch { /* already settled */ } _abortCtrl = null; }
+    // The monitor's approvals and its thinking, step and stream lines belong
+    // to sends that just ended: the approvals are declined, the lines go.
+    _declineApprovals();
+    _removeSendLines();
+    // The agent conversation belonged to the old chat; a new @mention starts
+    // a fresh one instead of sending into a call that may still be running.
+    _activeConversation = null;
+    _syncSending();
+  }
+
+  /* ── Who holds the send lock ──
+     The panel is busy while a send it started is still out: a Space card
+     call (_cardCalls) or NICE's own send (an agent or ship chat, the direct
+     reply, an auto-mission, a navigation reply). Each NICE send carries its
+     own token. `chat` names the conversation it answers, which _abortSends
+     moves on; only the send holding the lock (_niceSend) can let it go.
+     The contract for every send path: after each await, check
+     _inCurrentChat(token) before touching _messages, the monitor, an
+     approval or storage, so whatever an older chat's send brings back is
+     dropped. A callback that can trail its send (dispatch progress, stream
+     chunks) checks _isLiveSend(token) instead, so it never touches the
+     lines of a later send in the same chat.
+     The awaits this guards:
+       _executeAutoMission: mission_runs create, MissionRunner.run
+       _runShipChat: mission_runs create, MissionRunner.run, mission_runs
+         get, ship_log list
+       _replyAsNice: the agent conversation's send (first and continued),
+         AgentExecutor.execute, ShipLog.execute, the navigation reply's
+         timer, _callDirectLLM, each _executeExec after a direct reply
+       approvals: _approvalFor(token) asks only while the chat is open;
+         the agent conversation stops between steps (shouldStop)
+     Space cards keep their own epoch (_cardEpoch, see _askCards). */
+  let _chatEpoch = 0;
+  let _niceSendSeq = 0;
+  let _niceSend = null;
+
+  function _startNiceSend() {
+    _niceSend = { chat: _chatEpoch, id: ++_niceSendSeq };
+    _syncSending();
+    return _niceSend;
+  }
+  // The send belongs to the chat still open (its results may land).
+  function _inCurrentChat(token) { return !!token && token.chat === _chatEpoch; }
+  // The send is the one out right now, holding the lock (its live lines on
+  // the monitor are its own).
+  function _isLiveSend(token) { return !!token && token === _niceSend; }
+  function _endNiceSend(token) {
+    if (!_isLiveSend(token)) return;
+    _niceSend = null;
+    // Its lines end with it (a redraw keeps them only while it is out).
+    _removeSendLines();
+    _syncSending();
+  }
+  // A send that threw instead of answering still ends: it says what went
+  // wrong on the monitor and lets the panel go.
+  function _failNiceSend(token, err) {
+    if (!_isLiveSend(token)) return;
+    _removeSendLines();
+    _messages.push({
+      role: 'assistant',
+      text: '⚠️ **Request failed**\n\n' + ((err && err.message) || 'Something went wrong.'),
+      agent: null, error: true, ts: Date.now(),
+    });
+    _saveMessages();
+    _renderMonitor();
+    _endNiceSend(token);
+  }
+  // The monitor's approval prompt for a send: once the chat moves on, the
+  // send's tools are turned down without asking.
+  function _approvalFor(token) {
+    return (action) => (_inCurrentChat(token) ? _monitorApproval(action) : Promise.resolve(false));
+  }
+  function _syncSending() {
+    const busy = !!_niceSend || _cardCalls.size > 0;
+    const sendBtn = _panel?.querySelector('#nice-ai-send');
+    if (sendBtn) sendBtn.disabled = busy;
+    if (busy !== _sending) _setSending(busy);
+  }
+
+  // "To Gemini 2.5 Flash" / "To 3 models" beside the send button on Space,
+  // where the cards replace the model dropdown.
+  function _renderTargets() {
+    const label = _panel?.querySelector('#nice-ai-targets');
+    const modelSelect = _panel?.querySelector('#nice-ai-model');
+    const on = _isStandaloneChat() && typeof SpaceCards !== 'undefined';
+    if (modelSelect) modelSelect.hidden = on;
+    if (!label) return;
+    label.hidden = !on;
+    if (!on) { label.textContent = ''; label.removeAttribute('title'); return; }
+    const targets = SpaceCards.selected();
+    // No model on: Space says so in place of the cards, and a send asks the
+    // user to turn one on.
+    if (!targets.length) { label.hidden = true; label.textContent = ''; label.removeAttribute('title'); return; }
+    const names = targets.map(SpaceCards.label);
+    label.textContent = targets.length === 1 ? `To ${names[0]}` : `To ${targets.length} models`;
+    label.title = names.join(', ');
+  }
+
+  /* Comparisons saved before Space's cards replaced Compare still render on
+     the monitor (and each answer also shows on its model's card). Keeping an
+     answer makes it the reply the conversation continues from. */
   function _pickCompareAnswer(msgIndex, answerIndex) {
     const msg = _messages[msgIndex];
     const ans = msg && msg.type === 'compare' ? msg.answers[answerIndex] : null;
@@ -2480,6 +2798,31 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       return;
     }
 
+    // Space: the prompt goes to the selected model cards and the replies
+    // land on them. NICE still answers @mentions, navigation and missions
+    // itself, on the monitor below. The pre-check runs once: its intents
+    // act as they are detected (a theme switch, a queued command).
+    let spacePreCheck = null;
+    if (!forcedAgent && _isStandaloneChat() && !_parseMention(text) && !_parseShipMention(text)) {
+      spacePreCheck = _getResponse(text);
+      if (!spacePreCheck.autoMission && !spacePreCheck.isNav) {
+        if (!_sendToCards(text, sentAttachments)) {
+          // No model is on: keep what they typed and attached, and say how
+          // to turn one on.
+          _pendingAttachments = sentAttachments;
+          _renderAttachments();
+          if (typeof Notify !== 'undefined') {
+            Notify.send({ title: 'No model is on', message: 'Turn on a model in Manage models, then send again.', type: 'warning' });
+          }
+          return;
+        }
+        input.value = '';
+        input.style.height = '36px';
+        _panel?.querySelector('.nice-ai-input-container')?.classList.remove('has-text');
+        return;
+      }
+    }
+
     // Add user message and show on monitor
     const userMsg = { role: 'user', text, ts: Date.now() };
     if (sentAttachments.length) userMsg.attachments = sentAttachments;
@@ -2490,10 +2833,22 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     input.style.height = '36px';
     const _inputContainer = _panel?.querySelector('.nice-ai-input-container');
     if (_inputContainer) _inputContainer.classList.remove('has-text');
-    _setSending(true);
+    // NICE's own send (agent, ship, direct reply, mission) holds the lock
+    // until it ends, unless a new chat replaces it first: then whatever it
+    // brings back is dropped (see _startNiceSend). A send that throws before
+    // it gets going still ends, so it can't leave the panel locked.
+    const sendToken = _startNiceSend();
+    try {
+      _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken });
+    } catch (err) {
+      _failNiceSend(sendToken, err);
+    }
+  }
 
-    const sendBtn = _panel?.querySelector('#nice-ai-send');
-    if (sendBtn) sendBtn.disabled = true;
+  /* NICE answers a prompt itself: an agent, a ship's crew, a mission, a
+     navigation, or the model directly. Every reply goes through sendToken
+     (see "Who holds the send lock"). */
+  function _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken }) {
 
     // Show thinking on monitor
     _addMonitorThinking();
@@ -2547,6 +2902,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       let _stepEl = null;
       const onStep = (step) => {
+        if (!_inCurrentChat(sendToken)) return;
         if (!_stepEl) {
           _removeMonitorThinking();
           _stepEl = document.createElement('div');
@@ -2572,6 +2928,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (_isSameAgent && _activeConversation.controller) {
         // Continue existing conversation
         _activeConversation.controller.send(text, sentAttachments).then(result => {
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           _messages.push({
@@ -2581,17 +2938,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
           _saveMessages();
           _renderMonitor();
-          _setSending(false);
-          if (sendBtn) sendBtn.disabled = false;
+          _endNiceSend(sendToken);
         }).catch((err) => {
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
           _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _setSending(false);
-          if (sendBtn) sendBtn.disabled = false;
+          _endNiceSend(sendToken);
         });
       } else {
         // Start fresh conversation via converse() if available, else fallback to execute()
@@ -2602,16 +2958,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
           }
 
+          // The conversation lives as long as this chat: a new chat stops
+          // it between steps and turns its tools down without asking.
           const controller = AgentExecutor.converse(agentBp, {
             tools: agentBp.config.tools,
             spaceshipId,
             onStep,
             approvalMode: _approvalMode,
-            onApprovalNeeded: _monitorApproval,
+            onApprovalNeeded: _approvalFor(sendToken),
+            shouldStop: () => !_inCurrentChat(sendToken),
           });
           _activeConversation = { controller, agentBp, agentLabel };
 
           controller.send(text, sentAttachments).then(result => {
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2621,9 +2981,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           }).catch((err) => {
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _activeConversation = null;
@@ -2631,8 +2991,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           });
         } else {
           // Fallback: single-shot execute
@@ -2642,7 +3001,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             maxSteps: agentBp.config.maxSteps,
             onStep,
             attachments: sentAttachments,
+            shouldStop: () => !_inCurrentChat(sendToken),
           }).then(result => {
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2651,17 +3012,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           }).catch((err) => {
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           });
         }
       }
@@ -2680,13 +3040,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const cleanText = mentionedShip
         ? text.replace(/@[\w]+(\s+|$)/, '').trim() || text
         : text;
-      _runShipChat(cleanText, shipId, sendBtn, sentAttachments);
+      _runShipChat(cleanText, shipId, sendToken, sentAttachments).catch(err => _failNiceSend(sendToken, err));
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
       const spaceshipId = bpId || 'default-ship';
       let _streamText = '';
       let _streamEl = null;
       const onChunk = (chunk) => {
+        if (!_isLiveSend(sendToken)) return;
         if (!_streamEl) {
           _removeMonitorThinking();
           _streamEl = document.createElement('div');
@@ -2707,50 +3068,50 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       };
 
       ShipLog.execute(spaceshipId, agentBp, text, { onChunk, attachments: sentAttachments }).then(result => {
+        if (!_inCurrentChat(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = result.agent || (mentioned ? mentioned.name : null);
         _messages.push({ role: 'assistant', text: result.content, agent: agentName, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _setSending(false);
-        if (sendBtn) sendBtn.disabled = false;
+        _endNiceSend(sendToken);
       }).catch((err) => {
+        if (!_inCurrentChat(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const errorText = '⚠️ **Request failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
         _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _setSending(false);
-        if (sendBtn) sendBtn.disabled = false;
+        _endNiceSend(sendToken);
       });
     } else {
       // Direct LLM with streaming. Pre-check intent first so imperative
       // tasks ("write me a tagline") and navigation short-circuit the model.
-      const preCheck = _getResponse(text);
+      // Space already ran the pre-check before deciding against its cards.
+      const preCheck = spacePreCheck || _getResponse(text);
       if (preCheck.autoMission) {
-        _executeAutoMission(preCheck.title, sendBtn);
+        _executeAutoMission(preCheck.title, sendToken).catch(err => _failNiceSend(sendToken, err));
         return;
       }
       if (preCheck.isNav) {
         const delay = 400 + Math.random() * 400;
         setTimeout(() => {
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           _messages.push({ role: 'assistant', text: preCheck.text, agent: preCheck.agent, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _setSending(false);
-          if (sendBtn) sendBtn.disabled = false;
+          _endNiceSend(sendToken);
         }, delay);
-      } else if (_compareActive()) {
-        _sendCompare(text, sendBtn);
       } else {
         // Streaming LLM call
         let _streamEl = null;
         let _streamText = '';
 
         const onChunk = (chunk) => {
+          if (!_isLiveSend(sendToken)) return;
           if (!_streamEl) {
             _removeMonitorThinking();
             _streamEl = document.createElement('div');
@@ -2770,21 +3131,28 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         };
 
         _callDirectLLM(text, { onChunk }).then(async (result) => {
+          if (!_inCurrentChat(sendToken)) return;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
-            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, ts: Date.now() });
+            // Tag the exchange with the model that answered, so it shows on
+            // that model's card on Space like any other model chat.
+            const modelId = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(result.modelId) : result.modelId;
+            if (modelId && !userMsg.to) userMsg.to = [modelId];
+            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, modelId, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
 
             // Auto-open preview panel if response contains URLs or HTML
             if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(result.text);
 
-            // Execute any EXEC markers from the LLM response
+            // Execute any EXEC markers from the LLM response. A new chat
+            // stops the rest: no more commands run, and no result lands in it.
             const { execs } = _parseActions(result.text);
             if (execs && execs.length) {
               for (const ex of execs) {
-                const res = await _executeExec(ex.action, ex.params);
+                const res = await _executeExec(ex.action, ex.params, _approvalFor(sendToken));
+                if (!_inCurrentChat(sendToken)) return;
                 _messages.push({
                   role: 'assistant',
                   text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`,
@@ -2795,8 +3163,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
               _renderMonitor();
             }
 
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           } else {
             // LLM returned empty — show error instead of fake response
             _removeMonitorThinking();
@@ -2808,10 +3175,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _setSending(false);
-            if (sendBtn) sendBtn.disabled = false;
+            _endNiceSend(sendToken);
           }
         }).catch(err => {
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-stream')?.remove();
           // Show error on monitor with retry
@@ -2826,8 +3193,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
           _saveMessages();
           _renderMonitor();
-          _setSending(false);
-          if (sendBtn) sendBtn.disabled = false;
+          _endNiceSend(sendToken);
         });
       }
     }
@@ -2996,7 +3362,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         </div>
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
-          <div class="nice-ai-compare-bar" id="nice-ai-compare-bar" hidden></div>
           <div class="nice-ai-input-row">
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
@@ -3005,10 +3370,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
-              <button type="button" class="nice-ai-compare-btn" id="nice-ai-compare" aria-pressed="false" title="Compare models: send one question to several models" hidden>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="9.5" y="5" width="5" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>
-                <span>Compare</span>
-              </button>
+              <span class="nice-ai-targets" id="nice-ai-targets" aria-live="polite" hidden></span>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model" data-allow-zoom>
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
@@ -3142,18 +3504,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Model select change → guard against switching to a non-vision model
     // while images are staged.
     _panel.querySelector('#nice-ai-model')?.addEventListener('change', _onModelSelectChange);
-    _panel.querySelector('#nice-ai-compare')?.addEventListener('click', () => _setCompare(!_compareOn));
-    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('click', (e) => {
-      const rm = e.target.closest('.nice-ai-compare-remove');
-      if (!rm || _compareModels.length <= 2) return;
-      _compareModels = _compareModels.filter(id => id !== rm.dataset.model);
-      _renderCompareBar();
-    });
-    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('change', (e) => {
-      if (e.target.id !== 'nice-ai-compare-add' || !e.target.value) return;
-      if (_compareModels.length < COMPARE_MAX) _compareModels.push(e.target.value);
-      _renderCompareBar();
-    });
+    // Space: the "To …" label follows the card selection.
+    if (typeof SpaceCards !== 'undefined') {
+      _onSpaceCards = (e) => { if (e.detail && e.detail.kind === 'selection') _renderTargets(); };
+      document.addEventListener(SpaceCards.EVENT, _onSpaceCards);
+    }
 
     // Textarea auto-resize + keyboard + @mention
     const textarea = _panel.querySelector('#nice-ai-input');
@@ -3237,13 +3592,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
       }, 150);
       // Auto-hide monitor when user navigates via sidebar — unless this
-      // hashchange is the one _showConversation() triggered to land on #/
-      // before revealing the chat's full monitor.
-      if (_suppressMonitorAutoHide) {
-        _suppressMonitorAutoHide = false;
-      } else if (_isMonitorActive()) {
-        _hideMonitor();
-      }
+      // hashchange is the one _showConversation() triggered to land on
+      // Space with NICE's replies already up.
+      if (_suppressMonitorAutoHide) _suppressMonitorAutoHide = false;
+      else if (_isMonitorActive()) _hideMonitor();
     };
     window.addEventListener('hashchange', _onHashChange);
 
@@ -3652,8 +4004,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // often lands after this panel's init() has already built the
     // dropdown from the initial (free-only) enabled_models state.
     if (typeof State !== 'undefined' && State.on) {
-      State.on('enabled_models', () => { _populateModelDropdown(); _renderCompareBar(); });
-      State.on('token_balance', () => _renderCompareBar());
+      State.on('enabled_models', () => { _populateModelDropdown(); _renderTargets(); });
     }
     // Theme voice: stop playback on theme change, sync mute button + reactor.
     // Skip the stop for themes that ship a `voice.intro` — Theme.set fires
@@ -3686,6 +4037,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function destroy() {
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+    _abortSends();
     _userPickedModel = false;
     _lastModelValue = null;
     // Stop speech recognition & mic
@@ -3701,6 +4053,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
     if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
     if (_onCapsLockKey) { document.removeEventListener('keydown', _onCapsLockKey); _onCapsLockKey = null; }
+    if (_onSpaceCards) { document.removeEventListener(SpaceCards.EVENT, _onSpaceCards); _onSpaceCards = null; }
     if (_panelResizeObserver) { _panelResizeObserver.disconnect(); _panelResizeObserver = null; }
     window.removeEventListener('resize', _updateChatBottomInset);
     document.documentElement.style.removeProperty('--chat-bottom-inset');
@@ -3745,7 +4098,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function startFlow(flowDef) {
     // flowDef: { steps: [{ key, question, chips }], onComplete(answers), onCancel() }
     _activeFlow = { steps: flowDef.steps, currentStep: 0, answers: {}, onComplete: flowDef.onComplete, onCancel: flowDef.onCancel };
-    // Clear previous messages and show first question
+    // Clear previous messages and show first question; replies or approvals
+    // still out for the old conversation must not land in this one.
+    _abortSends();
     _messages = [];
     const first = flowDef.steps[0];
     _messages.push({ role: 'assistant', text: first.question, agent: 'NICE', ts: Date.now(), chips: first.chips });
@@ -3890,7 +4245,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   function syncRoute() {
     _updateRouteContext();
-    _renderCompareBar();
+    _renderTargets();
     const path = (location.hash || '#/').replace('#', '') || '/';
     // Reset manual flag when navigating to a different route
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
@@ -3935,35 +4290,78 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function setContext(ctx) { _ideContext = ctx; }
   function getContext() { return _ideContext; }
 
+  // The conversation in STORAGE_KEY changed under us (new chat, opened or
+  // deleted chat): drop replies still on their way and redraw Space.
   function _reload() {
+    _abortSends();
     _loadMessages();
-    // Re-render the chat view if we're on it
-    if (window.location.hash === '#/space') {
+    _resetMonitor();
+    // Space redraws here only when the router has it drawn. Otherwise the
+    // router owns what is on screen: a swap on its way to Space draws it from
+    // the messages just loaded, and drawing Space over another view would
+    // leave it with no one to tear it down.
+    if (typeof ChatView !== 'undefined' && typeof Router !== 'undefined' && Router.drawn && Router.drawn() === ChatView) {
       const el = document.getElementById('app-view');
-      if (el && typeof ChatView !== 'undefined') ChatView.render(el);
+      if (el) ChatView.render(el);
     }
   }
 
-  /* Open a stored conversation in the full-screen monitor. Called by the
-     sidebar Chats list. Loads the messages already written to STORAGE_KEY,
-     lands on Home (the monitor's home base), and reveals the full monitor.
-     When navigation is needed, arms _suppressMonitorAutoHide so the
-     resulting hashchange doesn't immediately close what we just opened. */
-  function _showConversation() {
-    const onHome = window.location.hash === '#/' || window.location.hash === '';
-    if (onHome) {
-      // Already home: refresh the feed underneath so it's consistent once the
-      // monitor closes (Router won't re-render for the same hash).
-      _reload();
-    } else {
-      _loadMessages();
-      if (_messages.length) _suppressMonitorAutoHide = true;
-      window.location.hash = '#/'; // Router renders Home fresh from STORAGE_KEY
-    }
-    _renderMonitor();
-    if (_messages.length) _showMonitor(true);
-    else _hideMonitor();
+  // The monitor still shows the conversation before: an open monitor shows
+  // the new one instead when it has something for the monitor, and
+  // otherwise closes and lets go of the old content.
+  function _niceReplies() {
+    return typeof SpaceCards !== 'undefined' ? SpaceCards.offCard(_messages).length > 0 : _messages.length > 0;
+  }
+  function _resetMonitor() {
+    if (!_monitorContent) return;
+    const shown = _isStandaloneChat() ? _niceReplies() : _messages.length > 0;
+    if (_isMonitorActive() && shown) { _renderMonitor(); return; }
+    _monitorContent.innerHTML = '';
+    _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare, _detectIntent };
+  /* Open a stored conversation on Space, each model's thread on its card.
+     Called by the sidebar Chats list after it writes the conversation to
+     STORAGE_KEY. When it also holds NICE's own replies (agents, commands,
+     missions), the monitor opens over the cards as before; Back returns to
+     the cards, and Space links back to the monitor while those replies exist.
+     `current` says the conversation is the one already open (the user
+     clicked the active chat): nothing is reloaded or cut off, its replies
+     still on their way land as usual. */
+  function _showConversation(opts) {
+    const current = !!(opts && opts.current);
+    const onSpace = window.location.hash === '#/space';
+    if (current) {
+      // Redrawn from the conversation as it stands (card exchanges since the
+      // monitor last drew included); a send still out keeps its lines and a
+      // waiting approval through the redraw.
+      const show = _niceReplies() || !!_niceSend;
+      if (!onSpace) {
+        _suppressMonitorAutoHide = show;
+        window.location.hash = '#/space';
+      }
+      if (show) {
+        _renderMonitor();
+        _showMonitor(true);
+      }
+      return;
+    }
+    if (onSpace) _reload();
+    else { _abortSends(); _loadMessages(); }
+    const niceReplies = _niceReplies();
+    if (!onSpace) {
+      _suppressMonitorAutoHide = niceReplies;
+      window.location.hash = '#/space'; // Router renders Space from the loaded messages
+    }
+    if (niceReplies) { _renderMonitor(); _showMonitor(true); }
+    else {
+      if (_monitorContent) _monitorContent.innerHTML = '';
+      _hideMonitor();
+    }
+  }
+
+  // The current conversation, for Space's cards. Same auth gate as the store.
+  function messages() { return _messages; }
+
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent };
 })();

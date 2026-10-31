@@ -6,7 +6,7 @@ import AxeBuilder from '@axe-core/playwright';
  *
  * Routes:
  *   #/           → HomeView ('Home') — what needs you, your projects (the NICE mark)
- *   #/space      → ChatView ('Space') — standalone chat until the card workspace lands
+ *   #/space      → ChatView ('Space') — model cards above the prompt; the prompt goes to the selected cards
  *   #/crew       → CrewView ('Crew') — one project's crew as cards, recent runs, approvals
  *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
  *   #/blueprints → BlueprintsView on its Blueprints tab
@@ -286,26 +286,69 @@ test.describe('Dashboard', () => {
     expect(errors.length).toBe(0);
   });
 
-  test('chat offers Compare and explains what it needs', async ({ page }) => {
+  test('Space shows the free model as the one selected card', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/space', 'Space');
-    const toggle = page.locator('#nice-ai-compare');
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    // A new visitor runs only the free model, so the strip says what Compare needs.
-    await expect(page.locator('#nice-ai-compare-bar')).toBeVisible();
-    await expect(page.locator('.nice-ai-compare-note')).toContainText('Compare needs two models');
+    const gemini = page.locator('.space-card[data-model="gemini-2-5-flash"]');
+    await expect(gemini).toBeVisible();
+    await expect(gemini).toHaveClass(/\bis-selected\b/);
+    await expect(page.locator('.space-card.is-selected')).toHaveCount(1);
+    await expect(page.locator('.space-card[data-model="nice-auto"]')).toHaveCount(0);
+    await expect(page.locator('a.space-link[href="#/security?tab=models"]')).toBeVisible();
+    // The cards replace Compare and the model dropdown on Space.
+    await expect(page.locator('#nice-ai-compare')).toHaveCount(0);
+    await expect(page.locator('#nice-ai-targets')).toHaveText('To Gemini 2.5 Flash');
+    await expect(page.locator('#nice-ai-model')).toBeHidden();
     await navigateTo(page, '#/crew', 'Crew');
-    await expect(toggle).toBeHidden();
+    await expect(page.locator('#nice-ai-targets')).toBeHidden();
   });
 
-  test('chat view renders greeting', async ({ page }) => {
+  test('a card click adds it to the prompt and keeps the choice', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/space', 'Space');
-    const greeting = page.locator('.chat-home-greeting');
-    await expect(greeting).toBeVisible();
-    expect(await greeting.textContent()).toMatch(/Good (morning|afternoon|evening)/);
+    // A Pro plan with Grok switched on gives a second card.
+    await page.evaluate(() => {
+      Subscription.isPro = () => true;
+      State.set('enabled_models', { 'gemini-2-5-flash': true, 'grok-4-3': true });
+    });
+    const grok = page.locator('.space-card[data-model="grok-4-3"]');
+    await expect(grok).toBeVisible();
+    await expect(grok).not.toHaveClass(/\bis-selected\b/);
+    await grok.locator('.space-card-body').click();
+    await expect(grok).toHaveClass(/\bis-selected\b/);
+    await expect(grok.locator('.space-card-head')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#nice-ai-targets')).toHaveText('To 2 models');
+    // The last selected card stays selected: the prompt always has a target.
+    await grok.locator('.space-card-head').click();
+    await page.locator('.space-card[data-model="gemini-2-5-flash"] .space-card-head').click();
+    await expect(page.locator('.space-card.is-selected')).toHaveCount(1);
+    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/space', 'Space');
+    await expect(page.locator('.space-card.is-selected')).toHaveCount(1);
+  });
+
+  test('Space keeps the prompt at the bottom, below the cards', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/space', 'Space');
+    const panel = page.locator('#nice-ai');
+    await expect(panel).toBeVisible();
+    const viewport = page.viewportSize();
+    const panelBox = await panel.boundingBox();
+    const cardBox = await page.locator('.space-card').first().boundingBox();
+    expect(panelBox.y + panelBox.height).toBeGreaterThan(viewport.height - 40);
+    expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(panelBox.y);
+  });
+
+  test('Space passes critical a11y checks', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/space', 'Space');
+    await expect(page.locator('.space-card').first()).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    const critical = results.violations.filter(v => v.impact === 'critical');
+    expect(critical).toHaveLength(0);
   });
 
   test('home view has no JS errors', async ({ page }) => {
@@ -431,13 +474,27 @@ test.describe('Front Page', () => {
   });
 
   test('opens a Codex entry from its link and searches the Codex', async ({ page }) => {
-    await page.goto('/#codex/compare');
-    const entry = page.locator('#codex-compare');
+    await page.goto('/#codex/space');
+    const entry = page.locator('#codex-space');
     await expect(entry).toBeVisible();
     await expect(page.locator('#codex-what-is-nice')).toBeHidden();
     await page.locator('#codex-search').fill('approve');
-    await expect(page.locator('.lp-codex-nav button[data-entry="outbox"]')).toBeVisible();
+    await expect(page.locator('.lp-codex-nav button[data-entry="ship"]')).toBeVisible();
     await expect(page.locator('.lp-codex-nav button[data-entry="themes"]')).toHaveCount(0);
+  });
+
+  test('keeps old Codex and section links working after the renames', async ({ page }) => {
+    await page.goto('/#codex/outbox');
+    await expect(page.locator('#codex-ship')).toBeVisible();
+    await expect(page).toHaveURL(/#codex\/ship$/);
+    await page.goto('/#codex/compare');
+    await expect(page.locator('#codex-space')).toBeVisible();
+    // An Object member name is not a renamed entry.
+    await page.goto('/#codex/constructor');
+    await expect(page).toHaveURL(/#codex\/constructor$/);
+    await page.goto('/#library');
+    await expect(page).toHaveURL(/#blueprints$/);
+    await expect(page.locator('#blueprints')).toBeInViewport();
   });
 
   test('forwards app deep links to /app/', async ({ page }) => {

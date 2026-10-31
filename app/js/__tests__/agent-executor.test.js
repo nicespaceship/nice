@@ -706,6 +706,122 @@ describe('AgentExecutor', () => {
       globalThis.SB = _SBsave;
     });
 
+    it('stops before the next tool and model call once shouldStop says so', async () => {
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Searching twice.' },
+          { type: 'tool_use', id: 'tu-s1', name: 'outlook_search_messages', input: { query: 'a' } },
+          { type: 'tool_use', id: 'tu-s2', name: 'outlook_search_messages', input: { query: 'b' } },
+        ],
+        stop_reason: 'tool_use',
+      });
+      _scriptedResponses.push({ content: 'Final Answer: never asked for.', stop_reason: 'end_turn' });
+
+      let stop = false;
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-stop', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        {
+          tools: ['outlook_search_messages'],
+          spaceshipId: 'ship-stop',
+          // The chat moves on while the first tool runs.
+          onStep: () => { stop = true; },
+          shouldStop: () => stop,
+        },
+      );
+      const result = await controller.send('search twice');
+
+      expect(_toolCalls).toEqual([{ query: 'a' }]);       // the second tool never ran
+      expect(_capturedRequests.length).toBe(1);           // nor did the next model call
+      expect(result.stopped).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(controller.history()).toEqual([]);           // the unfinished turn is taken back
+      const events = _logCalls.map(c => c.metadata?.event);
+      expect(events[events.length - 1]).toBe('turn_stopped');
+    });
+
+    it('logs a neutral stop, not a decline, when the run is called off at an approval', async () => {
+      ToolRegistry.deregister('mcp:test:outlook_send_message');
+      const sendCalls = [];
+      ToolRegistry.register({
+        id: 'mcp:test:outlook_send_message',
+        name: 'outlook_send_message',
+        description: 'Send mail',
+        schema: { type: 'object', properties: {} },
+        execute: async () => { sendCalls.push(1); return { ok: true }; },
+      });
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Sending the email.' },
+          { type: 'tool_use', id: 'tu-stop-a', name: 'outlook_send_message', input: { to: 'x' } },
+        ],
+        stop_reason: 'tool_use',
+      });
+      let stop = false;
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-stop4', name: 'Mailer', config: { role: 'Assistant', tools: ['outlook_send_message'] } },
+        {
+          tools: ['outlook_send_message'],
+          spaceshipId: 'ship-stop4',
+          approvalMode: 'review',
+          // The chat moves on while the approval waits, which declines it.
+          onApprovalNeeded: () => { stop = true; return Promise.resolve(false); },
+          shouldStop: () => stop,
+        },
+      );
+      const result = await controller.send('email Bob');
+      try {
+        expect(result.stopped).toBe(true);
+        expect(sendCalls).toHaveLength(0);
+        expect(_capturedRequests).toHaveLength(1);
+        const rows = _logCalls.map(c => [c.metadata?.event, c.content, !!c.metadata?.stopped]);
+        expect(rows.slice(1)).toEqual([
+          ['tool_use', 'Sending the email.', true],
+          ['tool_result', 'Stopped: the chat moved on before this ran.', true],
+          ['turn_stopped', 'Stopped: the chat moved on before a final answer.', true],
+        ]);
+        expect(_logCalls.some(c => /declined/.test(c.content))).toBe(false);
+      } finally {
+        ToolRegistry.deregister('mcp:test:outlook_send_message');
+      }
+    });
+
+    it('marks the agent idle when a run is stopped', async () => {
+      const marks = [];
+      const _saveActivity = globalThis.AgentActivity;
+      globalThis.AgentActivity = { markActive: (id) => marks.push('active:' + id), markIdle: (id) => marks.push('idle:' + id) };
+      try {
+        const controller = AgentExecutor.converse(
+          { id: 'agent-tools-stop2', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+          { tools: ['outlook_search_messages'], spaceshipId: 'ship-stop2', shouldStop: () => true },
+        );
+        const result = await controller.send('anything');
+        expect(result.stopped).toBe(true);
+        expect(_capturedRequests.length).toBe(0);
+        expect(marks).toEqual(['active:agent-tools-stop2', 'idle:agent-tools-stop2']);
+      } finally {
+        globalThis.AgentActivity = _saveActivity;
+      }
+    });
+
+    it('execute() does not fall back to a single-shot answer when stopped', async () => {
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Looking.' },
+          { type: 'tool_use', id: 'tu-s3', name: 'outlook_search_messages', input: {} },
+        ],
+        stop_reason: 'tool_use',
+      });
+      let stop = false;
+      const result = await AgentExecutor.execute(
+        { id: 'agent-tools-stop3', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        'look it up',
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-stop3', onStep: () => { stop = true; }, shouldStop: () => stop },
+      );
+      expect(result.stopped).toBe(true);
+      expect(result.finalAnswer).toBeNull();
+      expect(_capturedRequests.length).toBe(1);
+    });
+
     it('flattens object-shaped error bodies instead of returning [object Object]', async () => {
       // Regression for the M365 Agent on 2026-05-04: nice-ai forwarded a
       // provider error as { error: { message, code, details } } in the
