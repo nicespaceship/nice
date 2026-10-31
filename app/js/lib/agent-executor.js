@@ -16,6 +16,8 @@ const AgentExecutor = (() => {
    *   - maxSteps: number (default 5)
    *   - spaceshipId: string
    *   - onStep: function(step) callback per step
+   *   - shouldStop: () => bool; true calls the run off before its next
+   *     model call or tool (no single-shot fallback; `stopped: true`)
    * @returns {{ steps: Array, finalAnswer: string, metadata: Object }}
    */
   async function execute(agentBlueprint, prompt, opts) {
@@ -68,6 +70,27 @@ const AgentExecutor = (() => {
       onStep,
       startMs,
     });
+
+    if (loop.stopped) {
+      _logToShipLog(spaceshipId, agentId, 'agent', 'Stopped before a final answer.', {
+        event: 'turn_stopped',
+        duration_ms: Date.now() - startMs,
+        steps_used: loop.stepsUsed,
+        total_tokens: tokensRef.value,
+      });
+      return {
+        steps,
+        finalAnswer: null,
+        stopped: true,
+        metadata: {
+          totalTokens: tokensRef.value,
+          duration: Date.now() - startMs,
+          stepsUsed: loop.stepsUsed,
+          maxSteps,
+          toolsAvailable: toolIds,
+        },
+      };
+    }
 
     if (loop.error) {
       // LLM call failed mid-loop — fall back to single-shot like the
@@ -249,9 +272,10 @@ const AgentExecutor = (() => {
      converse().send() use this — keeps the native tool-use protocol in
      one place instead of two divergent copies.
 
-     Returns { finalAnswer, stepsUsed, error, maxStepsReached }.
+     Returns { finalAnswer, stepsUsed, error, maxStepsReached, stopped }.
      `finalAnswer === null` + `maxStepsReached` lets the caller decide
-     how to render the timeout (single-shot fallback vs. last observation). */
+     how to render the timeout (single-shot fallback vs. last observation).
+     `stopped` means opts.shouldStop called the run off. */
   async function _runReactLoop(params) {
     const {
       agentBlueprint, systemPrompt, toolsSchema, conversationMessages,
@@ -259,16 +283,24 @@ const AgentExecutor = (() => {
     } = params;
 
     let stepIdx = 0;
+    // The caller can call the run off (the chat it answers moved on): it
+    // stops before the next model call and before the next tool, so nothing
+    // more runs for an answer nobody will see.
+    const shouldStop = (opts && typeof opts.shouldStop === 'function') ? opts.shouldStop : null;
+    const stopped = () => !!(shouldStop && shouldStop());
 
     while (stepIdx < maxSteps) {
+      if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
       let llmResponse;
       try {
         llmResponse = await _callLLM(
           agentBlueprint, systemPrompt, conversationMessages, spaceshipId, toolsSchema
         );
       } catch (err) {
+        if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
         return { finalAnswer: null, stepsUsed: stepIdx, error: err.message || String(err) };
       }
+      if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
 
       tokensRef.value += llmResponse.tokensUsed || 0;
 
@@ -293,6 +325,7 @@ const AgentExecutor = (() => {
         const declined = new Set();
         const toolResultParts = [];
         for (const block of toolUseBlocks) {
+          if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
           let observation;
           let isError = false;
           try {
@@ -385,6 +418,7 @@ const AgentExecutor = (() => {
         let observation;
         let toolFailed = false;
         let wasDeclined = false;
+        if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
         try {
           const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {}, {
             approvalMode:     opts && opts.approvalMode,
@@ -994,6 +1028,8 @@ const AgentExecutor = (() => {
    *   - onTurn: function(turnResult) callback per turn
    *   - approvalMode: 'review' | 'autonomous' (gates side-effect tools)
    *   - onApprovalNeeded: ({tool, input, thought, stepIndex}) => Promise<bool>
+   *   - shouldStop: () => bool; true calls the turn off before its next
+   *     model call or tool (the result comes back with `stopped: true`)
    * @returns {Object} Conversation controller with send(), history(), reset()
    */
   function converse(agentBlueprint, opts) {
@@ -1029,7 +1065,8 @@ const AgentExecutor = (() => {
 
       // Attachments ride the user turn as multimodal parts; the plain text
       // was logged to ship_log above.
-      history.push({ role: 'user', content: AttachmentUtils.buildUserContent(userMessage, attachments) });
+      const userTurn = { role: 'user', content: AttachmentUtils.buildUserContent(userMessage, attachments) };
+      history.push(userTurn);
 
       const maxSteps = opts.maxSteps || 5;
       const conversationMessages = [...history];
@@ -1052,6 +1089,22 @@ const AgentExecutor = (() => {
       });
 
       totalTokens += tokensRef.value;
+
+      if (loop.stopped) {
+        // The turn never finished: take its prompt back out so the history
+        // still alternates user / assistant if the conversation goes on.
+        const at = history.lastIndexOf(userTurn);
+        if (at !== -1) history.splice(at, 1);
+        _logToShipLog(spaceshipId, agentId, 'agent', 'Stopped before a final answer.', {
+          event: 'turn_stopped',
+          duration_ms: Date.now() - startMs,
+          steps_used: loop.stepsUsed,
+          total_tokens: tokensRef.value,
+        });
+        const turnResult = { text: '', steps, done: false, stopped: true, totalTokens, duration: Date.now() - startMs };
+        if (opts.onTurn) opts.onTurn(turnResult);
+        return turnResult;
+      }
 
       if (loop.error) {
         const errorMsg = 'Error: ' + loop.error;
@@ -1140,7 +1193,7 @@ const AgentExecutor = (() => {
   }
 
   const _ACTIVE_EVENTS = new Set(['mission_start', 'turn_start']);
-  const _IDLE_EVENTS = new Set(['final_answer', 'turn_error', 'max_steps_reached']);
+  const _IDLE_EVENTS = new Set(['final_answer', 'turn_error', 'turn_stopped', 'max_steps_reached']);
   function _emitActivity(agentId, metadata) {
     if (!agentId || typeof AgentActivity === 'undefined') return;
     const ev = (metadata || {}).event;
