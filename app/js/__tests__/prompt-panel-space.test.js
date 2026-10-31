@@ -386,6 +386,19 @@ describe('Sending to the selected cards', () => {
       expect(PromptPanel.messages()).toEqual([]);
       expect(btn().disabled).toBe(false);
     });
+
+    it("frees the panel when NICE's own send throws before it gets going", () => {
+      globalThis.AgentExecutor = { converse: vi.fn(() => { throw new Error('No tools could load'); }) };
+      const bp = { id: 'a1', name: 'Scout', config: { tools: ['gmail_send'] } };
+      State.set('agents', [bp]);
+      globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? bp : null) };
+      send('@Scout email the team');
+      expect(btn().disabled).toBe(false);
+      expect(document.getElementById('monitor-thinking')).toBeNull();
+      const last = PromptPanel.messages().slice(-1)[0];
+      expect(last.error).toBe(true);
+      expect(last.text).toContain('No tools could load');
+    });
   });
 
   it('frees the panel when setting up the cards throws', () => {

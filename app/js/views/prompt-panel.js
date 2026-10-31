@@ -734,7 +734,7 @@ const PromptPanel = (() => {
   }
 
   /* ── Auto-mission: create mission, assign agent, run, stream result ── */
-  async function _executeAutoMission(title, sendEpoch) {
+  async function _executeAutoMission(title, sendToken) {
     const user = State.get('user');
     const agents = State.get('agents') || [];
     const agent = _pickBestAgent(title, agents);
@@ -767,7 +767,7 @@ const PromptPanel = (() => {
       _messages[_messages.length - 1].text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
       _saveMessages();
       _renderMonitor();
-      _endNiceSend(sendEpoch);
+      _endNiceSend(sendToken);
       return;
     }
     let mission = null;
@@ -781,17 +781,17 @@ const PromptPanel = (() => {
       missions.push(mission);
       State.set('missions', [...missions]);
     } catch (e) {
-      if (!_isCurrentSend(sendEpoch)) return;
+      if (!_isCurrentSend(sendToken)) return;
       // Update message with error
       _messages[_messages.length - 1].text += `\n\n**Error creating mission:** ${e.message}`;
       _saveMessages();
       _renderMonitor();
-      _endNiceSend(sendEpoch);
+      _endNiceSend(sendToken);
       return;
     }
 
     // A new chat opened meanwhile: this mission's news isn't for it.
-    if (!_isCurrentSend(sendEpoch)) return;
+    if (!_isCurrentSend(sendToken)) return;
 
     // Run MissionRunner
     if (mission && mission.id && typeof MissionRunner !== 'undefined') {
@@ -826,10 +826,10 @@ const PromptPanel = (() => {
       });
     }
 
-    if (!_isCurrentSend(sendEpoch)) return;
+    if (!_isCurrentSend(sendToken)) return;
     _saveMessages();
     _renderMonitor();
-    _endNiceSend(sendEpoch);
+    _endNiceSend(sendToken);
   }
 
   /**
@@ -844,7 +844,7 @@ const PromptPanel = (() => {
    * we resolve it to the user's matching `user_spaceships` row so the
    * mission_runs.spaceship_id FK is satisfied.
    */
-  async function _runShipChat(text, bpId, sendEpoch, attachments) {
+  async function _runShipChat(text, bpId, sendToken, attachments) {
     const user = State.get('user');
     const ships = State.get('spaceships') || [];
 
@@ -866,7 +866,7 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _endNiceSend(sendEpoch);
+      _endNiceSend(sendToken);
       return;
     }
 
@@ -905,7 +905,7 @@ const PromptPanel = (() => {
       missions.push(run);
       State.set('missions', [...missions]);
     } catch (err) {
-      if (!_isCurrentSend(sendEpoch)) return;
+      if (!_isCurrentSend(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -914,15 +914,15 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _endNiceSend(sendEpoch);
+      _endNiceSend(sendToken);
       return;
     }
 
-    if (!_isCurrentSend(sendEpoch)) return;
+    if (!_isCurrentSend(sendToken)) return;
 
     // Update the monitor thinking label as dispatch phases progress
     const _onDispatchProgress = ({ label }) => {
-      if (!_isCurrentSend(sendEpoch)) return;
+      if (!_isCurrentSend(sendToken)) return;
       const el = document.getElementById('monitor-thinking');
       if (el) {
         const lbl = el.querySelector('.monitor-thinking-label');
@@ -936,7 +936,7 @@ const PromptPanel = (() => {
     try {
       result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress, attachments });
     } catch (err) {
-      if (!_isCurrentSend(sendEpoch)) return;
+      if (!_isCurrentSend(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -945,11 +945,11 @@ const PromptPanel = (() => {
       });
       _saveMessages();
       _renderMonitor();
-      _endNiceSend(sendEpoch);
+      _endNiceSend(sendToken);
       return;
     }
 
-    if (!_isCurrentSend(sendEpoch)) return;
+    if (!_isCurrentSend(sendToken)) return;
     _removeMonitorThinking();
 
     // Pull the final row to read the persisted result + status (the in-
@@ -970,7 +970,7 @@ const PromptPanel = (() => {
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
 
-    if (!_isCurrentSend(sendEpoch)) return;
+    if (!_isCurrentSend(sendToken)) return;
     const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
 
     if (routingMeta?.chosen_agent_name) {
@@ -1003,7 +1003,7 @@ const PromptPanel = (() => {
 
     _saveMessages();
     _renderMonitor();
-    _endNiceSend(sendEpoch);
+    _endNiceSend(sendToken);
   }
 
   function _renderMonitor() {
@@ -2333,7 +2333,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function retryCard(id) {
     if (typeof SpaceCards === 'undefined' || !State.get('user')) return false;
     if (_cardCalls.has(id) || SpaceCards.live(id)) return false;
-    if (_niceSending) return false;
+    if (_niceSend) return false;
     const cards = SpaceCards.available();
     if (!cards.includes(id)) return false;
     const thread = SpaceCards.threads(_messages, cards)[id] || [];
@@ -2518,8 +2518,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof SpaceCards !== 'undefined') SpaceCards.endAll();
     _cardCalls.forEach(ctrl => { try { ctrl.abort(); } catch { /* already settled */ } });
     _cardCalls.clear();
-    _sendEpoch++;
-    _niceSending = false;
+    _chatEpoch++;
+    _niceSend = null;
     if (_abortCtrl) { try { _abortCtrl.abort(); } catch { /* already settled */ } _abortCtrl = null; }
     // The agent conversation belonged to the old chat; a new @mention starts
     // a fresh one instead of sending into a call that may still be running.
@@ -2529,27 +2529,47 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   /* ── Who holds the send lock ──
      The panel is busy while a send it started is still out: a Space card
-     call (_cardCalls) or one of NICE's own sends (an agent or ship chat, the
-     direct reply, an auto-mission, a navigation reply). Each NICE send
-     belongs to a send epoch that _abortSends bumps, so one from an older
-     chat that answers late neither unlocks the panel nor lands in the new
-     chat. */
-  let _sendEpoch = 0;
-  let _niceSending = false;
+     call (_cardCalls) or NICE's own send (an agent or ship chat, the direct
+     reply, an auto-mission, a navigation reply). Each NICE send carries its
+     own token. `chat` names the conversation it answers, which _abortSends
+     moves on; only the send holding the lock (_niceSend) can let it go.
+     The contract for every send path: after each await, check
+     _isCurrentSend(token) before touching _messages, the monitor, an
+     approval or storage, so whatever an older chat's send brings back is
+     dropped. */
+  let _chatEpoch = 0;
+  let _niceSendSeq = 0;
+  let _niceSend = null;
 
   function _startNiceSend() {
-    _niceSending = true;
+    _niceSend = { chat: _chatEpoch, id: ++_niceSendSeq };
     _syncSending();
-    return _sendEpoch;
+    return _niceSend;
   }
-  function _isCurrentSend(epoch) { return epoch === _sendEpoch; }
-  function _endNiceSend(epoch) {
-    if (epoch !== _sendEpoch) return;
-    _niceSending = false;
+  function _isCurrentSend(token) { return !!token && token.chat === _chatEpoch; }
+  function _endNiceSend(token) {
+    if (!token || token !== _niceSend) return;
+    _niceSend = null;
     _syncSending();
+  }
+  // A send that threw instead of answering still ends: it says what went
+  // wrong on the monitor and lets the panel go.
+  function _failNiceSend(token, err) {
+    if (!token || token !== _niceSend) return;
+    _removeMonitorThinking();
+    document.getElementById('monitor-step-indicator')?.remove();
+    document.getElementById('monitor-stream')?.remove();
+    _messages.push({
+      role: 'assistant',
+      text: '⚠️ **Request failed**\n\n' + ((err && err.message) || 'Something went wrong.'),
+      agent: null, error: true, ts: Date.now(),
+    });
+    _saveMessages();
+    _renderMonitor();
+    _endNiceSend(token);
   }
   function _syncSending() {
-    const busy = _niceSending || _cardCalls.size > 0;
+    const busy = !!_niceSend || _cardCalls.size > 0;
     const sendBtn = _panel?.querySelector('#nice-ai-send');
     if (sendBtn) sendBtn.disabled = busy;
     if (busy !== _sending) _setSending(busy);
@@ -2757,8 +2777,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_inputContainer) _inputContainer.classList.remove('has-text');
     // NICE's own send (agent, ship, direct reply, mission) holds the lock
     // until it ends, unless a new chat replaces it first: then whatever it
-    // brings back is dropped (see _startNiceSend).
-    const sendEpoch = _startNiceSend();
+    // brings back is dropped (see _startNiceSend). A send that throws before
+    // it gets going still ends, so it can't leave the panel locked.
+    const sendToken = _startNiceSend();
+    try {
+      _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken });
+    } catch (err) {
+      _failNiceSend(sendToken, err);
+    }
+  }
+
+  /* NICE answers a prompt itself: an agent, a ship's crew, a mission, a
+     navigation, or the model directly. Every reply goes through sendToken
+     (see "Who holds the send lock"). */
+  function _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken }) {
 
     // Show thinking on monitor
     _addMonitorThinking();
@@ -2812,7 +2844,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       let _stepEl = null;
       const onStep = (step) => {
-        if (!_isCurrentSend(sendEpoch)) return;
+        if (!_isCurrentSend(sendToken)) return;
         if (!_stepEl) {
           _removeMonitorThinking();
           _stepEl = document.createElement('div');
@@ -2838,7 +2870,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (_isSameAgent && _activeConversation.controller) {
         // Continue existing conversation
         _activeConversation.controller.send(text, sentAttachments).then(result => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           _messages.push({
@@ -2848,16 +2880,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
           _saveMessages();
           _renderMonitor();
-          _endNiceSend(sendEpoch);
+          _endNiceSend(sendToken);
         }).catch((err) => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
           _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _endNiceSend(sendEpoch);
+          _endNiceSend(sendToken);
         });
       } else {
         // Start fresh conversation via converse() if available, else fallback to execute()
@@ -2878,7 +2910,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _activeConversation = { controller, agentBp, agentLabel };
 
           controller.send(text, sentAttachments).then(result => {
-            if (!_isCurrentSend(sendEpoch)) return;
+            if (!_isCurrentSend(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2888,9 +2920,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           }).catch((err) => {
-            if (!_isCurrentSend(sendEpoch)) return;
+            if (!_isCurrentSend(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _activeConversation = null;
@@ -2898,7 +2930,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           });
         } else {
           // Fallback: single-shot execute
@@ -2909,7 +2941,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             onStep,
             attachments: sentAttachments,
           }).then(result => {
-            if (!_isCurrentSend(sendEpoch)) return;
+            if (!_isCurrentSend(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2918,16 +2950,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           }).catch((err) => {
-            if (!_isCurrentSend(sendEpoch)) return;
+            if (!_isCurrentSend(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           });
         }
       }
@@ -2946,14 +2978,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const cleanText = mentionedShip
         ? text.replace(/@[\w]+(\s+|$)/, '').trim() || text
         : text;
-      _runShipChat(cleanText, shipId, sendEpoch, sentAttachments);
+      _runShipChat(cleanText, shipId, sendToken, sentAttachments).catch(err => _failNiceSend(sendToken, err));
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
       const spaceshipId = bpId || 'default-ship';
       let _streamText = '';
       let _streamEl = null;
       const onChunk = (chunk) => {
-        if (!_isCurrentSend(sendEpoch)) return;
+        if (!_isCurrentSend(sendToken)) return;
         if (!_streamEl) {
           _removeMonitorThinking();
           _streamEl = document.createElement('div');
@@ -2974,23 +3006,23 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       };
 
       ShipLog.execute(spaceshipId, agentBp, text, { onChunk, attachments: sentAttachments }).then(result => {
-        if (!_isCurrentSend(sendEpoch)) return;
+        if (!_isCurrentSend(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = result.agent || (mentioned ? mentioned.name : null);
         _messages.push({ role: 'assistant', text: result.content, agent: agentName, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _endNiceSend(sendEpoch);
+        _endNiceSend(sendToken);
       }).catch((err) => {
-        if (!_isCurrentSend(sendEpoch)) return;
+        if (!_isCurrentSend(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const errorText = '⚠️ **Request failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
         _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _endNiceSend(sendEpoch);
+        _endNiceSend(sendToken);
       });
     } else {
       // Direct LLM with streaming. Pre-check intent first so imperative
@@ -2998,18 +3030,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       // Space already ran the pre-check before deciding against its cards.
       const preCheck = spacePreCheck || _getResponse(text);
       if (preCheck.autoMission) {
-        _executeAutoMission(preCheck.title, sendEpoch);
+        _executeAutoMission(preCheck.title, sendToken).catch(err => _failNiceSend(sendToken, err));
         return;
       }
       if (preCheck.isNav) {
         const delay = 400 + Math.random() * 400;
         setTimeout(() => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           _removeMonitorThinking();
           _messages.push({ role: 'assistant', text: preCheck.text, agent: preCheck.agent, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _endNiceSend(sendEpoch);
+          _endNiceSend(sendToken);
         }, delay);
       } else {
         // Streaming LLM call
@@ -3017,7 +3049,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         let _streamText = '';
 
         const onChunk = (chunk) => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           if (!_streamEl) {
             _removeMonitorThinking();
             _streamEl = document.createElement('div');
@@ -3037,7 +3069,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         };
 
         _callDirectLLM(text, { onChunk }).then(async (result) => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
@@ -3067,7 +3099,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
               _renderMonitor();
             }
 
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           } else {
             // LLM returned empty — show error instead of fake response
             _removeMonitorThinking();
@@ -3079,10 +3111,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             });
             _saveMessages();
             _renderMonitor();
-            _endNiceSend(sendEpoch);
+            _endNiceSend(sendToken);
           }
         }).catch(err => {
-          if (!_isCurrentSend(sendEpoch)) return;
+          if (!_isCurrentSend(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-stream')?.remove();
           // Show error on monitor with retry
@@ -3097,7 +3129,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
           _saveMessages();
           _renderMonitor();
-          _endNiceSend(sendEpoch);
+          _endNiceSend(sendToken);
         });
       }
     }
