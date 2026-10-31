@@ -167,7 +167,7 @@ const CostView = (() => {
     // Alert check
     if (pct >= budget.alert) {
       const trendEl = document.getElementById('co-daily-trend');
-      if (trendEl) trendEl.style.color = '#ef4444';
+      if (trendEl) trendEl.style.color = 'var(--color-error)';
     }
   }
 

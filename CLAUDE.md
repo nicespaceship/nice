@@ -246,7 +246,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 
 | Skin | Aesthetic | Source |
 |------|-----------|--------|
-| NICE (default) | Premium dark command center | Built-in |
+| NICE (default) | Monochrome: black, white, neutral grays; color only as indicator dots; no reactor. `nice` light + `nice-dark` | Built-in |
 | HAL-9000 | Sci-fi red/dark HUD | Built-in |
 | The Grid | Electric blue TRON grid | Built-in |
 | The Matrix | Digital rain green, terminal | Built-in |
@@ -267,6 +267,25 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - `--glow`, `--glow-hi` — glow/shadow effects
 - `--font-h`, `--font-b`, `--font-m` — heading/body/mono fonts
 - `--radius` — border radius
+- `--dot-stop`, `--dot-go`, `--dot-busy`, `--dot-info` — indicator dot colors, defined for NICE only in `theme.css`; every use outside a NICE-scoped rule reads `var(--dot-go, <the color it had before>)` so other themes keep their exact dots, while NICE-scoped rules use the token directly
+
+### NICE theme is monochrome (decided 2026-10-30)
+The founder's rule: everything in `nice` and `nice-dark` is black, white or a neutral gray (no blue-tinted grays), and color appears **only as small indicator dots**:
+
+| Dot | Token | Means |
+|-----|-------|-------|
+| Red | `--dot-stop` | no, stop, cancel, error, rejected |
+| Green | `--dot-go` | go, ready, done, approved, connected |
+| Orange | `--dot-busy` | working, waiting, needs attention |
+| Blue | `--dot-info` | info, neutral highlight |
+
+- `--accent` is ink (`#0a0a0a` light, `#fafafa` dark). Primary buttons, active nav, selected chips, links, focus rings, toggles, checkboxes (`accent-color`) and `::selection` all read black/white. Sapphire no longer applies to NICE's UI.
+- A status that other themes paint with color is ink plus a dot in NICE. Use the shared `.status-dot` + `.dot-g` / `.dot-r` / `.dot-a` / `.dot-i` (go / stop / busy / info), or a component dot. Every use outside a NICE-scoped rule reads `var(--dot-*, <fallback>)`, and the fallback is what every other theme shows, so a new dot never changes them; NICE-scoped rules use the token directly. Never color text, fills or borders for status in NICE.
+- NICE-only tokens live in one block in `app.css` (the CORE theme section): the status inks (`--color-success/error/warning/info` map to `--text`), `--on-accent` (text on an accent or status fill; `#fff` elsewhere), `--tint` (neutral hover wash), `--mono` / `--mono-ink`, and `--mono-line` (decorative frames, gray in NICE). Text on an ink fill must use `--on-accent` / `--mono-ink`, never `#fff`: in nice-dark the ink is near-white.
+- **`--mono` convention.** Base CSS and inline styles that paint a decorative color (rarity, category, provider, tier) write it as `var(--mono, #hex)`, and text on that fill as `var(--mono-ink, #fff)`. Only NICE defines `--mono`, so NICE renders ink and every other theme keeps its exact hex. Use the same pattern for any new colored literal outside a theme-scoped rule. Text links in NICE are ink with an underline (`a:not([class])`), since color can't mark them.
+- Blueprint cards are monochrome in NICE too (frames, rarity badges, card art via CSS `fill`/`stroke` overrides); the badge text still names the rarity. Integration logos render grayscale.
+- **No reactor in NICE.** `reactor:false` on both NICE entries in `THEMES`; `CoreReactor` never shows it while a reactor-less theme is active and re-evaluates on every `Theme.set`. The sci-fi themes keep theirs.
+- Left in color on purpose: the theme picker swatches (`.db`, `.tc-dock-swatch`, skin previews show each theme's own color), the Google and Microsoft sign-in logos (provider branding), the Operations mission-status donut (canvas chart, open question), and the `.d-*` theme dots.
 
 ### Skin Switching
 - Persisted in `localStorage` key `ns-theme`
@@ -403,7 +422,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `UpgradeModal` | `upgrade-modal.js` | Subscription upgrade prompts |
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
-| `CoreReactor` | `core-reactor.js` | Centerpiece reactor mount + state machine + audio-analyser pipeline; every theme registers its own core markup against it. Visibility gated via `setVisible(bool)` (toggles `html.reactor-visible`); Router default-hides on every route change, views opt in on render (Home / Schematic / SpaceshipDetail) |
+| `CoreReactor` | `core-reactor.js` | Centerpiece reactor mount + state machine + audio-analyser pipeline; every theme registers its own core markup against it (`reactor:false` opts out, as NICE does). Visibility gated via `setVisible(bool)` (toggles `html.reactor-visible`), which never shows it while the active theme has no reactor; `paint()` (called by `Theme.set`) re-evaluates on every switch. Router default-hides on every route change, views opt in on render (Space / Schematic / SpaceshipDetail) |
 | `CoreVoice` | `core-voice.js` | Theme-pluggable TTS router — resolves per-theme voice config and calls `nice-tts`, drives `CoreReactor` during playback |
 | `DefaultCore` | `default-core.js` | Fallback reactor SVG (concentric pulsing rings) for themes without a custom core markup |
 | `JarvisHUD` | `jarvis-hud.js` | SSOT for JARVIS arc reactor + HUD ring markup, shared by the prompt panel and Schematic center column |
@@ -572,7 +591,9 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
 | Space model cards | `SpaceCards` (`space-cards.js`) | Card set, selection, live state and per-model threads; ChatView draws, PromptPanel sends |
-| Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
+| Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views; painted through `var(--mono, …)` so NICE renders ink |
+| Indicator dot colors | `--dot-stop` / `--dot-go` / `--dot-busy` / `--dot-info` in `theme.css` (NICE-scoped) | The only color in the NICE theme. `.status-dot` + `.dot-r/g/a/i` in `app.css`; uses read `var(--dot-*, <fallback>)` |
+| NICE monochrome overrides | CORE theme block in `app.css` | Status inks, `--on-accent`, `--tint`, `--mono` / `--mono-ink`, `--bg-pattern:none` |
 | Top-banner height | `--app-banner-height` CSS var on `<html>` | `nice.js` stacks the sign-in and update banners in one fixed strip (`#app-banners`), measures it via `ResizeObserver`, and writes the var; sidebar / mobile-bar / hud-panel / app-main / toasts consume via `var(--app-banner-height, 0px)`. No magic pixel numbers |
 
 ## Tool Preferences

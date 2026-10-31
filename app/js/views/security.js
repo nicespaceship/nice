@@ -98,14 +98,18 @@ const SecurityView = (() => {
     if (score >= 50) return 'D';
     return 'F';
   }
+  // Score paint goes through var(--mono, …) so the monochrome NICE theme
+  // draws it in ink; every other theme keeps the hex.
   function _scoreColor(score) {
     if (score >= 80) return 'var(--accent)';
-    if (score >= 60) return '#e8a32e';
-    return '#e74c3c';
+    if (score >= 60) return 'var(--mono, #e8a32e)';
+    return 'var(--mono, #e74c3c)';
   }
+  // Threat severity is an indicator dot: high = stop, medium = busy. The
+  // --dot-* tokens exist only in NICE; other themes keep these hexes.
   function _sevColor(sev) {
-    if (sev === 'high')   return '#e74c3c';
-    if (sev === 'medium') return '#e8a32e';
+    if (sev === 'high')   return 'var(--dot-stop, #e74c3c)';
+    if (sev === 'medium') return 'var(--dot-busy, #e8a32e)';
     return 'var(--text-muted)';
   }
   const _timeAgo = Utils.timeAgo;
@@ -250,10 +254,10 @@ const SecurityView = (() => {
             <h3 class="security-section-title">Security Posture</h3>
             <p class="text-muted" style="margin:4px 0 12px">Score based on compliance checklist completion.</p>
             <div class="score-breakdown">
-              <span class="score-tag" style="background:${score >= 90 ? 'var(--accent)' : 'var(--border)'}; color:${score >= 90 ? '#fff' : 'var(--text)'}">A — Excellent (90+)</span>
-              <span class="score-tag" style="background:${score >= 80 && score < 90 ? '#e8a32e' : 'var(--border)'}; color:${score >= 80 && score < 90 ? '#fff' : 'var(--text)'}">B — Good (80-89)</span>
-              <span class="score-tag" style="background:${score >= 70 && score < 80 ? '#e8a32e' : 'var(--border)'}; color:${score >= 70 && score < 80 ? '#fff' : 'var(--text)'}">C — Fair (70-79)</span>
-              <span class="score-tag" style="background:${score < 70 ? '#e74c3c' : 'var(--border)'}; color:${score < 70 ? '#fff' : 'var(--text)'}">D/F — Needs Work (&lt;70)</span>
+              <span class="score-tag" style="background:${score >= 90 ? 'var(--accent)' : 'var(--border)'}; color:${score >= 90 ? 'var(--on-accent)' : 'var(--text)'}">A — Excellent (90+)</span>
+              <span class="score-tag" style="background:${score >= 80 && score < 90 ? 'var(--mono, #e8a32e)' : 'var(--border)'}; color:${score >= 80 && score < 90 ? 'var(--mono-ink, #fff)' : 'var(--text)'}">B — Good (80-89)</span>
+              <span class="score-tag" style="background:${score >= 70 && score < 80 ? 'var(--mono, #e8a32e)' : 'var(--border)'}; color:${score >= 70 && score < 80 ? 'var(--mono-ink, #fff)' : 'var(--text)'}">C — Fair (70-79)</span>
+              <span class="score-tag" style="background:${score < 70 ? 'var(--mono, #e74c3c)' : 'var(--border)'}; color:${score < 70 ? 'var(--mono-ink, #fff)' : 'var(--text)'}">D/F — Needs Work (&lt;70)</span>
             </div>
           </div>
         </div>
@@ -442,13 +446,13 @@ const SecurityView = (() => {
     const tags = el.querySelectorAll('.score-tag');
     if (tags.length >= 4) {
       tags[0].style.background = score >= 90 ? 'var(--accent)' : 'var(--border)';
-      tags[0].style.color = score >= 90 ? '#fff' : 'var(--text)';
-      tags[1].style.background = score >= 80 && score < 90 ? '#e8a32e' : 'var(--border)';
-      tags[1].style.color = score >= 80 && score < 90 ? '#fff' : 'var(--text)';
-      tags[2].style.background = score >= 70 && score < 80 ? '#e8a32e' : 'var(--border)';
-      tags[2].style.color = score >= 70 && score < 80 ? '#fff' : 'var(--text)';
-      tags[3].style.background = score < 70 ? '#e74c3c' : 'var(--border)';
-      tags[3].style.color = score < 70 ? '#fff' : 'var(--text)';
+      tags[0].style.color = score >= 90 ? 'var(--on-accent)' : 'var(--text)';
+      tags[1].style.background = score >= 80 && score < 90 ? 'var(--mono, #e8a32e)' : 'var(--border)';
+      tags[1].style.color = score >= 80 && score < 90 ? 'var(--mono-ink, #fff)' : 'var(--text)';
+      tags[2].style.background = score >= 70 && score < 80 ? 'var(--mono, #e8a32e)' : 'var(--border)';
+      tags[2].style.color = score >= 70 && score < 80 ? 'var(--mono-ink, #fff)' : 'var(--text)';
+      tags[3].style.background = score < 70 ? 'var(--mono, #e74c3c)' : 'var(--border)';
+      tags[3].style.color = score < 70 ? 'var(--mono-ink, #fff)' : 'var(--text)';
     }
   }
 

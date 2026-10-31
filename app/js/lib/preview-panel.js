@@ -137,19 +137,19 @@ const PreviewPanel = (() => {
   function log(level, text) { _log(level, text); }
 
   /* ── Agent Output ── */
+  // Agent HTML comes from a model reply, so it renders as its own document in
+  // a frame with every sandbox permission off: no scripts, forms or popups,
+  // and no access to NICE's page or session.
   function showOutput(html) {
     const { output } = _getEls();
     if (!output) return;
-    output.innerHTML = html;
+    const frame = document.createElement('iframe');
+    frame.className = 'preview-output-frame';
+    frame.title = 'Agent output';
+    frame.setAttribute('sandbox', '');
+    frame.srcdoc = html;
+    output.replaceChildren(frame);
     setTab('output');
-    if (!_isOpen) open();
-  }
-
-  function appendOutput(html) {
-    const { output } = _getEls();
-    if (!output) return;
-    output.innerHTML += html;
-    output.scrollTop = output.scrollHeight;
     if (!_isOpen) open();
   }
 
@@ -290,7 +290,7 @@ const PreviewPanel = (() => {
   return {
     init, open, close, toggle, isOpen,
     setTab, loadURL, refresh, goBack, goForward,
-    setViewport, showOutput, appendOutput,
+    setViewport, showOutput,
     detectAndOpen, log,
   };
 })();

@@ -1534,9 +1534,9 @@ const SpaceshipDetailView = (() => {
   }
 
   function _roleColorFromAgent(a) {
-    if (typeof CardRenderer !== 'undefined') return CardRenderer.roleColor(a?.role);
+    if (typeof CardRenderer !== 'undefined') return `var(--mono, ${CardRenderer.roleColor(a?.role)})`;
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6', Marketing:'#e11d48', Sales:'#f97316', Support:'#8b5cf6', Engineering:'#06b6d4', Analytics:'#f59e0b', Automation:'#14b8a6', Legal:'#64748b' };
-    return colors[a?.role] || '#6366f1';
+    return `var(--mono, ${colors[a?.role] || '#6366f1'})`;
   }
 
   function destroy() {
