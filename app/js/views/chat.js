@@ -23,7 +23,6 @@ const ChatView = (() => {
   let _said = [];                // screen-reader lines waiting for the next frame
   const _drawn = new Map();      // card id → the markup it shows now ('bar' too)
   let _status = null;            // the screen-reader status line (on <body>)
-  let _statusFrame = 0;
 
   /* ── Data ── */
   function _messages() {
@@ -360,16 +359,16 @@ const ChatView = (() => {
      announces it a second time. */
   function _speak() {
     if (!_status || !_said.length) return;
-    const line = _said.join(' ');
+    // Each announcement is a line of its own: a live region reads added
+    // lines, so one identical to the last ("Gemini 2.5 Flash answered."
+    // twice) still counts as news, and two that land close together are
+    // both read instead of one replacing the other. Only the last few stay;
+    // removing a line is not announced.
+    const line = document.createElement('span');
+    line.textContent = _said.join(' ') + ' ';
     _said = [];
-    // Clear, then write on the next frame: a line identical to the last
-    // one ("Gemini 2.5 Flash answered." twice) still counts as news.
-    _status.textContent = '';
-    if (_statusFrame) cancelAnimationFrame(_statusFrame);
-    _statusFrame = requestAnimationFrame(() => {
-      _statusFrame = 0;
-      if (_status) _status.textContent = line;
-    });
+    _status.appendChild(line);
+    while (_status.childNodes.length > 3) _status.firstChild.remove();
   }
 
   function _onScroll() {
@@ -467,7 +466,6 @@ const ChatView = (() => {
     _cleanup = [];
     if (_frame) { cancelAnimationFrame(_frame); _frame = 0; }
     if (_anchorFrame) { cancelAnimationFrame(_anchorFrame); _anchorFrame = 0; }
-    if (_statusFrame) { cancelAnimationFrame(_statusFrame); _statusFrame = 0; }
     _queued = new Set();
   }
 

@@ -256,20 +256,26 @@ describe('ChatView', () => {
     await frame();
     expect(card(el, 'gemini-2-5-flash').getAttribute('aria-busy')).toBe('true');
     expect(status.textContent).toBe('');
+    const lines = () => [...status.children].map(n => n.textContent.trim());
     messages.push({ role: 'assistant', text: 'Whole answer', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 });
     SpaceCards.endLive('gemini-2-5-flash', 'answered');
     await frame();
     expect(card(el, 'gemini-2-5-flash').hasAttribute('aria-busy')).toBe(false);
-    expect(status.textContent).toBe('');
-    await frame();
-    expect(status.textContent).toBe('Gemini 2.5 Flash answered.');
-    // The same line again is cleared first, so it is announced again.
+    expect(lines()).toEqual(['Gemini 2.5 Flash answered.']);
+    // The same line again is a new line, so it is read again.
     SpaceCards.setLive('gemini-2-5-flash', { text: '' });
     SpaceCards.endLive('gemini-2-5-flash', 'answered');
     await frame();
-    expect(status.textContent).toBe('');
+    expect(lines()).toEqual(['Gemini 2.5 Flash answered.', 'Gemini 2.5 Flash answered.']);
+    // Two answers a frame apart: both are read; only the last three lines stay.
+    SpaceCards.setLive('gemini-2-5-flash', { text: '' });
+    SpaceCards.setLive('grok-4-3', { text: '' });
     await frame();
-    expect(status.textContent).toBe('Gemini 2.5 Flash answered.');
+    SpaceCards.endLive('gemini-2-5-flash', 'answered');
+    await frame();
+    SpaceCards.endLive('grok-4-3', 'answered');
+    await frame();
+    expect(lines()).toEqual(['Gemini 2.5 Flash answered.', 'Gemini 2.5 Flash answered.', 'Grok 4.3 answered.']);
   });
 
   it('gives a free user the free card and a note about plans', () => {
