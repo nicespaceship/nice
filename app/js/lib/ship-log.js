@@ -128,15 +128,30 @@ const ShipLog = (() => {
   }
 
   /* ── Build context window for an agent ── */
+  // An agent run called off when the chat moved on leaves its tool rows for
+  // the record. The model reads one note in their place, so it neither
+  // replays them as turns nor takes the request that opened the run as
+  // still waiting for an answer.
+  const STOPPED_NOTE = 'That request was dropped: the chat moved on before it was answered, so none of it was done.';
+
   function buildContext(entries, currentAgentId) {
     if (!entries || !entries.length) return [];
-    // Rows of an agent run called off (the chat moved on) are kept for the
-    // record only: they are not turns, so the model never reads them back.
-    return entries.filter(e => !(e && e.metadata && e.metadata.stopped)).map(e => ({
-      role:    e.role === 'user' ? 'user' : 'assistant',
-      content: e.content,
-      name:    e.agent_id || 'system',
-    }));
+    const ctx = [];
+    let inStopped = false;
+    for (const e of entries) {
+      if (e && e.metadata && e.metadata.stopped) {
+        if (!inStopped) ctx.push({ role: 'assistant', content: STOPPED_NOTE, name: e.agent_id || 'system' });
+        inStopped = true;
+        continue;
+      }
+      inStopped = false;
+      ctx.push({
+        role:    e.role === 'user' ? 'user' : 'assistant',
+        content: e.content,
+        name:    e.agent_id || 'system',
+      });
+    }
+    return ctx;
   }
 
   /* ── Subscribe to realtime updates ── */

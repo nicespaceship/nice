@@ -291,7 +291,7 @@ describe('ShipLog', () => {
       expect(ctx[0].name).toBe('system');
     });
 
-    it('leaves out the rows of an agent run that was called off', () => {
+    it('folds a called-off run into one note that its request was dropped', () => {
       const ctx = ShipLog.buildContext([
         { role: 'user', content: 'email the team', agent_id: null, metadata: { event: 'mission_start' } },
         { role: 'agent', content: 'Sending.', agent_id: 'a1', metadata: { event: 'tool_use', stopped: true } },
@@ -299,7 +299,21 @@ describe('ShipLog', () => {
         { role: 'agent', content: 'Stopped: the chat moved on before a final answer.', agent_id: 'a1', metadata: { event: 'turn_stopped', stopped: true } },
         { role: 'user', content: 'say hi', agent_id: null },
       ]);
-      expect(ctx.map(c => c.content)).toEqual(['email the team', 'say hi']);
+      expect(ctx).toHaveLength(3);
+      expect(ctx[0]).toMatchObject({ role: 'user', content: 'email the team' });
+      expect(ctx[1].role).toBe('assistant');
+      expect(ctx[1].content).toMatch(/dropped/);
+      expect(ctx[1].content).not.toMatch(/Sending/);
+      expect(ctx[2]).toMatchObject({ role: 'user', content: 'say hi' });
+    });
+
+    it('gives each called-off run its own note', () => {
+      const stop = (n) => ({ role: 'agent', content: 'Stopped.', agent_id: 'a1', metadata: { event: 'turn_stopped', stopped: true, n } });
+      const ctx = ShipLog.buildContext([
+        { role: 'user', content: 'one', agent_id: null }, stop(1),
+        { role: 'user', content: 'two', agent_id: null }, stop(2),
+      ]);
+      expect(ctx.map(c => c.role)).toEqual(['user', 'assistant', 'user', 'assistant']);
     });
 
     it('should map agent role to assistant', () => {

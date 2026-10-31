@@ -278,8 +278,9 @@ const AgentExecutor = (() => {
      how to render the timeout (single-shot fallback vs. last observation).
      `stopped` means opts.shouldStop called the run off. */
   // What the log says when a run is called off. Neutral: nobody declined
-  // anything. The rows carry `stopped: true`, and ShipLog.buildContext leaves
-  // them out, so a later call never reads them back as a turn.
+  // anything. The rows carry `stopped: true`, and ShipLog.buildContext folds
+  // them into one note that the request was dropped, so a later call never
+  // reads them back as turns.
   const _STOP_TOOL_NOTE = 'Stopped: the chat moved on before this ran.';
   const _STOP_TURN_NOTE = 'Stopped: the chat moved on before a final answer.';
 
