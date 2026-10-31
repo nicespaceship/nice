@@ -2534,8 +2534,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _chatEpoch++;
     _niceSend = null;
     if (_abortCtrl) { try { _abortCtrl.abort(); } catch { /* already settled */ } _abortCtrl = null; }
-    // The monitor's approvals belong to sends that just ended: declined.
+    // The monitor's approvals and its thinking, step and stream lines belong
+    // to sends that just ended: the approvals are declined, the lines go.
     _declineApprovals();
+    _removeMonitorThinking();
+    document.getElementById('monitor-step-indicator')?.remove();
+    document.getElementById('monitor-stream')?.remove();
     // The agent conversation belonged to the old chat; a new @mention starts
     // a fresh one instead of sending into a call that may still be running.
     _activeConversation = null;
@@ -4257,10 +4261,25 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _reload() {
     _abortSends();
     _loadMessages();
+    _resetMonitor();
     if (window.location.hash === '#/space') {
       const el = document.getElementById('app-view');
       if (el && typeof ChatView !== 'undefined') ChatView.render(el);
     }
+  }
+
+  // The monitor still shows the conversation before: an open monitor shows
+  // the new one instead when it has something for the monitor, and
+  // otherwise closes and lets go of the old content.
+  function _niceReplies() {
+    return typeof SpaceCards !== 'undefined' ? SpaceCards.offCard(_messages).length > 0 : _messages.length > 0;
+  }
+  function _resetMonitor() {
+    if (!_monitorContent) return;
+    const shown = _isStandaloneChat() ? _niceReplies() : _messages.length > 0;
+    if (_isMonitorActive() && shown) { _renderMonitor(); return; }
+    _monitorContent.innerHTML = '';
+    _hideMonitor();
   }
 
   /* Open a stored conversation on Space, each model's thread on its card.
@@ -4272,13 +4291,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const onSpace = window.location.hash === '#/space';
     if (onSpace) _reload();
     else { _abortSends(); _loadMessages(); }
-    const niceReplies = typeof SpaceCards !== 'undefined' ? SpaceCards.offCard(_messages).length > 0 : _messages.length > 0;
+    const niceReplies = _niceReplies();
     if (!onSpace) {
       _suppressMonitorAutoHide = niceReplies;
       window.location.hash = '#/space'; // Router renders Space from the loaded messages
     }
     if (niceReplies) { _renderMonitor(); _showMonitor(true); }
-    else _hideMonitor();
+    else {
+      if (_monitorContent) _monitorContent.innerHTML = '';
+      _hideMonitor();
+    }
   }
 
   // The current conversation, for Space's cards. Same auth gate as the store.

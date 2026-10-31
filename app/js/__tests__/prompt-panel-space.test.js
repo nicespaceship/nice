@@ -419,6 +419,22 @@ describe('Sending to the selected cards', () => {
       }
     });
 
+    it("takes the old send's thinking line off the monitor and closes it", async () => {
+      let scoutDone;
+      globalThis.ShipLog = { execute: vi.fn(() => new Promise(r => { scoutDone = () => r({ content: 'Scout result', agent: 'Scout' }); })) };
+      send('@Scout find leads');
+      expect(monitorOpen()).toBe(true);
+      expect(document.getElementById('monitor-thinking')).not.toBeNull();
+      newChat();
+      expect(document.getElementById('monitor-thinking')).toBeNull();
+      expect(monitorOpen()).toBe(false);
+      expect(document.getElementById('nice-monitor-content').textContent.trim()).toBe('');
+      scoutDone();
+      await tick();
+      expect(monitorOpen()).toBe(false);
+      expect(btn().disabled).toBe(false);
+    });
+
     it("declines an old agent's approvals once a new chat opens, and stops the agent", async () => {
       let opts;
       globalThis.AgentExecutor = { converse: vi.fn((bp, o) => { opts = o; return { send: () => new Promise(() => {}) }; }) };
