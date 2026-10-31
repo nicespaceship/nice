@@ -435,6 +435,23 @@ describe('Sending to the selected cards', () => {
       expect(btn().disabled).toBe(false);
     });
 
+    it('keeps the reply still on its way when the open chat is opened again', async () => {
+      let scoutDone;
+      globalThis.ShipLog = { execute: vi.fn(() => new Promise(r => { scoutDone = () => r({ content: 'Scout result', agent: 'Scout' }); })) };
+      send('@Scout find leads');
+      history.replaceState(null, '', '#/ship');
+      PromptPanel._showConversation({ current: true }); // the sidebar, on the active chat
+      expect(location.hash).toBe('#/space');
+      expect(btn().disabled).toBe(true);
+      expect(monitorOpen()).toBe(true);
+      expect(document.getElementById('monitor-thinking')).not.toBeNull();
+      scoutDone();
+      await tick();
+      expect(PromptPanel.messages().slice(-1)[0].text).toBe('Scout result');
+      expect(stored().slice(-1)[0].text).toBe('Scout result');
+      expect(btn().disabled).toBe(false);
+    });
+
     it("declines an old agent's approvals once a new chat opens, and stops the agent", async () => {
       let opts;
       globalThis.AgentExecutor = { converse: vi.fn((bp, o) => { opts = o; return { send: () => new Promise(() => {}) }; }) };

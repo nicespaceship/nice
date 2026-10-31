@@ -4286,9 +4286,27 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      Called by the sidebar Chats list after it writes the conversation to
      STORAGE_KEY. When it also holds NICE's own replies (agents, commands,
      missions), the monitor opens over the cards as before; Back returns to
-     the cards, and Space links back to the monitor while those replies exist. */
-  function _showConversation() {
+     the cards, and Space links back to the monitor while those replies exist.
+     `current` says the conversation is the one already open (the user
+     clicked the active chat): nothing is reloaded or cut off, its replies
+     still on their way land as usual. */
+  function _showConversation(opts) {
+    const current = !!(opts && opts.current);
     const onSpace = window.location.hash === '#/space';
+    if (current) {
+      // A send still out keeps its thinking, step or stream line on the
+      // monitor; redrawing would drop them, so it shows as it is.
+      const show = _niceReplies() || !!_niceSend;
+      if (!onSpace) {
+        _suppressMonitorAutoHide = show;
+        window.location.hash = '#/space';
+      }
+      if (show) {
+        if (!_monitorContent?.children.length) _renderMonitor();
+        _showMonitor(true);
+      }
+      return;
+    }
     if (onSpace) _reload();
     else { _abortSends(); _loadMessages(); }
     const niceReplies = _niceReplies();

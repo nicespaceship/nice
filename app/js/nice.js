@@ -1069,6 +1069,16 @@ const NICE = (() => {
     const convs = _getConversations();
     const conv = convs.find(c => c.id === id);
     if (!conv) return;
+    // The chat already open: show it on Space without reloading it, so the
+    // replies it is still waiting for land instead of being cut off.
+    if (id === _getActiveConvId()) {
+      if (typeof PromptPanel !== 'undefined' && PromptPanel._showConversation) {
+        PromptPanel._showConversation({ current: true });
+      } else {
+        window.location.hash = '#/space';
+      }
+      return;
+    }
     _setActiveConvId(id);
     localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(conv.messages || []));
     _renderChatsList();
