@@ -5641,9 +5641,12 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* NICE is monochrome: no side bar. The kind shows as an indicator dot
    leading the title, and plain notices show none. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast-bar { display:none; }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast[data-kind] .notify-toast-title { display:flex; align-items:center; gap:8px; }
+/* The dot sits on the title's first line: flex-start, then centered in
+   one line box (1lh), so a wrapped title keeps the dot by its first word. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast[data-kind] .notify-toast-title { display:flex; align-items:flex-start; gap:8px; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast[data-kind] .notify-toast-title::before {
-  content:''; width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--dot);
+  content:''; width:8px; height:8px; margin-top:calc((1lh - 8px) / 2);
+  border-radius:50%; flex-shrink:0; background:var(--dot);
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast[data-kind="go"]   { --dot:var(--dot-go); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast[data-kind="stop"] { --dot:var(--dot-stop); }
