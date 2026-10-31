@@ -364,8 +364,8 @@ const ChatView = (() => {
     // twice) still counts as news, and two that land close together are
     // both read instead of one replacing the other. Only the last few stay;
     // removing a line is not announced.
-    const line = document.createElement('span');
-    line.textContent = _said.join(' ') + ' ';
+    const line = document.createElement('p');
+    line.textContent = _said.join(' ');
     _said = [];
     _status.appendChild(line);
     while (_status.childNodes.length > 3) _status.firstChild.remove();
