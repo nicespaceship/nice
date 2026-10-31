@@ -267,7 +267,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - `--glow`, `--glow-hi` — glow/shadow effects
 - `--font-h`, `--font-b`, `--font-m` — heading/body/mono fonts
 - `--radius` — border radius
-- `--dot-stop`, `--dot-go`, `--dot-busy`, `--dot-info` — indicator dot colors, defined for NICE only in `theme.css`; every use reads `var(--dot-go, <the color it had before>)` so other themes keep their exact dots
+- `--dot-stop`, `--dot-go`, `--dot-busy`, `--dot-info` — indicator dot colors, defined for NICE only in `theme.css`; every use outside a NICE-scoped rule reads `var(--dot-go, <the color it had before>)` so other themes keep their exact dots, while NICE-scoped rules use the token directly
 
 ### NICE theme is monochrome (decided 2026-10-30)
 The founder's rule: everything in `nice` and `nice-dark` is black, white or a neutral gray (no blue-tinted grays), and color appears **only as small indicator dots**:
@@ -280,7 +280,7 @@ The founder's rule: everything in `nice` and `nice-dark` is black, white or a ne
 | Blue | `--dot-info` | info, neutral highlight |
 
 - `--accent` is ink (`#0a0a0a` light, `#fafafa` dark). Primary buttons, active nav, selected chips, links, focus rings, toggles, checkboxes (`accent-color`) and `::selection` all read black/white. Sapphire no longer applies to NICE's UI.
-- A status that other themes paint with color is ink plus a dot in NICE. Use the shared `.status-dot` + `.dot-g` / `.dot-r` / `.dot-a` / `.dot-i` (go / stop / busy / info), or a component dot that reads `var(--dot-*, <fallback>)`; the fallback is what every other theme shows, so a new dot never changes them. Never color text, fills or borders for status in NICE.
+- A status that other themes paint with color is ink plus a dot in NICE. Use the shared `.status-dot` + `.dot-g` / `.dot-r` / `.dot-a` / `.dot-i` (go / stop / busy / info), or a component dot. Every use outside a NICE-scoped rule reads `var(--dot-*, <fallback>)`, and the fallback is what every other theme shows, so a new dot never changes them; NICE-scoped rules use the token directly. Never color text, fills or borders for status in NICE.
 - NICE-only tokens live in one block in `app.css` (the CORE theme section): the status inks (`--color-success/error/warning/info` map to `--text`), `--on-accent` (text on an accent or status fill; `#fff` elsewhere), `--tint` (neutral hover wash), `--mono` / `--mono-ink`, and `--mono-line` (decorative frames, gray in NICE). Text on an ink fill must use `--on-accent` / `--mono-ink`, never `#fff`: in nice-dark the ink is near-white.
 - **`--mono` convention.** Base CSS and inline styles that paint a decorative color (rarity, category, provider, tier) write it as `var(--mono, #hex)`, and text on that fill as `var(--mono-ink, #fff)`. Only NICE defines `--mono`, so NICE renders ink and every other theme keeps its exact hex. Use the same pattern for any new colored literal outside a theme-scoped rule. Text links in NICE are ink with an underline (`a:not([class])`), since color can't mark them.
 - Blueprint cards are monochrome in NICE too (frames, rarity badges, card art via CSS `fill`/`stroke` overrides); the badge text still names the rarity. Integration logos render grayscale.
