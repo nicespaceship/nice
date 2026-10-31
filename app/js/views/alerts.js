@@ -7,13 +7,13 @@ const AlertsView = (() => {
   const title = 'Alerts';
 
   const TYPES = {
-    'mission_complete': { icon: '#icon-check',     color: '#22c55e', label: 'Mission' },
-    'mission_failed':   { icon: '#icon-alert',     color: '#ef4444', label: 'Mission' },
-    'agent_ready':      { icon: '#icon-agent',     color: '#3b82f6', label: 'Agent' },
-    'fleet_deployed':   { icon: '#icon-spaceship', color: '#6366f1', label: 'Fleet' },
-    'budget_alert':     { icon: '#icon-alert',     color: '#f59e0b', label: 'Budget' },
+    'mission_complete': { icon: '#icon-check',     color: 'var(--mono, #22c55e)', label: 'Mission' },
+    'mission_failed':   { icon: '#icon-alert',     color: 'var(--mono, #ef4444)', label: 'Mission' },
+    'agent_ready':      { icon: '#icon-agent',     color: 'var(--mono, #3b82f6)', label: 'Agent' },
+    'fleet_deployed':   { icon: '#icon-spaceship', color: 'var(--mono, #6366f1)', label: 'Fleet' },
+    'budget_alert':     { icon: '#icon-alert',     color: 'var(--mono, #f59e0b)', label: 'Budget' },
     'system':           { icon: '#icon-settings',  color: 'var(--accent)', label: 'System' },
-    'broadcast':        { icon: '#icon-comms',     color: '#06b6d4', label: 'Broadcast' },
+    'broadcast':        { icon: '#icon-comms',     color: 'var(--mono, #06b6d4)', label: 'Broadcast' },
   };
 
   function render(el) {

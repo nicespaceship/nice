@@ -156,7 +156,8 @@ describe('CardRenderer — flip + back face', () => {
     it('colors the rarity badge by the computed tier, not the Common fallback', () => {
       const expected = BlueprintUtils.RARITY_COLORS[computed];
       expect(html).toContain(`data-rarity="${computed.toLowerCase()}"`);
-      expect(html).toContain(`style="background:${expected};color:`);
+      // The hex sits behind --mono so the monochrome NICE theme can swap in ink.
+      expect(html).toContain(`style="background:var(--mono, ${expected});color:var(--mono-ink, `);
     });
   });
 

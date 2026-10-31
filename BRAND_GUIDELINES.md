@@ -1,6 +1,6 @@
 # NICE SPACESHIP — Brand Guidelines
 
-Working reference as of 2026-10-02. The NICE SPACESHIP company icon is being redesigned, so this documents the interim state.
+Working reference as of 2026-10-30. The NICE SPACESHIP company icon is being redesigned, so this documents the interim state.
 
 ## Platform architecture
 
@@ -25,5 +25,13 @@ Working reference as of 2026-10-02. The NICE SPACESHIP company icon is being red
 
 ## Color
 
-- **Accent:** Sapphire, the only brand color, used on CTAs. The rule is `#0F52BA`, with `#1862ce` on hover; the theme tokens are `--accent: #1862ce` and `--accent2: #0F52BA`. The app's runtime source of truth is `app/js/nice.js` `THEMES`, which is injected as inline styles; `public/css/theme.css` mirrors it.
-- **Surfaces:** monochrome (black, white, gray). Blueprint cards keep their own rarity palette.
+- **The NICE theme is monochrome** (`nice` and `nice-dark`, decided 2026-10-30): black, white and neutral grays only, with no blue-tinted grays. Pure white or neutral gray surfaces on light, black and neutral grays on dark. Primary buttons are black with white text on light and white with black text on dark; active nav, links, focus rings, toggles, checkboxes, selection, badges and tabs all follow the same ink. `--accent` is that ink (`#0a0a0a` light, `#fafafa` dark). The runtime source of truth is `app/js/nice.js` `THEMES`, injected as inline styles; `public/css/theme.css` mirrors it.
+- **Color appears only as small indicator dots**, and each color has one meaning:
+  - **Red** (`--dot-stop`): no, stop, cancel, error, rejected.
+  - **Green** (`--dot-go`): go, ready, done, approved, connected.
+  - **Orange** (`--dot-busy`): working, waiting, needs attention.
+  - **Blue** (`--dot-info`): info, a neutral highlight.
+  A status that used to be a colored fill, text or border is now ink plus a dot. Blueprint cards follow the same rule in NICE: frames, badges and card art render in ink.
+- **Sapphire** (`#0F52BA`, `#1862ce` on hover) no longer applies to the NICE theme's UI. It stays a brand color only where the marketing front page (`index.html`, `landing.css`) still uses it.
+- **No reactor in NICE.** The circular centerpiece reactor is off in the NICE theme (`reactor:false` in `THEMES`); the sci-fi themes keep theirs.
+- **Other themes** (HAL-9000, The Grid, The Matrix, LCARS, J.A.R.V.I.S., Cyberpunk, RX-78-2, 16-BIT, The Office) keep their own palettes, status dots included. The dot tokens are defined for NICE only.

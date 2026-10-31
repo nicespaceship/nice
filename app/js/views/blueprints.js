@@ -530,8 +530,8 @@ const BlueprintsView = (() => {
       const previewBtn = !isActive ? `<button class="c-btn bp-skin-preview-btn" data-id="${bp.id}">Preview</button>` : '';
       const copyPreview = bp.copy?.nav ? Object.entries(bp.copy.nav).slice(0, 4).map(([k,v]) => `<p class="blueprint-card-cap" style="font-size:10px;opacity:0.7">${k} → ${_esc(v)}</p>`).join('') : '';
       return `<div class="blueprint-card blueprint-clickable skin-card" data-id="${bp.id}" data-type="skin" data-tags="${(bp.tags||[]).join(',')}">
-        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span><span class="blueprint-card-rarity" style="color:#f59e0b">Legendary</span></div>
-        <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">Skin</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
+        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span><span class="blueprint-card-rarity" style="color:var(--mono, #f59e0b)">Legendary</span></div>
+        <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:var(--mono, #f59e0b);border:1px solid var(--mono, #f59e0b)">Skin</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
         <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
         <div class="blueprint-card-text-box"><p class="blueprint-card-flavor">"${_esc(bp.flavor)}"</p>${copyPreview}</div>
         <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">Labels</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">Cost</span></div></div>
@@ -619,7 +619,7 @@ const BlueprintsView = (() => {
     const showAction = type !== 'agent';
 
     return `<div class="bpl-row blueprint-clickable" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}">
-      <span class="bpl-rarity" style="background:${dotColor}">${dotLabel}</span>
+      <span class="bpl-rarity" style="background:var(--mono, ${dotColor})">${dotLabel}</span>
       <span class="bpl-name">${name}</span>
       <span class="bpl-cat">${cat}</span>
       <span class="bpl-desc">${desc}</span>

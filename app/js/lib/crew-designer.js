@@ -545,7 +545,7 @@ Rules:
       Ops: '#fbbf24', Support: '#fb923c', Sales: '#f87171', Marketing: '#c084fc',
       Creative: '#e879f9', Media: '#38bdf8', Learning: '#4ade80', Legal: '#94a3b8',
     };
-    return colors[role] || '#94a3b8';
+    return `var(--mono, ${colors[role] || '#94a3b8'})`;
   }
 
   function _isIntegrationConnected(name) {

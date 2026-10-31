@@ -895,7 +895,10 @@ const SchematicView = (() => {
     // "in front of" the core. Tunable per theme via the CSS var.
     const clearanceRaw = getComputedStyle(document.documentElement)
       .getPropertyValue('--schematic-wire-clearance').trim();
-    const clearance = parseFloat(clearanceRaw) || 140;
+    // 0 is a real value (themes without a reactor), so only a missing or
+    // unparseable token falls back to the default.
+    const parsedClearance = parseFloat(clearanceRaw);
+    const clearance = Number.isFinite(parsedClearance) ? parsedClearance : 140;
 
     cards.forEach((card, i) => {
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper

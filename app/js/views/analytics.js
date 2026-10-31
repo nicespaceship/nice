@@ -415,7 +415,7 @@ const AnalyticsView = (() => {
               <td><span class="status-dot ${r.agent.status === 'active' ? 'dot-g' : r.agent.status === 'error' ? 'dot-r' : 'dot-a'}"></span> ${r.agent.status || 'idle'}</td>
               <td>${r.total}</td>
               <td>${r.completed}</td>
-              <td>${r.failed > 0 ? '<span style="color:#ef4444">' + r.failed + '</span>' : r.failed}</td>
+              <td>${r.failed > 0 ? '<span style="color:var(--color-error)">' + r.failed + '</span>' : r.failed}</td>
               <td>
                 <span class="ana-rate ${r.rate >= 80 ? 'rate-good' : r.rate >= 50 ? 'rate-ok' : r.total === 0 ? '' : 'rate-bad'}">${r.total > 0 ? r.rate + '%' : '\u2014'}</span>
               </td>

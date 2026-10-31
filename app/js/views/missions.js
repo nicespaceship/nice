@@ -16,12 +16,12 @@ const MissionsView = (() => {
   const STATUSES   = ['queued','running','completed','failed','cancelled'];
   const PRIORITIES = ['low','medium','high','critical'];
   const STATUS_META = {
-    queued:    { label: 'Queued',    color: '#f59e0b', icon: 'clock' },
-    running:   { label: 'Running',   color: '#6366f1', icon: 'zap' },
-    review:    { label: 'Review',    color: '#a855f7', icon: 'target' },
-    completed: { label: 'Completed', color: '#22c55e', icon: 'check' },
-    failed:    { label: 'Failed',    color: '#ef4444', icon: 'x' },
-    cancelled: { label: 'Cancelled', color: '#94a3b8', icon: 'x' },
+    queued:    { label: 'Queued',    color: 'var(--mono, #f59e0b)', icon: 'clock' },
+    running:   { label: 'Running',   color: 'var(--mono, #6366f1)', icon: 'zap' },
+    review:    { label: 'Review',    color: 'var(--mono, #a855f7)', icon: 'target' },
+    completed: { label: 'Completed', color: 'var(--mono, #22c55e)', icon: 'check' },
+    failed:    { label: 'Failed',    color: 'var(--mono, #ef4444)', icon: 'x' },
+    cancelled: { label: 'Cancelled', color: 'var(--mono, #94a3b8)', icon: 'x' },
   };
   const _statusIcon = (name) =>
     `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
@@ -373,7 +373,7 @@ const MissionsView = (() => {
   function _agentColor(role) {
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
                      Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
-    return colors[role] || 'var(--accent)';
+    return colors[role] ? `var(--mono, ${colors[role]})` : 'var(--accent)';
   }
 
   // Delegates to BlueprintUtils.humanizeModelShort — the SSOT for model
@@ -772,8 +772,8 @@ const MissionDetailView = (() => {
               <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run ${_N()}</button>
             ` : ''}
             ${mission.status === 'review' ? `
-              <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:#22c55e;border-color:#22c55e">✓ Approve</button>
-              <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:#f87171">✕ Reject</button>
+              <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:var(--color-success);border-color:var(--color-success)">✓ Approve</button>
+              <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:var(--mono, #f87171)">✕ Reject</button>
             ` : ''}
             ${mission.status === 'failed' && _isRunnable(mission) ? `
               <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry ${_N()}</button>
@@ -801,7 +801,7 @@ const MissionDetailView = (() => {
               <h3 class="detail-section-title">Progress</h3>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                 <span class="mission-running-pulse"></span>
-                <span style="font-size:.78rem;color:#6366f1;font-weight:500">Mission in progress...</span>
+                <span style="font-size:.78rem;color:var(--color-info);font-weight:500">Mission in progress...</span>
               </div>
               <div class="task-progress" style="height:8px;border-radius:4px">
                 <div class="task-progress-bar" style="width:${progress}%;transition:width .3s"></div>
@@ -1059,7 +1059,7 @@ const MissionDetailView = (() => {
   function _agentColor(role) {
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
                      Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
-    return colors[role] || 'var(--accent)';
+    return colors[role] ? `var(--mono, ${colors[role]})` : 'var(--accent)';
   }
 
   /* ── Inbox Captain helpers ──
@@ -1129,7 +1129,7 @@ const MissionDetailView = (() => {
     return `
       <div class="inbox-triage-stats" style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border,#333);margin-bottom:12px;font-size:.82rem">
         <div><strong style="font-size:1.1rem">${scanned}</strong> <span style="color:var(--text-muted)">scanned</span></div>
-        <div><strong style="font-size:1.1rem;color:#22c55e">${drafted.length}</strong> <span style="color:var(--text-muted)">drafted</span></div>
+        <div><strong style="font-size:1.1rem;color:var(--color-success)">${drafted.length}</strong> <span style="color:var(--text-muted)">drafted</span></div>
         <div><strong style="font-size:1.1rem;color:var(--text-muted)">${skipped.length}</strong> <span style="color:var(--text-muted)">skipped</span></div>
       </div>
     `;
@@ -1222,8 +1222,8 @@ const MissionDetailView = (() => {
 
     const gateActions = gateIsLive
       ? `<div class="dag-gate-actions">
-           <button class="btn btn-sm btn-primary dag-gate-approve" data-id="${_esc(missionId)}" style="background:#22c55e;border-color:#22c55e">✓ ${_esc(node.config?.approveLabel || 'Approve')}</button>
-           <button class="btn btn-sm dag-gate-reject" data-id="${_esc(missionId)}" style="color:#f87171">✕ ${_esc(node.config?.rejectLabel || 'Reject')}</button>
+           <button class="btn btn-sm btn-primary dag-gate-approve" data-id="${_esc(missionId)}" style="background:var(--color-success);border-color:var(--color-success)">✓ ${_esc(node.config?.approveLabel || 'Approve')}</button>
+           <button class="btn btn-sm dag-gate-reject" data-id="${_esc(missionId)}" style="color:var(--mono, #f87171)">✕ ${_esc(node.config?.rejectLabel || 'Reject')}</button>
          </div>`
       : '';
 
