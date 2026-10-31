@@ -838,6 +838,25 @@ describe('The "To …" label', () => {
   });
 });
 
+describe('A new chat redraws Space', () => {
+  afterEach(() => { delete globalThis.ChatView; delete Router.drawn; });
+
+  it('only when the router has Space drawn', () => {
+    globalThis.ChatView = { render: vi.fn() };
+    Router.drawn = () => ChatView;
+    PromptPanel._reload();
+    expect(ChatView.render).toHaveBeenCalledTimes(1);
+    expect(ChatView.render).toHaveBeenCalledWith(document.getElementById('app-view'));
+    // Another view drawn, or a swap still on its way to Space: the router
+    // draws Space itself, from the chat just loaded.
+    Router.drawn = () => ({ title: 'Ship' });
+    PromptPanel._reload();
+    Router.drawn = () => null;
+    PromptPanel._reload();
+    expect(ChatView.render).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Opening a stored conversation from the sidebar', () => {
   const store = (msgs) => localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(msgs));
 

@@ -11,6 +11,7 @@
  * @property {function(): Object.<string,string>} query — Parse query params from window.location.search
  * @property {function(): Object.<string,string>} hashQuery — Parse query params after the hash path
  * @property {function(HTMLElement): void} init — Start the router, rendering into the given container element
+ * @property {function(): ?Object} drawn — The view the router has drawn (null while a swap is on its way)
  */
 
 const Router = (() => {
@@ -265,6 +266,14 @@ const Router = (() => {
     _updateNav(path());
   }
 
+  /* The view the router has drawn, or null while a swap is still on its
+     way. A view that redraws itself from outside the router (Space on a new
+     chat) checks this first, so it never draws over a view the router owns
+     and then goes untorn-down. */
+  function drawn() {
+    return _currentView;
+  }
+
   /* Re-render the current view (e.g. after a theme change so any
      theme-specific DOM the previous view rendered gets rebuilt fresh). */
   function refresh() {
@@ -280,5 +289,5 @@ const Router = (() => {
     _render();
   }
 
-  return { on, navigate, path, query, hashQuery, init, refresh, syncNav };
+  return { on, navigate, path, query, hashQuery, init, refresh, syncNav, drawn };
 })();

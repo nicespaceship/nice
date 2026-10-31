@@ -95,6 +95,21 @@ describe('Router on a route with no view', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('reports the view it has drawn, and none while a swap is on its way', () => {
+    vi.useFakeTimers();
+    try {
+      reduced = false;
+      history.replaceState(null, '', '#/space');
+      RealRouter.init(host);
+      expect(RealRouter.drawn()).toBe(spaceView);
+      history.replaceState(null, '', '#/ship');
+      RealRouter.refresh();
+      expect(RealRouter.drawn()).toBeNull();
+      vi.advanceTimersByTime(500);
+      expect(RealRouter.drawn().title).toBe('Ship');
+    } finally { vi.useRealTimers(); }
+  });
+
   it('tears down a view once, after its delayed swap drew it', () => {
     vi.useFakeTimers();
     try {

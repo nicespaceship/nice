@@ -4264,9 +4264,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _abortSends();
     _loadMessages();
     _resetMonitor();
-    if (window.location.hash === '#/space') {
+    // Space redraws here only when the router has it drawn. Otherwise the
+    // router owns what is on screen: a swap on its way to Space draws it from
+    // the messages just loaded, and drawing Space over another view would
+    // leave it with no one to tear it down.
+    if (typeof ChatView !== 'undefined' && typeof Router !== 'undefined' && Router.drawn && Router.drawn() === ChatView) {
       const el = document.getElementById('app-view');
-      if (el && typeof ChatView !== 'undefined') ChatView.render(el);
+      if (el) ChatView.render(el);
     }
   }
 
