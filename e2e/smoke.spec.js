@@ -489,6 +489,9 @@ test.describe('Front Page', () => {
     await expect(page).toHaveURL(/#codex\/ship$/);
     await page.goto('/#codex/compare');
     await expect(page.locator('#codex-space')).toBeVisible();
+    // An Object member name is not a renamed entry.
+    await page.goto('/#codex/constructor');
+    await expect(page).toHaveURL(/#codex\/constructor$/);
     await page.goto('/#library');
     await expect(page).toHaveURL(/#blueprints$/);
     await expect(page.locator('#blueprints')).toBeInViewport();
