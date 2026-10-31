@@ -787,7 +787,7 @@ const PromptPanel = (() => {
       missions.push(mission);
       State.set('missions', [...missions]);
     } catch (e) {
-      if (!_isCurrentSend(sendToken)) return;
+      if (!_inCurrentChat(sendToken)) return;
       // Update message with error
       createdMsg.text += `\n\n**Error creating mission:** ${e.message}`;
       _saveMessages();
@@ -797,7 +797,7 @@ const PromptPanel = (() => {
     }
 
     // A new chat opened meanwhile: this mission's news isn't for it.
-    if (!_isCurrentSend(sendToken)) return;
+    if (!_inCurrentChat(sendToken)) return;
 
     // Run MissionRunner. The run can take minutes: whichever way it ends,
     // a chat opened meanwhile doesn't get its result.
@@ -806,7 +806,7 @@ const PromptPanel = (() => {
       try {
         result = await MissionRunner.run(mission.id);
       } catch (e) {
-        if (!_isCurrentSend(sendToken)) return;
+        if (!_inCurrentChat(sendToken)) return;
         _messages.push({
           role: 'assistant',
           text: `**Mission failed:** ${e.message}\n[ACTION: View Missions | #/missions]`,
@@ -817,7 +817,7 @@ const PromptPanel = (() => {
         _endNiceSend(sendToken);
         return;
       }
-      if (!_isCurrentSend(sendToken)) return;
+      if (!_inCurrentChat(sendToken)) return;
       if (result && result.content) {
         _messages.push({
           role: 'assistant',
@@ -918,7 +918,7 @@ const PromptPanel = (() => {
       missions.push(run);
       State.set('missions', [...missions]);
     } catch (err) {
-      if (!_isCurrentSend(sendToken)) return;
+      if (!_inCurrentChat(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -931,11 +931,13 @@ const PromptPanel = (() => {
       return;
     }
 
-    if (!_isCurrentSend(sendToken)) return;
+    if (!_inCurrentChat(sendToken)) return;
 
     // Update the monitor thinking label as dispatch phases progress
+    // Progress can trail the run it reports on: only the send still out may
+    // relabel the thinking line, never a later one in the same chat.
     const _onDispatchProgress = ({ label }) => {
-      if (!_isCurrentSend(sendToken)) return;
+      if (!_isLiveSend(sendToken)) return;
       const el = document.getElementById('monitor-thinking');
       if (el) {
         const lbl = el.querySelector('.monitor-thinking-label');
@@ -949,7 +951,7 @@ const PromptPanel = (() => {
     try {
       result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress, attachments });
     } catch (err) {
-      if (!_isCurrentSend(sendToken)) return;
+      if (!_inCurrentChat(sendToken)) return;
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
@@ -962,7 +964,7 @@ const PromptPanel = (() => {
       return;
     }
 
-    if (!_isCurrentSend(sendToken)) return;
+    if (!_inCurrentChat(sendToken)) return;
     _removeMonitorThinking();
 
     // Pull the final row to read the persisted result + status (the in-
@@ -970,7 +972,7 @@ const PromptPanel = (() => {
     // completed status flip from _runDag).
     let finalRow = null;
     try { finalRow = await SB.db('mission_runs').get(run.id); } catch { /* ignore */ }
-    if (!_isCurrentSend(sendToken)) return;
+    if (!_inCurrentChat(sendToken)) return;
     const status = finalRow?.status || result?.status || 'completed';
     // DAG path: result?.finalOutput. Non-DAG captain path: result?.content.
     // finalRow.result is the authoritative persisted value; in-memory result is fallback.
@@ -984,7 +986,7 @@ const PromptPanel = (() => {
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
 
-    if (!_isCurrentSend(sendToken)) return;
+    if (!_inCurrentChat(sendToken)) return;
     const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
 
     if (routingMeta?.chosen_agent_name) {
@@ -2569,9 +2571,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      own token. `chat` names the conversation it answers, which _abortSends
      moves on; only the send holding the lock (_niceSend) can let it go.
      The contract for every send path: after each await, check
-     _isCurrentSend(token) before touching _messages, the monitor, an
+     _inCurrentChat(token) before touching _messages, the monitor, an
      approval or storage, so whatever an older chat's send brings back is
-     dropped. */
+     dropped. A callback that can trail its send (dispatch progress, stream
+     chunks) checks _isLiveSend(token) instead, so it never touches the
+     lines of a later send in the same chat. */
   let _chatEpoch = 0;
   let _niceSendSeq = 0;
   let _niceSend = null;
@@ -2581,9 +2585,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _syncSending();
     return _niceSend;
   }
-  function _isCurrentSend(token) { return !!token && token.chat === _chatEpoch; }
+  // The send belongs to the chat still open (its results may land).
+  function _inCurrentChat(token) { return !!token && token.chat === _chatEpoch; }
+  // The send is the one out right now, holding the lock (its live lines on
+  // the monitor are its own).
+  function _isLiveSend(token) { return !!token && token === _niceSend; }
   function _endNiceSend(token) {
-    if (!token || token !== _niceSend) return;
+    if (!_isLiveSend(token)) return;
     _niceSend = null;
     // Its lines end with it (a redraw keeps them only while it is out).
     _removeSendLines();
@@ -2592,7 +2600,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // A send that threw instead of answering still ends: it says what went
   // wrong on the monitor and lets the panel go.
   function _failNiceSend(token, err) {
-    if (!token || token !== _niceSend) return;
+    if (!_isLiveSend(token)) return;
     _removeSendLines();
     _messages.push({
       role: 'assistant',
@@ -2606,7 +2614,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The monitor's approval prompt for a send: once the chat moves on, the
   // send's tools are turned down without asking.
   function _approvalFor(token) {
-    return (action) => (_isCurrentSend(token) ? _monitorApproval(action) : Promise.resolve(false));
+    return (action) => (_inCurrentChat(token) ? _monitorApproval(action) : Promise.resolve(false));
   }
   function _syncSending() {
     const busy = !!_niceSend || _cardCalls.size > 0;
@@ -2884,7 +2892,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       let _stepEl = null;
       const onStep = (step) => {
-        if (!_isCurrentSend(sendToken)) return;
+        if (!_inCurrentChat(sendToken)) return;
         if (!_stepEl) {
           _removeMonitorThinking();
           _stepEl = document.createElement('div');
@@ -2910,7 +2918,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (_isSameAgent && _activeConversation.controller) {
         // Continue existing conversation
         _activeConversation.controller.send(text, sentAttachments).then(result => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           _messages.push({
@@ -2922,7 +2930,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _renderMonitor();
           _endNiceSend(sendToken);
         }).catch((err) => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
@@ -2948,12 +2956,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             onStep,
             approvalMode: _approvalMode,
             onApprovalNeeded: _approvalFor(sendToken),
-            shouldStop: () => !_isCurrentSend(sendToken),
+            shouldStop: () => !_inCurrentChat(sendToken),
           });
           _activeConversation = { controller, agentBp, agentLabel };
 
           controller.send(text, sentAttachments).then(result => {
-            if (!_isCurrentSend(sendToken)) return;
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2965,7 +2973,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _renderMonitor();
             _endNiceSend(sendToken);
           }).catch((err) => {
-            if (!_isCurrentSend(sendToken)) return;
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _activeConversation = null;
@@ -2983,9 +2991,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             maxSteps: agentBp.config.maxSteps,
             onStep,
             attachments: sentAttachments,
-            shouldStop: () => !_isCurrentSend(sendToken),
+            shouldStop: () => !_inCurrentChat(sendToken),
           }).then(result => {
-            if (!_isCurrentSend(sendToken)) return;
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2996,7 +3004,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _renderMonitor();
             _endNiceSend(sendToken);
           }).catch((err) => {
-            if (!_isCurrentSend(sendToken)) return;
+            if (!_inCurrentChat(sendToken)) return;
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
@@ -3029,7 +3037,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       let _streamText = '';
       let _streamEl = null;
       const onChunk = (chunk) => {
-        if (!_isCurrentSend(sendToken)) return;
+        if (!_isLiveSend(sendToken)) return;
         if (!_streamEl) {
           _removeMonitorThinking();
           _streamEl = document.createElement('div');
@@ -3050,7 +3058,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       };
 
       ShipLog.execute(spaceshipId, agentBp, text, { onChunk, attachments: sentAttachments }).then(result => {
-        if (!_isCurrentSend(sendToken)) return;
+        if (!_inCurrentChat(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = result.agent || (mentioned ? mentioned.name : null);
@@ -3059,7 +3067,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         _renderMonitor();
         _endNiceSend(sendToken);
       }).catch((err) => {
-        if (!_isCurrentSend(sendToken)) return;
+        if (!_inCurrentChat(sendToken)) return;
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const errorText = '⚠️ **Request failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
@@ -3080,7 +3088,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (preCheck.isNav) {
         const delay = 400 + Math.random() * 400;
         setTimeout(() => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           _messages.push({ role: 'assistant', text: preCheck.text, agent: preCheck.agent, ts: Date.now() });
           _saveMessages();
@@ -3093,7 +3101,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         let _streamText = '';
 
         const onChunk = (chunk) => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_isLiveSend(sendToken)) return;
           if (!_streamEl) {
             _removeMonitorThinking();
             _streamEl = document.createElement('div');
@@ -3113,7 +3121,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         };
 
         _callDirectLLM(text, { onChunk }).then(async (result) => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_inCurrentChat(sendToken)) return;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
@@ -3134,7 +3142,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             if (execs && execs.length) {
               for (const ex of execs) {
                 const res = await _executeExec(ex.action, ex.params, _approvalFor(sendToken));
-                if (!_isCurrentSend(sendToken)) return;
+                if (!_inCurrentChat(sendToken)) return;
                 _messages.push({
                   role: 'assistant',
                   text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`,
@@ -3160,7 +3168,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _endNiceSend(sendToken);
           }
         }).catch(err => {
-          if (!_isCurrentSend(sendToken)) return;
+          if (!_inCurrentChat(sendToken)) return;
           _removeMonitorThinking();
           document.getElementById('monitor-stream')?.remove();
           // Show error on monitor with retry

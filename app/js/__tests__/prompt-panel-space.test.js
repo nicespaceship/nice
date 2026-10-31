@@ -522,6 +522,26 @@ describe('Sending to the selected cards', () => {
       }
     });
 
+    it("never lets a finished ship chat's late progress relabel the next send", async () => {
+      State.set('spaceships', [{ id: 's1', name: 'Falcon', slot_assignments: { 0: 'a1' } }]);
+      const db = SB.db;
+      SB.db = () => ({ create: async (row) => ({ id: 'r1', ...row }), get: async () => ({ status: 'completed', result: 'All quiet.' }), list: async () => [] });
+      let progress;
+      globalThis.MissionRunner = { _isCaptainAgent: () => false, run: vi.fn(async (id, o) => { progress = o.onDispatchProgress; return { status: 'completed' }; }) };
+      try {
+        send('@Falcon status report');
+        await vi.waitFor(() => expect(btn().disabled).toBe(false));
+        expect(PromptPanel.messages().slice(-1)[0].text).toBe('All quiet.');
+        globalThis.ShipLog = { execute: vi.fn(() => new Promise(() => {})) };
+        send('@Scout find leads');
+        progress({ label: 'Routing to the crew…' }); // the old run reports late
+        expect(document.querySelector('#monitor-thinking .monitor-thinking-label').textContent).toBe('Thinking…');
+      } finally {
+        SB.db = db;
+        delete globalThis.MissionRunner;
+      }
+    });
+
     // "Show full chat" on Space, or any other redraw of the monitor.
     const redraw = () => { document.querySelector('.app-main').classList.remove('monitor-active'); PromptPanel.toggle(); };
 
