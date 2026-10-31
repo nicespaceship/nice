@@ -2575,7 +2575,17 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      approval or storage, so whatever an older chat's send brings back is
      dropped. A callback that can trail its send (dispatch progress, stream
      chunks) checks _isLiveSend(token) instead, so it never touches the
-     lines of a later send in the same chat. */
+     lines of a later send in the same chat.
+     The awaits this guards:
+       _executeAutoMission: mission_runs create, MissionRunner.run
+       _runShipChat: mission_runs create, MissionRunner.run, mission_runs
+         get, ship_log list
+       _replyAsNice: the agent conversation's send (first and continued),
+         AgentExecutor.execute, ShipLog.execute, the navigation reply's
+         timer, _callDirectLLM, each _executeExec after a direct reply
+       approvals: _approvalFor(token) asks only while the chat is open;
+         the agent conversation stops between steps (shouldStop)
+     Space cards keep their own epoch (_cardEpoch, see _askCards). */
   let _chatEpoch = 0;
   let _niceSendSeq = 0;
   let _niceSend = null;
