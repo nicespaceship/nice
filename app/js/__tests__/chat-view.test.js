@@ -249,7 +249,9 @@ describe('ChatView', () => {
     // The status line sits outside the view (a polite live region in the
     // app), so it is announced once, by itself.
     const status = document.getElementById('space-status');
+    expect(status.tagName).toBe('DIV');
     expect(status.getAttribute('role')).toBe('status');
+    expect(status.getAttribute('aria-atomic')).toBe('false');
     expect(el.contains(status)).toBe(false);
     expect(status.parentElement).toBe(document.body);
     SpaceCards.setLive('gemini-2-5-flash', { text: 'Half' });
@@ -276,6 +278,10 @@ describe('ChatView', () => {
     SpaceCards.endLive('grok-4-3', 'answered');
     await frame();
     expect(lines()).toEqual(['Gemini 2.5 Flash answered.', 'Gemini 2.5 Flash answered.', 'Grok 4.3 answered.']);
+    // A new or reopened chat draws Space again: the old lines go with it.
+    ChatView.render(el);
+    expect(document.getElementById('space-status')).toBe(status);
+    expect(lines()).toEqual([]);
   });
 
   it('gives a free user the free card and a note about plans', () => {

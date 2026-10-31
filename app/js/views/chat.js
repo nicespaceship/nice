@@ -478,13 +478,18 @@ const ChatView = (() => {
     _el = el;
     _said = [];
     el.innerHTML = '<div class="space" aria-live="off"></div>';
+    // A div of line paragraphs, read line by line as each is added
+    // (aria-atomic false). Lines from the conversation before go: what they
+    // said is not news in this one.
     if (!_status || !_status.isConnected) {
-      _status = document.createElement('p');
+      _status = document.createElement('div');
       _status.id = 'space-status';
       _status.className = 'sr-only';
       _status.setAttribute('role', 'status');
+      _status.setAttribute('aria-atomic', 'false');
       document.body.appendChild(_status);
     }
+    _status.replaceChildren();
     _paint();
     _bind();
   }
