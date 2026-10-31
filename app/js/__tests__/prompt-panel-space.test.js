@@ -387,6 +387,89 @@ describe('Sending to the selected cards', () => {
       expect(btn().disabled).toBe(false);
     });
 
+    const newChat = () => { localStorage.setItem(Utils.KEYS.aiMessages, '[]'); PromptPanel._reload(); };
+    const stored = () => JSON.parse(localStorage.getItem(Utils.KEYS.aiMessages) || '[]');
+
+    it('drops an auto-mission result that lands after a new chat, whichever way the run ends', async () => {
+      const db = SB.db;
+      SB.db = () => ({ create: async (row) => ({ id: 'm1', ...row }), get: async () => null, list: async () => [] });
+      const runs = [];
+      globalThis.MissionRunner = { run: vi.fn(() => new Promise((res, rej) => runs.push({ res, rej }))), _isCaptainAgent: () => false };
+      try {
+        send('Write me a tagline');
+        await vi.waitFor(() => expect(MissionRunner.run).toHaveBeenCalledTimes(1));
+        newChat();
+        expect(btn().disabled).toBe(false);
+        runs[0].res({ content: 'Old chat mission result' });
+        await tick();
+        expect(PromptPanel.messages()).toEqual([]);
+        expect(stored()).toEqual([]);
+
+        send('Write me a slogan');
+        await vi.waitFor(() => expect(MissionRunner.run).toHaveBeenCalledTimes(2));
+        newChat();
+        runs[1].rej(new Error('Old chat mission failed'));
+        await tick();
+        expect(PromptPanel.messages()).toEqual([]);
+        expect(stored()).toEqual([]);
+        expect(btn().disabled).toBe(false);
+      } finally {
+        SB.db = db;
+        delete globalThis.MissionRunner;
+      }
+    });
+
+    it("declines an old agent's approvals once a new chat opens, and stops the agent", async () => {
+      let opts;
+      globalThis.AgentExecutor = { converse: vi.fn((bp, o) => { opts = o; return { send: () => new Promise(() => {}) }; }) };
+      const bp = { id: 'a1', name: 'Scout', config: { tools: ['gmail_send'] } };
+      State.set('agents', [bp]);
+      globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? bp : null) };
+      send('@Scout email the team');
+      const asked = opts.onApprovalNeeded({ tool: 'gmail_send', input: { to: 'team@example.com' } });
+      expect(document.querySelector('#nice-monitor-content .monitor-approval')).not.toBeNull();
+      expect(opts.shouldStop()).toBe(false);
+      newChat();
+      // The prompt waiting on the monitor is declined and goes...
+      await expect(asked).resolves.toBe(false);
+      expect(document.querySelector('.monitor-approval')).toBeNull();
+      // ...and one the agent asks later is declined without showing.
+      await expect(opts.onApprovalNeeded({ tool: 'gmail_send', input: {} })).resolves.toBe(false);
+      expect(document.querySelector('.monitor-approval')).toBeNull();
+      expect(opts.shouldStop()).toBe(true);
+      expect(PromptPanel.messages()).toEqual([]);
+      expect(btn().disabled).toBe(false);
+    });
+
+    it("runs none of an old direct reply's remaining commands after a new chat", async () => {
+      history.replaceState(null, '', '#/crew'); // no project: NICE answers directly
+      const releases = [];
+      const run = vi.fn((input) => new Promise(r => releases.push(() => r({ ok: true, msg: 'Created ' + input.title }))));
+      ToolRegistry.register({ id: 'create-mission', name: 'Create Mission', execute: run });
+      globalThis.fetch = vi.fn(async () => ({
+        ok: true, status: 200, headers: { get: () => 'application/json' },
+        json: async () => ({ content: [{ type: 'text', text: 'Sure. [EXEC: create_mission | First] [EXEC: create_mission | Second]' }] }),
+      }));
+      try {
+        send('Please queue a mission called First for me now');
+        // Review mode: the first command asks on the monitor and runs once approved.
+        await vi.waitFor(() => expect(document.getElementById('monitor-approve')).not.toBeNull());
+        document.getElementById('monitor-approve').click();
+        await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1));
+        expect(btn().disabled).toBe(true);
+        newChat();
+        expect(btn().disabled).toBe(false);
+        releases[0]();
+        await tick();
+        expect(run).toHaveBeenCalledTimes(1);                         // the second never runs
+        expect(document.querySelector('.monitor-approval')).toBeNull(); // nor asks
+        expect(PromptPanel.messages()).toEqual([]);
+        expect(stored()).toEqual([]);
+      } finally {
+        ToolRegistry.deregister('create-mission');
+      }
+    });
+
     it("frees the panel when NICE's own send throws before it gets going", () => {
       globalThis.AgentExecutor = { converse: vi.fn(() => { throw new Error('No tools could load'); }) };
       const bp = { id: 'a1', name: 'Scout', config: { tools: ['gmail_send'] } };

@@ -493,7 +493,12 @@ const PromptPanel = (() => {
 
   /* Shared inline approval prompt — used by the agent-with-tools chat AND by
      EXEC commands dispatched through the bus. Resolves true (approve) /
-     false (deny). */
+     false (deny). A prompt still waiting when the chat moves on is declined
+     (_declineApprovals), so the tool call behind it never hangs. */
+  const _pendingApprovals = new Set();
+  function _declineApprovals() {
+    [..._pendingApprovals].forEach(settle => settle(false));
+  }
   function _monitorApproval(action) {
     return new Promise((resolve) => {
       _removeMonitorThinking();
@@ -509,19 +514,18 @@ const PromptPanel = (() => {
           '<button class="btn btn-sm btn-primary" id="monitor-approve">Approve</button>' +
           '<button class="btn btn-sm" id="monitor-deny">Deny</button>' +
         '</div>';
+      const settle = (ok, label) => {
+        if (!_pendingApprovals.delete(settle)) return;
+        approvalEl.remove();
+        if (label) _addMonitorThinking(label);
+        resolve(ok);
+      };
+      _pendingApprovals.add(settle);
       _monitorContent?.appendChild(approvalEl);
       const monitorEl = document.getElementById('nice-monitor');
       if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
-      document.getElementById('monitor-approve')?.addEventListener('click', () => {
-        approvalEl.remove();
-        _addMonitorThinking('Executing approved action…');
-        resolve(true);
-      });
-      document.getElementById('monitor-deny')?.addEventListener('click', () => {
-        approvalEl.remove();
-        _addMonitorThinking('Finding an alternative…');
-        resolve(false);
-      });
+      approvalEl.querySelector('#monitor-approve')?.addEventListener('click', () => settle(true, 'Executing approved action…'));
+      approvalEl.querySelector('#monitor-deny')?.addEventListener('click', () => settle(false, 'Finding an alternative…'));
     });
   }
 
@@ -742,11 +746,12 @@ const PromptPanel = (() => {
 
     // Show creation message
     _removeMonitorThinking();
-    _messages.push({
+    const createdMsg = {
       role: 'assistant',
       text: `**Mission Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
       agent: 'NICE', ts: Date.now(),
-    });
+    };
+    _messages.push(createdMsg);
     _saveMessages();
     _renderMonitor();
 
@@ -764,7 +769,7 @@ const PromptPanel = (() => {
     const spaceshipId = spaceships[0]?.id;
     if (!spaceshipId) {
       const need = _needShip();
-      _messages[_messages.length - 1].text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
+      createdMsg.text += `\n\n**${need.lead}** ${Terminology.label('mission', { plural: true })} always belong to ${need.a} ${need.ship}.`;
       _saveMessages();
       _renderMonitor();
       _endNiceSend(sendToken);
@@ -783,7 +788,7 @@ const PromptPanel = (() => {
     } catch (e) {
       if (!_isCurrentSend(sendToken)) return;
       // Update message with error
-      _messages[_messages.length - 1].text += `\n\n**Error creating mission:** ${e.message}`;
+      createdMsg.text += `\n\n**Error creating mission:** ${e.message}`;
       _saveMessages();
       _renderMonitor();
       _endNiceSend(sendToken);
@@ -793,29 +798,37 @@ const PromptPanel = (() => {
     // A new chat opened meanwhile: this mission's news isn't for it.
     if (!_isCurrentSend(sendToken)) return;
 
-    // Run MissionRunner
+    // Run MissionRunner. The run can take minutes: whichever way it ends,
+    // a chat opened meanwhile doesn't get its result.
     if (mission && mission.id && typeof MissionRunner !== 'undefined') {
+      let result;
       try {
-        const result = await MissionRunner.run(mission.id);
-        if (result && result.content) {
-          _messages.push({
-            role: 'assistant',
-            text: result.content,
-            agent: agentName,
-            ts: Date.now(),
-          });
-        } else {
-          _messages.push({
-            role: 'assistant',
-            text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
-            agent: 'NICE', ts: Date.now(),
-          });
-        }
+        result = await MissionRunner.run(mission.id);
       } catch (e) {
+        if (!_isCurrentSend(sendToken)) return;
         _messages.push({
           role: 'assistant',
           text: `**Mission failed:** ${e.message}\n[ACTION: View Missions | #/missions]`,
           agent: 'NICE', ts: Date.now(), error: true,
+        });
+        _saveMessages();
+        _renderMonitor();
+        _endNiceSend(sendToken);
+        return;
+      }
+      if (!_isCurrentSend(sendToken)) return;
+      if (result && result.content) {
+        _messages.push({
+          role: 'assistant',
+          text: result.content,
+          agent: agentName,
+          ts: Date.now(),
+        });
+      } else {
+        _messages.push({
+          role: 'assistant',
+          text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
+          agent: 'NICE', ts: Date.now(),
         });
       }
     } else {
@@ -826,7 +839,6 @@ const PromptPanel = (() => {
       });
     }
 
-    if (!_isCurrentSend(sendToken)) return;
     _saveMessages();
     _renderMonitor();
     _endNiceSend(sendToken);
@@ -957,6 +969,7 @@ const PromptPanel = (() => {
     // completed status flip from _runDag).
     let finalRow = null;
     try { finalRow = await SB.db('mission_runs').get(run.id); } catch { /* ignore */ }
+    if (!_isCurrentSend(sendToken)) return;
     const status = finalRow?.status || result?.status || 'completed';
     // DAG path: result?.finalOutput. Non-DAG captain path: result?.content.
     // finalRow.result is the authoritative persisted value; in-memory result is fallback.
@@ -2521,6 +2534,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _chatEpoch++;
     _niceSend = null;
     if (_abortCtrl) { try { _abortCtrl.abort(); } catch { /* already settled */ } _abortCtrl = null; }
+    // The monitor's approvals belong to sends that just ended: declined.
+    _declineApprovals();
     // The agent conversation belonged to the old chat; a new @mention starts
     // a fresh one instead of sending into a call that may still be running.
     _activeConversation = null;
@@ -2567,6 +2582,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _saveMessages();
     _renderMonitor();
     _endNiceSend(token);
+  }
+  // The monitor's approval prompt for a send: once the chat moves on, the
+  // send's tools are turned down without asking.
+  function _approvalFor(token) {
+    return (action) => (_isCurrentSend(token) ? _monitorApproval(action) : Promise.resolve(false));
   }
   function _syncSending() {
     const busy = !!_niceSend || _cardCalls.size > 0;
@@ -2900,12 +2920,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
           }
 
+          // The conversation lives as long as this chat: a new chat stops
+          // it between steps and turns its tools down without asking.
           const controller = AgentExecutor.converse(agentBp, {
             tools: agentBp.config.tools,
             spaceshipId,
             onStep,
             approvalMode: _approvalMode,
-            onApprovalNeeded: _monitorApproval,
+            onApprovalNeeded: _approvalFor(sendToken),
+            shouldStop: () => !_isCurrentSend(sendToken),
           });
           _activeConversation = { controller, agentBp, agentLabel };
 
@@ -2940,6 +2963,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             maxSteps: agentBp.config.maxSteps,
             onStep,
             attachments: sentAttachments,
+            shouldStop: () => !_isCurrentSend(sendToken),
           }).then(result => {
             if (!_isCurrentSend(sendToken)) return;
             _removeMonitorThinking();
@@ -3084,11 +3108,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             // Auto-open preview panel if response contains URLs or HTML
             if (typeof PreviewPanel !== 'undefined') PreviewPanel.detectAndOpen(result.text);
 
-            // Execute any EXEC markers from the LLM response
+            // Execute any EXEC markers from the LLM response. A new chat
+            // stops the rest: no more commands run, and no result lands in it.
             const { execs } = _parseActions(result.text);
             if (execs && execs.length) {
               for (const ex of execs) {
-                const res = await _executeExec(ex.action, ex.params);
+                const res = await _executeExec(ex.action, ex.params, _approvalFor(sendToken));
+                if (!_isCurrentSend(sendToken)) return;
                 _messages.push({
                   role: 'assistant',
                   text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`,
