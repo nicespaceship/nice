@@ -130,7 +130,9 @@ const ShipLog = (() => {
   /* ── Build context window for an agent ── */
   function buildContext(entries, currentAgentId) {
     if (!entries || !entries.length) return [];
-    return entries.map(e => ({
+    // Rows of an agent run called off (the chat moved on) are kept for the
+    // record only: they are not turns, so the model never reads them back.
+    return entries.filter(e => !(e && e.metadata && e.metadata.stopped)).map(e => ({
       role:    e.role === 'user' ? 'user' : 'assistant',
       content: e.content,
       name:    e.agent_id || 'system',

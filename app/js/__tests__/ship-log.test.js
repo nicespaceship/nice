@@ -291,6 +291,17 @@ describe('ShipLog', () => {
       expect(ctx[0].name).toBe('system');
     });
 
+    it('leaves out the rows of an agent run that was called off', () => {
+      const ctx = ShipLog.buildContext([
+        { role: 'user', content: 'email the team', agent_id: null, metadata: { event: 'mission_start' } },
+        { role: 'agent', content: 'Sending.', agent_id: 'a1', metadata: { event: 'tool_use', stopped: true } },
+        { role: 'system', content: 'Stopped: the chat moved on before this ran.', agent_id: 'a1', metadata: { event: 'tool_result', stopped: true } },
+        { role: 'agent', content: 'Stopped: the chat moved on before a final answer.', agent_id: 'a1', metadata: { event: 'turn_stopped', stopped: true } },
+        { role: 'user', content: 'say hi', agent_id: null },
+      ]);
+      expect(ctx.map(c => c.content)).toEqual(['email the team', 'say hi']);
+    });
+
     it('should map agent role to assistant', () => {
       const ctx = ShipLog.buildContext([
         { role: 'agent', content: 'Response', agent_id: 'a1' },

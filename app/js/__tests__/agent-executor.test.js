@@ -739,6 +739,52 @@ describe('AgentExecutor', () => {
       expect(events[events.length - 1]).toBe('turn_stopped');
     });
 
+    it('logs a neutral stop, not a decline, when the run is called off at an approval', async () => {
+      ToolRegistry.deregister('mcp:test:outlook_send_message');
+      const sendCalls = [];
+      ToolRegistry.register({
+        id: 'mcp:test:outlook_send_message',
+        name: 'outlook_send_message',
+        description: 'Send mail',
+        schema: { type: 'object', properties: {} },
+        execute: async () => { sendCalls.push(1); return { ok: true }; },
+      });
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Sending the email.' },
+          { type: 'tool_use', id: 'tu-stop-a', name: 'outlook_send_message', input: { to: 'x' } },
+        ],
+        stop_reason: 'tool_use',
+      });
+      let stop = false;
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-stop4', name: 'Mailer', config: { role: 'Assistant', tools: ['outlook_send_message'] } },
+        {
+          tools: ['outlook_send_message'],
+          spaceshipId: 'ship-stop4',
+          approvalMode: 'review',
+          // The chat moves on while the approval waits, which declines it.
+          onApprovalNeeded: () => { stop = true; return Promise.resolve(false); },
+          shouldStop: () => stop,
+        },
+      );
+      const result = await controller.send('email Bob');
+      try {
+        expect(result.stopped).toBe(true);
+        expect(sendCalls).toHaveLength(0);
+        expect(_capturedRequests).toHaveLength(1);
+        const rows = _logCalls.map(c => [c.metadata?.event, c.content, !!c.metadata?.stopped]);
+        expect(rows.slice(1)).toEqual([
+          ['tool_use', 'Sending the email.', true],
+          ['tool_result', 'Stopped: the chat moved on before this ran.', true],
+          ['turn_stopped', 'Stopped: the chat moved on before a final answer.', true],
+        ]);
+        expect(_logCalls.some(c => /declined/.test(c.content))).toBe(false);
+      } finally {
+        ToolRegistry.deregister('mcp:test:outlook_send_message');
+      }
+    });
+
     it('marks the agent idle when a run is stopped', async () => {
       const marks = [];
       const _saveActivity = globalThis.AgentActivity;

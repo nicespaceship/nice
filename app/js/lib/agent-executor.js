@@ -72,8 +72,9 @@ const AgentExecutor = (() => {
     });
 
     if (loop.stopped) {
-      _logToShipLog(spaceshipId, agentId, 'agent', 'Stopped before a final answer.', {
+      _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, {
         event: 'turn_stopped',
+        stopped: true,
         duration_ms: Date.now() - startMs,
         steps_used: loop.stepsUsed,
         total_tokens: tokensRef.value,
@@ -276,6 +277,12 @@ const AgentExecutor = (() => {
      `finalAnswer === null` + `maxStepsReached` lets the caller decide
      how to render the timeout (single-shot fallback vs. last observation).
      `stopped` means opts.shouldStop called the run off. */
+  // What the log says when a run is called off. Neutral: nobody declined
+  // anything. The rows carry `stopped: true`, and ShipLog.buildContext leaves
+  // them out, so a later call never reads them back as a turn.
+  const _STOP_TOOL_NOTE = 'Stopped: the chat moved on before this ran.';
+  const _STOP_TURN_NOTE = 'Stopped: the chat moved on before a final answer.';
+
   async function _runReactLoop(params) {
     const {
       agentBlueprint, systemPrompt, toolsSchema, conversationMessages,
@@ -328,6 +335,7 @@ const AgentExecutor = (() => {
           if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
           let observation;
           let isError = false;
+          let wasStopped = false;
           try {
             const result = await ToolRegistry.execute(block.name, block.input || {}, {
               approvalMode:     opts && opts.approvalMode,
@@ -338,7 +346,11 @@ const AgentExecutor = (() => {
             });
             observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
           } catch (err) {
-            if (err && err.declined) {
+            if (err && err.declined && stopped()) {
+              // Turned down because the run was called off, not by the user.
+              wasStopped = true;
+              observation = _STOP_TOOL_NOTE;
+            } else if (err && err.declined) {
               declined.add(block.id);
               observation = 'Action blocked — user declined approval.';
             } else {
@@ -377,6 +389,7 @@ const AgentExecutor = (() => {
             tool_use_id: block.id,
             input: block.input || {},
             step: stepIdx,
+            ...(wasStopped ? { stopped: true } : {}),
           });
           _logToShipLog(spaceshipId, agentId, 'system', observation, {
             event: 'tool_result',
@@ -384,8 +397,10 @@ const AgentExecutor = (() => {
             tool_use_id: block.id,
             is_error: !!isError,
             step: stepIdx,
+            ...(wasStopped ? { stopped: true } : {}),
           });
 
+          if (wasStopped) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
           if (stepIdx >= maxSteps) break;
         }
 
@@ -418,6 +433,7 @@ const AgentExecutor = (() => {
         let observation;
         let toolFailed = false;
         let wasDeclined = false;
+        let wasStopped = false;
         if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
         try {
           const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {}, {
@@ -429,7 +445,11 @@ const AgentExecutor = (() => {
           });
           observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         } catch (err) {
-          if (err && err.declined) {
+          if (err && err.declined && stopped()) {
+            // Turned down because the run was called off, not by the user.
+            wasStopped = true;
+            observation = _STOP_TOOL_NOTE;
+          } else if (err && err.declined) {
             wasDeclined = true;
             observation = 'Action blocked — user declined approval.';
           } else {
@@ -450,10 +470,13 @@ const AgentExecutor = (() => {
         if (onStep) onStep(step);
         _logToShipLog(spaceshipId, agentId, 'agent', parsed.thought || `(tool call: ${parsed.action})`, {
           event: 'tool_use', tool_name: parsed.action, input: parsed.actionInput || {}, step: stepIdx,
+          ...(wasStopped ? { stopped: true } : {}),
         });
         _logToShipLog(spaceshipId, agentId, 'system', observation, {
           event: 'tool_result', tool_name: parsed.action, is_error: toolFailed, step: stepIdx,
+          ...(wasStopped ? { stopped: true } : {}),
         });
+        if (wasStopped) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
         conversationMessages.push({ role: 'assistant', content: combinedText });
         conversationMessages.push({
           role: 'user',
@@ -1095,8 +1118,9 @@ const AgentExecutor = (() => {
         // still alternates user / assistant if the conversation goes on.
         const at = history.lastIndexOf(userTurn);
         if (at !== -1) history.splice(at, 1);
-        _logToShipLog(spaceshipId, agentId, 'agent', 'Stopped before a final answer.', {
+        _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, {
           event: 'turn_stopped',
+          stopped: true,
           duration_ms: Date.now() - startMs,
           steps_used: loop.stepsUsed,
           total_tokens: tokensRef.value,
