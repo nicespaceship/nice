@@ -93,13 +93,32 @@ const Router = (() => {
     return null;
   }
 
-  /* Render the matched view */
+  // A path with no view gets this page, through the same steps as a view.
+  function _notFound(p) {
+    return {
+      title: 'Page Not Found',
+      render: (el) => { el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`; },
+    };
+  }
+
+  let _swapTimer = 0; // the animated swap still waiting to draw the last route
+
+  /* Render the matched view (or the not-found page) */
   function _render() {
     const p = path();
     const match = _match(p);
+    const view = match ? match.view : _notFound(p);
+    const params = match ? match.params : {};
 
-    // Teardown previous view safely, a not-found page included: it replaces
-    // the view too, which must not keep its listeners or page furniture.
+    // A newer route wins: a swap still waiting from the last one must not
+    // draw its view over this one.
+    if (_swapTimer) {
+      clearTimeout(_swapTimer);
+      _swapTimer = 0;
+      _el.classList.remove('view-exit');
+    }
+
+    // Teardown previous view safely
     if (_currentView && _currentView.destroy) {
       try { _currentView.destroy(); } catch(e) { console.error('[NICE] View destroy error:', e); }
     }
@@ -108,16 +127,10 @@ const Router = (() => {
       State.destroyScoped();
     }
 
-    if (!match) {
-      _currentView = null;
-      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`;
-      return;
-    }
-
-    _currentView = match.view;
+    _currentView = view;
 
     // Update page title in header
-    const title = match.view.title || 'NICE';
+    const title = view.title || 'NICE';
     const titleEl = document.getElementById('app-page-title');
     if (titleEl) titleEl.textContent = title;
     document.title = `${title} — NICE`;
@@ -147,12 +160,12 @@ const Router = (() => {
     // CoreReactor.setVisible(true) in their render hook.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(false);
 
-    if (reducedMotion || !hasContent) {
-      // Instant swap (first render or reduced motion)
+    if (reducedMotion || !hasContent || !match) {
+      // Instant swap (first render, reduced motion, or the not-found page)
       _el.innerHTML = '';
       _el.scrollTop = 0;
       try {
-        if (match.view.render) match.view.render(_el, match.params);
+        if (view.render) view.render(_el, params);
       } catch (err) {
         console.error('[NICE] View render error on ' + p + ':', err);
         _el.innerHTML = _renderError(p, err);
@@ -160,12 +173,13 @@ const Router = (() => {
     } else {
       // Animated transition
       _el.classList.add('view-exit');
-      setTimeout(() => {
+      _swapTimer = setTimeout(() => {
+        _swapTimer = 0;
         _el.innerHTML = '';
         _el.scrollTop = 0;
         _el.classList.remove('view-exit');
         try {
-          if (match.view.render) match.view.render(_el, match.params);
+          if (view.render) view.render(_el, params);
         } catch (err) {
           console.error('[NICE] View render error on ' + p + ':', err);
           _el.innerHTML = _renderError(p, err);
