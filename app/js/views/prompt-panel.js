@@ -494,10 +494,11 @@ const PromptPanel = (() => {
   /* Shared inline approval prompt — used by the agent-with-tools chat AND by
      EXEC commands dispatched through the bus. Resolves true (approve) /
      false (deny). A prompt still waiting when the chat moves on is declined
-     (_declineApprovals), so the tool call behind it never hangs. */
-  const _pendingApprovals = new Set();
+     (_declineApprovals), so the tool call behind it never hangs; one still
+     waiting survives a redraw of the monitor (_renderMonitor). */
+  const _pendingApprovals = new Map(); // settle → its prompt on the monitor
   function _declineApprovals() {
-    [..._pendingApprovals].forEach(settle => settle(false));
+    [..._pendingApprovals.keys()].forEach(settle => settle(false));
   }
   function _monitorApproval(action) {
     return new Promise((resolve) => {
@@ -520,7 +521,7 @@ const PromptPanel = (() => {
         if (label) _addMonitorThinking(label);
         resolve(ok);
       };
-      _pendingApprovals.add(settle);
+      _pendingApprovals.set(settle, approvalEl);
       _monitorContent?.appendChild(approvalEl);
       const monitorEl = document.getElementById('nice-monitor');
       if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
@@ -1108,7 +1109,16 @@ const PromptPanel = (() => {
       }
     }
 
+    // What is still live on the monitor survives the redraw: the same
+    // elements go back under the conversation, so a waiting approval keeps
+    // its buttons and its settle, and a NICE send still out keeps its
+    // thinking, step or stream line updating.
+    const waiting = new Set(_pendingApprovals.values());
+    const live = [..._monitorContent.children].filter(el =>
+      waiting.has(el) || (_niceSend && _SEND_LINE_IDS.includes(el.id)));
     _monitorContent.innerHTML = html;
+    live.forEach(el => _monitorContent.appendChild(el));
+    waiting.forEach(el => { if (!el.isConnected) _monitorContent.appendChild(el); });
     _showMonitor();
 
     // Bind action buttons directly (safety net for delegated handler)
@@ -1183,6 +1193,12 @@ const PromptPanel = (() => {
 
   function _removeMonitorThinking() {
     document.getElementById('monitor-thinking')?.remove();
+  }
+
+  // The lines a NICE send keeps on the monitor while it is out.
+  const _SEND_LINE_IDS = ['monitor-thinking', 'monitor-step-indicator', 'monitor-stream'];
+  function _removeSendLines() {
+    _SEND_LINE_IDS.forEach(id => document.getElementById(id)?.remove());
   }
 
   function _renderNavOnMonitor(label) {
@@ -2539,9 +2555,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // The monitor's approvals and its thinking, step and stream lines belong
     // to sends that just ended: the approvals are declined, the lines go.
     _declineApprovals();
-    _removeMonitorThinking();
-    document.getElementById('monitor-step-indicator')?.remove();
-    document.getElementById('monitor-stream')?.remove();
+    _removeSendLines();
     // The agent conversation belonged to the old chat; a new @mention starts
     // a fresh one instead of sending into a call that may still be running.
     _activeConversation = null;
@@ -2571,15 +2585,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _endNiceSend(token) {
     if (!token || token !== _niceSend) return;
     _niceSend = null;
+    // Its lines end with it (a redraw keeps them only while it is out).
+    _removeSendLines();
     _syncSending();
   }
   // A send that threw instead of answering still ends: it says what went
   // wrong on the monitor and lets the panel go.
   function _failNiceSend(token, err) {
     if (!token || token !== _niceSend) return;
-    _removeMonitorThinking();
-    document.getElementById('monitor-step-indicator')?.remove();
-    document.getElementById('monitor-stream')?.remove();
+    _removeSendLines();
     _messages.push({
       role: 'assistant',
       text: '⚠️ **Request failed**\n\n' + ((err && err.message) || 'Something went wrong.'),

@@ -504,6 +504,46 @@ describe('Sending to the selected cards', () => {
       }
     });
 
+    // "Show full chat" on Space, or any other redraw of the monitor.
+    const redraw = () => { document.querySelector('.app-main').classList.remove('monitor-active'); PromptPanel.toggle(); };
+
+    it('keeps a waiting approval through a redraw of the monitor', async () => {
+      let opts, finish;
+      globalThis.AgentExecutor = { converse: vi.fn((bp, o) => { opts = o; return { send: () => new Promise(r => { finish = r; }) }; }) };
+      const bp = { id: 'a1', name: 'Scout', config: { tools: ['gmail_send'] } };
+      State.set('agents', [bp]);
+      globalThis.Blueprints = { getAgent: (id) => (id === 'a1' ? bp : null) };
+      send('@Scout email the team');
+      const asked = opts.onApprovalNeeded({ tool: 'gmail_send', input: { to: 'team@example.com' } });
+      redraw();
+      expect(monitorOpen()).toBe(true);
+      expect(document.querySelectorAll('#nice-monitor-content .monitor-approval')).toHaveLength(1);
+      expect(document.getElementById('nice-monitor-content').lastElementChild.classList.contains('monitor-approval')).toBe(true);
+      document.getElementById('monitor-approve').click();
+      await expect(asked).resolves.toBe(true);
+      finish({ text: 'Emailed the team.', done: true });
+      await tick();
+      expect(PromptPanel.messages().slice(-1)[0].text).toBe('Emailed the team.');
+      expect(document.getElementById('monitor-thinking')).toBeNull();
+      expect(btn().disabled).toBe(false);
+    });
+
+    it("keeps a send's thinking line through a redraw, until the send ends", async () => {
+      let scoutDone;
+      globalThis.ShipLog = { execute: vi.fn(() => new Promise(r => { scoutDone = () => r({ content: 'Scout result', agent: 'Scout' }); })) };
+      send('@Scout find leads');
+      const line = document.getElementById('monitor-thinking');
+      redraw();
+      expect(document.getElementById('monitor-thinking')).toBe(line);
+      scoutDone();
+      await tick();
+      expect(document.getElementById('monitor-thinking')).toBeNull();
+      // With no send out, a redraw brings back nothing of it.
+      redraw();
+      expect(document.getElementById('monitor-thinking')).toBeNull();
+      expect(document.getElementById('nice-monitor-content').textContent).toContain('Scout result');
+    });
+
     it("frees the panel when NICE's own send throws before it gets going", () => {
       globalThis.AgentExecutor = { converse: vi.fn(() => { throw new Error('No tools could load'); }) };
       const bp = { id: 'a1', name: 'Scout', config: { tools: ['gmail_send'] } };
