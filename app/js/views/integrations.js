@@ -813,6 +813,8 @@ const IntegrationsView = (() => {
     // left the dialog (a click on its text), and Escape stops here instead of
     // also closing whatever else listens for it.
     _disconnectKeys = (e) => {
+      // Something opened on top (the command palette) owns its own keys.
+      if (e.target instanceof Element && e.target !== document.body && !overlay.contains(e.target)) return;
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); _closeDisconnect(el); return; }
       if (e.key !== 'Tab') return;
       // Two buttons and nothing else: Tab moves between them and stays inside.

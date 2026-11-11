@@ -5,7 +5,7 @@
  * write can't leave a revoked-looking integration live for the agents.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -223,6 +223,7 @@ describe('IntegrationsView._disconnectMcp', () => {
 });
 
 describe('IntegrationsView disconnect confirmation', () => {
+  afterEach(() => { document.getElementById('disconnect-cancel')?.click(); });
   const open = () => !!document.getElementById('modal-disconnect');
   const cardBtn = (id) => [...el().querySelectorAll('button[data-catalog-id]')].find(b => b.dataset.catalogId === id);
   const mount = (rows) => {
@@ -284,6 +285,18 @@ describe('IntegrationsView disconnect confirmation', () => {
     expect(document.activeElement.id).toBe('disconnect-cancel');
   });
 
+  it('leaves the keys of something opened on top alone', () => {
+    mount();
+    cardBtn('notion').click();
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(open()).toBe(true);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(input);
+  });
+
   it('keeps Escape to itself', () => {
     mount();
     cardBtn('notion').click();
@@ -316,11 +329,12 @@ describe('IntegrationsView disconnect confirmation', () => {
     listImpl = () => new Promise(() => {});
     mount();
     const p = IntegrationsView._disconnectMcp(UUID, 'notion');
-    State.set('mcp_connections', undefined);
+    const theirs = [{ id: 'eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'Notion', catalog_id: 'notion', status: 'connected' }];
     State.set('user', { id: 'u2' });
+    State.set('mcp_connections', theirs);
     release();
     await p;
-    expect(State.get('mcp_connections')).toBeUndefined();
+    expect(State.get('mcp_connections')).toBe(theirs);
     expect(Notify.send).not.toHaveBeenCalled();
   });
 
