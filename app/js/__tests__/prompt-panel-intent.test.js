@@ -43,6 +43,14 @@ describe('PromptPanel._detectIntent', () => {
     'Can you review the space budget?',
     'Preview the spaceship announcement',
     'What should I ship first?',
+    'Explain open source models',
+    'Which open-weight model is best for coding?',
+    'show me model pricing',
+    'Can you show me a card trick?',
+    'Show me a sample chat transcript for support',
+    'Show me how to deliver this project on time',
+    'models',
+    'chat',
   ])('sends "%s" to the model', (text) => {
     expect(handledByPanel(text)).toBeNull();
   });
@@ -59,9 +67,22 @@ describe('PromptPanel._detectIntent', () => {
     ['go to space', 'open-space'],
     ['open ship', 'open-ship'],
     ['Space', 'open-space'],
+    ['go  to   settings', 'open-settings'],
     ['show me the outbox', 'open-ship'],
   ])('handles "%s" itself', (text, commandId) => {
     expect(handledByPanel(text)).toBe(commandId);
+  });
+
+  it('does not navigate to the page the user is already on', () => {
+    const path = Router.path;
+    try {
+      expect(handledByPanel('What is the best open space office layout?')).toBe('open-space');
+      Router.path = () => '/space';
+      expect(handledByPanel('What is the best open space office layout?')).toBeNull();
+      expect(handledByPanel('open ship')).toBe('open-ship');
+    } finally {
+      Router.path = path;
+    }
   });
 
   it('seeds the Crew Designer with the business it was asked about', () => {

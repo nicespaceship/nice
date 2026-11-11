@@ -87,7 +87,7 @@ const CommandPalette = (() => {
     let items = [];
 
     _staticCommands().forEach(c => {
-      const score = _fuzzyScore(q, c.label + ' ' + c.keywords);
+      const score = _fuzzyScore(q, c.label + ' ' + c.keywords + ' ' + (c.search || ''));
       if (score > 0 || !q) items.push({ id: c.id, label: c.label, icon: c.icon, score, type: c.kind });
     });
 
@@ -193,5 +193,5 @@ const CommandPalette = (() => {
     }
   }
 
-  return { init, open, close, _search };
+  return { init, open, close, _search, _fuzzyScore };
 })();

@@ -52,8 +52,8 @@ const NavCommands = (() => {
   const COMMANDS = [
     // ── Navigation ──
     { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
-    { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space chat workspace models cards' },
-    { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox approvals deliver' },
+    { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space workspace', search: 'chat models cards', desc: 'Open Space, where the model cards work.' },
+    { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox', search: 'approvals review deliver', desc: 'Open Ship, where finished work goes out.' },
     { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents agent list manage',                                     desc: 'Open the Agents roster.' },
     { id: 'open-agent-builder',     name: 'New Agent',         kind: 'nav', route: '/blueprints/agents/new', icon: '#icon-plus',      skinKey: 'newAgent',          keywords: 'create new agent builder',                               desc: 'Open the Agent Builder.' },
     { id: 'open-shipyard',          name: 'Project Blueprints', kind: 'nav', route: '/blueprints/spaceships', icon: '#icon-spaceship', skinKey: 'nav.spaceships',    keywords: 'spaceships shipyard fleet ships',                        desc: 'Open the project blueprints.' },
@@ -122,8 +122,10 @@ const NavCommands = (() => {
 
   /* Project commands into display descriptors for a front-end. Resolves
      Terminology + Skin per call so theme-aware labels are never frozen.
-     Returns { id, label, keywords, icon, kind } — execute via
-     ToolRegistry.execute(id). */
+     Returns { id, label, keywords, search, icon, kind, route } — execute via
+     ToolRegistry.execute(id). `keywords` are what chat may navigate on, so
+     they stay narrow; `search` holds extra words only the palette matches
+     ("chat", "models"), which are too common in conversation to navigate on. */
   function list() {
     const m = _missionNoun();
     const sh = _shipNoun();
@@ -136,7 +138,7 @@ const NavCommands = (() => {
       else if (c.id === 'open-shipyard') { label = `${sh.singular} blueprints`; }
       else if (c.id === 'new-spaceship') { label = `New ${sh.lower}`; }
       if (skinOn && c.skinKey) label = Skin.text(c.skinKey, label);
-      return { id: c.id, label, keywords, icon: c.icon, kind: c.kind };
+      return { id: c.id, label, keywords, search: c.search || '', icon: c.icon, kind: c.kind, route: c.route };
     });
   }
 
@@ -162,7 +164,7 @@ const NavCommands = (() => {
      resolve to declaration order (COMMANDS is ordered specific-before-generic
      where it matters).
 
-     Returns { id, label } of the top command, or null when nothing matches.
+     Returns { id, label, route } of the top command, or null when nothing matches.
      The CALLER decides whether the surrounding phrasing actually warrants a
      navigation (a nav verb, or a one-word command) — resolve() is pure. */
   function resolve(text) {
@@ -180,7 +182,7 @@ const NavCommands = (() => {
       });
       if (score > bestScore) { bestScore = score; best = c; }
     });
-    return best ? { id: best.id, label: best.label } : null;
+    return best ? { id: best.id, label: best.label, route: best.route } : null;
   }
 
   return { init, list, resolve, COMMANDS };

@@ -1434,11 +1434,12 @@ const PromptPanel = (() => {
     if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) return { type: 'search', response: _handleSearch(genericSearch[1].trim()) };
 
     // Whole words only: "review this code" holds "view" but is not a request to go anywhere.
-    const isNavRequest = /\b(?:go to|take me to|open|show|navigate to|switch to|view)\b/.test(lower);
+    const navPhrases = ['go to', 'take me to', 'open', 'show', 'navigate to', 'switch to', 'view'];
+    const isNavRequest = new RegExp('\\b(?:' + navPhrases.map(p => p.replace(/ /g, '\\s+')).join('|') + ')\\b').test(lower);
     // The auto-mission rule further down has always stood aside for any text
-    // that merely contains one of these (so "review my resume" and "draft an
-    // overview" reach the model). That is unchanged here.
-    const holdsNavText = ['go to', 'take me to', 'open', 'show', 'navigate to', 'switch to', 'view'].some(p => lower.includes(p));
+    // that merely contains one of the phrases, inside a word or not (so
+    // "review my resume" and "draft an overview" reach the model). Kept as is.
+    const autoMissionStandsAside = navPhrases.some(p => lower.includes(p));
 
     // Authoring verbs → the specific builder/board command. These run BEFORE
     // the fuzzy nav resolve so "build an agent" opens the Builder rather than
@@ -1492,7 +1493,10 @@ const PromptPanel = (() => {
       const oneWord = lower.trim().split(/\s+/).filter(Boolean).length === 1;
       if (isNavRequest || oneWord) {
         const m = NavCommands.resolve(lower);
-        if (m) return _cmd(m.id, { reply: `Navigating to ${m.label}.`, isNav: true, navLabel: m.label });
+        // Already there: the words are about the page's subject, not a request
+        // to go to it ("open space office layouts", asked on Space).
+        const here = typeof Router !== 'undefined' && Router.path ? Router.path() : null;
+        if (m && m.route !== here) return _cmd(m.id, { reply: `Navigating to ${m.label}.`, isNav: true, navLabel: m.label });
       }
     }
 
@@ -1512,7 +1516,7 @@ const PromptPanel = (() => {
     // Short, direct tasks auto-create + run a mission; longer prompts are
     // conversational and go to the LLM (which can use EXEC markers).
     const taskVerbs = /^(write|draft|generate|analyze|summarize|research|list|outline|compose|review|evaluate|audit|produce)\s+(me\s+|a\s+|an\s+|the\s+|my\s+|\d+\s+)/i;
-    if (taskVerbs.test(lower) && !holdsNavText && text.length < 80) {
+    if (taskVerbs.test(lower) && !autoMissionStandsAside && text.length < 80) {
       return { type: 'auto-mission', title: text };
     }
 
