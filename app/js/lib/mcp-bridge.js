@@ -226,9 +226,12 @@ const McpBridge = (() => {
       // and by now may hold a change made there that these rows predate.
       if (wanted() && Array.isArray(rows)) State.set('mcp_connections', rows);
     }).catch(() => {
+      // A load for an account that has since changed, or whose rows arrived
+      // another way, must not touch the retry the current account waits on.
+      if (!wanted()) return;
       // Most likely offline. Agents and the Mission Composer read these rows
-      // without ever opening Integrations, so try again once the network is back.
-      // One retry is ever waiting, whatever account it was first set for.
+      // without ever opening Integrations, so try again each time the network
+      // comes back until a load succeeds. Only one retry ever waits.
       _dropRetry();
       _retry = () => { _dropRetry(); if (wanted()) _loadAccount(id); };
       window.addEventListener('online', _retry);
