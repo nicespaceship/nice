@@ -106,6 +106,20 @@ describe('ChatView', () => {
     expect(card(el, 'deepseek-v4-flash').querySelector('.space-reply')).toBeNull();
   });
 
+  it('gives a card a footer only once it holds a conversation', () => {
+    messages = [
+      { role: 'user', text: 'Name it', to: ['gemini-2-5-flash'], v: 2 },
+      { role: 'assistant', text: 'Rise & Co.', modelId: 'gemini-2-5-flash', agent: 'NICE', v: 2 },
+    ];
+    mount();
+    const used = card(el, 'gemini-2-5-flash');
+    const idle = card(el, 'grok-4-3');
+    expect(used.querySelector('.space-card-foot .space-more')).not.toBeNull();
+    expect(idle.querySelector('.space-card-foot')).toBeNull();
+    expect(idle.querySelector('.space-more')).toBeNull();
+    expect(idle.querySelector('.space-card-body')).not.toBeNull();
+  });
+
   it('puts an old single-thread conversation on the card of the model that answered', () => {
     messages = SpaceCards.tagLegacy([
       { role: 'user', text: 'Hi' },

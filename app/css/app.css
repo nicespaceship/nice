@@ -5781,18 +5781,20 @@ html:has(.space-reactor) .jv-pp-reactor {
 
 /* Body: the latest exchange, capped and cut off with a fade; "Show all"
    opens the card across the row with the whole thread (the page stays the
-   only scroller). The bottom padding is the fade's room, so a body shorter
-   than the cap fades nothing but empty space. */
+   only scroller). The bottom padding is the fade's room (--space-fade), so
+   a body shorter than the cap fades nothing but empty space. */
 .space-card-body {
-  flex:0 1 auto; min-height:0; overflow:hidden; padding:10px 12px 20px;
+  --space-fade:20px;
+  flex:0 1 auto; min-height:0; overflow:hidden; padding:10px 12px var(--space-fade);
   font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-base);
   color:var(--text); overflow-wrap:anywhere;
 }
 .space-card:not(.is-expanded) .space-card-body {
   max-height:132px;
-  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
-          mask-image:linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - var(--space-fade)), transparent);
+          mask-image:linear-gradient(to bottom, #000 calc(100% - var(--space-fade)), transparent);
 }
+.space-card.is-expanded .space-card-body { --space-fade:6px; }
 .space-empty,
 .space-wait,
 .space-err { margin:0; }
@@ -5847,7 +5849,7 @@ html:has(.space-reactor) .jv-pp-reactor {
 
 .space-card-foot {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
-  margin-top:auto; padding:0 12px 8px;
+  margin-top:auto; padding:4px 12px 8px;
   font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
 }
 .space-more {
@@ -5866,10 +5868,10 @@ html:has(.space-reactor) .jv-pp-reactor {
   .space-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
   .space-card-head { gap:8px; padding:8px 10px; }
   .space-card-name { font-size:var(--text-sm); }
-  .space-card-body { padding:8px 10px 18px; }
+  .space-card-body { --space-fade:18px; padding:8px 10px var(--space-fade); }
   .space-card:not(.is-expanded) .space-card-body { max-height:118px; }
   .space-approval { margin:0 10px 8px; padding:8px 10px; }
-  .space-card-foot { padding:0 10px 6px; }
+  .space-card-foot { padding:4px 10px 6px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
