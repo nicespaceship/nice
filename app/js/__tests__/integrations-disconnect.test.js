@@ -246,7 +246,7 @@ describe('IntegrationsView disconnect confirmation', () => {
     mount();
     const closers = [
       () => document.getElementById('disconnect-cancel').click(),
-      () => document.getElementById('modal-disconnect').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })),
+      () => { document.activeElement.blur(); document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); },
       () => document.getElementById('modal-disconnect').click(),
       () => window.dispatchEvent(new Event('hashchange')),
     ];
@@ -279,6 +279,49 @@ describe('IntegrationsView disconnect confirmation', () => {
     expect(document.activeElement.id).toBe('disconnect-confirm');
     tab();
     expect(document.activeElement.id).toBe('disconnect-cancel');
+    document.activeElement.blur();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+  });
+
+  it('keeps Escape to itself', () => {
+    mount();
+    cardBtn('notion').click();
+    const heard = vi.fn();
+    document.addEventListener('keydown', heard);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.removeEventListener('keydown', heard);
+    expect(open()).toBe(false);
+    expect(heard).not.toHaveBeenCalled();
+  });
+
+  it('does not ask again about a card that is already disconnecting', async () => {
+    let release;
+    removeImpl = () => new Promise((res) => { release = res; });
+    mount();
+    cardBtn('notion').click();
+    document.getElementById('disconnect-confirm').click();
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+    document.getElementById('disconnect-cancel').click();
+    cardBtn('notion').click();
+    expect(open()).toBe(false);
+    release();
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([]);
+  });
+
+  it('leaves another account alone when it signs in while a delete runs', async () => {
+    let release;
+    removeImpl = () => new Promise((res) => { release = res; });
+    listImpl = () => new Promise(() => {});
+    mount();
+    const p = IntegrationsView._disconnectMcp(UUID, 'notion');
+    State.set('mcp_connections', undefined);
+    State.set('user', { id: 'u2' });
+    release();
+    await p;
+    expect(State.get('mcp_connections')).toBeUndefined();
+    expect(Notify.send).not.toHaveBeenCalled();
   });
 
   it('disconnects on confirm, holds the button while it runs, then closes on the Connect button', async () => {

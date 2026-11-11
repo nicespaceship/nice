@@ -779,11 +779,14 @@ const IntegrationsView = (() => {
   }
 
   let _disconnectTarget = null;
+  let _disconnectKeys = null;
 
   /* The dialog is built on <body> for as long as it is open: inside the view
      it would sit under the sidebar and the side panels. */
   function _askDisconnect(connId, catalogId, el) {
-    if (_pending() || !_cardConns(connId, catalogId).length) return;
+    const rows = _cardConns(connId, catalogId);
+    // Already being disconnected: the toast will say how it went.
+    if (_pending() || !rows.length || rows.some(c => _disconnecting.has(c.id))) return;
     _closeDisconnect();
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay open';
@@ -806,13 +809,17 @@ const IntegrationsView = (() => {
     cancel.addEventListener('click', () => _closeDisconnect(el));
     confirmBtn.addEventListener('click', () => _confirmDisconnect(el));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) _closeDisconnect(el); });
-    overlay.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); _closeDisconnect(el); return; }
+    // On document, in the capture phase: the keys keep working when focus has
+    // left the dialog (a click on its text), and Escape stops here instead of
+    // also closing whatever else listens for it.
+    _disconnectKeys = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); _closeDisconnect(el); return; }
       if (e.key !== 'Tab') return;
       // Two buttons and nothing else: Tab moves between them and stays inside.
       e.preventDefault();
       (document.activeElement === cancel && !confirmBtn.disabled ? confirmBtn : cancel).focus();
-    });
+    };
+    document.addEventListener('keydown', _disconnectKeys, true);
     window.addEventListener('hashchange', _closeDisconnect);
     _disconnectTarget = { connId, catalogId };
     document.body.appendChild(overlay);
@@ -823,6 +830,8 @@ const IntegrationsView = (() => {
     const target = _disconnectTarget;
     _disconnectTarget = null;
     window.removeEventListener('hashchange', _closeDisconnect);
+    if (_disconnectKeys) document.removeEventListener('keydown', _disconnectKeys, true);
+    _disconnectKeys = null;
     document.getElementById('modal-disconnect')?.remove();
     // The cards may have been redrawn since the dialog opened, so hand focus
     // back to whichever button the card shows now.
@@ -837,6 +846,7 @@ const IntegrationsView = (() => {
     if (!target || !confirmBtn || confirmBtn.disabled) return;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Disconnecting…';
+    document.getElementById('disconnect-cancel')?.focus();
     await _disconnectMcp(target.connId, target.catalogId);
     // Closed or pointed at another card while the delete ran: leave it be.
     if (_disconnectTarget === target) _closeDisconnect(el);
@@ -847,6 +857,7 @@ const IntegrationsView = (() => {
     const rows = _cardConns(connId, catalogId);
     if (!rows.length || rows.some(c => _disconnecting.has(c.id))) return;
     const name = _cardName(connId, catalogId);
+    const userId = State.get('user')?.id ?? null;
 
     // A local-only row (created in-session, never assigned a DB id) has
     // nothing server-side to delete. For a persisted row, mcp-gateway loads
@@ -869,6 +880,8 @@ const IntegrationsView = (() => {
       }
     }));
 
+    // Another account signed in while the deletes ran: these rows are not its.
+    if ((State.get('user')?.id ?? null) !== userId || _pending()) return;
     if (gone.size) _setConns(_conns().filter(c => !gone.has(c.id)));
     if (typeof Notify === 'undefined') return;
     if (gone.size < rows.length) {
