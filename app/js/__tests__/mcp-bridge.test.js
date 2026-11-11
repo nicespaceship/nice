@@ -22,14 +22,22 @@ function loadLibGlobal(rel) {
 // ToolRegistry; McpBridge.loadTools reads mcp_connections from it.
 globalThis.State = (() => {
   const data = {};
+  const subs = {};
   return {
     get: (k) => data[k],
-    set: (k, v) => { data[k] = v; },
-    on: () => {}, off: () => {},
+    set: (k, v) => { data[k] = v; (subs[k] || []).forEach(fn => fn(v)); },
+    on: (k, fn) => { (subs[k] = subs[k] || []).push(fn); },
+    off: () => {},
     _reset: () => { Object.keys(data).forEach(k => delete data[k]); },
   };
 })();
-globalThis.SB = { functions: { invoke: vi.fn() } };
+let listImpl = async () => [];
+let listCalls = [];
+globalThis.SB = {
+  functions: { invoke: vi.fn() },
+  isReady: () => true,
+  db: () => ({ list: (q) => { listCalls.push(q); return listImpl(q); } }),
+};
 
 loadLibGlobal('lib/tool-registry.js');
 loadLibGlobal('lib/mcp-bridge.js');
@@ -174,5 +182,178 @@ describe('McpBridge.loadTools — short-name resolution for agents', () => {
       McpBridge.loadTools();
       expect(SB.functions.invoke).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('McpBridge.watchAccount — connections belong to one account', () => {
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+  const row = (id) => ({ id, name: 'Notion', catalog_id: 'notion', status: 'connected' });
+
+  beforeEach(async () => {
+    McpBridge.watchAccount();
+    listImpl = async () => [];
+    State.set('user', null);
+    await flush();
+    listCalls = [];
+  });
+
+  it('loads the rows of the user who signs in', async () => {
+    listImpl = async () => [row('a')];
+    State.set('user', { id: 'u1' });
+    expect(State.get('mcp_connections')).toBeNull();
+    await flush();
+    expect(listCalls).toEqual([{ userId: 'u1' }]);
+    expect(State.get('mcp_connections')).toEqual([row('a')]);
+  });
+
+  it('drops the rows the moment the user signs out, with no reload', async () => {
+    listImpl = async () => [row('a')];
+    State.set('user', { id: 'u1' });
+    await flush();
+    State.set('user', null);
+    expect(State.get('mcp_connections')).toBeNull();
+    expect(listCalls).toHaveLength(1);
+  });
+
+  it('never shows one account the rows of another', async () => {
+    let release;
+    listImpl = (q) => q.userId === 'u1' ? new Promise((res) => { release = res; }) : Promise.resolve([row('b')]);
+    State.set('user', { id: 'u1' });
+    State.set('user', { id: 'u2' });
+    await flush();
+    release([row('a')]);
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([row('b')]);
+  });
+
+  it('drops rows that arrive after their user signed out', async () => {
+    let release;
+    listImpl = () => new Promise((res) => { release = res; });
+    State.set('user', { id: 'u1' });
+    State.set('user', null);
+    release([row('a')]);
+    await flush();
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
+  it('leaves the rows alone when the same user is set again', async () => {
+    listImpl = async () => [row('a')];
+    State.set('user', { id: 'u1' });
+    await flush();
+    const loaded = State.get('mcp_connections');
+    State.set('user', { id: 'u1', is_admin: true });
+    await flush();
+    expect(State.get('mcp_connections')).toBe(loaded);
+    expect(listCalls).toHaveLength(1);
+  });
+
+  it('does not overwrite rows that loaded, and changed, before its own fetch landed', async () => {
+    let release;
+    listImpl = () => new Promise((res) => { release = res; });
+    State.set('user', { id: 'u1' });
+    const fromView = [row('a'), row('c')];
+    State.set('mcp_connections', fromView);
+    release([row('a')]);
+    await flush();
+    expect(State.get('mcp_connections')).toBe(fromView);
+  });
+
+  it('keeps the rows unloaded when the fetch fails', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
+  it('tries again when the network comes back after a failed load', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    listImpl = async () => [row('a')];
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([row('a')]);
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls).toHaveLength(2);
+  });
+
+  it('keeps trying on each return of the network until a load succeeds', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(State.get('mcp_connections')).toBeNull();
+    listImpl = async () => [row('a')];
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls).toHaveLength(3);
+    expect(State.get('mcp_connections')).toEqual([row('a')]);
+  });
+
+  it('does not let a stale failed load cancel the current account\'s retry', async () => {
+    let failFirst;
+    listImpl = (q) => q.userId === 'u1'
+      ? new Promise((_, rej) => { failFirst = rej; })
+      : Promise.reject(new Error('offline'));
+    State.set('user', { id: 'u1' });
+    State.set('user', { id: 'u2' });
+    await flush();
+    failFirst(new Error('offline'));
+    await flush();
+    listImpl = async () => [row('b')];
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls[listCalls.length - 1]).toEqual({ userId: 'u2' });
+    expect(State.get('mcp_connections')).toEqual([row('b')]);
+  });
+
+  it('does not try again for a user who has since signed out', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    State.set('user', null);
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls).toHaveLength(1);
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
+  it('subscribes once however often it is called', async () => {
+    McpBridge.watchAccount();
+    McpBridge.watchAccount();
+    State.set('user', { id: 'u1' });
+    await flush();
+    expect(listCalls).toHaveLength(1);
+  });
+});
+
+describe('McpBridge.discoverTools — only updates a connection still in State', () => {
+  const tools = { data: { tools: [{ name: 'search', description: 'd', inputSchema: {} }] }, error: null };
+
+  it('fills in the tools of the connection it asked about', async () => {
+    State.set('mcp_connections', [{ id: 'c1', status: 'error' }, { id: 'c2', status: 'connected' }]);
+    SB.functions.invoke.mockResolvedValueOnce(tools);
+    await McpBridge.discoverTools('c1');
+    const [c1, c2] = State.get('mcp_connections');
+    expect(c1.available_tools).toEqual(['search']);
+    expect(c1.status).toBe('connected');
+    expect(c2).toEqual({ id: 'c2', status: 'connected' });
+  });
+
+  it('does not turn unloaded rows into an empty list', async () => {
+    State.set('mcp_connections', null);
+    SB.functions.invoke.mockResolvedValueOnce(tools);
+    await McpBridge.discoverTools('c1');
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
+  it('writes nothing when the connection has gone', async () => {
+    const rows = [{ id: 'c2', status: 'connected' }];
+    State.set('mcp_connections', rows);
+    SB.functions.invoke.mockResolvedValueOnce(tools);
+    await McpBridge.discoverTools('c1');
+    expect(State.get('mcp_connections')).toBe(rows);
   });
 });

@@ -141,8 +141,10 @@ const McpBridge = (() => {
     }
 
     // Update connection in State with discovered tools + rich schemas
-    const connections = State.get('mcp_connections') || [];
-    if (data?.tools) {
+    // The rows may have gone while the gateway answered (signed out, another
+    // account, disconnected): only a connection still in State is updated.
+    const connections = State.get('mcp_connections');
+    if (data?.tools && Array.isArray(connections) && connections.some(c => c.id === connectionId)) {
       const toolDefs = {};
       data.tools.forEach(t => {
         toolDefs[t.name] = { description: t.description || '', inputSchema: t.inputSchema || {} };
@@ -202,5 +204,54 @@ const McpBridge = (() => {
     };
   }
 
-  return { loadTools, unloadTools, getToolIds, discoverTools };
+  /* State.mcp_connections belongs to one account. When the signed-in user
+     changes, by any path (sign-out, idle timeout, another sign-in), the old
+     rows are dropped before anything can act on them, and the new account's
+     rows are loaded. Until they arrive the value is null, which readers treat
+     as "not loaded yet". */
+  let _accountId = null;
+  let _watching = false;
+
+  let _retry = null;
+  function _dropRetry() {
+    if (_retry) window.removeEventListener('online', _retry);
+    _retry = null;
+  }
+
+  function _loadAccount(id) {
+    if (typeof SB === 'undefined' || typeof SB.db !== 'function' || !SB.isReady || !SB.isReady()) return;
+    const wanted = () => _accountId === id && !Array.isArray(State.get('mcp_connections'));
+    SB.db('mcp_connections').list({ userId: id }).then(rows => {
+      // The first load to land wins. The Integrations view loads the rows too,
+      // and by now may hold a change made there that these rows predate.
+      if (wanted() && Array.isArray(rows)) State.set('mcp_connections', rows);
+    }).catch(() => {
+      // A load for an account that has since changed, or whose rows arrived
+      // another way, must not touch the retry the current account waits on.
+      if (!wanted()) return;
+      // Most likely offline. Agents and the Mission Composer read these rows
+      // without ever opening Integrations, so try again each time the network
+      // comes back until a load succeeds. Only one retry ever waits.
+      _dropRetry();
+      _retry = () => { _dropRetry(); if (wanted()) _loadAccount(id); };
+      window.addEventListener('online', _retry);
+    });
+  }
+
+  function _onUser(user) {
+    const id = user ? user.id : null;
+    if (id === _accountId) return;
+    _accountId = id;
+    _dropRetry();
+    State.set('mcp_connections', null);
+    if (id) _loadAccount(id);
+  }
+
+  function watchAccount() {
+    if (_watching) return;
+    _watching = true;
+    State.on('user', _onUser);
+  }
+
+  return { loadTools, unloadTools, getToolIds, discoverTools, watchAccount };
 })();
