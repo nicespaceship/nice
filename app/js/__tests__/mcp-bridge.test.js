@@ -226,6 +226,16 @@ describe('McpBridge.watchAccount — connections belong to one account', () => {
     expect(State.get('mcp_connections')).toEqual([row('b')]);
   });
 
+  it('drops rows that arrive after their user signed out', async () => {
+    let release;
+    listImpl = () => new Promise((res) => { release = res; });
+    State.set('user', { id: 'u1' });
+    State.set('user', null);
+    release([row('a')]);
+    await flush();
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
   it('leaves the rows alone when the same user is set again', async () => {
     listImpl = async () => [row('a')];
     State.set('user', { id: 'u1' });
@@ -252,6 +262,30 @@ describe('McpBridge.watchAccount — connections belong to one account', () => {
     listImpl = async () => { throw new Error('offline'); };
     State.set('user', { id: 'u1' });
     await flush();
+    expect(State.get('mcp_connections')).toBeNull();
+  });
+
+  it('tries again when the network comes back after a failed load', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    listImpl = async () => [row('a')];
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([row('a')]);
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls).toHaveLength(2);
+  });
+
+  it('does not try again for a user who has since signed out', async () => {
+    listImpl = async () => { throw new Error('offline'); };
+    State.set('user', { id: 'u1' });
+    await flush();
+    State.set('user', null);
+    window.dispatchEvent(new Event('online'));
+    await flush();
+    expect(listCalls).toHaveLength(1);
     expect(State.get('mcp_connections')).toBeNull();
   });
 

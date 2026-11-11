@@ -212,18 +212,36 @@ const McpBridge = (() => {
   let _accountId = null;
   let _watching = false;
 
+  let _retry = null;
+  function _dropRetry() {
+    if (_retry) window.removeEventListener('online', _retry);
+    _retry = null;
+  }
+
+  function _loadAccount(id) {
+    if (typeof SB === 'undefined' || typeof SB.db !== 'function' || !SB.isReady || !SB.isReady()) return;
+    const wanted = () => _accountId === id && !Array.isArray(State.get('mcp_connections'));
+    SB.db('mcp_connections').list({ userId: id }).then(rows => {
+      // The first load to land wins. The Integrations view loads the rows too,
+      // and by now may hold a change made there that these rows predate.
+      if (wanted() && Array.isArray(rows)) State.set('mcp_connections', rows);
+    }).catch(() => {
+      // Most likely offline. Agents and the Mission Composer read these rows
+      // without ever opening Integrations, so try again once the network is back.
+      // One retry is ever waiting, whatever account it was first set for.
+      _dropRetry();
+      _retry = () => { _dropRetry(); if (wanted()) _loadAccount(id); };
+      window.addEventListener('online', _retry);
+    });
+  }
+
   function _onUser(user) {
     const id = user ? user.id : null;
     if (id === _accountId) return;
     _accountId = id;
+    _dropRetry();
     State.set('mcp_connections', null);
-    if (!id || typeof SB === 'undefined' || typeof SB.db !== 'function' || !SB.isReady || !SB.isReady()) return;
-    SB.db('mcp_connections').list({ userId: id }).then(rows => {
-      // The first load to land wins. The Integrations view loads the rows too,
-      // and by now may hold a change made there that these rows predate.
-      if (_accountId !== id || !Array.isArray(rows) || Array.isArray(State.get('mcp_connections'))) return;
-      State.set('mcp_connections', rows);
-    }).catch(() => {});
+    if (id) _loadAccount(id);
   }
 
   function watchAccount() {
