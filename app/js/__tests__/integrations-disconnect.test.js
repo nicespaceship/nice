@@ -5,7 +5,7 @@
  * write can't leave a revoked-looking integration live for the agents.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -157,26 +157,18 @@ describe('IntegrationsView._isPersistedId', () => {
 });
 
 describe('IntegrationsView._disconnectMcp', () => {
-  it('aborts without touching State or the DB when the user cancels', async () => {
-    confirmReturn = false;
-    seed([{ id: UUID, name: 'Notion', status: 'connected' }]);
-    await IntegrationsView._disconnectMcp(UUID, el());
-    expect(removeCalls).toEqual([]);
-    expect(State.get('mcp_connections')).toHaveLength(1);
-  });
-
   it('drops a persisted row only after the DB delete resolves', async () => {
-    seed([{ id: UUID, name: 'Notion', status: 'connected' }]);
-    await IntegrationsView._disconnectMcp(UUID, el());
+    seed([{ id: UUID, name: 'Notion', catalog_id: 'notion', status: 'connected' }]);
+    await IntegrationsView._disconnectMcp(UUID, 'notion');
     expect(removeCalls).toEqual([UUID]);
     expect(State.get('mcp_connections')).toEqual([]);
-    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'MCP Disconnected' }));
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Notion disconnected' }));
   });
 
   it('keeps the row connected and warns when the DB delete fails', async () => {
     removeImpl = async () => { throw new Error('RLS denied'); };
-    seed([{ id: UUID, name: 'Notion', status: 'connected' }]);
-    await IntegrationsView._disconnectMcp(UUID, el());
+    seed([{ id: UUID, name: 'Notion', catalog_id: 'notion', status: 'connected' }]);
+    await IntegrationsView._disconnectMcp(UUID, 'notion');
     expect(removeCalls).toEqual([UUID]);
     expect(State.get('mcp_connections')).toHaveLength(1);
     expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Disconnect failed', type: 'error' }));
@@ -184,24 +176,214 @@ describe('IntegrationsView._disconnectMcp', () => {
 
   it('drops a local-only (mc-) row without a DB delete', async () => {
     seed([{ id: 'mc-123', name: 'Custom', status: 'connected' }]);
-    await IntegrationsView._disconnectMcp('mc-123', el());
+    await IntegrationsView._disconnectMcp('mc-123');
     expect(removeCalls).toEqual([]);
     expect(State.get('mcp_connections')).toEqual([]);
-    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'MCP Disconnected' }));
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Custom disconnected' }));
   });
 
-  it('ignores a re-entrant click while a delete is in flight', async () => {
+  it('ignores a second call while a delete is in flight', async () => {
     let release;
     removeImpl = () => new Promise((res) => { release = res; });
-    seed([{ id: UUID, name: 'Notion', status: 'connected' }]);
-    const p1 = IntegrationsView._disconnectMcp(UUID, el());
-    const p2 = IntegrationsView._disconnectMcp(UUID, el());
-    await p2;
-    expect(confirmCalls).toBe(1);
+    seed([{ id: UUID, name: 'Notion', catalog_id: 'notion', status: 'connected' }]);
+    const p1 = IntegrationsView._disconnectMcp(UUID, 'notion');
+    await IntegrationsView._disconnectMcp(UUID, 'notion');
     expect(removeCalls).toEqual([UUID]);
     release();
     await p1;
     expect(State.get('mcp_connections')).toEqual([]);
+  });
+
+  const UUID2 = 'bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+  const UUID3 = 'cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+  const googleRows = () => [
+    { id: UUID, name: 'Gmail', catalog_id: 'google-gmail', status: 'connected' },
+    { id: UUID2, name: 'Calendar', catalog_id: 'google-calendar', status: 'connected' },
+    { id: UUID3, name: 'Drive', catalog_id: 'google-drive', status: 'connected' },
+    { id: 'dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'Notion', catalog_id: 'notion', status: 'connected' },
+  ];
+
+  it('removes every row behind a card in one go, and leaves other cards alone', async () => {
+    seed(googleRows());
+    await IntegrationsView._disconnectMcp(UUID, 'google');
+    expect(removeCalls.slice().sort()).toEqual([UUID, UUID2, UUID3].sort());
+    expect(State.get('mcp_connections').map(c => c.catalog_id)).toEqual(['notion']);
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Google Workspace disconnected' }));
+  });
+
+  it('keeps the rows whose delete failed and says the card is still active', async () => {
+    removeImpl = async (id) => { if (id === UUID2) throw new Error('boom'); };
+    seed(googleRows());
+    await IntegrationsView._disconnectMcp(UUID, 'google');
+    expect(State.get('mcp_connections').map(c => c.catalog_id)).toEqual(['google-calendar', 'notion']);
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Disconnect failed', type: 'error' }));
+  });
+});
+
+describe('IntegrationsView disconnect confirmation', () => {
+  afterEach(() => { document.getElementById('disconnect-cancel')?.click(); });
+  const open = () => !!document.getElementById('modal-disconnect');
+  const cardBtn = (id) => [...el().querySelectorAll('button[data-catalog-id]')].find(b => b.dataset.catalogId === id);
+  const mount = (rows) => {
+    signIn();
+    seed(rows || [{ id: UUID, name: 'Notion', catalog_id: 'notion', status: 'connected' }]);
+    IntegrationsView.render(el());
+  };
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it('asks in the page, naming the integration, and never with a browser dialog', () => {
+    mount();
+    cardBtn('notion').click();
+    expect(open()).toBe(true);
+    expect(document.getElementById('disconnect-title').textContent).toBe('Disconnect Notion?');
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+    expect(confirmCalls).toBe(0);
+    expect(removeCalls).toEqual([]);
+  });
+
+  it('changes nothing on Cancel, Escape, a click outside or leaving the page', () => {
+    mount();
+    const closers = [
+      () => document.getElementById('disconnect-cancel').click(),
+      () => { document.activeElement.blur(); document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); },
+      () => document.getElementById('modal-disconnect').click(),
+      () => window.dispatchEvent(new Event('hashchange')),
+    ];
+    for (const close of closers) {
+      cardBtn('notion').click();
+      expect(open()).toBe(true);
+      close();
+      expect(open()).toBe(false);
+    }
+    cardBtn('notion').click();
+    document.getElementById('disconnect-cancel').click();
+    expect(document.activeElement).toBe(cardBtn('notion'));
+    expect(removeCalls).toEqual([]);
+    expect(State.get('mcp_connections')).toHaveLength(1);
+  });
+
+  it('sits on the page body, above the sidebar, and is gone once the view is drawn again', () => {
+    mount();
+    cardBtn('notion').click();
+    expect(document.getElementById('modal-disconnect').parentElement).toBe(document.body);
+    IntegrationsView.render(el());
+    expect(open()).toBe(false);
+  });
+
+  it('keeps Tab inside the dialog', () => {
+    mount();
+    cardBtn('notion').click();
+    const tab = () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    tab();
+    expect(document.activeElement.id).toBe('disconnect-confirm');
+    tab();
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+    document.activeElement.blur();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+  });
+
+  it('leaves the keys of something opened on top alone', () => {
+    mount();
+    cardBtn('notion').click();
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(open()).toBe(true);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('keeps Escape to itself', () => {
+    mount();
+    cardBtn('notion').click();
+    const heard = vi.fn();
+    document.addEventListener('keydown', heard);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.removeEventListener('keydown', heard);
+    expect(open()).toBe(false);
+    expect(heard).not.toHaveBeenCalled();
+  });
+
+  it('does not ask again about a card that is already disconnecting', async () => {
+    let release;
+    removeImpl = () => new Promise((res) => { release = res; });
+    mount();
+    cardBtn('notion').click();
+    document.getElementById('disconnect-confirm').click();
+    expect(document.activeElement.id).toBe('disconnect-cancel');
+    document.getElementById('disconnect-cancel').click();
+    cardBtn('notion').click();
+    expect(open()).toBe(false);
+    release();
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([]);
+  });
+
+  it('leaves another account alone when it signs in while a delete runs', async () => {
+    let release;
+    removeImpl = () => new Promise((res) => { release = res; });
+    listImpl = () => new Promise(() => {});
+    mount();
+    const p = IntegrationsView._disconnectMcp(UUID, 'notion');
+    const theirs = [{ id: 'eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'Notion', catalog_id: 'notion', status: 'connected' }];
+    State.set('user', { id: 'u2' });
+    State.set('mcp_connections', theirs);
+    release();
+    await p;
+    expect(State.get('mcp_connections')).toBe(theirs);
+    expect(Notify.send).not.toHaveBeenCalled();
+  });
+
+  it('disconnects on confirm, holds the button while it runs, then closes on the Connect button', async () => {
+    let release;
+    removeImpl = () => new Promise((res) => { release = res; });
+    mount();
+    cardBtn('notion').click();
+    const confirmBtn = document.getElementById('disconnect-confirm');
+    confirmBtn.click();
+    confirmBtn.click();
+    expect(confirmBtn.disabled).toBe(true);
+    expect(removeCalls).toEqual([UUID]);
+    expect(open()).toBe(true);
+    release();
+    await flush();
+    expect(open()).toBe(false);
+    expect(State.get('mcp_connections')).toEqual([]);
+    expect(cardBtn('notion').classList.contains('mcp-connect-btn')).toBe(true);
+    expect(document.activeElement).toBe(cardBtn('notion'));
+  });
+
+  it('disconnects all of Google from one confirmation', async () => {
+    mount([
+      { id: UUID, name: 'Gmail', catalog_id: 'google-gmail', status: 'connected' },
+      { id: 'bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'Calendar', catalog_id: 'google-calendar', status: 'connected' },
+      { id: 'cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee', name: 'Drive', catalog_id: 'google-drive', status: 'connected' },
+    ]);
+    cardBtn('google').click();
+    expect(document.getElementById('disconnect-title').textContent).toBe('Disconnect Google Workspace?');
+    document.getElementById('disconnect-confirm').click();
+    await flush();
+    expect(removeCalls).toHaveLength(3);
+    expect(State.get('mcp_connections')).toEqual([]);
+    expect(cardBtn('google').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('opens ready to use again after a failed disconnect', async () => {
+    removeImpl = async () => { throw new Error('boom'); };
+    mount();
+    cardBtn('notion').click();
+    document.getElementById('disconnect-confirm').click();
+    await flush();
+    expect(open()).toBe(false);
+    expect(State.get('mcp_connections')).toHaveLength(1);
+    cardBtn('notion').click();
+    const confirmBtn = document.getElementById('disconnect-confirm');
+    expect(confirmBtn.disabled).toBe(false);
+    expect(confirmBtn.textContent.trim()).toBe('Disconnect');
   });
 });
 
