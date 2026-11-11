@@ -53,10 +53,12 @@ let createCalls = [];
 let createImpl = async (row) => ({ ...row, id: DB_UUID });
 let updateCalls = [];
 let updateImpl = async (id, changes) => ({ id, name: 'Zapier', catalog_id: 'zapier', available_tools: [], ...changes });
+let listCalls = 0;
+let listImpl = async () => [];
 globalThis.SB = {
   url: 'https://x.supabase.co', client: null, isReady: () => false, isOnline: () => true,
   db: () => ({
-    list: async () => [],
+    list: async () => { listCalls++; return listImpl(); },
     create: async (row) => { createCalls.push(row); return createImpl(row); },
     update: async (id, changes) => { updateCalls.push({ id, changes }); return updateImpl(id, changes); },
     get: async () => null,
@@ -128,6 +130,8 @@ beforeEach(() => {
   updateImpl = async (id, changes) => ({ id, name: 'Zapier', catalog_id: 'zapier', available_tools: [], ...changes });
   confirmReturn = true;
   confirmCalls = 0;
+  listCalls = 0;
+  listImpl = async () => [];
   Notify.send.mockClear();
 });
 
@@ -356,5 +360,139 @@ describe('IntegrationsView MCP grid/list toggle', () => {
     IntegrationsView.render(node);
     // The once-guard sets a marker the first time only.
     expect(node.dataset.intgDelegated).toBe('1');
+  });
+});
+
+describe('IntegrationsView cards follow the loaded connections', () => {
+  const flush = () => new Promise(r => setTimeout(r, 0));
+  const card = (name) => [...el().querySelectorAll('.mcp-catalog-card, .intg-list-row')]
+    .find(c => c.querySelector('.mcp-catalog-name, .intg-list-name').textContent.trim().startsWith(name));
+  const button = (name) => card(name).querySelector('button');
+  const notion = { id: UUID, name: 'Notion', catalog_id: 'notion', status: 'connected', available_tools: ['search'] };
+
+  it('holds every button until the signed-in user\'s rows arrive, then redraws', async () => {
+    State.set('user', { id: 'u1' });
+    let deliver;
+    listImpl = () => new Promise(r => { deliver = r; });
+    IntegrationsView.render(el());
+
+    expect(State.get('mcp_connections')).toBeUndefined();
+    expect(el().querySelector('.mcp-disconnect-btn, .mcp-connect-btn')).toBeNull();
+    expect(button('Notion').disabled).toBe(true);
+    expect(button('Notion').textContent).toBe('Loading…');
+    expect(el().querySelector('.intg-stat-num').textContent).toBe('…');
+
+    deliver([notion]);
+    await flush();
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+    expect(button('Notion').dataset.connId).toBe(UUID);
+    expect(button('Google Workspace').classList.contains('mcp-connect-btn')).toBe(true);
+    expect(el().querySelector('.intg-stat-num').textContent).toBe('1');
+  });
+
+  it('never invents placeholder connections', async () => {
+    State.set('user', { id: 'u1' });
+    IntegrationsView.render(el());
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([]);
+    expect(el().querySelector('.mcp-disconnect-btn')).toBeNull();
+    expect(button('Google Workspace').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('redraws when the boot fetch fills State after the first paint', () => {
+    State.set('user', { id: 'u1' });
+    listImpl = () => new Promise(() => {});
+    IntegrationsView.render(el());
+    State.set('mcp_connections', [notion]);
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('does not fetch again when the rows are already in State', () => {
+    State.set('user', { id: 'u1' });
+    seed([notion]);
+    IntegrationsView.render(el());
+    expect(listCalls).toBe(0);
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('offers Connect straight away when signed out', () => {
+    IntegrationsView.render(el());
+    expect(listCalls).toBe(0);
+    expect(button('Notion').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('says so when the rows fail to load, and loads them on Try again', async () => {
+    State.set('user', { id: 'u1' });
+    listImpl = async () => { throw new Error('offline'); };
+    IntegrationsView.render(el());
+    await flush();
+    const note = el().querySelector('.intg-load-error');
+    expect(note.hidden).toBe(false);
+    expect(button('Notion').disabled).toBe(true);
+    expect(button('Notion').textContent).toBe('Unavailable');
+    expect(State.get('mcp_connections')).toBeUndefined();
+
+    listImpl = async () => [notion];
+    el().querySelector('.intg-retry-btn').click();
+    expect(button('Notion').textContent).toBe('Loading…');
+    await flush();
+    expect(note.hidden).toBe(true);
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('drops rows fetched for an account that has since signed out', async () => {
+    State.set('user', { id: 'u1' });
+    let deliver;
+    listImpl = () => new Promise(r => { deliver = r; });
+    IntegrationsView.render(el());
+    State.set('user', null);
+    deliver([notion]);
+    await flush();
+    expect(State.get('mcp_connections')).toBeUndefined();
+    expect(button('Notion').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('loads the rows of a user who signs in while the view is open', async () => {
+    IntegrationsView.render(el());
+    listImpl = async () => [notion];
+    State.set('user', { id: 'u2' });
+    expect(button('Notion').textContent).toBe('Loading…');
+    await flush();
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('keeps the search, the filter and the list view when a connection changes', () => {
+    seed([notion]);
+    IntegrationsView.render(el());
+    document.getElementById('mcp-view-list').click();
+    const search = document.getElementById('intg-mcp-search');
+    search.value = 'notion';
+    search.dispatchEvent(new Event('input'));
+    expect(el().querySelectorAll('.intg-list-row').length).toBe(1);
+
+    seed([]);
+    expect(search.value).toBe('notion');
+    expect(el().querySelector('#intg-mcp-grid').className).toContain('intg-list-container');
+    expect(el().querySelectorAll('.intg-list-row').length).toBe(1);
+    expect(button('Notion').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('reads the current connections after a search, not the ones from first paint', () => {
+    seed([]);
+    IntegrationsView.render(el());
+    seed([notion]);
+    const search = document.getElementById('intg-mcp-search');
+    search.value = 'notion';
+    search.dispatchEvent(new Event('input'));
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('stops redrawing a view that has left the page', () => {
+    seed([]);
+    const node = el();
+    IntegrationsView.render(node);
+    node.remove();
+    expect(() => seed([notion])).not.toThrow();
+    expect(node.querySelector('.mcp-disconnect-btn')).toBeNull();
   });
 });
