@@ -120,6 +120,7 @@ const IntegrationsView = (() => {
     // A fresh mount starts from the default toolbar, so the filter state
     // matches what the markup below shows.
     _mcpView = 'grid'; _mcpCat = 'all'; _mcpQ = '';
+    _closeDisconnect();
     if (_pending()) _loadMcps();
 
     /* Derive unique categories */
@@ -502,7 +503,7 @@ const IntegrationsView = (() => {
         // upserts the existing row by user_id+catalog_id and resets status.
         if (mcpReconn) return _connectMcp(mcpReconn.dataset.catalogId, el, { reconnect: true });
         const mcpDisc = e.target.closest('.mcp-disconnect-btn');
-        if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
+        if (mcpDisc) return _askDisconnect(mcpDisc.dataset.connId, mcpDisc.dataset.catalogId, el);
         if (e.target.closest('.intg-retry-btn')) { _loadMcps(); _paint(el); }
       });
     }
@@ -760,41 +761,121 @@ const IntegrationsView = (() => {
   function _initiateCfObservabilityOAuth() { _initiateOAuthGeneric('Cloudflare Observability', CF_OBSERVABILITY_OAUTH_URL); }
   function _initiateCfBuildsOAuth()        { _initiateOAuthGeneric('Cloudflare Builds',        CF_BUILDS_OAUTH_URL); }
 
-  async function _disconnectMcp(connId, el) {
-    if (_pending() || _disconnecting.has(connId)) return;
-    if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
-    const conns = State.get('mcp_connections') || [];
-    if (!conns.some(c => c.id === connId)) return;
+  /* Every row one card stands for. Google's card covers its Gmail, Calendar
+     and Drive rows, so disconnecting it has to remove all three. */
+  function _cardConns(connId, catalogId) {
+    const rows = _conns();
+    const group = catalogId
+      ? rows.filter(c => c.catalog_id === catalogId || (c.catalog_id && c.catalog_id.startsWith(catalogId + '-')))
+      : [];
+    return group.length ? group : rows.filter(c => c.id === connId);
+  }
 
-    const drop = () => {
-      _setConns(_conns().filter(c => c.id !== connId));
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
-    };
+  function _cardName(connId, catalogId) {
+    const entry = MCP_CATALOG.find(m => m.id === catalogId);
+    if (entry) return entry.name;
+    const row = _conns().find(c => c.id === connId);
+    return (row && row.name) || 'this integration';
+  }
 
-    // Local-only row (created in-session, never assigned a DB id): there is
-    // nothing server-side to delete, so drop it from State directly.
-    if (!_isPersistedId(connId)) { drop(); return; }
+  let _disconnectTarget = null;
 
-    // Persisted row: mcp-gateway loads this row's OAuth tokens server-side and
-    // keeps invoking the provider until the row is gone. Await the delete and
-    // claim "Disconnected" only once the DB confirms — a silently-failed write
-    // must not leave a revoked-looking integration live for the agents.
-    _disconnecting.add(connId);
-    let ok = false;
-    try {
-      await SB.db('mcp_connections').remove(connId);
-      ok = true;
-    } catch (_) {
-      // Leave the row in State so the card still reads "Connected" — the
-      // truth server-side.
-    } finally {
-      _disconnecting.delete(connId);
+  /* The dialog is built on <body> for as long as it is open: inside the view
+     it would sit under the sidebar and the side panels. */
+  function _askDisconnect(connId, catalogId, el) {
+    if (_pending() || !_cardConns(connId, catalogId).length) return;
+    _closeDisconnect();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'modal-disconnect';
+    overlay.innerHTML = `
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="disconnect-title" aria-describedby="disconnect-desc">
+        <div class="modal-hdr">
+          <h3 class="modal-title" id="disconnect-title">Disconnect ${_esc(_cardName(connId, catalogId))}?</h3>
+        </div>
+        <div class="modal-body">
+          <p class="intg-confirm-text" id="disconnect-desc">Your agents lose its tools right away. You can connect it again at any time.</p>
+          <div class="intg-confirm-actions">
+            <button type="button" class="btn" id="disconnect-cancel">Cancel</button>
+            <button type="button" class="btn btn-danger" id="disconnect-confirm"><span class="status-dot dot-r"></span> Disconnect</button>
+          </div>
+        </div>
+      </div>`;
+    const cancel = overlay.querySelector('#disconnect-cancel');
+    const confirmBtn = overlay.querySelector('#disconnect-confirm');
+    cancel.addEventListener('click', () => _closeDisconnect(el));
+    confirmBtn.addEventListener('click', () => _confirmDisconnect(el));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) _closeDisconnect(el); });
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); _closeDisconnect(el); return; }
+      if (e.key !== 'Tab') return;
+      // Two buttons and nothing else: Tab moves between them and stays inside.
+      e.preventDefault();
+      (document.activeElement === cancel && !confirmBtn.disabled ? confirmBtn : cancel).focus();
+    });
+    window.addEventListener('hashchange', _closeDisconnect);
+    _disconnectTarget = { connId, catalogId };
+    document.body.appendChild(overlay);
+    cancel.focus();
+  }
+
+  function _closeDisconnect(el) {
+    const target = _disconnectTarget;
+    _disconnectTarget = null;
+    window.removeEventListener('hashchange', _closeDisconnect);
+    document.getElementById('modal-disconnect')?.remove();
+    // The cards may have been redrawn since the dialog opened, so hand focus
+    // back to whichever button the card shows now.
+    if (!target || !(el instanceof Element)) return;
+    const btn = [...el.querySelectorAll('button[data-catalog-id]')].find(b => b.dataset.catalogId === target.catalogId);
+    if (btn) btn.focus();
+  }
+
+  async function _confirmDisconnect(el) {
+    const target = _disconnectTarget;
+    const confirmBtn = document.getElementById('disconnect-confirm');
+    if (!target || !confirmBtn || confirmBtn.disabled) return;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Disconnecting…';
+    await _disconnectMcp(target.connId, target.catalogId);
+    // Closed or pointed at another card while the delete ran: leave it be.
+    if (_disconnectTarget === target) _closeDisconnect(el);
+  }
+
+  async function _disconnectMcp(connId, catalogId) {
+    if (_pending()) return;
+    const rows = _cardConns(connId, catalogId);
+    if (!rows.length || rows.some(c => _disconnecting.has(c.id))) return;
+    const name = _cardName(connId, catalogId);
+
+    // A local-only row (created in-session, never assigned a DB id) has
+    // nothing server-side to delete. For a persisted row, mcp-gateway loads
+    // its OAuth tokens server-side and keeps invoking the provider until the
+    // row is gone, so a row leaves State only once the DB confirms its delete:
+    // a silently failed write must not leave a revoked-looking integration
+    // live for the agents.
+    const gone = new Set(rows.filter(c => !_isPersistedId(c.id)).map(c => c.id));
+    const persisted = rows.filter(c => _isPersistedId(c.id));
+    persisted.forEach(c => _disconnecting.add(c.id));
+    await Promise.all(persisted.map(async (c) => {
+      try {
+        await SB.db('mcp_connections').remove(c.id);
+        gone.add(c.id);
+      } catch (_) {
+        // Stays in State, so the card still reads "Connected": the truth
+        // server-side.
+      } finally {
+        _disconnecting.delete(c.id);
+      }
+    }));
+
+    if (gone.size) _setConns(_conns().filter(c => !gone.has(c.id)));
+    if (typeof Notify === 'undefined') return;
+    if (gone.size < rows.length) {
+      Notify.send({ title: 'Disconnect failed', message: `Could not disconnect ${name}. It is still active, please try again.`, type: 'error' });
+    } else {
+      Notify.send({ title: `${name} disconnected`, message: 'Your agents no longer have its tools.', type: 'system' });
     }
-    if (!ok) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Disconnect failed', message: 'Could not disconnect. The integration is still active, please try again.', type: 'error' });
-      return;
-    }
-    drop();
   }
 
   async function _addCustomMcp(e, el) {
@@ -923,5 +1004,5 @@ const IntegrationsView = (() => {
     commit(saved);
   }
 
-  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp, _connectZapier, _initiateOAuthGeneric };
+  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _askDisconnect, _connectMcp, _addCustomMcp, _connectZapier, _initiateOAuthGeneric };
 })();
