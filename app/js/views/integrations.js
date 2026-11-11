@@ -104,8 +104,9 @@ const IntegrationsView = (() => {
     const cleanHash = hashParts[0] || '#/security';
     history.replaceState(null, '', cleanHash);
     // The callback just inserted the row server-side: fetch again, and the
-    // State subscription redraws the cards when it lands.
-    _loadMcps();
+    // State subscription redraws the cards when it lands. With nothing
+    // loaded yet, render() is about to fetch anyway.
+    if (!_pending()) _loadMcps();
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: toast.title, message: toast.message, type: 'system' });
     }
@@ -155,7 +156,7 @@ const IntegrationsView = (() => {
             ${_renderMcpCards(MCP_CATALOG, _conns(), 'grid')}
           </div>
           <div style="margin-top:12px">
-            <button class="btn btn-sm" id="btn-add-custom-mcp">
+            <button class="btn btn-sm" id="btn-add-custom-mcp"${_pending() ? ' disabled' : ''}>
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
               Add Custom MCP
             </button>
@@ -245,6 +246,13 @@ const IntegrationsView = (() => {
     return Array.isArray(rows) ? rows : [];
   }
 
+  // Every change this view makes to the list. It retires any fetch still in
+  // flight, so an older answer can't undo the change when it lands.
+  function _setConns(rows) {
+    _loadSeq++;
+    State.set('mcp_connections', rows);
+  }
+
   // Signed in, and the user's rows have not arrived yet. Cards hold their
   // buttons until they do: a card drawn from a guess can offer Connect for
   // something already connected, or the reverse.
@@ -271,7 +279,7 @@ const IntegrationsView = (() => {
             <span class="intg-stat-num">${num(mcps.filter(m => m.status === 'connected').length)}</span>
             <span class="intg-stat-label">Online</span>
           </div>
-          ${errors ? `<div class="intg-stat" title="Connections whose OAuth token was rejected by the provider — click Reconnect on the card to re-authorize">
+          ${errors ? `<div class="intg-stat" title="Connections whose OAuth token was rejected by the provider. Click Reconnect on the card to re-authorize.">
             <span class="status-dot dot-r"></span>
             <span class="intg-stat-num">${errors}</span>
             <span class="intg-stat-label">Reconnect</span>
@@ -285,6 +293,8 @@ const IntegrationsView = (() => {
     if (stats) stats.innerHTML = _statsHTML();
     const note = el.querySelector('.intg-load-error');
     if (note) note.hidden = !(_loadFailed && _pending());
+    const add = el.querySelector('#btn-add-custom-mcp');
+    if (add) add.disabled = _pending();
     _applyFilters(el);
   }
 
@@ -293,19 +303,29 @@ const IntegrationsView = (() => {
   // user redraws the cards.
   let _mounted = null;
   function _onChange() {
-    if (_mounted && document.contains(_mounted) && _mounted.querySelector('.integrations-wrap')) _paint(_mounted);
+    if (_showing()) _paint(_mounted);
   }
-  // Signing in while the view is open: fetch that account's rows here too,
-  // so the cards never wait on a fetch made elsewhere.
-  function _onUser() {
-    if (!_mounted || !document.contains(_mounted)) return;
+  function _showing() {
+    return !!_mounted && document.contains(_mounted) && !!_mounted.querySelector('.integrations-wrap');
+  }
+  // A different account (or none) while the view is open: fetch its rows
+  // here too, so the cards never wait on a fetch made elsewhere. The same
+  // user set again (a token refresh) changes nothing and redraws nothing.
+  let _userId = null;
+  function _onUser(user) {
+    const id = user ? user.id : null;
+    if (id === _userId) return;
+    _userId = id;
+    if (!_showing()) return;
     if (_pending()) _loadMcps();
-    _onChange();
+    _paint(_mounted);
   }
   function _watch(el) {
     _mounted = null; // State.on replays the current value; skip that paint
     State.off('mcp_connections', _onChange); State.on('mcp_connections', _onChange);
     State.off('user', _onUser); State.on('user', _onUser);
+    const user = State.get('user');
+    _userId = user ? user.id : null;
     _mounted = el;
   }
 
@@ -466,8 +486,7 @@ const IntegrationsView = (() => {
     // Delegate connect/disconnect/reconnect clicks. Bind ONCE: render(el)
     // re-runs _bindEvents on the same el each time the tab is opened and el
     // persists across them (only its innerHTML is replaced), so re-adding the
-    // delegate each time
-    // would stack listeners and fire the handler N times on a single click.
+    // delegate each time would stack listeners and fire the handler N times on a single click.
     // The handler reads ids off the clicked node and calls module fns, so a
     // once-bound delegate stays correct across re-renders.
     if (!el.dataset.intgDelegated) {
@@ -561,6 +580,7 @@ const IntegrationsView = (() => {
   const REPLICATE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/replicate-oauth`;
 
   async function _connectMcp(catalogId, el, opts) {
+    if (_pending()) return;
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
     if (catalog.comingSoon) {
@@ -643,7 +663,7 @@ const IntegrationsView = (() => {
     const user = State.get('user');
 
     const announce = (conn) => {
-      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
+      _setConns([..._conns(), conn]);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Connected', message: `${catalog.name} is now available to all your agents.`, type: 'system' });
     };
 
@@ -738,13 +758,13 @@ const IntegrationsView = (() => {
   function _initiateCfBuildsOAuth()        { _initiateOAuthGeneric('Cloudflare Builds',        CF_BUILDS_OAUTH_URL); }
 
   async function _disconnectMcp(connId, el) {
-    if (_disconnecting.has(connId)) return;
+    if (_pending() || _disconnecting.has(connId)) return;
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
     const conns = State.get('mcp_connections') || [];
     if (!conns.some(c => c.id === connId)) return;
 
     const drop = () => {
-      State.set('mcp_connections', (State.get('mcp_connections') || []).filter(c => c.id !== connId));
+      _setConns(_conns().filter(c => c.id !== connId));
       if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
     };
 
@@ -776,6 +796,7 @@ const IntegrationsView = (() => {
 
   async function _addCustomMcp(e, el) {
     e.preventDefault();
+    if (_pending()) return;
     const errEl = document.getElementById('mcp-error');
     const name = document.getElementById('mcp-name').value.trim();
     const url = document.getElementById('mcp-url').value.trim();
@@ -784,7 +805,7 @@ const IntegrationsView = (() => {
     if (!name || !url) { errEl.textContent = 'Name and URL are required.'; return; }
 
     const finish = (conn) => {
-      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
+      _setConns([..._conns(), conn]);
       document.getElementById('modal-add-mcp')?.classList.remove('open');
       document.getElementById('mcp-custom-form')?.reset();
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
@@ -838,6 +859,7 @@ const IntegrationsView = (() => {
   // authenticates the query param.
   async function _connectZapier(e, el) {
     e.preventDefault();
+    if (_pending()) return;
     const errEl = document.getElementById('zapier-error');
     const url = (document.getElementById('zapier-url')?.value || '').trim();
     let parsed;
@@ -855,7 +877,7 @@ const IntegrationsView = (() => {
     // in place (so the card stays one row) or appending a fresh one.
     const commit = (conn) => {
       const cur = State.get('mcp_connections') || [];
-      State.set('mcp_connections', existing ? cur.map(c => (c.id === existing.id ? conn : c)) : [...cur, conn]);
+      _setConns(existing ? cur.map(c => (c.id === existing.id ? conn : c)) : [...cur, conn]);
       document.getElementById('modal-zapier')?.classList.remove('open');
       document.getElementById('zapier-form')?.reset();
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });

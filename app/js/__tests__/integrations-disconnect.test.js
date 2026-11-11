@@ -96,6 +96,9 @@ IntegrationsView.MCP_CATALOG.push({
 const UUID = '3f1aa8c0-1234-4abc-89ab-0123456789ab';
 const el = () => document.getElementById('test-el');
 const seed = (rows) => State.set('mcp_connections', rows);
+// A signed-in user whose connections have loaded (none yet). Tests that
+// start from other rows call seed() after this.
+const signIn = () => { State.set('user', { id: 'u1' }); if (!Array.isArray(State.get('mcp_connections'))) seed([]); };
 
 function setupCustomForm(name, url, auth = 'none', transport = 'json-rpc') {
   document.body.innerHTML += `
@@ -204,7 +207,7 @@ describe('IntegrationsView._disconnectMcp', () => {
 
 describe('IntegrationsView._connectMcp (standard / persisted)', () => {
   it('seeds State from the returned DB row so the id is the real UUID', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     await IntegrationsView._connectMcp('teststd', el());
     const conns = State.get('mcp_connections');
     expect(conns).toHaveLength(1);
@@ -216,7 +219,7 @@ describe('IntegrationsView._connectMcp (standard / persisted)', () => {
 
   it('adds nothing and warns when the insert fails', async () => {
     createImpl = async () => { throw new Error('insert failed'); };
-    State.set('user', { id: 'u1' });
+    signIn();
     await IntegrationsView._connectMcp('teststd', el());
     expect(State.get('mcp_connections') || []).toHaveLength(0);
     expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Connection failed', type: 'error' }));
@@ -231,7 +234,7 @@ describe('IntegrationsView._connectMcp (standard / persisted)', () => {
   });
 
   it('ignores a re-entrant click while an insert is in flight', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     let release;
     createImpl = () => new Promise((res) => { release = res; });
     const p1 = IntegrationsView._connectMcp('teststd', el());
@@ -249,7 +252,7 @@ describe('IntegrationsView._addCustomMcp', () => {
   const ev = { preventDefault() {} };
 
   it('seeds State from the returned DB row (real UUID, reconciled)', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     setupCustomForm('My MCP', 'https://x.example.com');
     await IntegrationsView._addCustomMcp(ev, el());
     const conns = State.get('mcp_connections');
@@ -261,7 +264,7 @@ describe('IntegrationsView._addCustomMcp', () => {
 
   it('keeps the modal open with an error when the insert fails', async () => {
     createImpl = async () => { throw new Error('insert failed'); };
-    State.set('user', { id: 'u1' });
+    signIn();
     setupCustomForm('My MCP', 'https://x.example.com');
     await IntegrationsView._addCustomMcp(ev, el());
     expect(State.get('mcp_connections') || []).toHaveLength(0);
@@ -269,7 +272,7 @@ describe('IntegrationsView._addCustomMcp', () => {
   });
 
   it('validates name and url before any DB write', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     setupCustomForm('', '');
     await IntegrationsView._addCustomMcp(ev, el());
     expect(createCalls).toHaveLength(0);
@@ -286,7 +289,7 @@ describe('IntegrationsView._connectZapier', () => {
   });
 
   it('rejects a non-zapier url with no DB write', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     setupZapierForm('https://evil.example.com/');
     await IntegrationsView._connectZapier(ev, el());
     expect(createCalls).toHaveLength(0);
@@ -294,7 +297,7 @@ describe('IntegrationsView._connectZapier', () => {
   });
 
   it('seeds State from the returned row (real UUID) on a fresh connect', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     setupZapierForm(ZURL);
     await IntegrationsView._connectZapier(ev, el());
     const conns = State.get('mcp_connections');
@@ -304,7 +307,7 @@ describe('IntegrationsView._connectZapier', () => {
   });
 
   it('reconciles an in-session mc- row to the persisted UUID on reconnect (no duplicate)', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     seed([{ id: 'mc-9', name: 'Zapier', catalog_id: 'zapier', server_url: 'https://mcp.zapier.com/old', status: 'connected' }]);
     setupZapierForm(ZURL);
     await IntegrationsView._connectZapier(ev, el());
@@ -315,7 +318,7 @@ describe('IntegrationsView._connectZapier', () => {
   });
 
   it('updates an existing persisted row in place on reconnect', async () => {
-    State.set('user', { id: 'u1' });
+    signIn();
     seed([{ id: UUID, name: 'Zapier', catalog_id: 'zapier', server_url: 'https://mcp.zapier.com/old', status: 'connected' }]);
     setupZapierForm(ZURL);
     await IntegrationsView._connectZapier(ev, el());
@@ -329,7 +332,7 @@ describe('IntegrationsView._connectZapier', () => {
 
   it('leaves State unchanged and warns when the save fails', async () => {
     createImpl = async () => { throw new Error('insert failed'); };
-    State.set('user', { id: 'u1' });
+    signIn();
     setupZapierForm(ZURL);
     await IntegrationsView._connectZapier(ev, el());
     expect(State.get('mcp_connections') || []).toHaveLength(0);
@@ -459,6 +462,90 @@ describe('IntegrationsView cards follow the loaded connections', () => {
     expect(button('Notion').textContent).toBe('Loading…');
     await flush();
     expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('drops rows fetched for one account once another has signed in', async () => {
+    State.set('user', { id: 'u1' });
+    const deliver = [];
+    listImpl = () => new Promise(r => { deliver.push(r); });
+    IntegrationsView.render(el());
+    State.set('user', { id: 'u2' });
+    expect(deliver.length).toBe(2);
+    deliver[0]([notion]);
+    await flush();
+    expect(State.get('mcp_connections')).toBeUndefined();
+    expect(button('Notion').textContent).toBe('Loading…');
+    deliver[1]([]);
+    await flush();
+    expect(button('Notion').classList.contains('mcp-connect-btn')).toBe(true);
+  });
+
+  it('lets only the latest fetch answer', async () => {
+    State.set('user', { id: 'u1' });
+    const deliver = [];
+    listImpl = () => { const p = new Promise((res, rej) => { deliver.push({ res, rej }); }); return p; };
+    IntegrationsView.render(el());
+    deliver[0].rej(new Error('offline'));
+    await flush();
+    el().querySelector('.intg-retry-btn').click();
+    el().querySelector('.intg-retry-btn').click();
+    expect(deliver.length).toBe(3);
+    deliver[2].res([notion]);
+    deliver[1].res([]);
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([notion]);
+  });
+
+  it('does not fetch or redraw when the same user is set again', async () => {
+    State.set('user', { id: 'u1' });
+    seed([notion]);
+    IntegrationsView.render(el());
+    const before = button('Notion');
+    State.set('user', { id: 'u1', is_admin: true });
+    expect(listCalls).toBe(0);
+    expect(button('Notion')).toBe(before);
+  });
+
+  it('refuses every change until the rows have loaded', async () => {
+    State.set('user', { id: 'u1' });
+    listImpl = async () => { throw new Error('offline'); };
+    IntegrationsView.render(el());
+    await flush();
+    expect(document.getElementById('btn-add-custom-mcp').disabled).toBe(true);
+
+    setupCustomForm('Mine', 'https://mcp.example.com');
+    await IntegrationsView._addCustomMcp({ preventDefault() {} }, el());
+    setupZapierForm('https://mcp.zapier.com/api/v1/connect?token=abc');
+    await IntegrationsView._connectZapier({ preventDefault() {} }, el());
+    await IntegrationsView._connectMcp('teststd', el());
+    await IntegrationsView._disconnectMcp(UUID, el());
+    expect(createCalls.length).toBe(0);
+    expect(removeCalls.length).toBe(0);
+    expect(confirmCalls).toBe(0);
+    expect(State.get('mcp_connections')).toBeUndefined();
+  });
+
+  it('enables Add custom MCP once the rows arrive', async () => {
+    State.set('user', { id: 'u1' });
+    IntegrationsView.render(el());
+    expect(document.getElementById('btn-add-custom-mcp').disabled).toBe(true);
+    await flush();
+    expect(document.getElementById('btn-add-custom-mcp').disabled).toBe(false);
+  });
+
+  it('keeps a change made here when an older fetch lands after it', async () => {
+    State.set('user', { id: 'u1' });
+    seed([notion]);
+    IntegrationsView.render(el());
+    let deliver;
+    listImpl = () => new Promise(r => { deliver = r; });
+    el().querySelector('.intg-retry-btn').click();
+    await IntegrationsView._disconnectMcp(UUID, el());
+    expect(State.get('mcp_connections')).toEqual([]);
+    deliver([notion]);
+    await flush();
+    expect(State.get('mcp_connections')).toEqual([]);
+    expect(button('Notion').classList.contains('mcp-connect-btn')).toBe(true);
   });
 
   it('keeps the search, the filter and the list view when a connection changes', () => {
