@@ -182,10 +182,10 @@ const ChatView = (() => {
         </button>
         <div class="space-card-body" id="${Utils.escAttr('space-body-' + id)}">${body}</div>
         ${pending ? _approvalHTML(id, pending) : ''}
-        <div class="space-card-foot">
+        ${thread.length ? `<div class="space-card-foot">
           <span>${live ? (live.text ? 'Writing…' : '') : _esc(_time(lastTs))}</span>
           ${more}
-        </div>
+        </div>` : ''}
       </article>`;
   }
 
