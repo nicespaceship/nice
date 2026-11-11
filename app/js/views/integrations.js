@@ -60,73 +60,6 @@ const IntegrationsView = (() => {
   // can't open a second insert while the first is unconfirmed.
   const _connecting = new Set();
 
-  /* ── Demo seed data ───────────────────────────────────────────── */
-  function _seedMcpConnections() {
-    const sbUrl = (typeof SB !== 'undefined' && SB._url) ? SB._url : 'https://zacllshbgmnwsmliteqx.supabase.co';
-    return [
-      {
-        id: 'mc-gmail', name: 'Gmail', catalog_id: 'google-gmail',
-        server_url: sbUrl + '/functions/v1/gmail-mcp',
-        transport: 'json-rpc', auth_type: 'oauth',
-        available_tools: ['gmail_search_messages', 'gmail_read_message', 'gmail_list_labels', 'gmail_send_message', 'gmail_create_draft', 'gmail_reply_message'],
-        tool_definitions: {
-          gmail_search_messages: { description: 'Search Gmail messages using query syntax (is:unread, from:, subject:, has:attachment)', inputSchema: { type:'object', properties: { q:{type:'string',description:'Gmail search query'}, maxResults:{type:'number',description:'Max results (1-20)'} } } },
-          gmail_read_message: { description: 'Read the full content of a Gmail message by ID', inputSchema: { type:'object', properties: { messageId:{type:'string',description:'Message ID from search'} }, required:['messageId'] } },
-          gmail_list_labels: { description: 'List all Gmail labels', inputSchema: { type:'object', properties:{} } },
-          gmail_send_message: { description: 'Send an email message', inputSchema: { type:'object', properties: { to:{type:'string',description:'Recipient email address'}, subject:{type:'string',description:'Email subject'}, body:{type:'string',description:'Email body (plain text or HTML)'}, cc:{type:'string',description:'CC recipients (comma-separated)'}, bcc:{type:'string',description:'BCC recipients (comma-separated)'} }, required:['to','subject','body'] } },
-          gmail_create_draft: { description: 'Create an email draft without sending', inputSchema: { type:'object', properties: { to:{type:'string',description:'Recipient email'}, subject:{type:'string',description:'Subject line'}, body:{type:'string',description:'Draft body'} }, required:['subject','body'] } },
-          gmail_reply_message: { description: 'Reply to an existing email thread', inputSchema: { type:'object', properties: { messageId:{type:'string',description:'ID of message to reply to'}, body:{type:'string',description:'Reply body'}, replyAll:{type:'boolean',description:'Reply to all recipients'} }, required:['messageId','body'] } },
-        },
-        status: 'disconnected', created_at: new Date().toISOString(),
-      },
-      {
-        id: 'mc-calendar', name: 'Google Calendar', catalog_id: 'google-calendar',
-        server_url: sbUrl + '/functions/v1/calendar-mcp',
-        transport: 'json-rpc', auth_type: 'oauth',
-        available_tools: ['calendar_list_events', 'calendar_get_event', 'calendar_list_calendars', 'calendar_create_event', 'calendar_update_event', 'calendar_delete_event'],
-        tool_definitions: {
-          calendar_list_events: { description: 'List calendar events within a time range', inputSchema: { type:'object', properties: { timeMin:{type:'string'}, timeMax:{type:'string'}, maxResults:{type:'number'} } } },
-          calendar_get_event: { description: 'Get details of a specific calendar event', inputSchema: { type:'object', properties: { eventId:{type:'string'} }, required:['eventId'] } },
-          calendar_list_calendars: { description: 'List all calendars', inputSchema: { type:'object', properties:{} } },
-          calendar_create_event: { description: 'Create a new calendar event', inputSchema: { type:'object', properties: { summary:{type:'string',description:'Event title'}, start:{type:'string',description:'Start time (ISO 8601)'}, end:{type:'string',description:'End time (ISO 8601)'}, description:{type:'string',description:'Event description'}, location:{type:'string',description:'Event location'}, attendees:{type:'array',items:{type:'string'},description:'Attendee emails'} }, required:['summary','start','end'] } },
-          calendar_update_event: { description: 'Update an existing calendar event', inputSchema: { type:'object', properties: { eventId:{type:'string'}, summary:{type:'string'}, start:{type:'string'}, end:{type:'string'}, description:{type:'string'}, location:{type:'string'} }, required:['eventId'] } },
-          calendar_delete_event: { description: 'Delete a calendar event', inputSchema: { type:'object', properties: { eventId:{type:'string'} }, required:['eventId'] } },
-        },
-        status: 'disconnected', created_at: new Date().toISOString(),
-      },
-      {
-        id: 'mc-drive', name: 'Google Drive', catalog_id: 'google-drive',
-        server_url: sbUrl + '/functions/v1/drive-mcp',
-        transport: 'json-rpc', auth_type: 'oauth',
-        available_tools: ['drive_search_files', 'drive_get_file', 'drive_read_file', 'drive_create_file', 'drive_update_file', 'drive_upload_file'],
-        tool_definitions: {
-          drive_search_files: { description: 'Search files in Google Drive by name or content', inputSchema: { type:'object', properties: { q:{type:'string',description:'Search query'}, maxResults:{type:'number'} } } },
-          drive_get_file: { description: 'Get metadata of a specific file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
-          drive_read_file: { description: 'Read the text content of a file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
-          drive_create_file: { description: 'Create a new file in Google Drive', inputSchema: { type:'object', properties: { name:{type:'string',description:'File name'}, content:{type:'string',description:'File content (text)'}, mimeType:{type:'string',description:'MIME type (default: text/plain)'}, folderId:{type:'string',description:'Parent folder ID'} }, required:['name','content'] } },
-          drive_update_file: { description: 'Update the content of an existing file', inputSchema: { type:'object', properties: { fileId:{type:'string'}, content:{type:'string',description:'New file content'} }, required:['fileId','content'] } },
-          drive_upload_file: { description: 'Upload a file to Google Drive', inputSchema: { type:'object', properties: { name:{type:'string',description:'File name'}, content:{type:'string',description:'Base64-encoded file content'}, mimeType:{type:'string',description:'MIME type'}, folderId:{type:'string',description:'Parent folder ID'} }, required:['name','content','mimeType'] } },
-        },
-        status: 'disconnected', created_at: new Date().toISOString(),
-      },
-      {
-        id: 'mc-social', name: 'Social Media', catalog_id: 'buffer',
-        server_url: sbUrl + '/functions/v1/social-mcp',
-        transport: 'json-rpc', auth_type: 'oauth',
-        available_tools: ['social_list_queued', 'social_create_post', 'social_publish_post', 'social_schedule_post', 'social_get_analytics', 'social_list_platforms'],
-        tool_definitions: {
-          social_list_queued: { description: 'List approved content from the outbox queue', inputSchema: { type:'object', properties: { status:{type:'string'}, limit:{type:'number'} } } },
-          social_create_post: { description: 'Draft a social media post for review', inputSchema: { type:'object', properties: { content:{type:'string'}, platforms:{type:'array',items:{type:'string'}}, title:{type:'string'} }, required:['content'] } },
-          social_publish_post: { description: 'Publish an approved post to a platform', inputSchema: { type:'object', properties: { post_id:{type:'string'}, platform:{type:'string'} }, required:['post_id','platform'] } },
-          social_schedule_post: { description: 'Schedule a post for future publishing', inputSchema: { type:'object', properties: { post_id:{type:'string'}, platform:{type:'string'}, scheduled_at:{type:'string'} }, required:['post_id','platform','scheduled_at'] } },
-          social_get_analytics: { description: 'Get engagement metrics for published posts', inputSchema: { type:'object', properties: { platform:{type:'string'} }, required:['platform'] } },
-          social_list_platforms: { description: 'List available social platforms and connection status', inputSchema: { type:'object', properties:{} } },
-        },
-        status: 'disconnected', created_at: new Date().toISOString(),
-      },
-    ];
-  }
-
   /* ── OAuth Return Handler ─────────────────────────────────────── */
   /* Lookup of `?<provider>_connected=true` params we may receive when
      the OAuth callback redirects back here. Adding a new provider is
@@ -170,15 +103,10 @@ const IntegrationsView = (() => {
     // Clean URL first so a re-render won't see the param a second time.
     const cleanHash = hashParts[0] || '#/security';
     history.replaceState(null, '', cleanHash);
-    // Re-render the view once the async DB load completes — without this
-    // the freshly-inserted mcp_connections row arrives AFTER render() has
-    // already painted the cards from the seed, leaving the just-connected
-    // service stuck on "Connect" until the user navigates away and back.
-    _loadMcps((rows) => {
-      if (!el || !document.contains(el)) return;
-      if (!Array.isArray(rows) || rows.length === 0) return;
-      render(el);
-    });
+    // The callback just inserted the row server-side: fetch again, and the
+    // State subscription redraws the cards when it lands. With nothing
+    // loaded yet, render() is about to fetch anyway.
+    if (!_pending()) _loadMcps();
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: toast.title, message: toast.message, type: 'system' });
     }
@@ -189,8 +117,10 @@ const IntegrationsView = (() => {
     // Handle OAuth return redirect
     _handleOAuthReturn(el);
 
-    const mcps = State.get('mcp_connections') || _loadMcps();
-    const totalTools = mcps.reduce((sum, c) => sum + (c.available_tools || []).length, 0);
+    // A fresh mount starts from the default toolbar, so the filter state
+    // matches what the markup below shows.
+    _mcpView = 'grid'; _mcpCat = 'all'; _mcpQ = '';
+    if (_pending()) _loadMcps();
 
     /* Derive unique categories */
     const mcpCats = [...new Set(MCP_CATALOG.map(m => m.cat))];
@@ -199,26 +129,8 @@ const IntegrationsView = (() => {
     el.innerHTML = `
       <div class="integrations-wrap">
         <!-- Stats Bar -->
-        <div class="integrations-stats">
-          <div class="intg-stat">
-            <span class="intg-stat-num">${mcps.length}</span>
-            <span class="intg-stat-label">Connections</span>
-          </div>
-          <div class="intg-stat">
-            <span class="intg-stat-num">${totalTools}</span>
-            <span class="intg-stat-label">Tools</span>
-          </div>
-          <div class="intg-stat">
-            <span class="status-dot dot-g"></span>
-            <span class="intg-stat-num">${mcps.filter(m => m.status === 'connected').length}</span>
-            <span class="intg-stat-label">Online</span>
-          </div>
-          ${mcps.some(m => m.status === 'error') ? `<div class="intg-stat" title="Connections whose OAuth token was rejected by the provider — click Reconnect on the card to re-authorize">
-            <span class="status-dot dot-r"></span>
-            <span class="intg-stat-num">${mcps.filter(m => m.status === 'error').length}</span>
-            <span class="intg-stat-label">Reconnect</span>
-          </div>` : ''}
-        </div>
+        <div class="integrations-stats">${_statsHTML()}</div>
+        <p class="intg-load-error" role="alert"${_loadFailed && _pending() ? '' : ' hidden'}>Your connections did not load. <button type="button" class="btn btn-xs intg-retry-btn">Try again</button></p>
 
         <!-- ═══ MCP Servers Section ═══ -->
         <div class="integrations-section">
@@ -241,10 +153,10 @@ const IntegrationsView = (() => {
             </div>
           </div>
           <div class="mcp-catalog-grid" id="intg-mcp-grid">
-            ${_renderMcpCards(MCP_CATALOG, mcps, 'grid')}
+            ${_renderMcpCards(MCP_CATALOG, _conns(), 'grid')}
           </div>
           <div style="margin-top:12px">
-            <button class="btn btn-sm" id="btn-add-custom-mcp">
+            <button class="btn btn-sm" id="btn-add-custom-mcp"${_pending() ? ' disabled' : ''}>
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
               Add Custom MCP
             </button>
@@ -322,9 +234,102 @@ const IntegrationsView = (() => {
       </div>
     `;
 
-    _bindEvents(el, null, mcps);
+    _bindEvents(el);
+    _watch(el);
 
     // AI Models moved to separate tab in SecurityView
+  }
+
+  /* ── Connection state ─────────────────────────────────────────── */
+  function _conns() {
+    const rows = State.get('mcp_connections');
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  // Every change this view makes to the list. It retires any fetch still in
+  // flight, so an older answer can't undo the change when it lands.
+  function _setConns(rows) {
+    _loadSeq++;
+    State.set('mcp_connections', rows);
+  }
+
+  // Signed in, and the user's rows have not arrived yet. Cards hold their
+  // buttons until they do: a card drawn from a guess can offer Connect for
+  // something already connected, or the reverse.
+  // Shown in a form that was already open when the view went pending.
+  const _NOT_LOADED = 'Your connections are still loading. Try again in a moment.';
+
+  function _pending() {
+    return !!State.get('user') && !Array.isArray(State.get('mcp_connections'));
+  }
+
+  function _statsHTML() {
+    const mcps = _conns();
+    const wait = _pending();
+    const num = (n) => (wait ? '…' : n);
+    const errors = mcps.filter(m => m.status === 'error').length;
+    return `
+          <div class="intg-stat">
+            <span class="intg-stat-num">${num(mcps.length)}</span>
+            <span class="intg-stat-label">Connections</span>
+          </div>
+          <div class="intg-stat">
+            <span class="intg-stat-num">${num(mcps.reduce((sum, c) => sum + (c.available_tools || []).length, 0))}</span>
+            <span class="intg-stat-label">Tools</span>
+          </div>
+          <div class="intg-stat">
+            <span class="status-dot dot-g"></span>
+            <span class="intg-stat-num">${num(mcps.filter(m => m.status === 'connected').length)}</span>
+            <span class="intg-stat-label">Online</span>
+          </div>
+          ${errors ? `<div class="intg-stat" title="Connections whose OAuth token was rejected by the provider. Click Reconnect on the card to re-authorize.">
+            <span class="status-dot dot-r"></span>
+            <span class="intg-stat-num">${errors}</span>
+            <span class="intg-stat-label">Reconnect</span>
+          </div>` : ''}`;
+  }
+
+  // Redraw what depends on the connections (stats, cards) and nothing else,
+  // so the search text, the filter and the grid or list choice stay put.
+  function _paint(el) {
+    const stats = el.querySelector('.integrations-stats');
+    if (stats) stats.innerHTML = _statsHTML();
+    const note = el.querySelector('.intg-load-error');
+    if (note) note.hidden = !(_loadFailed && _pending());
+    const add = el.querySelector('#btn-add-custom-mcp');
+    if (add) add.disabled = _pending();
+    _applyFilters(el);
+  }
+
+  // One subscription for the mounted view: whatever changes the connections
+  // (the boot fetch, connect, disconnect, tool discovery) or the signed-in
+  // user redraws the cards.
+  let _mounted = null;
+  function _onChange() {
+    if (_showing()) _paint(_mounted);
+  }
+  function _showing() {
+    return !!_mounted && document.contains(_mounted) && !!_mounted.querySelector('.integrations-wrap');
+  }
+  // A different account (or none) while the view is open: fetch its rows
+  // here too, so the cards never wait on a fetch made elsewhere. The same
+  // user set again (a token refresh) changes nothing and redraws nothing.
+  let _userId = null;
+  function _onUser(user) {
+    const id = user ? user.id : null;
+    if (id === _userId) return;
+    _userId = id;
+    if (!_showing()) return;
+    if (_pending()) _loadMcps();
+    _paint(_mounted);
+  }
+  function _watch(el) {
+    _mounted = null; // State.on replays the current value; skip that paint
+    State.off('mcp_connections', _onChange); State.on('mcp_connections', _onChange);
+    State.off('user', _onUser); State.on('user', _onUser);
+    const user = State.get('user');
+    _userId = user ? user.id : null;
+    _mounted = el;
   }
 
   /* ── Card Renderers ──────────────────────────────────────────── */
@@ -332,6 +337,9 @@ const IntegrationsView = (() => {
     const sizeCls = size === 'xs' ? 'btn-xs' : 'btn-sm';
     if (mcp.comingSoon) {
       return `<button class="btn ${sizeCls}" disabled>Coming soon</button>`;
+    }
+    if (_pending()) {
+      return `<button class="btn ${sizeCls}" disabled>${_loadFailed ? 'Unavailable' : 'Loading…'}</button>`;
     }
     if (conn && conn.status === 'error') {
       const baseTip = 'The OAuth token for this connection was rejected by the provider. Click to re-authorize.';
@@ -440,44 +448,48 @@ const IntegrationsView = (() => {
   /* ── Filter & View Logic ─────────────────────────────────────── */
   let _mcpView = 'grid', _mcpCat = 'all', _mcpQ = '';
 
-  function _applyFilters(section, el, apis, mcps) {
-    if (section === 'mcp' || section === 'both') {
-      let filtered = MCP_CATALOG;
-      if (_mcpCat !== 'all') filtered = filtered.filter(m => m.cat === _mcpCat);
-      if (_mcpQ) filtered = filtered.filter(m => (m.name + ' ' + m.desc).toLowerCase().includes(_mcpQ));
-      const grid = el.querySelector('#intg-mcp-grid');
-      if (grid) {
-        grid.className = _mcpView === 'list' ? 'intg-list-container' : 'mcp-catalog-grid';
-        grid.innerHTML = _renderMcpCards(filtered, mcps, _mcpView);
-      }
+  function _applyFilters(el) {
+    let filtered = MCP_CATALOG;
+    if (_mcpCat !== 'all') filtered = filtered.filter(m => m.cat === _mcpCat);
+    if (_mcpQ) filtered = filtered.filter(m => (m.name + ' ' + m.desc).toLowerCase().includes(_mcpQ));
+    const grid = el.querySelector('#intg-mcp-grid');
+    if (grid) {
+      grid.className = _mcpView === 'list' ? 'intg-list-container' : 'mcp-catalog-grid';
+      grid.innerHTML = _renderMcpCards(filtered, _conns(), _mcpView);
     }
   }
 
   /* ── Data Loading ─────────────────────────────────────────────── */
-  /* `onAsyncLoad` fires once the DB fetch returns rows so callers
-     (e.g. the OAuth-return handler) can re-render with real data.
-     Sync return is the seed for the first paint. */
-  function _loadMcps(onAsyncLoad) {
+  /* Fetch the user's rows into State; the subscription in _watch redraws.
+     A failed fetch leaves State untouched and shows "Try again". Only the
+     latest call may answer, and only for the account that asked. */
+  let _loadSeq = 0;
+  let _loadFailed = false;
+  function _loadMcps() {
     const user = State.get('user');
-    if (!user) return [];
+    if (!user) return;
+    const seq = ++_loadSeq;
+    _loadFailed = false;
+    const current = () => {
+      const now = State.get('user');
+      return seq === _loadSeq && !!now && now.id === user.id;
+    };
     SB.db('mcp_connections').list({ userId: user.id }).then(rows => {
-      if (rows && rows.length) {
-        State.set('mcp_connections', rows);
-        if (typeof onAsyncLoad === 'function') onAsyncLoad(rows);
-      }
-    }).catch(() => {});
-    const seed = _seedMcpConnections();
-    State.set('mcp_connections', seed);
-    return seed;
+      if (!Array.isArray(rows)) throw new Error('No rows');
+      if (current()) State.set('mcp_connections', rows);
+    }).catch(() => {
+      if (!current()) return;
+      _loadFailed = true;
+      _onChange();
+    });
   }
 
   /* ── Events ───────────────────────────────────────────────────── */
-  function _bindEvents(el, _unused, mcps) {
+  function _bindEvents(el) {
     // Delegate connect/disconnect/reconnect clicks. Bind ONCE: render(el)
-    // re-runs _bindEvents on the same el on every re-render (OAuth return,
-    // connect, disconnect, custom/Zapier add) and el persists across them
-    // (only its innerHTML is replaced), so re-adding the delegate each time
-    // would stack listeners and fire the handler N times on a single click.
+    // re-runs _bindEvents on the same el each time the tab is opened and el
+    // persists across them (only its innerHTML is replaced), so re-adding the
+    // delegate each time would stack listeners and fire the handler N times on a single click.
     // The handler reads ids off the clicked node and calls module fns, so a
     // once-bound delegate stays correct across re-renders.
     if (!el.dataset.intgDelegated) {
@@ -491,13 +503,14 @@ const IntegrationsView = (() => {
         if (mcpReconn) return _connectMcp(mcpReconn.dataset.catalogId, el, { reconnect: true });
         const mcpDisc = e.target.closest('.mcp-disconnect-btn');
         if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
+        if (e.target.closest('.intg-retry-btn')) { _loadMcps(); _paint(el); }
       });
     }
 
     // MCP search
     document.getElementById('intg-mcp-search')?.addEventListener('input', (e) => {
       _mcpQ = e.target.value.toLowerCase().trim();
-      _applyFilters('mcp', el, [], mcps);
+      _applyFilters(el);
     });
 
     // MCP category filter pills
@@ -506,12 +519,12 @@ const IntegrationsView = (() => {
       if (!btn) return;
       _mcpCat = btn.dataset.cat;
       el.querySelectorAll('#intg-mcp-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === _mcpCat));
-      _applyFilters('mcp', el, [], mcps);
+      _applyFilters(el);
     });
 
     // View toggle (grid/list)
-    document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, [], mcps); });
-    document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, [], mcps); });
+    document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters(el); });
+    document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters(el); });
     // Custom MCP modal
     document.getElementById('btn-add-custom-mcp')?.addEventListener('click', () => {
       document.getElementById('modal-add-mcp')?.classList.add('open');
@@ -570,6 +583,7 @@ const IntegrationsView = (() => {
   const REPLICATE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/replicate-oauth`;
 
   async function _connectMcp(catalogId, el, opts) {
+    if (_pending()) return;
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
     if (catalog.comingSoon) {
@@ -652,8 +666,7 @@ const IntegrationsView = (() => {
     const user = State.get('user');
 
     const announce = (conn) => {
-      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
-      render(el);
+      _setConns([..._conns(), conn]);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Connected', message: `${catalog.name} is now available to all your agents.`, type: 'system' });
     };
 
@@ -748,14 +761,13 @@ const IntegrationsView = (() => {
   function _initiateCfBuildsOAuth()        { _initiateOAuthGeneric('Cloudflare Builds',        CF_BUILDS_OAUTH_URL); }
 
   async function _disconnectMcp(connId, el) {
-    if (_disconnecting.has(connId)) return;
+    if (_pending() || _disconnecting.has(connId)) return;
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
     const conns = State.get('mcp_connections') || [];
     if (!conns.some(c => c.id === connId)) return;
 
     const drop = () => {
-      State.set('mcp_connections', (State.get('mcp_connections') || []).filter(c => c.id !== connId));
-      render(el);
+      _setConns(_conns().filter(c => c.id !== connId));
       if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
     };
 
@@ -788,6 +800,7 @@ const IntegrationsView = (() => {
   async function _addCustomMcp(e, el) {
     e.preventDefault();
     const errEl = document.getElementById('mcp-error');
+    if (_pending()) { if (errEl) errEl.textContent = _NOT_LOADED; return; }
     const name = document.getElementById('mcp-name').value.trim();
     const url = document.getElementById('mcp-url').value.trim();
     const transport = document.getElementById('mcp-transport').value;
@@ -795,10 +808,9 @@ const IntegrationsView = (() => {
     if (!name || !url) { errEl.textContent = 'Name and URL are required.'; return; }
 
     const finish = (conn) => {
-      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
+      _setConns([..._conns(), conn]);
       document.getElementById('modal-add-mcp')?.classList.remove('open');
       document.getElementById('mcp-custom-form')?.reset();
-      render(el);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
     };
 
@@ -851,6 +863,7 @@ const IntegrationsView = (() => {
   async function _connectZapier(e, el) {
     e.preventDefault();
     const errEl = document.getElementById('zapier-error');
+    if (_pending()) { if (errEl) errEl.textContent = _NOT_LOADED; return; }
     const url = (document.getElementById('zapier-url')?.value || '').trim();
     let parsed;
     try { parsed = new URL(url); } catch (_) { if (errEl) errEl.textContent = 'Enter a valid URL.'; return; }
@@ -867,10 +880,9 @@ const IntegrationsView = (() => {
     // in place (so the card stays one row) or appending a fresh one.
     const commit = (conn) => {
       const cur = State.get('mcp_connections') || [];
-      State.set('mcp_connections', existing ? cur.map(c => (c.id === existing.id ? conn : c)) : [...cur, conn]);
+      _setConns(existing ? cur.map(c => (c.id === existing.id ? conn : c)) : [...cur, conn]);
       document.getElementById('modal-zapier')?.classList.remove('open');
       document.getElementById('zapier-form')?.reset();
-      render(el);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
     };
 
