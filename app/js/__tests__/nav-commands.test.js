@@ -140,14 +140,13 @@ describe('NavCommands', () => {
     it('opens Space and Ship by their own names and older ones', () => {
       expect(NavCommands.resolve('space').id).toBe('open-space');
       expect(NavCommands.resolve('go to space').id).toBe('open-space');
-      expect(NavCommands.resolve('open my workspace').id).toBe('open-space');
       expect(NavCommands.resolve('ship').id).toBe('open-ship');
       expect(NavCommands.resolve('show me the outbox').id).toBe('open-ship');
       expect(NavCommands.resolve('Open Ship?').id).toBe('open-ship');
     });
 
     it('does not navigate on words the palette alone searches', () => {
-      ['chat', 'models', 'model', 'cards', 'deliver', 'approvals', 'review'].forEach(w => {
+      ['chat', 'workspace', 'models', 'model', 'cards', 'deliver', 'approvals', 'review'].forEach(w => {
         expect(NavCommands.resolve(w)).toBeNull();
       });
     });

@@ -52,7 +52,7 @@ const NavCommands = (() => {
   const COMMANDS = [
     // ── Navigation ──
     { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
-    { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space workspace', search: 'chat models cards', desc: 'Open Space, where the model cards work.' },
+    { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space', search: 'chat workspace models cards', desc: 'Open Space, where the model cards work.' },
     { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox', search: 'approvals review deliver', desc: 'Open Ship, where finished work goes out.' },
     { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents agent list manage',                                     desc: 'Open the Agents roster.' },
     { id: 'open-agent-builder',     name: 'New Agent',         kind: 'nav', route: '/blueprints/agents/new', icon: '#icon-plus',      skinKey: 'newAgent',          keywords: 'create new agent builder',                               desc: 'Open the Agent Builder.' },

@@ -80,7 +80,13 @@ describe('PromptPanel._detectIntent', () => {
       Router.path = () => '/space';
       expect(handledByPanel('What is the best open space office layout?')).toBeNull();
       expect(handledByPanel('open ship')).toBe('open-ship');
+      Router.path = () => '/ship';
+      window.location.hash = '#/ship?item=abc';
+      expect(handledByPanel('open ship')).toBe('open-ship');
+      window.location.hash = '#/ship';
+      expect(handledByPanel('open ship')).toBeNull();
     } finally {
+      window.location.hash = '';
       Router.path = path;
     }
   });

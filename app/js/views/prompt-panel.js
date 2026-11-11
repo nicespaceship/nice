@@ -1495,7 +1495,9 @@ const PromptPanel = (() => {
         const m = NavCommands.resolve(lower);
         // Already there: the words are about the page's subject, not a request
         // to go to it ("open space office layouts", asked on Space).
-        const here = typeof Router !== 'undefined' && Router.path ? Router.path() : null;
+        // A tab or item in the address (#/ship?item=…) is not the base page, so
+        // "open ship" still goes there.
+        const here = typeof Router !== 'undefined' && Router.path && !window.location.hash.includes('?') ? Router.path() : null;
         if (m && m.route !== here) return _cmd(m.id, { reply: `Navigating to ${m.label}.`, isNav: true, navLabel: m.label });
       }
     }
