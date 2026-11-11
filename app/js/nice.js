@@ -1547,6 +1547,11 @@ const NICE = (() => {
       SB.auth.signOut().catch(() => {});
     }
 
+    // Loads the signed-in account's MCP connections into State up front (the
+    // Mission Composer and agents read them before Integrations is ever
+    // opened) and drops them when the account changes.
+    if (typeof McpBridge !== 'undefined') McpBridge.watchAccount();
+
     SB.auth.onAuthChange((user, _session, event) => {
       State.set('user', user);
       if (user) {
@@ -1581,19 +1586,6 @@ const NICE = (() => {
         // Hydrate the notification store from Supabase so the Alerts page and
         // PWA badge survive a reload (the store was previously session-only).
         if (typeof Notify !== 'undefined' && Notify.load) Notify.load(user);
-        // Hydrate mcp_connections from DB at boot, not lazily on the
-        // Integrations view. Previously State.mcp_connections was only
-        // populated when the user visited #/security?tab=integrations,
-        // so the Mission Composer's Gmail gate wrongly said "Needs:
-        // connect Gmail" until the user went through that view once
-        // per session. The list is cheap (one row per connected
-        // integration) and downstream code throughout the app reads
-        // from State.
-        if (typeof SB !== 'undefined' && SB.isReady() && typeof SB.db === 'function') {
-          SB.db('mcp_connections').list({ userId: user.id }).then(rows => {
-            if (Array.isArray(rows)) State.set('mcp_connections', rows);
-          }).catch(() => {});
-        }
         // Sync cross-device data
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
