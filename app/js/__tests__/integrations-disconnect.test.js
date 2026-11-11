@@ -523,6 +523,8 @@ describe('IntegrationsView cards follow the loaded connections', () => {
     expect(removeCalls.length).toBe(0);
     expect(confirmCalls).toBe(0);
     expect(State.get('mcp_connections')).toBeUndefined();
+    expect(document.getElementById('mcp-error').textContent).toMatch(/still loading/);
+    expect(document.getElementById('zapier-error').textContent).toMatch(/still loading/);
   });
 
   it('enables Add custom MCP once the rows arrive', async () => {
@@ -572,6 +574,29 @@ describe('IntegrationsView cards follow the loaded connections', () => {
     search.value = 'notion';
     search.dispatchEvent(new Event('input'));
     expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+  });
+
+  it('fetches nothing for a user change once the view has left the page', () => {
+    seed([]);
+    const node = el();
+    IntegrationsView.render(node);
+    node.remove();
+    State.set('mcp_connections', undefined);
+    State.set('user', { id: 'u9' });
+    expect(listCalls).toBe(0);
+  });
+
+  it('fetches again on return from a provider sign-in and shows the new row', async () => {
+    State.set('user', { id: 'u1' });
+    seed([]);
+    listImpl = async () => [notion];
+    const before = window.location.hash;
+    window.location.hash = '#/security?notion_connected=true';
+    IntegrationsView.render(el());
+    expect(listCalls).toBe(1);
+    await flush();
+    expect(button('Notion').classList.contains('mcp-disconnect-btn')).toBe(true);
+    window.location.hash = before;
   });
 
   it('stops redrawing a view that has left the page', () => {

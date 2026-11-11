@@ -256,6 +256,9 @@ const IntegrationsView = (() => {
   // Signed in, and the user's rows have not arrived yet. Cards hold their
   // buttons until they do: a card drawn from a guess can offer Connect for
   // something already connected, or the reverse.
+  // Shown in a form that was already open when the view went pending.
+  const _NOT_LOADED = 'Your connections are still loading. Try again in a moment.';
+
   function _pending() {
     return !!State.get('user') && !Array.isArray(State.get('mcp_connections'));
   }
@@ -796,8 +799,8 @@ const IntegrationsView = (() => {
 
   async function _addCustomMcp(e, el) {
     e.preventDefault();
-    if (_pending()) return;
     const errEl = document.getElementById('mcp-error');
+    if (_pending()) { if (errEl) errEl.textContent = _NOT_LOADED; return; }
     const name = document.getElementById('mcp-name').value.trim();
     const url = document.getElementById('mcp-url').value.trim();
     const transport = document.getElementById('mcp-transport').value;
@@ -859,8 +862,8 @@ const IntegrationsView = (() => {
   // authenticates the query param.
   async function _connectZapier(e, el) {
     e.preventDefault();
-    if (_pending()) return;
     const errEl = document.getElementById('zapier-error');
+    if (_pending()) { if (errEl) errEl.textContent = _NOT_LOADED; return; }
     const url = (document.getElementById('zapier-url')?.value || '').trim();
     let parsed;
     try { parsed = new URL(url); } catch (_) { if (errEl) errEl.textContent = 'Enter a valid URL.'; return; }
