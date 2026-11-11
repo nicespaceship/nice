@@ -39,6 +39,10 @@ describe('PromptPanel._detectIntent', () => {
     'Write a review of my bakery',
     'Draft an overview of Q3 sales',
     'Write an interview guide for designers',
+    'Review our shipping policy',
+    'Can you review the space budget?',
+    'Preview the spaceship announcement',
+    'What should I ship first?',
   ])('sends "%s" to the model', (text) => {
     expect(handledByPanel(text)).toBeNull();
   });
@@ -52,6 +56,10 @@ describe('PromptPanel._detectIntent', () => {
     ['open settings', 'open-settings'],
     ['go to missions', 'open-missions'],
     ['Open projects', 'open-shipyard'],
+    ['go to space', 'open-space'],
+    ['open ship', 'open-ship'],
+    ['Space', 'open-space'],
+    ['show me the outbox', 'open-ship'],
   ])('handles "%s" itself', (text, commandId) => {
     expect(handledByPanel(text)).toBe(commandId);
   });

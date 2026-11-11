@@ -101,3 +101,21 @@ describe('CommandPalette data-result routing', () => {
     expect(results.every(r => !/^\/blueprints\/(agents|spaceships)\/[^/]+$/.test(r.path || ''))).toBe(true);
   });
 });
+
+describe('CommandPalette Space and Ship entries', () => {
+  const labels = (q) => CommandPalette._search(q).map(r => r.label);
+
+  it('lists Space first for "space" and Ship first for "ship"', () => {
+    CommandPalette.init();
+    expect(labels('space')[0]).toBe('Space');
+    expect(labels('ship')[0]).toBe('Ship');
+    expect(labels('outbox')[0]).toBe('Ship');
+    expect(labels('chat')[0]).toBe('Space');
+  });
+
+  it('still finds them from the first letters', () => {
+    CommandPalette.init();
+    expect(labels('spa')).toContain('Space');
+    expect(labels('shi')).toContain('Ship');
+  });
+});

@@ -126,6 +126,9 @@ const CommandPalette = (() => {
   function _fuzzyScore(query, text) {
     if (!query) return 1;
     text = text.toLowerCase();
+    // A whole word outranks the same letters inside a longer word, so "ship"
+    // lists Ship above "spaceships" and "space" lists Space first.
+    if (text.split(/[^a-z0-9]+/).includes(query)) return 15 + query.length;
     if (text.includes(query)) return 10 + query.length;
     let qi = 0;
     for (let i = 0; i < text.length && qi < query.length; i++) {

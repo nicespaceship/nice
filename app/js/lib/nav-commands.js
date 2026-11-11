@@ -52,7 +52,9 @@ const NavCommands = (() => {
   const COMMANDS = [
     // ── Navigation ──
     { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
-    { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents list manage',                                     desc: 'Open the Agents roster.' },
+    { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space chat workspace models cards' },
+    { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox approvals deliver' },
+    { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents agent list manage',                                     desc: 'Open the Agents roster.' },
     { id: 'open-agent-builder',     name: 'New Agent',         kind: 'nav', route: '/blueprints/agents/new', icon: '#icon-plus',      skinKey: 'newAgent',          keywords: 'create new agent builder',                               desc: 'Open the Agent Builder.' },
     { id: 'open-shipyard',          name: 'Project Blueprints', kind: 'nav', route: '/blueprints/spaceships', icon: '#icon-spaceship', skinKey: 'nav.spaceships',    keywords: 'spaceships shipyard fleet ships',                        desc: 'Open the project blueprints.' },
     { id: 'open-missions',          name: 'Missions',          kind: 'nav', route: '/missions',              icon: '#icon-task',      skinKey: 'nav.missions',      keywords: 'missions tasks assignments queue jobs',                  desc: 'Open the mission board.' },
@@ -153,11 +155,12 @@ const NavCommands = (() => {
      triggers and must not be reachable by fuzzy "show me …" phrasing (e.g.
      "switch to cyberpunk" is a theme verb, not a request to toggle the theme).
 
-     Scoring: a command earns a point per keyword that a content token matches.
-     Tokens ≥ 4 chars match by substring (so "agents" ↔ "agent",
-     "spaceships" ↔ "spaceship"); shorter tokens require exact equality to
-     avoid noise. Ties resolve to declaration order (COMMANDS is ordered
-     specific-before-generic where it matters).
+     Scoring: whole words only. A keyword scores 2 when a content token is
+     that word, and 1 when the two differ by a plural "s" ("agent" ↔ "agents").
+     Substrings never count: "spaceship" must not open Space or Ship, and
+     "shipping" or "workspaces" inside a sentence must not navigate. Ties
+     resolve to declaration order (COMMANDS is ordered specific-before-generic
+     where it matters).
 
      Returns { id, label } of the top command, or null when nothing matches.
      The CALLER decides whether the surrounding phrasing actually warrants a
@@ -165,17 +168,15 @@ const NavCommands = (() => {
   function resolve(text) {
     const lower = String(text || '').toLowerCase().trim();
     if (!lower) return null;
-    const tokens = lower.split(/\s+/).filter(t => t && !_STOP.has(t));
+    const tokens = lower.split(/[^a-z0-9]+/).filter(t => t && !_STOP.has(t));
     if (!tokens.length) return null;
     let best = null, bestScore = 0;
     list().forEach(c => {
       if (c.kind !== 'nav') return;
       let score = 0;
       String(c.keywords || '').split(/\s+/).filter(Boolean).forEach(kw => {
-        const hit = tokens.some(t =>
-          t === kw || (t.length >= 4 && kw.length >= 4 && (t.includes(kw) || kw.includes(t)))
-        );
-        if (hit) score++;
+        if (tokens.includes(kw)) score += 2;
+        else if (tokens.some(t => t === kw + 's' || kw === t + 's')) score += 1;
       });
       if (score > bestScore) { bestScore = score; best = c; }
     });
