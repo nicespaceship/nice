@@ -87,7 +87,7 @@ const CommandPalette = (() => {
     let items = [];
 
     _staticCommands().forEach(c => {
-      const score = _fuzzyScore(q, c.label + ' ' + c.keywords);
+      const score = _fuzzyScore(q, c.label + ' ' + c.keywords + ' ' + (c.search || ''));
       if (score > 0 || !q) items.push({ id: c.id, label: c.label, icon: c.icon, score, type: c.kind });
     });
 
@@ -126,6 +126,9 @@ const CommandPalette = (() => {
   function _fuzzyScore(query, text) {
     if (!query) return 1;
     text = text.toLowerCase();
+    // A whole word outranks the same letters inside a longer word, so "ship"
+    // lists Ship above "spaceships" and "space" lists Space first.
+    if (text.split(/[^a-z0-9]+/).includes(query)) return 15 + query.length;
     if (text.includes(query)) return 10 + query.length;
     let qi = 0;
     for (let i = 0; i < text.length && qi < query.length; i++) {
@@ -190,5 +193,5 @@ const CommandPalette = (() => {
     }
   }
 
-  return { init, open, close, _search };
+  return { init, open, close, _search, _fuzzyScore };
 })();

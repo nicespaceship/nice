@@ -128,12 +128,45 @@ describe('NavCommands', () => {
       expect(NavCommands.resolve('profile').id).toBe('open-profile');
     });
 
-    it('matches singular/plural via substring (agents ↔ agent, ships ↔ spaceship)', () => {
+    it('matches singular and plural (agents ↔ agent, spaceships ↔ spaceship)', () => {
       expect(NavCommands.resolve('agent').id).toBe('open-agents');
       expect(NavCommands.resolve('spaceships').id).toBe('open-shipyard');
+      expect(NavCommands.resolve('spaceship').id).toBe('open-shipyard');
       // "project" is everyday business language, so it is not a nav keyword:
       // a request about a project plan must reach the model.
       expect(NavCommands.resolve('show me a sample project charter')).toBeNull();
+    });
+
+    it('opens Space and Ship by their own names and older ones', () => {
+      expect(NavCommands.resolve('space').id).toBe('open-space');
+      expect(NavCommands.resolve('go to space').id).toBe('open-space');
+      expect(NavCommands.resolve('ship').id).toBe('open-ship');
+      expect(NavCommands.resolve('show me the outbox').id).toBe('open-ship');
+      expect(NavCommands.resolve('Open Ship?').id).toBe('open-ship');
+    });
+
+    it('does not navigate on words the palette alone searches', () => {
+      ['chat', 'workspace', 'models', 'model', 'cards', 'deliver', 'approvals', 'review'].forEach(w => {
+        expect(NavCommands.resolve(w)).toBeNull();
+      });
+    });
+
+    it('matches whole words only, never a word inside a longer one', () => {
+      // "spaceship" holds both "space" and "ship"; "ships" is the fleet.
+      expect(NavCommands.resolve('spaceship').id).toBe('open-shipyard');
+      expect(NavCommands.resolve('ships').id).toBe('open-shipyard');
+      expect(NavCommands.resolve('show me our shipping policy')).toBeNull();
+      expect(NavCommands.resolve('show friendship quotes')).toBeNull();
+      expect(NavCommands.resolve('view the aerospace report')).toBeNull();
+    });
+
+    it('routes Space and Ship to their pages', async () => {
+      const spy = vi.spyOn(globalThis.Router, 'navigate').mockImplementation(() => {});
+      await ToolRegistry.execute('open-space');
+      expect(spy).toHaveBeenLastCalledWith('#/space');
+      await ToolRegistry.execute('open-ship');
+      expect(spy).toHaveBeenLastCalledWith('#/ship');
+      spy.mockRestore();
     });
 
     it('ignores nav verbs and function words, scoring only content tokens', () => {

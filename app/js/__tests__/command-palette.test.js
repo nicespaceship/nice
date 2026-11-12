@@ -23,17 +23,7 @@ describe('CommandPalette', () => {
 });
 
 describe('CommandPalette fuzzyScore', () => {
-  // Extract fuzzyScore logic for unit testing
-  function fuzzyScore(query, text) {
-    if (!query) return 1;
-    text = text.toLowerCase();
-    if (text.includes(query)) return 10 + query.length;
-    let qi = 0;
-    for (let i = 0; i < text.length && qi < query.length; i++) {
-      if (text[i] === query[qi]) qi++;
-    }
-    return qi === query.length ? qi : 0;
-  }
+  const fuzzyScore = (q, t) => CommandPalette._fuzzyScore(q, t);
 
   it('should return 1 for empty query', () => {
     expect(fuzzyScore('', 'Home')).toBe(1);
@@ -41,7 +31,8 @@ describe('CommandPalette fuzzyScore', () => {
 
   it('should score exact substring match high', () => {
     const score = fuzzyScore('home', 'Home dashboard mission control');
-    expect(score).toBe(14); // 10 + query.length(4)
+    expect(score).toBe(19); // whole word: 15 + query.length(4)
+    expect(fuzzyScore('dash', 'Home dashboard mission control')).toBe(14); // inside a word: 10 + 4
   });
 
   it('should score fuzzy match based on character count', () => {
@@ -99,5 +90,25 @@ describe('CommandPalette data-result routing', () => {
     State.set('spaceships', [{ id: 's1', name: 'Ops Ship' }]);
     const results = CommandPalette._search('ops');
     expect(results.every(r => !/^\/blueprints\/(agents|spaceships)\/[^/]+$/.test(r.path || ''))).toBe(true);
+  });
+});
+
+describe('CommandPalette Space and Ship entries', () => {
+  const labels = (q) => CommandPalette._search(q).map(r => r.label);
+
+  it('lists Space first for "space" and Ship first for "ship"', () => {
+    CommandPalette.init();
+    expect(labels('space')[0]).toBe('Space');
+    expect(labels('ship')[0]).toBe('Ship');
+    expect(labels('outbox')[0]).toBe('Ship');
+    expect(labels('chat')[0]).toBe('Space');
+    expect(labels('models')[0]).toBe('Space');
+    expect(labels('approvals')[0]).toBe('Ship');
+  });
+
+  it('still finds them from the first letters', () => {
+    CommandPalette.init();
+    expect(labels('spa')).toContain('Space');
+    expect(labels('shi')).toContain('Ship');
   });
 });
