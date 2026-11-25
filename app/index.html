@@ -299,15 +299,6 @@
     </div>
   </div>
 
-  <!-- Primary destinations: labeled when open, icons on the collapsed rail.
-       Home is the NICE mark above. Blueprints is what a project starts from;
-       the projects themselves are listed below. -->
-  <nav class="side-primary" aria-label="Primary">
-    <a href="#/blueprints" class="side-link" data-nav="blueprints" title="Blueprints">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg>
-      <span>Blueprints</span>
-    </a>
-  </nav>
 
   <!-- Your projects (activated spaceships), rendered by nice.js. -->
   <div class="side-ships" id="side-ships"></div>
@@ -342,6 +333,10 @@
         <span>Get help</span>
       </a>
       <div class="side-menu-sep" role="separator"></div>
+      <a href="#/blueprints" class="side-popover-item" role="menuitem" data-view="blueprints">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-blueprint"/></svg>
+        <span>Blueprints</span>
+      </a>
       <a href="#/integrations" class="side-popover-item" role="menuitem" data-view="integrations">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-integrations"/></svg>
         <span>Integrations</span>

@@ -64,23 +64,26 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // Desktop opens with the sidebar docked: Blueprints, then the projects.
-    // The NICE mark is Home. Space, Ship and the chat list are not in the menu.
+    // Desktop opens with the sidebar docked: the projects, and nothing else.
+    // The NICE mark is Home; Blueprints lives in the account menu.
     await expect(sidebar).toHaveClass(/\bopen\b/);
     await expect(page.locator('.side-brand')).toHaveAttribute('href', '#/');
-    await expect(page.locator('.side-primary .side-link')).toHaveCount(1);
-    await expect(page.locator('.side-primary .side-link', { hasText: 'Blueprints' })).toBeVisible();
+    await expect(page.locator('.side-primary')).toHaveCount(0);
     await expect(page.locator('#side-ships')).toBeAttached();
     await expect(page.locator('#side-chats-folder')).toHaveCount(0);
-    // A destination navigates and becomes the highlighted link.
-    await page.locator('.side-primary .side-link[data-nav="blueprints"]').click();
+    for (const gone of ['Space', 'Ship']) {
+      await expect(sidebar.locator('.side-link', { hasText: gone })).toHaveCount(0);
+    }
+    // Blueprints is a row in the account menu, above Integrations.
+    await page.locator('#side-more-btn').click();
+    const rows = await page.locator('#side-popover .side-popover-item span:first-of-type').allTextContents();
+    expect(rows.indexOf('Blueprints')).toBe(rows.indexOf('Integrations') - 1);
+    await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
     await page.waitForFunction(() => location.hash === '#/blueprints');
-    await expect(page.locator('.side-primary .side-link[data-nav="blueprints"]')).toHaveAttribute('aria-current', 'page');
     // Collapsing keeps the destinations on the rail as icons. There the NICE
     // mark still goes Home, and the button under it expands the menu.
     await page.locator('#side-collapse').click();
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
-    await expect(page.locator('.side-primary .side-link[data-nav="blueprints"]')).toBeVisible();
     await page.locator('#side-rail-nice').click();
     await page.waitForFunction(() => location.hash === '#/');
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
