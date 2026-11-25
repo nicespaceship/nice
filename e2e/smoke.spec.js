@@ -65,11 +65,11 @@ test.describe('Smoke Tests', () => {
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
     // Desktop opens with the sidebar docked: the projects, and nothing else.
-    // The sidebar has no logo; NICE in the top bar is Home, and Blueprints
+    // The sidebar has no logo; NICE in its header is Home, and Blueprints
     // lives in the account menu.
     await expect(sidebar).toHaveClass(/\bopen\b/);
     await expect(sidebar.locator('use[href="#icon-nice"]')).toHaveCount(0);
-    const nice = page.locator('#app-topbar .app-mode-btn', { hasText: 'NICE' });
+    const nice = page.locator('.side-header .app-mode-btn', { hasText: 'NICE' });
     await expect(nice).toHaveAttribute('href', '#/');
     await expect(page.locator('#app-mode-code')).toBeVisible();
     await expect(page.locator('.side-primary')).toHaveCount(0);
@@ -107,21 +107,21 @@ test.describe('Smoke Tests', () => {
     await page.locator('#side-more-btn').click();
     await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
     await page.waitForFunction(() => location.hash === '#/blueprints');
-    // The top bar's toggle collapses the sidebar to the rail and opens it
-    // again; NICE goes Home either way; Code says it is not ready.
+    // The header's toggle collapses the sidebar to the rail, where only the
+    // toggle stays, and opens it again. NICE goes Home; Code is not ready.
     const toggle = page.locator('#app-sidebar-toggle');
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await toggle.click();
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(toggle).toHaveAttribute('aria-label', 'Open sidebar');
+    await expect(nice).toBeHidden();
+    await toggle.click();
     await nice.click();
     await page.waitForFunction(() => location.hash === '#/');
-    await expect(sidebar).not.toHaveClass(/\bopen\b/);
     await page.locator('#app-mode-code').click();
     await expect(page.locator('.notify-toast', { hasText: 'not available yet' }).first()).toBeVisible();
     expect(await page.evaluate(() => location.hash)).toBe('#/');
-    await toggle.click();
     await expect(sidebar).toHaveClass(/\bopen\b/);
   });
 
@@ -261,7 +261,7 @@ test.describe('Accessibility', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
-    // The top bar's sidebar toggle is the first control; Tab moves on.
+    // The sidebar header's toggle is the first control; Tab moves on.
     const brand = page.locator('#app-sidebar-toggle');
     await brand.focus();
     await page.keyboard.press('Tab');

@@ -827,8 +827,8 @@ const NICE = (() => {
     _applySidebarDefault(sidebar);
     _mobileMQ.addEventListener('change', () => _applySidebarDefault(sidebar));
 
-    // Top bar toggle (tablet and desktop): collapses the sidebar to the
-    // rail or opens it again, and remembers the choice.
+    // Sidebar header toggle: collapses the sidebar to the rail or opens it
+    // again (and remembers the choice); on phones it closes the drawer.
     const toggle = document.getElementById('app-sidebar-toggle');
     const syncToggle = () => {
       if (!toggle) return;
@@ -854,14 +854,6 @@ const NICE = (() => {
     // Code is not built yet; the switch says so.
     document.getElementById('app-mode-code')?.addEventListener('click', () => {
       if (typeof Notify !== 'undefined' && Notify.toast) Notify.toast('Code', 'This is not available yet.');
-    });
-
-    // Drawer close button (phones).
-    document.getElementById('side-collapse')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      sidebar.classList.remove('open');
-      if (!_isMobile()) localStorage.setItem(Utils.KEYS.sidebarCollapsed, '1');
     });
 
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');

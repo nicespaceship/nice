@@ -1207,36 +1207,18 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar top strip — the height of the page's top bar (.app-topbar), so
-   the sidebar's first row lines up with the page below the bar. Empty on
-   tablet and desktop; on phones it holds the drawer's close button.
+/* Sidebar header — the open / close toggle on the left, the NICE / Code
+   switch on the right. Collapsed to the rail, only the toggle shows.
    Per-theme decorations (LCARS elbow, JARVIS reactor pulse, Cyberpunk
    light strip — see theme.css) anchor on it. */
 .side-header {
-  flex-shrink:0; height:var(--app-topbar-height); padding:0 12px;
-  display:flex; align-items:center; justify-content:flex-end; gap:8px;
+  flex-shrink:0; height:52px; padding:0 12px 0 8px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
   background:var(--nav-bg-dk, transparent);
 }
-@media (min-width:769px) {
-  .side-header .side-header-actions { display:none; }
-}
-
-/* Page top bar — sidebar toggle on the left, the NICE / Code switch on
-   the right. Tablet and desktop; phones use .app-mobile-bar. */
-:root { --app-topbar-height:52px; }
-.app-topbar {
-  flex-shrink:0; height:var(--app-topbar-height); padding:0 16px 0 8px;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  background:var(--bg);
-}
-.app-topbar-btn {
-  display:flex; align-items:center; justify-content:center;
-  width:36px; height:36px; padding:0;
-  background:transparent; border:0; border-radius:8px;
-  color:var(--text-muted); cursor:pointer; transition:background .15s, color .15s;
-}
-.app-topbar-btn:hover { background:var(--tint, var(--surface)); color:var(--text); }
-.app-topbar-btn .icon { width:20px; height:20px; }
+.app-sidebar:not(.open) .side-header { justify-content:center; padding:0; }
+.app-sidebar:not(.open) .app-mode { display:none; }
+/* NICE / Code switch */
 .app-mode {
   display:inline-flex; align-items:center; gap:2px; padding:3px;
   border-radius:10px; background:var(--surface2, var(--surface));
@@ -1250,9 +1232,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-mode-btn:hover { color:var(--text); }
 .app-mode-btn.is-on { background:var(--bg); color:var(--text); }
-@media (max-width:768px) {
-  .app-topbar { display:none; }
-}
 .side-theme-btn {
   display:flex; align-items:center; justify-content:center;
   width:36px; height:36px; padding:0; flex-shrink:0;
@@ -1262,7 +1241,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-theme-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-theme-btn .icon { width:20px; height:20px; }
-.side-header-actions { display:flex; align-items:center; gap:2px; }
 
 /* The user's projects. They stay on the collapsed rail as marks; labels
    and the section title need the open width. The list is the part of the

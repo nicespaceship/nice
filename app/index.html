@@ -244,15 +244,16 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Top strip: as tall as the page's top bar, so the sidebar lines up
-       with it; themes decorate it. On phones it holds the drawer's close
-       button. Themes (#btn-hud, in the account menu) slides the HUD panel
-       down under it. -->
+  <!-- Sidebar header: the open / close toggle on the left, the NICE / Code
+       switch on the right. Collapsed, only the toggle shows. Themes
+       (#btn-hud, in the account menu) slides the HUD panel down under it. -->
   <div class="side-header">
-    <div class="side-header-actions">
-      <button type="button" class="side-theme-btn" id="side-collapse" aria-label="Collapse menu" title="Collapse menu">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-collapse"/></svg>
-      </button>
+    <button type="button" class="side-theme-btn" id="app-sidebar-toggle" aria-controls="app-sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-collapse"/></svg>
+    </button>
+    <div class="app-mode" role="group" aria-label="Switch between NICE and Code">
+      <a href="#/" class="app-mode-btn is-on" data-home-link>NICE</a>
+      <button type="button" class="app-mode-btn" id="app-mode-code">Code</button>
     </div>
   </div>
 
@@ -388,17 +389,6 @@
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <main class="app-main" role="main">
-  <!-- Top bar (tablet and desktop): the sidebar toggle on the left, the
-       NICE / Code switch on the right. Phones use the mobile bar. -->
-  <header class="app-topbar" id="app-topbar">
-    <button type="button" class="app-topbar-btn" id="app-sidebar-toggle" aria-controls="app-sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-collapse"/></svg>
-    </button>
-    <div class="app-mode" role="group" aria-label="Switch between NICE and Code">
-      <a href="#/" class="app-mode-btn is-on" data-home-link>NICE</a>
-      <button type="button" class="app-mode-btn" id="app-mode-code">Code</button>
-    </div>
-  </header>
   <div id="app-fixed-tabs"></div>
   <div class="app-view-content" id="app-view" aria-live="polite">
     <!-- Views rendered here by router -->
