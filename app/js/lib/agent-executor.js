@@ -12,7 +12,7 @@ const AgentExecutor = (() => {
    * @param {Object} agentBlueprint - Blueprint with id, name, config, flavor
    * @param {string} prompt - User prompt
    * @param {Object} opts
-   *   - tools: string[] of tool IDs to make available
+   *   - tools: string[] of tool IDs to make available; nothing else runs
    *   - maxSteps: number (default 5)
    *   - spaceshipId: string
    *   - onStep: function(step) callback per step
@@ -60,6 +60,7 @@ const AgentExecutor = (() => {
       agentBlueprint,
       systemPrompt: ctx.systemPrompt,
       toolsSchema: ctx.toolsSchema,
+      allowedTools: ctx.allowedTools,
       conversationMessages,
       spaceshipId,
       agentId,
@@ -264,7 +265,30 @@ const AgentExecutor = (() => {
     // tool-using turn for any agent with accumulated memory.
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
-    return { availableTools, toolsSchema, systemPrompt };
+    // The only tools _runReactLoop will run: the ones this agent was given,
+    // reachable by id or by the name toolsSchema showed the model.
+    const allowedTools = {
+      ids: new Set(availableTools.map(t => t.id)),
+      byName: new Map(dedupedTools.map(t => [t.name, t.id])),
+    };
+
+    return { availableTools, toolsSchema, systemPrompt, allowedTools };
+  }
+
+  /* The id of the tool a reply asks for, or null when this agent was not
+     given it. ToolRegistry.resolve also matches aliases and fuzzy names
+     across every registered tool, so its answer counts only inside the set,
+     and a name the model was shown wins over a registry alias for it (the
+     built-in "search" alias points at web-search, not a connected tool
+     called "search"). */
+  function _allowedToolId(requested, allowedTools) {
+    if (!requested || typeof requested !== 'string' || !allowedTools) return null;
+    if (allowedTools.ids.has(requested)) return requested;
+    if (allowedTools.byName.has(requested)) return allowedTools.byName.get(requested);
+    const tool = typeof ToolRegistry !== 'undefined' && typeof ToolRegistry.resolve === 'function'
+      ? ToolRegistry.resolve(requested)
+      : null;
+    return tool && allowedTools.ids.has(tool.id) ? tool.id : null;
   }
 
   /* ── Shared ReAct loop body ──
@@ -286,7 +310,7 @@ const AgentExecutor = (() => {
 
   async function _runReactLoop(params) {
     const {
-      agentBlueprint, systemPrompt, toolsSchema, conversationMessages,
+      agentBlueprint, systemPrompt, toolsSchema, allowedTools, conversationMessages,
       spaceshipId, agentId, maxSteps, steps, tokensRef, opts, onStep,
     } = params;
 
@@ -337,27 +361,34 @@ const AgentExecutor = (() => {
           let observation;
           let isError = false;
           let wasStopped = false;
-          try {
-            const result = await ToolRegistry.execute(block.name, block.input || {}, {
-              approvalMode:     opts && opts.approvalMode,
-              onApprovalNeeded: opts && opts.onApprovalNeeded,
-              toolLabel:        block.name,
-              thought:          combinedText,
-              stepIndex:        stepIdx + 1,
-            });
-            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-          } catch (err) {
-            if (err && err.declined && stopped()) {
-              // Turned down because the run was called off, not by the user.
-              wasStopped = true;
-              observation = _STOP_TOOL_NOTE;
-            } else if (err && err.declined) {
-              declined.add(block.id);
-              observation = 'Action blocked — user declined approval.';
-            } else {
-              observation = 'Error: ' + (err.message || 'Tool execution failed');
-            }
+          const toolId = _allowedToolId(block.name, allowedTools);
+          if (!toolId) {
+            // Never run, but answered, so the model can carry on without it.
+            observation = 'Error: tool "' + block.name + '" is not available to this agent';
             isError = true;
+          } else {
+            try {
+              const result = await ToolRegistry.execute(toolId, block.input || {}, {
+                approvalMode:     opts && opts.approvalMode,
+                onApprovalNeeded: opts && opts.onApprovalNeeded,
+                toolLabel:        block.name,
+                thought:          combinedText,
+                stepIndex:        stepIdx + 1,
+              });
+              observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+            } catch (err) {
+              if (err && err.declined && stopped()) {
+                // Turned down because the run was called off, not by the user.
+                wasStopped = true;
+                observation = _STOP_TOOL_NOTE;
+              } else if (err && err.declined) {
+                declined.add(block.id);
+                observation = 'Action blocked — user declined approval.';
+              } else {
+                observation = 'Error: ' + (err.message || 'Tool execution failed');
+              }
+              isError = true;
+            }
           }
 
           toolResultParts.push({
@@ -424,9 +455,18 @@ const AgentExecutor = (() => {
       // ── No native tool_use — plain text response ─────────────────────
       // Model either gave a final answer or (on providers without native
       // tool-use) responded in legacy ReAct text format. Parse once, act.
-      const parsed = _parseReActResponse(combinedText || '');
+      // With no tools nothing in the reply can be a call: the parser reads
+      // "transaction: …" or a Redux {"action": …} example as one, so the
+      // reply stands as written. A parsed action for a tool this agent was
+      // not given is part of the answer too, never run.
+      const parsed = allowedTools && allowedTools.ids.size
+        ? _parseReActResponse(combinedText || '')
+        : { thought: null, action: null, actionInput: null, finalAnswer: null };
+      const textToolId = parsed.action && !parsed.finalAnswer
+        ? _allowedToolId(parsed.action, allowedTools)
+        : null;
 
-      if (parsed.action && !parsed.finalAnswer) {
+      if (textToolId) {
         // Same shared gate as the native path: route through ToolRegistry.execute
         // with review-mode context. A declined action throws `declined`, which we
         // surface with the dedicated "try a different approach" nudge so the model
@@ -437,7 +477,7 @@ const AgentExecutor = (() => {
         let wasStopped = false;
         if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
         try {
-          const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {}, {
+          const result = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
             approvalMode:     opts && opts.approvalMode,
             onApprovalNeeded: opts && opts.onApprovalNeeded,
             toolLabel:        parsed.action,
@@ -1101,6 +1141,7 @@ const AgentExecutor = (() => {
         agentBlueprint,
         systemPrompt: ctx.systemPrompt,
         toolsSchema: ctx.toolsSchema,
+        allowedTools: ctx.allowedTools,
         conversationMessages,
         spaceshipId,
         agentId,
