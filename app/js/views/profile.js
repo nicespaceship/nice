@@ -121,7 +121,7 @@ const ProfileView = (() => {
           </form>
 
           <div class="auth-footer">
-            <span>TRANSMISSION ENCRYPTED &mdash; TLS 1.3</span>
+            <span>${Terminology.pick('Encrypted connection · TLS 1.3', 'TRANSMISSION ENCRYPTED &mdash; TLS 1.3')}</span>
           </div>
         </div>
       </div>

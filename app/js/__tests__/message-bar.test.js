@@ -97,8 +97,22 @@ describe('MessageBar._collectMessages (via rendered ticker)', () => {
   it('always appends the two system-status lines', () => {
     mountBar();
     MessageBar.init();
-    expect(track().innerHTML).toContain('All subsystems nominal');
-    expect(track().innerHTML).toContain('standing by for mission assignments');
+    expect(track().innerHTML).toContain('NICE v3.5 is up to date and running.');
+    expect(track().innerHTML).toContain('Your agents are ready for work.');
+    expect(track().innerHTML).toContain('Everything is running.');
+  });
+
+  it('keeps the sci-fi status lines in a sci-fi theme', () => {
+    globalThis.Theme = { current: () => 'hal-9000' };
+    try {
+      mountBar();
+      MessageBar.init();
+      expect(track().innerHTML).toContain('NICE v3.5 — All subsystems nominal.');
+      expect(track().innerHTML).toContain('Agent fleet standing by for mission assignments.');
+      expect(track().innerHTML).toContain('All systems operational.');
+    } finally {
+      delete globalThis.Theme;
+    }
   });
 
   it('collects at most 6 notifications from State', () => {

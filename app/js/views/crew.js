@@ -104,7 +104,7 @@ const CrewView = (() => {
       return `
         <div class="crew-card crew-card-open">
           <span class="crew-open-mark" aria-hidden="true">+</span>
-          <b>Open station</b>
+          <b>${Terminology.pick('Open role', 'Open station')}</b>
           ${role ? `<span>${_esc(role)}</span>` : ''}
         </div>`;
     }
@@ -183,7 +183,7 @@ const CrewView = (() => {
           <div class="crew-head-text">
             <p class="crew-eyebrow">${_esc(shipNoun)}</p>
             <h1>${_esc(shipName)}</h1>
-            <p>${_esc(staffed.length + (staffed.length === 1 ? ' agent' : ' agents') + ' on ' + models.size + (models.size === 1 ? ' model' : ' models') + (open ? ', ' + open + (open === 1 ? ' open station' : ' open stations') : ''))}</p>
+            <p>${_esc(staffed.length + (staffed.length === 1 ? ' agent' : ' agents') + ' on ' + models.size + (models.size === 1 ? ' model' : ' models') + (open ? ', ' + open + (open === 1 ? Terminology.pick(' open role', ' open station') : Terminology.pick(' open roles', ' open stations')) : ''))}</p>
           </div>
           <div class="crew-head-acts">
             <a class="btn btn-sm" href="#/bridge?tab=missions">${_esc(missionsLabel)}</a>

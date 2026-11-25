@@ -228,7 +228,7 @@ const SchematicView = (() => {
         el.innerHTML = `
           <div class="schematic-empty app-empty">
             <h2>No ${_esc(_ship({ plural: true, lowercase: true }))} ${_say('active', 'deployed')}</h2>
-            <p>Activate ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} from the catalog or build one from scratch to put a ${_esc(_crewWord())} on the schematic.</p>
+            <p>Activate ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} from the catalog or build one from scratch to put a ${_esc(_crewWord())} on the ${_say('diagram', 'schematic')}.</p>
             <div class="app-empty-acts">
               ${canWizard ? '<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my ' + _crewWord() + '</button>' : ''}
               <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse ${_esc(_ship({ plural: true, lowercase: true }))}</a>

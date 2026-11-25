@@ -37,7 +37,7 @@ const MessageBar = (() => {
 
     // Welcome
     msgs.push({
-      text: `Welcome back, ${displayName}. All systems operational.`,
+      text: Terminology.pick(`Welcome back, ${displayName}. Everything is running.`, `Welcome back, ${displayName}. All systems operational.`),
       icon: '#icon-home',
       route: '#/',
       type: 'welcome',
@@ -88,7 +88,7 @@ const MessageBar = (() => {
 
     // System status
     msgs.push({
-      text: 'NICE v3.5 — All subsystems nominal.',
+      text: Terminology.pick('NICE v3.5 is up to date and running.', 'NICE v3.5 — All subsystems nominal.'),
       icon: '#icon-settings',
       route: '#/settings',
       type: 'system',
@@ -96,7 +96,7 @@ const MessageBar = (() => {
     });
 
     msgs.push({
-      text: 'Agent fleet standing by for mission assignments.',
+      text: Terminology.pick('Your agents are ready for work.', 'Agent fleet standing by for mission assignments.'),
       icon: '#icon-agent',
       route: '#/bridge/agents',
       type: 'system',

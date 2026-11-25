@@ -125,7 +125,7 @@ const IntegrationsView = (() => {
 
     /* Derive unique categories */
     const mcpCats = [...new Set(MCP_CATALOG.map(m => m.cat))];
-    const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:'Comms', data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring', media:'Media' };
+    const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:Terminology.pick('Communication', 'Comms'), data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring', media:'Media' };
 
     el.innerHTML = `
       <div class="integrations-wrap">

@@ -763,7 +763,7 @@ Rules:
           <p class="cd-subheading">${agentCount} ${_say('agents active and ready to work.', 'agents deployed and ready for action.')}</p>
           <p class="cd-rationale">${_esc(_data.rationale)}</p>
           <div class="cd-actions cd-actions-stack">
-            <button class="btn cd-btn-primary" id="cd-view-schematic">View Schematic</button>
+            <button class="btn cd-btn-primary" id="cd-view-schematic">${_say('View diagram', 'View Schematic')}</button>
             ${_data.testMission ? `<button class="btn cd-btn-secondary" id="cd-test-mission-btn">Run Test Mission</button>` : ''}
             <button class="btn cd-btn-secondary" id="cd-close-success">Close</button>
           </div>
