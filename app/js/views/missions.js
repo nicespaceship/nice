@@ -529,7 +529,7 @@ const MissionsView = (() => {
     const now = Date.now();
     const rows = [
       { id:'st1', title:'Scrape competitor pricing', agent_id:'sa1', agent_name:'ResearchBot', status:'completed', priority:'high', progress:100, created_at:new Date(now - 86400000).toISOString(), completed_at:new Date(now - 82800000).toISOString() },
-      { id:'st2', title:'Review PR #142', agent_id:'sa2', agent_name:'CodePilot', status:'running', priority:'medium', progress:45, created_at:new Date(now - 7200000).toISOString() },
+      { id:'st2', title:'Review PR #142', agent_id:'sa2', agent_name:Terminology.pick('CodeReviewer', 'CodePilot'), status:'running', priority:'medium', progress:45, created_at:new Date(now - 7200000).toISOString() },
       { id:'st3', title:'Generate weekly report', agent_id:'sa3', agent_name:'DataCrunch', status:'queued', priority:'low', progress:0, created_at:new Date(now - 3600000).toISOString() },
       { id:'st4', title:'Write blog post draft', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'medium', progress:100, created_at:new Date(now - 172800000).toISOString(), completed_at:new Date(now - 162000000).toISOString() },
       { id:'st5', title:'Deploy staging environment', agent_id:'sa5', agent_name:'OpsMonitor', status:'failed', priority:'high', progress:60, created_at:new Date(now - 43200000).toISOString() },

@@ -53,6 +53,22 @@ describe('Roles — SEED + synchronous getters', () => {
     expect(Roles.get(undefined)).toBeNull();
   });
 
+  it('displayLabel shows Lead in the plain looks and leaves the stored label alone', () => {
+    const prev = globalThis.Theme;
+    try {
+      globalThis.Theme = { current: () => 'nice' };
+      expect(Roles.displayLabel('captain')).toBe('Lead');
+      expect(Roles.displayLabel('Captain')).toBe('Lead');
+      expect(Roles.displayLabel('sales')).toBe('Sales');
+      expect(Roles.displayLabel('Performance Lead')).toBe('Performance Lead');
+      expect(Roles.get('captain').label).toBe('Captain');
+      globalThis.Theme = { current: () => 'hal-9000' };
+      expect(Roles.displayLabel('captain')).toBe('Captain');
+    } finally {
+      if (prev === undefined) delete globalThis.Theme; else globalThis.Theme = prev;
+    }
+  });
+
   it('getRequiredTags returns the capability tags for a role', () => {
     expect(Roles.getRequiredTags('engineering')).toEqual(['code', 'issues', 'engineering']);
     expect(Roles.getRequiredTags('sales')).toEqual(['sales', 'crm']);

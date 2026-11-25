@@ -343,7 +343,7 @@ const BlueprintsView = (() => {
       // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
       // logic so the underlying tab state stays unified.
       const tabDefs = [
-        { id: 'schematic', label: 'Schematic' },
+        { id: 'schematic', label: Terminology.pick('Diagram', 'Schematic') },
         { id: 'blueprints', label: 'Blueprints' },
         { id: 'missions', label: Terminology.label('mission', { plural: true }) },
         { id: 'operations', label: 'Operations' },

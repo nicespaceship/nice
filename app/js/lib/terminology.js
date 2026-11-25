@@ -20,14 +20,15 @@ const Terminology = (() => {
   const PILOT = { singular: 'Pilot', plural: 'Pilots' };
   // What the sci-fi themes say where the plain looks use everyday words.
   const CREW = { singular: 'Crew', plural: 'Crew' };
-  const SCIFI = { spaceship: SPACESHIP, crew: CREW, bridge: { singular: 'Bridge', plural: 'Bridges' }, guest: PILOT, account: PILOT, member: PILOT };
+  const SCIFI = { spaceship: SPACESHIP, crew: CREW, captain: { singular: 'Captain', plural: 'Captains' }, bridge: { singular: 'Bridge', plural: 'Bridges' }, guest: PILOT, account: PILOT, member: PILOT };
   const NOUNS = {
     default: {
       mission:   { singular: 'Mission',   plural: 'Missions' },
       agent:     { singular: 'Agent',     plural: 'Agents' },
       spaceship: { singular: 'Project',   plural: 'Projects' },
       crew:      { singular: 'Team',      plural: 'Teams' },
-      captain:   { singular: 'Captain',   plural: 'Captains' },
+      // The agent that coordinates the rest of the team.
+      captain:   { singular: 'Lead',      plural: 'Leads' },
       // Someone with no name on file, the account chip, and the profile badge.
       guest:     { singular: 'Guest',     plural: 'Guests' },
       account:   { singular: 'Profile',   plural: 'Profiles' },

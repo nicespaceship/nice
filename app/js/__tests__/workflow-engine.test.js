@@ -109,6 +109,18 @@ describe('WorkflowEngine — approval_gate', () => {
     expect(out.summary).toBe('Awaiting captain.');
   });
 
+  it('_executeApprovalGate words its default reason per look', () => {
+    const prev = globalThis.Theme;
+    try {
+      globalThis.Theme = { current: () => 'nice' };
+      expect(WorkflowEngine._executeApprovalGate({ config: {} }, '').reason).toBe('Awaiting your approval.');
+      globalThis.Theme = { current: () => 'lcars' };
+      expect(WorkflowEngine._executeApprovalGate({ config: {} }, '').reason).toBe('Awaiting captain approval.');
+    } finally {
+      if (prev === undefined) delete globalThis.Theme; else globalThis.Theme = prev;
+    }
+  });
+
   it('_isGatePause only matches sentinel-shaped objects', () => {
     expect(WorkflowEngine._isGatePause({ __nice_workflow_pause: true })).toBe(true);
     expect(WorkflowEngine._isGatePause({})).toBe(false);

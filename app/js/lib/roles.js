@@ -92,7 +92,16 @@ const Roles = (() => {
     return Object.values(_byKey).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   }
 
-  return { init, isReady, get, getRequiredTags, list };
+  // What a role is called on screen. `label` is stored on agents and matched
+  // by mission dispatch, so it stays "Captain"; only the plain looks show the
+  // coordinating role as "Lead".
+  function displayLabel(slug) {
+    if (String(slug || '').toLowerCase() === 'captain' && typeof Terminology !== 'undefined') return Terminology.label('captain');
+    const r = get(slug);
+    return (r && r.label) || slug || '';
+  }
+
+  return { init, isReady, get, getRequiredTags, list, displayLabel };
 
 })();
 

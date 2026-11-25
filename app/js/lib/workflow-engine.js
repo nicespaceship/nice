@@ -863,7 +863,7 @@ const WorkflowEngine = (() => {
     const cfg = node.config || {};
     return {
       __nice_workflow_pause: true,
-      reason: cfg.reason || 'Awaiting captain approval.',
+      reason: cfg.reason || Terminology.pick('Awaiting your approval.', 'Awaiting captain approval.'),
       approveLabel: cfg.approveLabel || 'Approve',
       rejectLabel: cfg.rejectLabel || 'Reject',
       // Summary shown in the review UI. Upstream node output flows in

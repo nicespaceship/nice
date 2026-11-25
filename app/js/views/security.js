@@ -12,7 +12,7 @@ const SecurityView = (() => {
 
   /* ── Demo threat events ─────────────────────────────────────── */
   const DEMO_THREATS = [
-    { ts: Date.now() - 180000, severity:'low',    msg:'Agent "Scout-7" accessed /api/data within rate limit' },
+    { ts: Date.now() - 180000, severity:'low',    get msg() { return Terminology.pick('Agent "Research-7" accessed /api/data within rate limit', 'Agent "Scout-7" accessed /api/data within rate limit'); } },
     { ts: Date.now() - 420000, severity:'medium', msg:'Failed auth attempt from unknown IP 203.0.113.42' },
     { ts: Date.now() - 900000, severity:'low',    msg:'Token rotation completed for integration "Stripe"' },
     { ts: Date.now() - 1800000,severity:'high',   msg:'Agent "Crawler-X" exceeded rate limit (120 req/min)' },
@@ -330,7 +330,7 @@ const SecurityView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
             Threat Monitor
           </h3>
-          <p class="text-muted" style="margin:0 0 12px">Recent security events across your fleet.</p>
+          <p class="text-muted" style="margin:0 0 12px">${Terminology.pick('Recent security events across your agents.', 'Recent security events across your fleet.')}</p>
           <div class="security-events" id="sec-events">
             ${_getThreats().map(t => `
               <div class="security-event">

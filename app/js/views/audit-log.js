@@ -107,7 +107,7 @@ const AuditLogView = (() => {
 
   function render(el) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, "the captain's log");
+    if (!user) return _authPrompt(el, Terminology.pick('the activity log', "the captain's log"));
 
     el.innerHTML = `
       <div class="log-wrap">
@@ -157,7 +157,7 @@ const AuditLogView = (() => {
 
     document.getElementById('log-filter-search')?.addEventListener('input', _debounce(_loadEntries, 200));
     document.getElementById('log-clear')?.addEventListener('click', () => {
-      if (!confirm('Clear the entire Captain\'s Log? This cannot be undone.')) return;
+      if (!confirm(Terminology.pick('Clear the entire activity log? This cannot be undone.', 'Clear the entire Captain\'s Log? This cannot be undone.'))) return;
       AuditLog.clearEntries();
       _activeCat = 'all';
       // Recompute pill counts inline (the pills live outside this view's

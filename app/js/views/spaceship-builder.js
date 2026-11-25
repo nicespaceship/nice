@@ -654,7 +654,7 @@ const SpaceshipBuilderView = (() => {
           <button class="crew-setup-option" id="btn-skip-setup">
             <span class="crew-setup-icon">&#8594;</span>
             <span class="crew-setup-label">Skip for Now</span>
-            <span class="crew-setup-desc">${Terminology.pick('Set up your team later from the Schematic view', 'Set up crew later from the Schematic view')}</span>
+            <span class="crew-setup-desc">${Terminology.pick('Set up your team later from the Diagram view', 'Set up crew later from the Schematic view')}</span>
           </button>
         </div>
 

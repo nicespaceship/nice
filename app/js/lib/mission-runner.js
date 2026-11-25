@@ -324,8 +324,8 @@ const MissionRunner = (() => {
           ShipLog.append(spaceshipId, {
             agentId: agentBp.id || null,
             role: 'system',
-            content: 'Captain ' + agentBp.name + ' is coordinating your request.',
-            metadata: { type: 'routing', chosen_agent_id: agentBp.id, chosen_agent_name: agentBp.name, reasoning: 'Captain dispatch' },
+            content: Terminology.pick('', 'Captain ') + agentBp.name + ' is coordinating your request.',
+            metadata: { type: 'routing', chosen_agent_id: agentBp.id, chosen_agent_name: agentBp.name, reasoning: Terminology.pick('Team lead', 'Captain dispatch') },
           }).catch(() => {});
         }
         const execResult = await runWithDispatch(agentBp, missionPrompt, _ship, {
@@ -598,7 +598,7 @@ const MissionRunner = (() => {
       await SB.db('mission_runs').update(missionId, {
         status: 'review',
         progress: 100,
-        result: result.finalOutput || 'Awaiting captain approval.',
+        result: result.finalOutput || Terminology.pick('Awaiting your approval.', 'Awaiting captain approval.'),
         approval_status: 'draft',
         node_results: nodeResults,
         metadata: Object.assign({}, mission.metadata || {}, {
@@ -612,7 +612,7 @@ const MissionRunner = (() => {
       _updateLocalMission(missionId, {
         status: 'review',
         progress: 100,
-        result: result.finalOutput || 'Awaiting captain approval.',
+        result: result.finalOutput || Terminology.pick('Awaiting your approval.', 'Awaiting captain approval.'),
         approval_status: 'draft',
       });
       _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
@@ -1252,7 +1252,7 @@ const MissionRunner = (() => {
       if (cleaned !== lastResult.finalAnswer) {
         lastResult = {
           ...lastResult,
-          finalAnswer: cleaned || 'The ' + Terminology.label('crew', { lowercase: true }) + ' completed their tasks, but the captain did not return a final summary.',
+          finalAnswer: cleaned || 'The ' + Terminology.label('crew', { lowercase: true }) + ' completed their tasks, but the ' + Terminology.label('captain', { lowercase: true }) + ' did not return a final summary.',
         };
       }
     }
