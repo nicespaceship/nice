@@ -79,12 +79,23 @@ describe('CrewView', () => {
     expect(el.querySelector('.crew-empty a.btn-primary').textContent).toBe('Choose a project');
   });
 
+  it('keeps the coordinating role as Captain in a sci-fi theme', () => {
+    const prev = globalThis.Theme;
+    globalThis.Theme = { current: () => 'matrix' };
+    try {
+      CrewView.render(el);
+      expect(el.querySelector('.crew-card-names span').textContent).toBe('Captain');
+    } finally {
+      if (prev === undefined) delete globalThis.Theme; else globalThis.Theme = prev;
+    }
+  });
+
   it('renders one card per crew member, framed in its provider color', () => {
     CrewView.render(el);
     const cards = [...el.querySelectorAll('.crew-card:not(.crew-card-open)')];
     expect(cards).toHaveLength(2);
     expect(cards[0].querySelector('h3').textContent).toBe('Head Baker');
-    expect(cards[0].querySelector('.crew-card-names span').textContent).toBe('Captain');
+    expect(cards[0].querySelector('.crew-card-names span').textContent).toBe('Lead');
     expect(cards[0].querySelector('.crew-model').textContent).toContain('Claude 4.6 Sonnet');
     expect(cards[0].style.getPropertyValue('--crew-c')).toBe(ModelCatalog.providerColor('claude-4-6-sonnet'));
     expect(cards[1].style.getPropertyValue('--crew-c')).toBe(ModelCatalog.providerColor('gemini-2-5-flash'));
