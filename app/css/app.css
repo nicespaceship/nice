@@ -291,13 +291,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 :is([data-theme="office"], [data-theme="office-dark"]) .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
 
 /* Header button hovers — invert to light bg on dark header band */
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle {
   color:var(--nav-text); border-color:rgba(255,255,255,0.35);
 }
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover *,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
 :is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn,
 :is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn-nice,
@@ -491,11 +488,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
-[data-theme="rx-78-2"] #btn-hud {
-  background: none;
-  color: #d4a017;
-  border: none;
-}
 /* Sidebar utility icons — boost contrast against Federation blue background */
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight,
 [data-theme="rx-78-2"] .app-sidebar .side-rail-btn { color: #d4a017; }
@@ -1274,8 +1266,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   color:var(--nav-text-muted, var(--text-muted));
   cursor:pointer; transition:background .15s, color .15s;
 }
-.side-theme-btn:hover,
-.side-theme-btn.active { color:var(--accent, var(--nav-text, var(--text))); }
+.side-theme-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 

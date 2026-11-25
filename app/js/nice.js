@@ -868,6 +868,8 @@ const NICE = (() => {
     });
     sidebar.addEventListener('click', (e) => {
       if (!_isMobile()) return;
+      // Themes opens a panel inside the sidebar, so the drawer stays open.
+      if (e.target.closest('#btn-hud')) return;
       if (e.target.closest('.side-link, .side-brand, .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
     });
 
@@ -1249,30 +1251,25 @@ const NICE = (() => {
 
     if (btn && panel) {
       const sidebarEl = document.getElementById('app-sidebar');
-      const toggleHUD = () => {
-        panel.classList.toggle('open');
-        btn.classList.toggle('active');
+      const setHUD = (on) => {
+        panel.classList.toggle('open', on);
+        btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       };
+      const toggleHUD = () => setHUD(!panel.classList.contains('open'));
       btn.addEventListener('click', toggleHUD);
       // The sidebar collapses by many paths (overlay, outside-click, nav,
       // swipe). When it does, reset the panel so it doesn't reopen
       // pre-expanded and shove the mode tabs down on the next open.
       if (sidebarEl) {
         new MutationObserver(() => {
-          if (!sidebarEl.classList.contains('open') && panel.classList.contains('open')) {
-            panel.classList.remove('open');
-            btn.classList.remove('active');
-          }
+          if (!sidebarEl.classList.contains('open') && panel.classList.contains('open')) setHUD(false);
         }).observe(sidebarEl, { attributes:true, attributeFilter:['class'] });
       }
 
       document.addEventListener('click', e => {
         // Use contains() so inner SVG/USE targets (the logo inside the
         // button) still register as the trigger rather than an outside click.
-        if (!panel.contains(e.target) && !btn.contains(e.target)) {
-          panel.classList.remove('open');
-          btn.classList.remove('active');
-        }
+        if (!panel.contains(e.target) && !btn.contains(e.target)) setHUD(false);
       });
     }
 

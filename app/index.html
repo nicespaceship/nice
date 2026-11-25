@@ -255,17 +255,14 @@
     </button>
   </div>
 
-  <!-- Open header: NICE wordmark (Home) on the left; theme and collapse on
-       the right. The theme button (#btn-hud) slides the HUD panel down. -->
+  <!-- Open header: NICE wordmark (Home) on the left; collapse on the right.
+       Themes (#btn-hud, in the account menu) slides the HUD panel down. -->
   <div class="side-header">
     <a href="#/" class="side-brand" id="side-brand" data-home-link aria-label="Home">
       <svg class="side-brand-logo" viewBox="0 0 79 64" aria-hidden="true"><use href="#icon-nice"/></svg>
       <span class="side-brand-text">NICE</span>
     </a>
     <div class="side-header-actions">
-      <button type="button" class="side-theme-btn" id="btn-hud" aria-label="Theme" title="Theme" aria-expanded="false">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-palette"/></svg>
-      </button>
       <button type="button" class="side-theme-btn" id="side-collapse" aria-label="Collapse menu" title="Collapse menu">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-collapse"/></svg>
       </button>
@@ -332,6 +329,10 @@
         <span>Get help</span>
       </a>
       <div class="side-menu-sep" role="separator"></div>
+      <button type="button" class="side-popover-item" role="menuitem" id="btn-hud" aria-expanded="false" aria-controls="app-hud-panel">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-palette"/></svg>
+        <span>Themes</span>
+      </button>
       <a href="#/blueprints" class="side-popover-item" role="menuitem" data-view="blueprints">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-blueprint"/></svg>
         <span>Blueprints</span>
