@@ -68,6 +68,16 @@
   <symbol id="icon-build" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
   <symbol id="icon-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
   <symbol id="icon-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+  <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+  <symbol id="icon-gauge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12V7"/><path d="M8 4.5l.5 1M16 4.5l-.5 1"/></symbol>
+  <symbol id="icon-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5v.2"/><path d="M12 16.5h.01"/></symbol>
+  <symbol id="icon-message" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 1-4.2 17L3 21l1-4.8A9 9 0 0 1 12 3z"/></symbol>
+  <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></symbol>
+  <symbol id="icon-plans" viewBox="0 0 24 24"><path d="M3 6l1.5 1.5L7.5 4.5"/><circle cx="5" cy="17" r="2"/><path d="M11 6h10M11 17h10"/></symbol>
+  <symbol id="icon-devices" viewBox="0 0 24 24"><rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="16" y="9" width="6" height="11" rx="1.5"/></symbol>
+  <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
   <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
   <symbol id="icon-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
   <symbol id="icon-palette" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="14" r="1.5" fill="currentColor" stroke="none"/></symbol>
@@ -327,46 +337,88 @@
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
   <div class="side-footer">
     <div id="sidebar-presence"></div>
-    <div class="side-footer-row">
-      <a href="#/profile" class="side-user-card" id="hdr-user">
-        <span class="side-user-top">
-          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>
-          <span class="hdr-username" id="hdr-username">Profile</span>
-        </span>
-      </a>
-      <button class="side-more-btn" id="side-more-btn" aria-label="Settings" title="Settings" aria-expanded="false">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-settings"/></svg>
-        <span class="nav-alert-dot nav-alert-dot--corner" id="gear-alert-dot" hidden></span>
-      </button>
-    </div>
-    <div class="side-popover" id="side-popover">
-      <a href="#/settings" class="side-popover-item" data-view="settings">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-settings"/></svg>
+    <button type="button" class="side-account" id="side-more-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="side-popover">
+      <span class="side-account-avatar" id="hdr-user" aria-hidden="true"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-profile"/></svg></span>
+      <span class="side-account-text"><span class="hdr-username" id="hdr-username">Profile</span><span class="side-account-plan" id="side-account-plan" hidden></span></span>
+      <span class="nav-alert-dot" id="gear-alert-dot" hidden></span>
+      <svg class="icon icon-xs side-account-chev" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+    </button>
+    <div class="side-popover side-menu" id="side-popover" role="menu" aria-label="Account">
+      <a href="#/profile" class="side-menu-id" id="side-menu-id" role="menuitem">Sign in</a>
+      <a href="#/settings" class="side-popover-item" role="menuitem" data-view="settings">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-settings"/></svg>
         <span>Settings</span>
+        <kbd class="side-menu-kbd" data-kbd=","></kbd>
       </a>
-      <a href="#/integrations" class="side-popover-item" data-view="integrations">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
+      <button type="button" class="side-popover-item" role="menuitem" id="side-menu-shortcuts">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-keyboard"/></svg>
+        <span>Keyboard shortcuts</span>
+        <kbd class="side-menu-kbd" data-kbd="/"></kbd>
+      </button>
+      <a href="#/wallet" class="side-popover-item" role="menuitem" data-view="wallet">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-gauge"/></svg>
+        <span>Usage</span>
+        <span class="nav-alert-dot" id="alert-dot-wallet" hidden></span>
+      </a>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-globe"/></svg>
+        <span>Language</span>
+      </button>
+      <a href="#/bridge?tab=documentation" class="side-popover-item" role="menuitem" data-view="docs">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-help"/></svg>
+        <span>Get help</span>
+      </a>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-message"/></svg>
+        <span>Send feedback</span>
+      </button>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-info"/></svg>
+        <span>Learn more</span>
+        <svg class="icon icon-xs side-menu-end" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-chevron-right"/></svg>
+      </button>
+      <div class="side-menu-sep" role="separator"></div>
+      <a href="#/wallet" class="side-popover-item" role="menuitem" data-view="plans">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-plans"/></svg>
+        <span>View all plans</span>
+      </a>
+      <a href="#/integrations" class="side-popover-item" role="menuitem" data-view="integrations">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-integrations"/></svg>
         <span>Integrations</span>
         <span class="nav-alert-dot" id="alert-dot-integrations" hidden></span>
       </a>
-      <a href="#/wallet" class="side-popover-item" data-view="wallet">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-wallet"/></svg>
-        <span>Wallet</span>
-        <span class="nav-alert-dot" id="alert-dot-wallet" hidden></span>
-      </a>
-      <a href="#/security" class="side-popover-item" data-view="security">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
+      <a href="#/security" class="side-popover-item" role="menuitem" data-view="security">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-lock"/></svg>
         <span>Security</span>
         <span class="nav-alert-dot" id="alert-dot-security" hidden></span>
       </a>
-      <a href="#/moderation" class="side-popover-item admin-only" data-view="moderation" hidden>
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-alert"/></svg>
+      <a href="#/moderation" class="side-popover-item admin-only" role="menuitem" data-view="moderation" hidden>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-alert"/></svg>
         <span>Moderation</span>
         <span class="nav-alert-dot" id="alert-dot-moderation" hidden></span>
       </a>
-      <button class="side-popover-item" id="btn-logout">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span>Log Out</span>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-devices"/></svg>
+        <span>Get apps and extensions</span>
+      </button>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-key"/></svg>
+        <span>Share guest passes</span>
+      </button>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-file-text"/></svg>
+        <span>View changelog</span>
+      </button>
+      <div class="side-menu-sep" role="separator"></div>
+      <button type="button" class="side-popover-item" role="menuitem" data-soon>
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-key"/></svg>
+        <span>Get API keys</span>
+        <svg class="icon icon-xs side-menu-end" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-external"/></svg>
+      </button>
+      <div class="side-menu-sep" role="separator"></div>
+      <button type="button" class="side-popover-item" role="menuitem" id="btn-logout">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-logout"/></svg>
+        <span>Log out</span>
       </button>
     </div>
   </div>

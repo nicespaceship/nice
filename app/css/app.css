@@ -163,8 +163,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-hdr-menu { display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; }
 
 /* User info (now in sidebar footer) */
-.hdr-user { display:flex; align-items:center; gap:8px; }
-.side-user-top { display:flex; align-items:center; gap:8px; min-width:0; }
 .hdr-username { font-size:var(--text-sm); font-family:var(--font-b); color:var(--nav-text-muted, var(--text-muted)); white-space:nowrap; }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1388,23 +1386,26 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-chat-menu-item--danger svg { color:var(--color-error); }
 
 /* Sidebar user card (footer) */
-.side-footer-row {
-  display:flex; align-items:center; gap:4px;
-}
-.side-user-card {
-  display:flex; flex-direction:column; gap:4px;
+.side-account {
+  display:flex; align-items:center; gap:10px; width:100%; position:relative;
   padding:8px 10px; border-radius:var(--radius);
-  text-decoration:none; color:var(--nav-text-muted, var(--text-muted));
+  background:transparent; border:none; cursor:pointer; text-align:left;
+  color:var(--nav-text-muted, var(--text-muted));
+  font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-snug);
   transition:background .15s, color .15s;
-  flex:1; min-width:0;
 }
-.side-more-btn {
-  display:flex; align-items:center; justify-content:center;
-  width:32px; height:32px; flex-shrink:0;
-  background:transparent; border:none; border-radius:var(--radius);
-  color:var(--nav-text-muted, var(--text-muted)); cursor:pointer;
-  transition:color .2s, background .2s;
+.side-account-avatar {
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:24px; height:24px; border-radius:50%; overflow:hidden;
+  background:var(--nav-surface2, var(--surface2));
+  font-size:var(--text-xs); font-weight:var(--fw-medium);
 }
+.side-account-avatar .icon { width:14px; height:14px; }
+.side-account-avatar img { width:100%; height:100%; object-fit:cover; }
+.side-account-text { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.side-account-text .hdr-username { color:var(--nav-text, var(--text)); }
+.side-account-chev { width:14px; height:14px; flex-shrink:0; opacity:.7; transition:transform .15s; }
+.side-account[aria-expanded="true"] .side-account-chev { transform:rotate(180deg); }
 .side-footer { position:relative; }
 .side-popover {
   display:none; position:absolute; bottom:100%; left:8px; right:8px;
@@ -1416,15 +1417,34 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   margin-bottom:6px;
 }
 .side-popover.open { display:block; }
+/* Tall menu: scroll inside itself when the window is short. */
+.side-menu { max-height:calc(100dvh - var(--app-banner-height, 0px) - 96px); overflow-y:auto; }
 .side-popover-item {
   display:flex; align-items:center; gap:10px;
   padding:9px 14px; width:100%;
-  background:none; border:none;
+  background:none; border:none; text-align:left;
   color:var(--text-muted); text-decoration:none;
   font-family:var(--font-b); font-size:var(--text-sm);
   cursor:pointer; transition:background .15s, color .15s;
 }
-.side-popover-item:hover { background:var(--surface); color:var(--text); }
+.side-popover-item:hover,
+.side-popover-item:focus-visible { background:var(--surface); color:var(--text); }
+.side-popover-item > .icon { flex-shrink:0; }
+/* display:flex above would otherwise beat the hidden attribute (admin-only rows, Log out for guests). */
+.side-popover-item[hidden] { display:none; }
+.side-menu-id {
+  display:block; padding:8px 14px 6px;
+  color:var(--text-muted); text-decoration:none;
+  font-family:var(--font-b); font-size:var(--text-sm);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.side-menu-id:hover { color:var(--text); }
+.side-menu-sep { height:1px; margin:6px 14px; background:var(--border); }
+.side-menu-kbd {
+  margin-left:auto; flex-shrink:0;
+  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
+}
+.side-menu-end { margin-left:auto; flex-shrink:0; width:14px; height:14px; opacity:.7; }
 
 .app-side-nav { display:flex; flex-direction:column; padding:8px; gap:2px; flex:1; overflow-y:auto; }
 .side-link {
@@ -1440,8 +1460,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    Popover/menu items that float OUTSIDE the sidebar chrome keep their own
    bare --surface hover so they read against --panel-bg, not --nav-bg. */
 .side-link:hover,
-.side-user-card:hover,
-.side-more-btn:hover,
+.side-account:hover,
+.side-account[aria-expanded="true"],
 .side-folder-toggle:hover,
 .side-chat-dots:hover {
   background:var(--nav-surface, var(--surface));
@@ -1827,12 +1847,13 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
-/* Collapsed footer: stack the settings gear above the profile icon as a
-   vertical icon column (column-reverse keeps DOM order profile→gear but
-   paints gear on top). Collapsed, the gear is a quick Settings shortcut —
-   the full popover menu needs the expanded width (see nice.js). */
-.app-sidebar:not(.open) .side-footer-row { flex-direction:column-reverse; align-items:center; gap:8px; }
-.app-sidebar:not(.open) .side-user-card { padding:0; justify-content:center; align-items:center; }
+/* Collapsed footer: only the avatar shows. There the account button is a
+   quick Settings shortcut; the menu needs the expanded width (see nice.js). */
+.app-sidebar:not(.open) .side-account { justify-content:center; padding:4px 0; }
+.app-sidebar:not(.open) .side-account-text,
+.app-sidebar:not(.open) .side-account-chev { display:none; }
+/* On the rail the dot sits on the avatar's corner instead of taking a column. */
+.app-sidebar:not(.open) .side-account .nav-alert-dot { position:absolute; top:2px; right:8px; margin:0; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {
@@ -6484,7 +6505,7 @@ html:has(.space-reactor) .jv-pp-reactor {
 .nav-alert-dot { margin-left:auto; }
 .nav-alert-dot[hidden], .bp-tab-alert[hidden] { display:none; }
 /* Corner variant — pinned to the top-right of a square control (rail icon, tab, gear). */
-.side-rail-btn, .bp-type-tab, .bp-tab-picker, .side-more-btn { position:relative; }
+.side-rail-btn, .bp-type-tab, .bp-tab-picker { position:relative; }
 .nav-alert-dot--corner { position:absolute; top:7px; right:7px; margin-left:0; }
 .bp-tab-alert { position:absolute; top:5px; right:6px; }
 

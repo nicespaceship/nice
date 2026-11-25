@@ -33,6 +33,8 @@ const Keyboard = (() => {
     // Single key
     { chord: ['?'],      label: 'Show Shortcuts',   action: () => Keyboard.showHelp() },
     // Modifier shortcuts (handled separately in _handleKey, listed here for help overlay)
+    { chord: ['⌘',','],     label: 'Settings',        action: () => {} },
+    { chord: ['⌘','/'],     label: 'Show Shortcuts',  action: () => {} },
     { chord: ['⌘','⇧','P'], label: 'Toggle Preview',  action: () => {} },
     { chord: ['⌘','⇧','O'], label: 'New Chat',        action: () => {} },
   ];
@@ -56,6 +58,20 @@ const Keyboard = (() => {
       const btn = document.getElementById('side-chat-new');
       if (btn) btn.click();
       return;
+    }
+
+    // Cmd/Ctrl+, → Settings; Cmd/Ctrl+/ → this shortcut list (the account menu shows both)
+    // Matched on the character typed, so layouts where that physical key is
+    // "-" keep their browser zoom shortcut.
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      const comma = e.key === ',' && !e.shiftKey;
+      const slash = e.key === '/';
+      if (comma || slash) {
+        e.preventDefault();
+        if (comma) window.location.hash = '#/settings';
+        else showHelp();
+        return;
+      }
     }
 
     // Ignore when typing in inputs

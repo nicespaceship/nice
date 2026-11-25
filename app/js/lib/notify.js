@@ -343,5 +343,8 @@ const Notify = (() => {
     return arr;
   }
 
-  return { init, requestPermission, send, load, markRead, markAllRead, teardownRealtime: _teardownRealtime, subscribePush, updateBadge: _updateBadge };
+  // A toast and nothing else: not stored, not counted, not pushed.
+  const toast = (title, message, type = 'system') => _showToast(title, message, type);
+
+  return { init, requestPermission, send, toast, load, markRead, markAllRead, teardownRealtime: _teardownRealtime, subscribePush, updateBadge: _updateBadge };
 })();

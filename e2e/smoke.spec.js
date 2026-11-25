@@ -253,6 +253,70 @@ test.describe('Dashboard', () => {
     await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toHaveText('Choose a project');
   });
 
+  test('the account button opens the account menu', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); });
+    const button = page.locator('#side-more-btn');
+    const menu = page.locator('#side-popover');
+    await expect(button).toContainText('Profile');
+    await expect(menu).toBeHidden();
+    await button.click();
+    await expect(menu).toBeVisible();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    // Signed out: the identity line offers sign-in, and there is nothing to log out of.
+    await expect(menu.locator('#side-menu-id')).toHaveText('Sign in');
+    await expect(menu.locator('#btn-logout')).toBeHidden();
+    await expect(menu.locator('.admin-only')).toBeHidden();
+    for (const label of ['Settings', 'Keyboard shortcuts', 'Usage', 'Get help', 'View all plans', 'Integrations', 'Security']) {
+      await expect(menu.locator('.side-popover-item', { hasText: label }).first()).toBeVisible();
+    }
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+    // A row NICE does not have yet says so and closes the menu.
+    await button.click();
+    await menu.locator('.side-popover-item', { hasText: 'Send feedback' }).click();
+    await expect(menu).toBeHidden();
+    await expect(page.locator('#notify-container')).toContainText('not available yet');
+    // A real row navigates.
+    await button.click();
+    await menu.locator('.side-popover-item', { hasText: 'Settings' }).click();
+    await expect(page).toHaveTitle(/Settings/);
+  });
+
+  test('the plan shows only after that account\'s subscription has loaded', async ({ page }) => {
+    await waitForApp(page);
+    const plan = page.locator('#side-account-plan');
+    await expect(plan).toBeHidden();
+    await page.evaluate(() => { State.set('user', { id: 'acct-a', email: 'a@example.com' }); });
+    await expect(page.locator('#hdr-username')).toHaveText('a');
+    await expect(plan).toBeHidden();
+    // Another account's subscription landing must not label this one.
+    await page.evaluate(() => { document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: 'acct-b' } })); });
+    await expect(plan).toBeHidden();
+    await page.evaluate(() => { document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: 'acct-a' } })); });
+    await expect(plan).toHaveText(/· (Free|Pro)/);
+    await page.evaluate(() => { State.set('user', { id: 'acct-b', email: 'b@example.com' }); });
+    await expect(plan).toBeHidden();
+  });
+
+  test('the shortcuts the account menu advertises work', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/', 'Home');
+    await page.keyboard.press('Control+,');
+    await expect(page).toHaveTitle(/Settings/);
+    // On layouts where that physical key types "-", Ctrl+minus stays the browser's zoom-out.
+    const taken = await page.evaluate(() => {
+      const e = new KeyboardEvent('keydown', { key: '-', code: 'Slash', ctrlKey: true, bubbles: true, cancelable: true });
+      document.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+    expect(taken).toBe(false);
+    await expect(page.locator('#shortcut-help')).toBeHidden();
+    await page.keyboard.press('Control+/');
+    await expect(page.locator('#shortcut-help')).toBeVisible();
+  });
+
   test('the default look says project and sci-fi themes say spaceship', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); });
