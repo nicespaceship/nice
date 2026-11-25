@@ -60,8 +60,8 @@ const Notify = (() => {
     const duration = (settings.toastDuration || 5) * 1000;
     _showToast(title, message, type, duration, undo, actionLabel, persistent);
 
-    // Record in the in-memory store the Alerts page, MessageBar, and the PWA
-    // badge all read. send() is the producer; without it that store stays empty
+    // Record in the in-memory store the Alerts page and the PWA
+    // badge both read. send() is the producer; without it that store stays empty
     // and those surfaces never light up. Durable history still goes to Supabase.
     const clientId = (typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()

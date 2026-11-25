@@ -2393,9 +2393,6 @@ const NICE = (() => {
     // Activity feed
     if (typeof ActivityFeed !== 'undefined') ActivityFeed.init();
 
-    // Message bar (AI communications ticker)
-    if (typeof MessageBar !== 'undefined') MessageBar.init();
-
     // Quick Notes panel
     if (typeof QuickNotes !== 'undefined') QuickNotes.init();
 

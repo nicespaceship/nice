@@ -129,7 +129,7 @@ describe('Notify — notification store + PWA badge', () => {
     State.set('notifications', []);
   });
 
-  it('send() records the notification in State so Alerts/MessageBar/badge can read it', () => {
+  it('send() records the notification in State so Alerts and the badge can read it', () => {
     Notify.send({ title: 'Hi', message: 'there', type: 'system' });
     const notifs = State.get('notifications');
     expect(notifs.length).toBe(1);

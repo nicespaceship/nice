@@ -1395,66 +1395,9 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   background:var(--nav-bg-dk, transparent);
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   MESSAGE BAR (AI Communications Feed)
-───────────────────────────────────────────────────────────────── */
-.msg-bar {
-  display:none; /* Message bar removed — layout uses full-height sidebar */
-}
-.msg-bar-ticker { width:100%; height:32px; overflow:hidden; display:flex; align-items:center; }
-.msg-bar-track {
-  display:flex; align-items:center; white-space:nowrap;
-  animation:msg-scroll 60s linear infinite;
-  font-family:var(--font-b); font-size:var(--text-2xs);
-  color:var(--text-muted); letter-spacing:var(--tracking-normal);
-  transition:color .4s;
-}
-.msg-bar-item {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:0 24px; border-right:1px solid var(--border);
-  color:var(--text-muted); text-decoration:none; cursor:pointer;
-  transition:color .15s;
-}
-.msg-bar-item:hover { color:var(--accent); }
-.msg-bar-dot {
-  width:4px; height:4px; border-radius:50%;
-  background:var(--accent); box-shadow:var(--glow);
-  animation:blink 2s ease-in-out infinite; flex-shrink:0;
-}
-.msg-bar-text { white-space:nowrap; }
+/* Shared blink keyframe. theme.css also defines `blink`; this copy, loaded
+   later, is the one app elements get, so keep it. */
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes msg-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-
-/* Expanded state */
-.msg-bar.expanded { height:240px; overflow:visible; }
-.msg-bar.expanded .msg-bar-ticker { display:none; }
-.msg-bar-feed {
-  display:none; flex-direction:column; overflow-y:auto;
-  height:calc(240px - 8px); padding:4px 0;
-}
-.msg-bar.expanded .msg-bar-feed { display:flex; }
-.msg-bar-feed-item {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 16px; font-size:var(--text-xs);
-  color:var(--text-muted); text-decoration:none;
-  border-bottom:1px solid rgba(255,255,255,.04);
-  transition:background .15s, color .15s;
-}
-.msg-bar-feed-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
-.msg-bar-feed-text { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.msg-bar-feed-time { font-size:var(--text-2xs); color:var(--text-muted); opacity:.6; white-space:nowrap; }
-
-/* Toggle button */
-.msg-bar-toggle {
-  position:absolute; right:8px; top:50%; transform:translateY(-50%);
-  background:none; border:1px solid var(--border);
-  color:var(--text-muted); cursor:pointer;
-  padding:3px; border-radius:var(--radius);
-  transition:color .15s, border-color .15s; z-index:1;
-}
-.msg-bar-toggle:hover { color:var(--accent); border-color:var(--accent); }
-.msg-bar.expanded .msg-bar-toggle { top:8px; transform:none; }
-
 
 /* ─────────────────────────────────────────────────────────────────
    MAIN CONTENT
