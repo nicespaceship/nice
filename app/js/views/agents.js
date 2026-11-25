@@ -345,14 +345,19 @@ function _authPrompt(el, feature) {
     <div class="app-empty">
       <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-profile"/></svg>
       <h2>Sign In Required</h2>
-      <p>Sign in to access ${feature}.</p>
+      <p>Sign in to access ${Utils.esc(feature)}.</p>
       <div class="app-empty-acts">
         ${useModal
-          ? '<button class="btn btn-primary btn-sm" onclick="AuthModal.open(\'Sign in to access ' + feature + '\')">Sign In</button>'
+          ? '<button type="button" class="btn btn-primary btn-sm" data-auth-prompt>Sign In</button>'
           : '<a href="#/profile" class="btn btn-primary btn-sm">Sign In</a>'}
       </div>
     </div>
   `;
+  // A listener, not an inline onclick: the feature name can hold quotes
+  // ("the captain's log") that would break a handler built as a string.
+  el.querySelector('[data-auth-prompt]')?.addEventListener('click', () => {
+    AuthModal.open('Sign in to access ' + feature);
+  });
 }
 
 /* ── Skeleton Loading Helpers (global) ── */
