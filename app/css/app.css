@@ -11042,9 +11042,11 @@ body.preview-active .nice-ai {
   border:1px solid var(--border); border-radius:14px; background:var(--bg);
 }
 .code-prompt:focus-within { border-color:var(--border-hi, var(--accent)); }
-.code-prompt textarea {
+/* `.code-view` lifts these past the themes' blanket input / textarea styles. */
+.code-view .code-prompt textarea,
+.code-view .code-prompt textarea:focus {
   display:block; width:100%; max-height:240px; resize:none; padding:0;
-  border:0; outline:0; background:transparent; color:var(--text);
+  border:0; outline:0; box-shadow:none; background:transparent; color:var(--text);
   font-family:var(--font-b); font-size:var(--text-base); line-height:var(--lh-base);
 }
 .code-prompt-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
@@ -11105,10 +11107,12 @@ body.preview-active .nice-ai {
 }
 .code-term-line { flex-shrink:0; display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid var(--border); }
 .code-term-prompt { color:var(--text-muted); font-family:var(--font-m); }
-.code-term-line input {
-  flex:1; min-width:0; border:0; outline:0; background:transparent;
+.code-view .code-term-line input,
+.code-view .code-term-line input:focus {
+  flex:1; min-width:0; padding:0; border:0; outline:0; box-shadow:none; background:transparent;
   color:var(--text); font-family:var(--font-m); font-size:var(--text-sm);
 }
+.code-term-line [hidden] { display:none; }
 
 .code-empty {
   display:flex; flex-direction:column; align-items:center; gap:12px;
