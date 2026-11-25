@@ -51,8 +51,7 @@ const NavCommands = (() => {
      paths byte-for-byte so palette behavior is unchanged. */
   const COMMANDS = [
     // ── Navigation ──
-    { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
-    { id: 'open-dashboard',         name: 'Dashboard',         kind: 'nav', route: '/bridge',                icon: '#icon-dashboard', skinKey: null,                keywords: 'dashboard bridge',                                       desc: 'Open the Dashboard: diagram, blueprints, missions, operations and log.' },
+    { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open Home.' },
     { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space', search: 'chat workspace models cards', desc: 'Open Space, where the model cards work.' },
     { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox', search: 'approvals review deliver', desc: 'Open Ship, where finished work goes out.' },
     { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents agent list manage',                                     desc: 'Open the Agents roster.' },
@@ -70,6 +69,7 @@ const NavCommands = (() => {
     { id: 'open-settings',          name: 'Settings',          kind: 'nav', route: '/settings',              icon: '#icon-settings',  skinKey: 'nav.settings',      keywords: 'settings preferences config',                            desc: 'Open Settings.' },
     { id: 'open-theme-editor',      name: 'Theme Editor',      kind: 'nav', route: '/theme-editor',          icon: '#icon-settings',  skinKey: 'nav.theme-creator', keywords: 'theme editor creator custom colors builder',             desc: 'Open the Theme Editor.' },
     { id: 'open-workflows',         name: 'Workflows',         kind: 'nav', route: '/workflows',             icon: '#icon-build',     skinKey: 'nav.workflows',     keywords: 'workflows pipelines automation nodes',                   desc: 'Open Workflows.' },
+    { id: 'open-dashboard',         name: 'Dashboard',         kind: 'nav', route: '/bridge',                icon: '#icon-dashboard', skinKey: null,                keywords: 'dashboard bridge',                                       desc: 'Open the Dashboard: diagram, blueprints, missions, operations and log.' },
     // ── UI actions ──
     { id: 'create-agent',      name: 'Create Agent',       kind: 'action', icon: '#icon-plus',      keywords: 'new create agent build',                          desc: 'Open the Agent Builder.',           run: () => _navigate('#/bridge/agents/new') },
     { id: 'new-spaceship',     name: 'New Project',        kind: 'action', icon: '#icon-spaceship', keywords: 'new create spaceship fleet project',              desc: 'Open Blueprints to add a project.', run: () => _navigate('#/bridge/spaceships') },

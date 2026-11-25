@@ -174,6 +174,11 @@ describe('NavCommands', () => {
         const dash = NavCommands.list().find(c => c.id === 'open-dashboard');
         expect(dash.label).toBe('Dashboard');
         expect(dash.route).toBe('/bridge');
+        expect(NavCommands.list().find(c => c.id === 'open-bridge').keywords).toBe('home');
+        for (const plain of ['office', 'office-dark', 'my-custom-theme']) {
+          globalThis.Theme = { ...theme, current: () => plain };
+          expect(NavCommands.resolve('dashboard').id).toBe('open-dashboard');
+        }
         globalThis.Theme = { ...theme, current: () => 'lcars' };
         expect(NavCommands.resolve('dashboard').id).toBe('open-bridge');
         expect(NavCommands.resolve('bridge').id).toBe('open-bridge');
