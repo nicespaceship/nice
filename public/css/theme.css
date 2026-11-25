@@ -478,7 +478,6 @@ html:not([data-theme]),
   color: var(--accent);
 }
 
-
 /* ── CORE Dark — flip the few light-only literals ──────────────────────
    The :is(nice, nice-dark) selectors above share all token-based rules;
    only literals that hardcoded a light value need a dark override here. */

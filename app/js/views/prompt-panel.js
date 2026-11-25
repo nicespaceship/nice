@@ -346,8 +346,8 @@ const PromptPanel = (() => {
     // On the Schematic, keep the user in-view — responses render into the
     // mini-chat panel above the reactor. The expand button opts in to the
     // full monitor overlay by setting `_miniExpanded`. `force` is the
-    // explicit "open this conversation" path (_showConversation) which always
-    // wants the full monitor, never the schematic mini-chat.
+    // explicit "open this conversation" path (_showConversation), which
+    // always wants the full monitor, never the schematic mini-chat.
     if (!force && _isOnSchematicInView() && !_miniExpanded) {
       _ensureMiniObserver();
       _updateMiniChat();
