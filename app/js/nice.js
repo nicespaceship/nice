@@ -868,6 +868,8 @@ const NICE = (() => {
     });
     sidebar.addEventListener('click', (e) => {
       if (!_isMobile()) return;
+      // Themes opens a panel inside the sidebar, so the drawer stays open.
+      if (e.target.closest('#btn-hud')) return;
       if (e.target.closest('.side-link, .side-brand, .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
     });
 
@@ -1249,30 +1251,37 @@ const NICE = (() => {
 
     if (btn && panel) {
       const sidebarEl = document.getElementById('app-sidebar');
-      const toggleHUD = () => {
-        panel.classList.toggle('open');
-        btn.classList.toggle('active');
+      const setHUD = (on) => {
+        panel.classList.toggle('open', on);
+        btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       };
+      // The row lives in the account menu, which hides as it closes, so
+      // focus moves into the panel (the current theme's swatch) on open.
+      const toggleHUD = () => {
+        const on = !panel.classList.contains('open');
+        setHUD(on);
+        if (on) (panel.querySelector('.db.active') || panel.querySelector('button, [tabindex]'))?.focus();
+      };
+      // Escape closes the panel and returns focus to the account button.
+      panel.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        setHUD(false);
+        document.getElementById('side-more-btn')?.focus();
+      });
       btn.addEventListener('click', toggleHUD);
       // The sidebar collapses by many paths (overlay, outside-click, nav,
       // swipe). When it does, reset the panel so it doesn't reopen
       // pre-expanded and shove the mode tabs down on the next open.
       if (sidebarEl) {
         new MutationObserver(() => {
-          if (!sidebarEl.classList.contains('open') && panel.classList.contains('open')) {
-            panel.classList.remove('open');
-            btn.classList.remove('active');
-          }
+          if (!sidebarEl.classList.contains('open') && panel.classList.contains('open')) setHUD(false);
         }).observe(sidebarEl, { attributes:true, attributeFilter:['class'] });
       }
 
       document.addEventListener('click', e => {
         // Use contains() so inner SVG/USE targets (the logo inside the
         // button) still register as the trigger rather than an outside click.
-        if (!panel.contains(e.target) && !btn.contains(e.target)) {
-          panel.classList.remove('open');
-          btn.classList.remove('active');
-        }
+        if (!panel.contains(e.target) && !btn.contains(e.target)) setHUD(false);
       });
     }
 

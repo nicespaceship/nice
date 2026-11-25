@@ -172,10 +172,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    sidebar's visual slot (just below the sidebar header). Previously
    lived inside the sidebar and flexed it open; now fixed to the same
    viewport coordinates with a slide-in via max-height + opacity. */
-/* In-flow inside the sidebar, directly under the header CTA. Collapsed
-   to zero height so it adds no space; opening it slides down and pushes
-   the mode tabs + sub-nav below. Only expands while the sidebar is open
-   (the CTA that toggles it only shows when open). */
+/* In-flow inside the sidebar, directly under the header. Collapsed to
+   zero height so it adds no space; Themes in the account menu slides it
+   down and pushes the project list below. Only expands while the sidebar
+   is open (the account menu only shows when open). */
 .app-hud-panel {
   flex-shrink:0;
   margin:0 12px;
@@ -291,13 +291,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 :is([data-theme="office"], [data-theme="office-dark"]) .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
 
 /* Header button hovers — invert to light bg on dark header band */
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle {
   color:var(--nav-text); border-color:rgba(255,255,255,0.35);
 }
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
-:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover *,
 :is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
 :is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn,
 :is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn-nice,
@@ -491,11 +488,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
-[data-theme="rx-78-2"] #btn-hud {
-  background: none;
-  color: #d4a017;
-  border: none;
-}
 /* Sidebar utility icons — boost contrast against Federation blue background */
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight,
 [data-theme="rx-78-2"] .app-sidebar .side-rail-btn { color: #d4a017; }
@@ -1219,7 +1211,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* Sidebar top — two states share the top of the sidebar:
    - Collapsed: the .side-rail icon stack (NICE mark for Home + expand).
-   - Open: the .side-header — NICE wordmark (Home) + theme and collapse.
+   - Open: the .side-header — NICE wordmark (Home) + collapse.
    Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
    light strip — see theme.css) anchor on .side-header. */
 
@@ -1274,8 +1266,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   color:var(--nav-text-muted, var(--text-muted));
   cursor:pointer; transition:background .15s, color .15s;
 }
-.side-theme-btn:hover,
-.side-theme-btn.active { color:var(--accent, var(--nav-text, var(--text))); }
+.side-theme-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 

@@ -74,10 +74,33 @@ test.describe('Smoke Tests', () => {
     for (const gone of ['#/space', '#/ship']) {
       await expect(sidebar.locator(`a[href="${gone}"]`)).toHaveCount(0);
     }
-    // Blueprints is a row in the account menu, above Integrations.
+    // Themes and Blueprints are rows in the account menu, above Integrations.
+    await expect(page.locator('.side-header #btn-hud')).toHaveCount(0);
     await page.locator('#side-more-btn').click();
     const rows = await page.locator('#side-popover .side-popover-item span:first-of-type').allTextContents();
+    expect(rows.indexOf('Themes')).toBe(rows.indexOf('Blueprints') - 1);
     expect(rows.indexOf('Blueprints')).toBe(rows.indexOf('Integrations') - 1);
+    // Themes closes the menu and opens the theme panel; a swatch switches.
+    await page.locator('#side-popover .side-popover-item', { hasText: 'Themes' }).click();
+    await expect(page.locator('#side-popover')).toBeHidden();
+    await expect(page.locator('#app-hud-panel')).toHaveClass(/\bopen\b/);
+    await expect(page.locator('#btn-hud')).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('#app-hud-panel .db[data-theme-id="matrix"]').click();
+    expect(await page.getAttribute('html', 'data-theme')).toBe('matrix');
+    await page.evaluate(() => Theme.set('nice'));
+    await page.locator('#app-main, .app-main').first().click({ position: { x: 5, y: 5 } });
+    await expect(page.locator('#app-hud-panel')).not.toHaveClass(/\bopen\b/);
+    // By keyboard: focus lands on the current theme's swatch; Escape closes
+    // the panel and returns focus to the account button.
+    await page.locator('#side-more-btn').click();
+    await page.locator('#btn-hud').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#app-hud-panel')).toHaveClass(/\bopen\b/);
+    expect(await page.evaluate(() => document.getElementById('app-hud-panel').contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#app-hud-panel')).not.toHaveClass(/\bopen\b/);
+    await expect(page.locator('#side-more-btn')).toBeFocused();
+    await page.locator('#side-more-btn').click();
     await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
     await page.waitForFunction(() => location.hash === '#/blueprints');
     // Collapsing keeps the destinations on the rail as icons. There the NICE
