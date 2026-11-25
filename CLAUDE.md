@@ -456,7 +456,7 @@ Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Spa
 | `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
 | `MissionComposerView` | `mission-composer.js` | `#/missions/new` | Mission Composer (prompt-driven authoring; emits to `missions` table + enqueues a `mission_runs` row) |
 | `AnalyticsView` | `analytics.js` | (embedded in BlueprintsView) | Operations |
-| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView; serves Bridge "Log" tab) | Captain's Log |
+| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView; serves Bridge "Log" tab) | Activity log (Captain's Log in sci-fi themes) |
 | `ShipLogView` | `ship-log-view.js` | (embedded in SchematicView) | Ship's Log |
 | `SecurityView` | `security.js` | `#/security` | Security |
 | `IntegrationsView` | `integrations.js` | (tab in SecurityView) | Integrations |
