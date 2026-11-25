@@ -113,6 +113,27 @@ test.describe('Smoke Tests', () => {
     }
   });
 
+  test('documentation has its own page and old bridge links land on it', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { window.location.hash = '#/bridge?tab=documentation&s=missions'; });
+    await page.waitForFunction(() => location.hash === '#/docs?s=missions');
+    await expect(page.locator('.docs-nav-btn.active[data-section="missions"]')).toBeVisible();
+    await page.locator('.docs-nav-btn[data-section="agents"]').click();
+    await page.waitForFunction(() => location.hash === '#/docs?s=agents');
+    // One scroller per view: the docs page scrolls in .app-view-content.
+    expect(await page.locator('#docs-content').evaluate(el => getComputedStyle(el).overflowY)).toBe('visible');
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    expect(results.violations.filter(v => v.impact === 'critical')).toHaveLength(0);
+    // axe files these under best-practice, so they run by name.
+    const landmarks = await new AxeBuilder({ page })
+      .withRules(['landmark-no-duplicate-main', 'landmark-main-is-top-level'])
+      .analyze();
+    expect(landmarks.violations.map(v => v.id)).toEqual([]);
+  });
+
   test('ship has its own page and old bridge links land on it', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=outbox'; });

@@ -303,13 +303,18 @@ const BlueprintsView = (() => {
       const _tabParam = _hashParams.get('tab');
       const _sourceParam = _hashParams.get('source');
       const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log'];
-      // Log is a top-level tab (after Operations). Documentation moved to
-      // the marketing site (linked from the global ? icon). Old sub-tab deep
-      // links rewrite onto the flat tabs below so they keep resolving.
+      // Log is a top-level tab (after Operations). Old sub-tab deep links
+      // rewrite onto the flat tabs below so they keep resolving.
       const subParam = _hashParams.get('sub');
       // The review queue has its own page (Ship); old Bridge links land there.
       if (_tabParam === 'outbox' || (_tabParam === 'missions' && subParam === 'outbox')) {
         location.replace('#/ship');
+        return;
+      }
+      // Documentation has its own page; old Bridge links land there.
+      if (_tabParam === 'documentation') {
+        const section = _hashParams.get('s');
+        location.replace('#/docs' + (section ? '?s=' + encodeURIComponent(section) : ''));
         return;
       }
       // Main-nav routes that open a Bridge tab directly (see _TAB_ROUTES).
@@ -318,7 +323,6 @@ const BlueprintsView = (() => {
         if (['spaceship', 'agent', 'active', 'workshop'].includes(_tabParam)) _subTab = _tabParam;
       }
       else if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'documentation') { _activeTab = 'schematic'; }
       else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }

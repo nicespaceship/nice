@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Documentation Hub
-   Route: #/bridge?tab=documentation  (also rendered as a Bridge tab)
+   Route: #/docs (old #/bridge?tab=documentation links forward here)
 
    The view module — handles render, search, navigation, and dynamic
    model-table substitution. Content lives in app/js/lib/docs-content.js
@@ -9,7 +9,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const DocsView = (() => {
-  const title = 'Docs';
+  const title = 'Documentation';
   const _esc = Utils.esc;
 
   let _el = null;
@@ -40,7 +40,7 @@ const DocsView = (() => {
       <div class="docs-wrap">
         <nav class="docs-sidebar">
           <div class="docs-search-wrap">
-            <input type="text" class="docs-search" id="docs-search" placeholder="Search docs…" />
+            <input type="text" class="docs-search" id="docs-search" placeholder="Search docs…" aria-label="Search docs" />
           </div>
           <ul class="docs-nav" id="docs-nav">
             ${SECTIONS.map(s => `
@@ -53,9 +53,9 @@ const DocsView = (() => {
             `).join('')}
           </ul>
         </nav>
-        <main class="docs-content" id="docs-content">
+        <section class="docs-content" id="docs-content">
           ${_renderSection(_activeSection)}
-        </main>
+        </section>
       </div>
     `;
 
@@ -68,12 +68,12 @@ const DocsView = (() => {
       const btn = e.target.closest('[data-section]');
       if (!btn) return;
       _activeSection = btn.dataset.section;
-      history.replaceState(null, '', `#/bridge?tab=documentation&s=${_activeSection}`);
+      history.replaceState(null, '', '#/docs?s=' + encodeURIComponent(_activeSection));
       document.querySelectorAll('.docs-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.section === _activeSection));
       const content = document.getElementById('docs-content');
       if (content) {
         content.innerHTML = _renderSection(_activeSection);
-        content.scrollTop = 0;
+        if (_el) _el.scrollTop = 0;
       }
     });
 
@@ -85,12 +85,12 @@ const DocsView = (() => {
       _searchQuery = '';
       const searchInput = document.getElementById('docs-search');
       if (searchInput) searchInput.value = '';
-      history.replaceState(null, '', `#/bridge?tab=documentation&s=${_activeSection}`);
+      history.replaceState(null, '', '#/docs?s=' + encodeURIComponent(_activeSection));
       document.querySelectorAll('.docs-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.section === _activeSection));
       const content = document.getElementById('docs-content');
       if (content) {
         content.innerHTML = _renderSection(_activeSection);
-        content.scrollTop = 0;
+        if (_el) _el.scrollTop = 0;
       }
     });
 
