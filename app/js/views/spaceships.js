@@ -7,6 +7,8 @@
 
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const _esc = Utils.esc;
   // The spaceship noun follows the theme: "Project" in the default look.
   const _ship = (opts = {}) => Terminology.label('spaceship', opts);
@@ -151,7 +153,7 @@ const SpaceshipDetailView = (() => {
           </div>
         </div>
         <div class="ship-dash-log">
-          <div class="ship-dash-log-title">Recent crew log</div>
+          <div class="ship-dash-log-title">Recent ${_esc(_crewWord())} log</div>
           ${logHtml}
         </div>
       </div>
@@ -720,7 +722,7 @@ const SpaceshipDetailView = (() => {
           </div>
         </div>`;
     }).join('');
-    const empty = `<div class="ship-wf-empty">No workflows yet. Build a sequence your crew runs on demand.</div>`;
+    const empty = `<div class="ship-wf-empty">No workflows yet. Build a sequence your ${_esc(_crewWord())} runs on demand.</div>`;
     return `
       <div class="detail-section ship-workflows">
         <div class="ship-wf-titlerow">
@@ -854,7 +856,7 @@ const SpaceshipDetailView = (() => {
         const assignments = fleet.slots || fleet.slot_assignments || {};
         const targetSlot = spaceshipClass.slots.find(slot => !assignments[slot.id]);
         if (!targetSlot) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: `Every crew slot on this ${_ship({ lowercase: true })} is filled.`, type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: `Every ${_crewWord()} slot on this ${_ship({ lowercase: true })} is filled.`, type: 'system' });
           return;
         }
         _assignAgentToSlot(el, id, fleet, String(targetSlot.id), agentId, allAgents, agentMap, spaceshipClass);
@@ -886,7 +888,7 @@ const SpaceshipDetailView = (() => {
         if (!workflow) return;
         const slots = fleet.slot_assignments || {};
         if (!Object.values(slots).some(Boolean)) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'No crew aboard', message: 'Dock at least one crew member before running a workflow.', type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: Terminology.pick('No team members', 'No crew aboard'), message: Terminology.pick('Add at least one team member before running a workflow.', 'Dock at least one crew member before running a workflow.'), type: 'system' });
           return;
         }
         if (typeof MissionRunner === 'undefined' || !MissionRunner.createRun) return;
@@ -1036,7 +1038,7 @@ const SpaceshipDetailView = (() => {
       <div class="wfe-step" data-i="${i}">
         <span class="wfe-step-num">${i + 1}</span>
         <input type="text" class="wfe-step-text" value="${_esc(step.step)}" placeholder="Describe what happens in this step…" />
-        ${CSelect.html('wfe-slot-' + i, 'Assign crew slot', slotOptions, String(step.agent_slot || 0))}
+        ${CSelect.html('wfe-slot-' + i, 'Assign ' + _crewWord() + ' slot', slotOptions, String(step.agent_slot || 0))}
         <div class="wfe-step-ctrls">
           <button type="button" class="wfe-ctrl wfe-gate${step.approval ? ' is-on' : ''}" aria-pressed="${!!step.approval}" aria-label="Require approval before this step" title="Require approval before this step">
             <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
@@ -1341,7 +1343,7 @@ const SpaceshipDetailView = (() => {
       }
       const slots = fleet.slot_assignments || {};
       if (!Object.values(slots).some(Boolean)) {
-        errEl.textContent = 'Dock at least one crew member before scheduling.';
+        errEl.textContent = Terminology.pick('Add at least one team member before scheduling.', 'Dock at least one crew member before scheduling.');
         return;
       }
       if (typeof MissionRunner === 'undefined' || !MissionRunner.upsertScheduledMission) {
@@ -1528,7 +1530,7 @@ const SpaceshipDetailView = (() => {
     } catch(e) { /* local state already updated */ }
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: `${_ship()} docked`, message: `A crew slot is empty, so ${fleet.name || _ship({ lowercase: true })} is docked.`, type: 'system' });
+      Notify.send({ title: `${_ship()} docked`, message: `A ${_crewWord()} slot is empty, so ${fleet.name || _ship({ lowercase: true })} is docked.`, type: 'system' });
     }
     _loadSpaceship(el, id);
   }

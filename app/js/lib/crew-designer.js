@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewDesigner = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   let _overlay = null;
   let _step = 0;
   const _esc = Utils.esc;
@@ -67,7 +69,7 @@ const CrewDesigner = (() => {
     _overlay = document.createElement('div');
     _overlay.className = 'wizard-overlay cd-overlay';
     _overlay.setAttribute('role', 'dialog');
-    _overlay.setAttribute('aria-label', 'Crew Designer');
+    _overlay.setAttribute('aria-label', _crewWord(true) + ' Designer');
     document.body.appendChild(_overlay);
     document.body.style.overflow = 'hidden';
     _render();
@@ -117,13 +119,13 @@ const CrewDesigner = (() => {
     el.innerHTML = `
       <div class="cd-describe">
         <h2 class="cd-heading">What do you want your AI team to do?</h2>
-        <p class="cd-subheading">Describe your goal in plain English. NICE will design the perfect crew.</p>
+        <p class="cd-subheading">Describe your goal in plain English. NICE will design the perfect ${_crewWord()}.</p>
         <textarea class="cd-textarea" id="cd-prompt" placeholder="e.g., Monitor my Gmail for customer complaints, draft responses, and track patterns in a weekly report..." rows="4">${_esc(_data.userPrompt)}</textarea>
         <div class="cd-suggestions" id="cd-suggestions">
           ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${_esc(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
         </div>
         <div class="cd-actions">
-          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>Design My Crew →</button>
+          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>Design my ${_crewWord()} →</button>
         </div>
       </div>
     `;
@@ -158,7 +160,7 @@ const CrewDesigner = (() => {
     body.innerHTML = `
       <div class="cd-loading">
         <div class="wizard-spinner"></div>
-        <p class="cd-loading-text">Designing your crew...</p>
+        <p class="cd-loading-text">Designing your ${_crewWord()}...</p>
         <p class="cd-loading-sub">NICE is analyzing your goal and building the optimal team.</p>
       </div>
     `;
@@ -191,7 +193,7 @@ const CrewDesigner = (() => {
       _data.testMission = fallback.suggested_test_mission || '';
       _step = 1;
       _render();
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Offline Mode', message: 'Used crew templates (AI unavailable)', type: 'warning' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Offline Mode', message: `Used ${_crewWord()} templates (AI unavailable)`, type: 'warning' });
     }
   }
 
@@ -397,7 +399,7 @@ Rules:
         ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
 
         <!-- Crew Grid -->
-        <div class="cd-section-label">Crew <span class="cd-count">${_data.editedAgents.length} agents</span></div>
+        <div class="cd-section-label">${_crewWord(true)} <span class="cd-count">${_data.editedAgents.length} agents</span></div>
         <div class="cd-crew-grid" id="cd-crew-grid">
           ${_data.editedAgents.map((a, i) => _renderAgentCard(a, i)).join('')}
           <button class="cd-agent-add" id="cd-add-agent">+ Add Agent</button>
@@ -420,7 +422,7 @@ Rules:
 
         <!-- Test Mission -->
         <div class="cd-section-label">Test Mission</div>
-        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${_esc(_data.testMission)}" placeholder="First mission to test your crew...">
+        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${_esc(_data.testMission)}" placeholder="First mission to test your ${_crewWord()}...">
 
         <!-- Actions -->
         <div class="cd-actions cd-actions-split">
@@ -673,7 +675,7 @@ Rules:
       }
 
       // 3. Activate in Blueprints
-      setStatus('Activating crew...');
+      setStatus(`Activating ${_crewWord()}...`);
       if (typeof Blueprints !== 'undefined') {
         try {
           Blueprints.activateShip(shipId);
@@ -786,7 +788,7 @@ Rules:
     el.querySelector('#cd-close-success')?.addEventListener('click', close);
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Crew Deployed', message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
+      Notify.send({ title: _crewWord(true) + ' Deployed', message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
     }
   }
 

@@ -16,7 +16,9 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewView = (() => {
-  const title = 'Crew';
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
+
   const _esc = Utils.esc;
   const _WATCH = ['spaceships', 'agents', 'user'];
   const _LOG_EVENTS = ['mission_start', 'turn_start', 'final_answer'];
@@ -145,7 +147,7 @@ const CrewView = (() => {
       <div class="crew-wrap">
         <div class="widget-card crew-empty">
           <h1>No ${ship} yet</h1>
-          <p>${a === 'an' ? 'An' : 'A'} ${ship} gives you a crew of AI agents built for one kind of business. Pick one from Blueprints and its crew shows up here.</p>
+          <p>${a === 'an' ? 'An' : 'A'} ${ship} gives you a ${_esc(_crewWord())} of AI agents built for one kind of business. Pick one from Blueprints and its ${_esc(_crewWord())} shows up here.</p>
           <div class="crew-empty-acts">
             <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Choose ${a} ${ship}</a>
             <a class="btn btn-sm" href="#/space">Ask anything instead</a>
@@ -190,7 +192,7 @@ const CrewView = (() => {
         </header>
         <div id="crew-review"></div>
         <div class="crew-layout">
-          <section class="crew-cards" aria-label="Crew">
+          <section class="crew-cards" aria-label="${_esc(_crewWord(true))}">
             ${_crew.map(_cardHTML).join('')}
           </section>
           <aside class="widget-card crew-runs" aria-labelledby="crew-runs-title">
@@ -221,12 +223,12 @@ const CrewView = (() => {
     const box = _el && _el.querySelector('#crew-runlog');
     if (!box) return;
     if (_runsState === 'signed-out') {
-      box.innerHTML = `<p class="crew-runs-empty">Sign in to see your crew's runs.</p><button type="button" class="btn btn-sm btn-primary" data-crew-action="signin">Sign in</button>`;
+      box.innerHTML = `<p class="crew-runs-empty">Sign in to see your ${_esc(_crewWord())}'s runs.</p><button type="button" class="btn btn-sm btn-primary" data-crew-action="signin">Sign in</button>`;
       return;
     }
     if (_runsState === 'loading' && !_runs.length) { box.innerHTML = '<p class="crew-runs-empty">Loading runs…</p>'; return; }
     if (!_runs.length) {
-      box.innerHTML = `<p class="crew-runs-empty">Runs show up here when the crew works. Message the crew below to start one.</p>`;
+      box.innerHTML = `<p class="crew-runs-empty">Runs show up here when the ${_esc(_crewWord())} works. Message the ${_esc(_crewWord())} below to start one.</p>`;
       return;
     }
     box.innerHTML = `<ol class="crew-runlist">${_runs.map(r => `
@@ -302,7 +304,7 @@ const CrewView = (() => {
         const out = await MissionRunner.approveRun(run);
         if (typeof Notify !== 'undefined') {
           Notify.send(out.resumed
-            ? { title: `${mission} continues`, message: 'The crew picked up after your approval.', type: 'success' }
+            ? { title: `${mission} continues`, message: `The ${_crewWord()} picked up after your approval.`, type: 'success' }
             : { title: `${mission} approved`, message: `${run.title || 'The run'} is done.`, type: 'success' });
         }
       } else if (action === 'reject') {
@@ -362,5 +364,5 @@ const CrewView = (() => {
     _runsState = 'idle';
   }
 
-  return { title, render, destroy };
+  return { get title() { return _crewWord(true); }, render, destroy };
 })();

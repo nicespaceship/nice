@@ -4,6 +4,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const BlueprintsView = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const title = 'Bridge';
   const _esc = Utils.esc;
   // The spaceship noun follows the theme: "Project" in the default look.
@@ -2128,7 +2130,7 @@ const BlueprintsView = (() => {
       }).join('');
       crewBlock = `
         <div class="bp-drawer-section bp-drawer-crew">
-          <div class="bp-drawer-section-label">Crew of ${crew.length}</div>
+          <div class="bp-drawer-section-label">${_esc(_crewWord(true))} of ${crew.length}</div>
           <div class="bp-drawer-crew-list">${rows}</div>
           <div class="bp-drawer-crew-legend">
             <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-1"></i>C1 starter</span>
@@ -2857,7 +2859,7 @@ const BlueprintsView = (() => {
       <div class="bp-confirm-modal">
         <h3>Remove Blueprint</h3>
         <p>Are you sure you want to remove <span class="bp-confirm-name">${safeName}</span>?</p>
-        <p class="bp-confirm-warning">This will permanently remove it from your roster and delete its crew. You can add it back anytime from the Blueprints.</p>
+        <p class="bp-confirm-warning">This will permanently remove it from your roster and delete its ${_esc(_crewWord())}. You can add it back anytime from the Blueprints.</p>
         <p class="bp-confirm-helper" data-role="helper" hidden></p>
         <input data-role="input" class="bp-confirm-input" hidden />
         <button type="button" class="bp-confirm-switch" data-role="switch" hidden></button>

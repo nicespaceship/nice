@@ -19,13 +19,14 @@ const Terminology = (() => {
   const SPACESHIP = { singular: 'Spaceship', plural: 'Spaceships' };
   const PILOT = { singular: 'Pilot', plural: 'Pilots' };
   // What the sci-fi themes say where the plain looks use everyday words.
-  const SCIFI = { spaceship: SPACESHIP, guest: PILOT, account: PILOT, member: PILOT };
+  const CREW = { singular: 'Crew', plural: 'Crew' };
+  const SCIFI = { spaceship: SPACESHIP, crew: CREW, guest: PILOT, account: PILOT, member: PILOT };
   const NOUNS = {
     default: {
       mission:   { singular: 'Mission',   plural: 'Missions' },
       agent:     { singular: 'Agent',     plural: 'Agents' },
       spaceship: { singular: 'Project',   plural: 'Projects' },
-      crew:      { singular: 'Crew',      plural: 'Crew' },
+      crew:      { singular: 'Team',      plural: 'Teams' },
       captain:   { singular: 'Captain',   plural: 'Captains' },
       // Someone with no name on file, the account chip, and the profile badge.
       guest:     { singular: 'Guest',     plural: 'Guests' },
@@ -114,7 +115,15 @@ const Terminology = (() => {
     });
   }
 
-  return { label, article, applyDOM, NOUNS };
+  /**
+   * For a sentence that needs different wording, not just a different noun:
+   * returns `scifi` in a sci-fi theme and `plain` everywhere else.
+   */
+  function pick(plain, scifi, opts = {}) {
+    return NOUNS[opts.theme || _activeTheme()] === SCIFI ? scifi : plain;
+  }
+
+  return { label, article, pick, applyDOM, NOUNS };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = Terminology;

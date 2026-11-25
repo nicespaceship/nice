@@ -7,6 +7,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const PromptPanel = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
 
   const STORAGE_KEY = Utils.KEYS.aiMessages;
 
@@ -1252,7 +1254,7 @@ const PromptPanel = (() => {
     if (/how many (agent|crew)/i.test(lower) || /agent count/i.test(lower)) {
       const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
       const slotted = _getSlottedAgents();
-      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''}.${slotted.length ? ' ' + slotted.length + ' currently assigned to crew slots.' : ''}` };
+      return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''}.${slotted.length ? ' ' + slotted.length + ' currently assigned to ' + _crewWord() + ' slots.' : ''}` };
     }
 
     if (/mission.*(running|active|progress|status)/i.test(lower) || /running mission/i.test(lower) || /how many mission/i.test(lower)) {
@@ -1470,9 +1472,9 @@ const PromptPanel = (() => {
       return _cmd('open-crew-designer', {
         params: { prompt: seed },
         reply: seed
-          ? `Opening the Crew Designer to design a crew for "${seed}".`
-          : 'Opening the Crew Designer. Describe your business and NICE designs the crew.',
-        isNav: true, navLabel: 'Crew Designer',
+          ? `Opening the ${_crewWord(true)} Designer to design a ${_crewWord()} for "${seed}".`
+          : `Opening the ${_crewWord(true)} Designer. Describe your business and NICE designs the ${_crewWord()}.`,
+        isNav: true, navLabel: _crewWord(true) + ' Designer',
       });
     }
     if (/^(setup|guided setup|wizard)/i.test(lower))

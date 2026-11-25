@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SetupWizard = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   let _overlay = null;
   let _step = 0;
   const _esc = Utils.esc;
@@ -170,7 +172,7 @@ const SetupWizard = (() => {
   function _renderStep2(body, actions) {
     body.innerHTML = `
       <h2 class="wizard-title">What do you need help with?</h2>
-      <p class="wizard-subtitle">Select everything that applies — we'll tailor your AI crew to match.</p>
+      <p class="wizard-subtitle">Select everything that applies — we'll tailor your AI ${_crewWord()} to match.</p>
       <div class="wizard-goals" id="wiz-needs-grid">
         ${NEEDS.map(n => `
           <label class="wizard-goal${_data.needs.includes(n.id) ? ' selected' : ''}">
@@ -214,7 +216,7 @@ const SetupWizard = (() => {
   function _renderStep3(body, actions) {
     body.innerHTML = `
       <h2 class="wizard-title">Building your AI team...</h2>
-      <p class="wizard-subtitle">NICE is designing the perfect crew for your business.</p>
+      <p class="wizard-subtitle">NICE is designing the perfect ${_crewWord()} for your business.</p>
       <div class="wizard-loading">
         <div class="wizard-spinner"></div>
         <p id="wiz-loading-text">Analyzing your needs...</p>
@@ -250,14 +252,14 @@ const SetupWizard = (() => {
 
     body.innerHTML = `
       <h2 class="wizard-title">Your AI Team</h2>
-      <p class="wizard-subtitle">${_esc(proposal.spaceship?.rationale || 'Here is your custom crew, ready to deploy.')}</p>
+      <p class="wizard-subtitle">${_esc(proposal.spaceship?.rationale || `Here is your custom ${_crewWord()}, ready to deploy.`)}</p>
       <div class="wizard-rec-card">
         <div class="wizard-rec-header">
           <span class="wizard-rec-class">${_esc(_data.shipName)}</span>
           <span class="wizard-rec-flow">${_esc(flowLabel)} Flow</span>
         </div>
         <div class="wizard-rec-section">
-          <h4>Crew (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
+          <h4>${_crewWord(true)} (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
           ${agents.map(a => `
             <div class="wizard-agent-row">
               <strong>${_esc(a.name)}</strong>
@@ -333,7 +335,7 @@ const SetupWizard = (() => {
           <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
           <div class="wizard-first-mission" style="margin-top:1.5rem;padding:1rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;text-align:left">
             <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your ${_crewWord()}${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="text" id="wiz-first-mission" class="wizard-input" value="${_esc(firstMissionPrompt)}" style="flex:1" />
               <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
@@ -526,7 +528,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
         description: `AI team for: ${_data.businessDesc}`,
         category: 'Operations',
         flow_pattern: agents.length > 3 ? 'router' : 'sequential',
-        rationale: `Custom crew built around your ${_data.needs.length} selected focus areas.`,
+        rationale: `Custom ${_crewWord()} built around your ${_data.needs.length} selected focus areas.`,
       },
       agents,
       integrations_needed: integrations,
@@ -540,7 +542,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
 
   async function _deployCrew() {
     const proposal = _data.proposal;
-    if (!proposal?.agents?.length) throw new Error('No crew to deploy');
+    if (!proposal?.agents?.length) throw new Error(`No ${_crewWord()} to deploy`);
 
     const agents = proposal.agents;
     const userId = typeof State !== 'undefined' ? State.get('user')?.id : null;
@@ -633,7 +635,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 3. Activate in Blueprints
-    setStatus('Activating crew...');
+    setStatus(`Activating ${_crewWord()}...`);
     if (typeof Blueprints !== 'undefined') {
       try {
         Blueprints.activateShip(shipId);

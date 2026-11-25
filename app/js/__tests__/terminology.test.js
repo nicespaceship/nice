@@ -57,6 +57,31 @@ describe('Terminology', () => {
       }
     });
 
+    it('calls the crew a team in the plain looks and a crew in sci-fi themes', () => {
+      for (const theme of ['nice', 'nice-dark', 'office', 'office-dark']) {
+        stubTheme(theme);
+        expect(Terminology.label('crew')).toBe('Team');
+        expect(Terminology.label('crew', { lowercase: true })).toBe('team');
+      }
+      for (const theme of ['hal-9000', 'grid', 'matrix', 'lcars', 'jarvis', 'cyberpunk', 'rx-78-2', '16bit']) {
+        stubTheme(theme);
+        expect(Terminology.label('crew')).toBe('Crew');
+        expect(Terminology.label('crew', { plural: true })).toBe('Crew');
+      }
+    });
+
+    it('pick() returns the sci-fi sentence only in a sci-fi theme', () => {
+      stubTheme('nice');
+      expect(Terminology.pick('plain', 'scifi')).toBe('plain');
+      stubTheme('office');
+      expect(Terminology.pick('plain', 'scifi')).toBe('plain');
+      stubTheme('lcars');
+      expect(Terminology.pick('plain', 'scifi')).toBe('scifi');
+      expect(Terminology.pick('plain', 'scifi', { theme: 'nice-dark' })).toBe('plain');
+      stubTheme('a-custom-theme');
+      expect(Terminology.pick('plain', 'scifi')).toBe('plain');
+    });
+
     it('overrides the singular for Office theme', () => {
       stubTheme('office');
       expect(Terminology.label('mission')).toBe('Assignment');

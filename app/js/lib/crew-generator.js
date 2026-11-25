@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewGenerator = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
 
   const VALID_TOOLS = [
     'Web Search','Email','Calendar','Spreadsheet','Database','API Call',
@@ -78,7 +80,7 @@ Rules:
         lastErr = e.message || 'Network error';
       }
     }
-    return { agents: [], error: lastErr || 'Failed to generate crew' };
+    return { agents: [], error: lastErr || 'Failed to generate ' + _crewWord() };
   }
 
   /**
@@ -197,7 +199,7 @@ Rules:
     if (!bp) return { error: 'Blueprint not found: ' + blueprintId };
 
     var catalogCrew = bp.metadata?.crew || bp.crew || [];
-    if (!catalogCrew.length) return { error: 'No crew defined in blueprint' };
+    if (!catalogCrew.length) return { error: 'No ' + _crewWord() + ' defined in blueprint' };
 
     var slotAssignments = {};
     var savedAgents = [];

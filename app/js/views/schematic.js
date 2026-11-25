@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SchematicView = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const _esc = Utils.esc;
   // The spaceship noun follows the theme: "Project" in the default look.
   const _ship = (opts = {}) => Terminology.label('spaceship', opts);
@@ -224,9 +226,9 @@ const SchematicView = (() => {
         el.innerHTML = `
           <div class="schematic-empty app-empty">
             <h2>No ${_esc(_ship({ plural: true, lowercase: true }))} deployed</h2>
-            <p>Activate ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <p>Activate ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} from the catalog or build one from scratch to put a ${_esc(_crewWord())} on the schematic.</p>
             <div class="app-empty-acts">
-              ${canWizard ? '<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my crew</button>' : ''}
+              ${canWizard ? '<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my ' + _crewWord() + '</button>' : ''}
               <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse ${_esc(_ship({ plural: true, lowercase: true }))}</a>
               <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
             </div>
@@ -810,7 +812,7 @@ const SchematicView = (() => {
           '</div>' +
         '</li>';
       }
-      return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+      return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading ' + _crewWord() + '">' +
         '<ol class="schematic-stack-rows">' + rows + '</ol>' +
       '</div>';
     }
@@ -823,7 +825,7 @@ const SchematicView = (() => {
     '</div>';
     let col = '';
     for (let i = 0; i < SLOTS / 2; i++) col += card;
-    return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+    return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading ' + _crewWord() + '">' +
       '<div class="schematic-col schematic-col-left">' + col + '</div>' +
       '<div class="schematic-center"></div>' +
       '<div class="schematic-col schematic-col-right">' + col + '</div>' +
