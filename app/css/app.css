@@ -11050,32 +11050,42 @@ body.preview-active .nice-ai {
   font-family:var(--font-b); font-size:var(--text-base); line-height:var(--lh-base);
 }
 .code-prompt-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
-.code-prompt-bar select {
-  max-width:60%; padding:4px 8px; border:0; border-radius:8px; background:transparent;
+/* The themes' select rules reach (0,3,1) with their :not() opt-outs, so
+   the class on the select is what lifts these past them. */
+.code-view .code-prompt-bar select.code-model,
+.code-view .code-prompt-bar select.code-model:focus {
+  max-width:60%; padding:4px 8px; border:0; border-radius:8px; outline:0; box-shadow:none; clip-path:none;
+  appearance:auto; -webkit-appearance:auto; background:transparent;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); cursor:pointer;
 }
-.code-prompt-bar select:hover { background:var(--tint, var(--surface)); color:var(--text); }
+.code-view .code-prompt-bar select.code-model:hover { background:var(--tint, var(--surface)); color:var(--text); }
+.code-view .code-prompt-bar select.code-model:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.code-view .code-prompt-bar select.code-model option { background:var(--bg); color:var(--text); }
 .code-send {
   display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
   width:32px; height:32px; padding:0; border:0; border-radius:50%;
   background:var(--accent); color:var(--on-accent, #fff); cursor:pointer;
 }
+.code-send.is-stopping { opacity:.6; cursor:default; }
 .code-stop-square { width:10px; height:10px; border-radius:2px; background:currentColor; }
 
+/* --bg2, not --bg-alt: every theme sets --bg2, while --bg-alt is set by
+   only five and its light :root default showed through the rest. */
 .code-panel {
   display:flex; flex-direction:column; min-height:0; min-width:0;
-  border-left:1px solid var(--border); background:var(--bg-alt, var(--bg));
+  border-left:1px solid var(--border); background:var(--bg2);
 }
-.code-panel-tabs {
+.code-panel-hdr {
   display:flex; align-items:center; gap:4px; flex-shrink:0;
   padding:8px 8px 8px 12px; border-bottom:1px solid var(--border);
 }
+.code-panel-tabs { display:flex; align-items:center; gap:4px; }
 .code-panel-tab {
   padding:6px 10px; border:0; border-radius:8px; background:none; cursor:pointer;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
 }
 .code-panel-tab:hover { color:var(--text); }
-.code-panel-tab.active { background:var(--surface2, var(--surface)); color:var(--text); }
+.code-panel-tab.active { background:var(--surface2); color:var(--text); }
 .code-panel-close { margin-left:auto; }
 .code-panel-body { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; }
 
@@ -11087,13 +11097,14 @@ body.preview-active .nice-ai {
   color:var(--text); font-family:var(--font-b); font-size:var(--text-sm); line-height:var(--lh-snug);
 }
 .code-tree-row:hover, .code-tree-row.active { background:var(--tint, var(--surface)); }
-.code-tree-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.code-tree-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .code-tree-row .icon { width:14px; height:14px; flex-shrink:0; color:var(--text-muted); }
-.code-tree-err { padding:8px 12px; color:var(--text-muted); font-size:var(--text-sm); }
+.code-tree-err,
+.code-tree-more { padding:8px 12px 8px calc(12px + var(--depth, 0) * 14px); color:var(--text-muted); font-size:var(--text-sm); }
 .code-tree-foot { flex-shrink:0; padding:8px 12px; border-top:1px solid var(--border); }
 .code-file-hdr {
   position:sticky; top:0; display:flex; align-items:center; gap:6px;
-  padding:6px 8px; border-bottom:1px solid var(--border); background:var(--bg-alt, var(--bg));
+  padding:6px 8px; border-bottom:1px solid var(--border); background:var(--bg2);
 }
 .code-file-path { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-family:var(--font-m); font-size:var(--text-sm); }
 .code-file-body { margin:0; padding:12px; color:var(--text); font-family:var(--font-m); font-size:var(--text-xs); line-height:var(--lh-base); white-space:pre; }
@@ -11126,4 +11137,15 @@ body.preview-active .nice-ai {
   .code-view { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) minmax(0,45%); }
   .code-view.code-panel-closed { grid-template-rows:minmax(0,1fr); }
   .code-panel { border-left:0; border-top:1px solid var(--border); }
+}
+/* Phones. .app-main's height leaves out the 48px mobile bar its own
+   margin-top adds, so a view that fills it would run 48px past the
+   screen: Code sizes it to what is visible. The fixed tab bar then covers
+   the bottom, so the view stops above it, by the height .nice-ai sits on. */
+@media (max-width:768px) {
+  .app-main:has(.code-view) {
+    height:calc(100vh - 48px - var(--app-banner-height, 0px));
+    height:calc(100dvh - 48px - var(--app-banner-height, 0px));
+  }
+  .app-main:has(.code-view) .app-view-content { padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
