@@ -1244,3 +1244,42 @@ describe('WorkflowEngine — attachments', () => {
     expect(capturedOpts.attachments == null).toBe(true);
   });
 });
+
+describe('WorkflowEngine — condition and branch expressions', () => {
+  const run = (nodes, connections) => WorkflowEngine.execute({ id: 'wf-expr', nodes, connections }, { skipSave: true });
+
+  it('a condition passes or stops the output it guards', async () => {
+    const res = await run([
+      { id: 'a', type: 'agent', config: { prompt: 'x' } },
+      { id: 'yes', type: 'condition', config: { expression: 'result.text.includes("ran:")' } },
+      { id: 'no', type: 'condition', config: { expression: 'result.length > 100000' } },
+    ], [{ from: 'a', to: 'yes' }, { from: 'a', to: 'no' }]);
+    expect(String(res.nodeResults.get('yes'))).toMatch(/^ran:/);
+    expect(res.nodeResults.get('no')).toBe('');
+  });
+
+  it('a branch follows the first condition that holds', async () => {
+    const res = await run([
+      { id: 'a', type: 'agent', config: { prompt: 'x' } },
+      { id: 'br', type: 'branch', config: { conditions: [
+        { expression: 'result.length > 100000', targetNodeId: 'big' },
+        { expression: 'result.success', targetNodeId: 'small' },
+      ] } },
+      { id: 'big', type: 'agent', config: { prompt: 'big' } },
+      { id: 'small', type: 'agent', config: { prompt: 'small' } },
+    ], [{ from: 'a', to: 'br' }, { from: 'br', to: 'big' }, { from: 'br', to: 'small' }]);
+    expect(res.nodeResults.has('small')).toBe(true);
+    expect(res.nodeResults.has('big')).toBe(false);
+  });
+
+  it('never runs code from a saved plan', async () => {
+    delete globalThis.__niceExprPwned;
+    await run([
+      { id: 'a', type: 'agent', config: { prompt: 'x' } },
+      { id: 'c', type: 'condition', config: { expression: '(globalThis.__niceExprPwned = 1, true)' } },
+      { id: 'br', type: 'branch', config: { conditions: [{ expression: 'globalThis.__niceExprPwned = 2', targetNodeId: 'b' }] } },
+      { id: 'b', type: 'agent', config: { prompt: 'b' } },
+    ], [{ from: 'a', to: 'c' }, { from: 'a', to: 'br' }, { from: 'br', to: 'b' }]);
+    expect(globalThis.__niceExprPwned).toBeUndefined();
+  });
+});

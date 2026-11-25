@@ -876,7 +876,7 @@ const WorkflowEngine = (() => {
     const expr = node.config.expression || 'true';
     try {
       const result = { text: input, length: input.length, success: input.length > 0 };
-      const pass = new Function('result', `return !!(${expr})`)(result);
+      const pass = SafeExpr.condition(expr, { result });
       return pass ? input : '';
     } catch {
       return input; // pass through on eval error
@@ -956,7 +956,7 @@ const WorkflowEngine = (() => {
     for (const cond of conditions) {
       try {
         const result = { text: input, length: input.length, success: input.length > 0 };
-        const pass = new Function('result', `return !!(${cond.expression})`)(result);
+        const pass = SafeExpr.condition(cond.expression, { result });
         if (pass && cond.targetNodeId) {
           chosenTarget = cond.targetNodeId;
           break;
