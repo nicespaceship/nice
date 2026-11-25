@@ -316,9 +316,12 @@ describe('ChatView', () => {
     const onNew = vi.fn();
     const prev = globalThis.NICE;
     globalThis.NICE = { newChat: onNew };
-    mount();
-    el.querySelector('[data-act="new"]').click();
-    if (prev === undefined) delete globalThis.NICE; else globalThis.NICE = prev;
+    try {
+      mount();
+      el.querySelector('[data-act="new"]').click();
+    } finally {
+      if (prev === undefined) delete globalThis.NICE; else globalThis.NICE = prev;
+    }
     expect(onNew).toHaveBeenCalledTimes(1);
   });
 
