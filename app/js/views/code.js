@@ -42,10 +42,10 @@ const CodeView = (() => {
   // Links that listed as folders. Refresh clears _dirCache but not this, so
   // an open linked folder stays open.
   const _linkDirs = new Set();
-  // The rows of the latest tree paint, indexed by each row's data-row. The
-  // path never goes through an attribute: HTML parsing turns a \r in one
-  // into \n, and macOS puts a file named "Icon\r" in some folders.
-  let _treeRows = [];            // { path, type, open }
+  // Each drawn tree row → { path, type, open }. Clicks and focus read a
+  // row's path from here, never from an attribute: HTML parsing turns a \r
+  // in one into \n, and macOS puts a file named "Icon\r" in some folders.
+  const _rowInfo = new WeakMap();
   let _openFile = null;          // { path, content, totalLines, endLine } | { path, error }
   let _treeSeq = 0;              // the latest tree paint wins
   let _readSeq = 0;              // the latest file click wins
@@ -130,7 +130,6 @@ const CodeView = (() => {
     _expanded.add('.');
     _openFile = null;
     _linkDirs.clear();
-    _treeRows = [];
     _termText = '';
     // No kill from here: by now host.openFolder() has swapped the workspace,
     // so a kill would reach the new folder and find nothing. The
@@ -139,6 +138,8 @@ const CodeView = (() => {
     _termRun = null;
   }
 
+  // #app-view is a polite live region. The panel body repaints whole trees,
+  // files and terminal output, so it opts out; the thread is its own log.
   function _renderWorkspace(el) {
     el.innerHTML = `
       <div class="code-view">
@@ -172,7 +173,7 @@ const CodeView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-x"/></svg>
             </button>
           </div>
-          <div class="code-panel-body" id="code-panel-body" role="tabpanel"></div>
+          <div class="code-panel-body" id="code-panel-body" role="tabpanel" aria-live="off"></div>
         </aside>
       </div>`;
     _bind(el);
@@ -431,7 +432,8 @@ const CodeView = (() => {
     catch { _linkDirs.delete(p); _expanded.delete(p); return false; }
   }
 
-  // `rows` collects { path, type, open } for each row, at its data-row.
+  // `rows` collects { path, type, open } for each row, at its data-row, for
+  // the paint to put in _rowInfo.
   async function _treeHTML(dir, depth, rows) {
     let listing;
     try { listing = await _list(dir); }
@@ -456,12 +458,26 @@ const CodeView = (() => {
     return html.join('');
   }
 
-  async function _renderFiles() {
+  // Where focus is in the panel body, for a repaint to put it back: the
+  // path of a focused row, '' for anything else in there, null when it is
+  // elsewhere (a repaint then leaves it alone).
+  function _focusIn(body) {
+    const a = document.activeElement;
+    if (!a || !body.contains(a)) return null;
+    const info = _rowInfo.get(a);
+    return info ? info.path : '';
+  }
+
+  // When focus was in the panel, a repaint puts it back: on the same row, or
+  // on the row `focusPath` names (Back names the file it closes), or else
+  // on Refresh.
+  async function _renderFiles(focusPath) {
     const body = _el && _el.querySelector('#code-panel-body');
     if (!body || _panelState().tab !== 'files') return;
     const seq = ++_treeSeq;
     if (_openFile) {
       const f = _openFile;
+      const refocus = _focusIn(body) !== null;
       body.innerHTML = `
         <div class="code-file-hdr">
           <button type="button" class="code-icon-btn" id="code-file-back" aria-label="Back to files" title="Back to files"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-arrow-left"/></svg></button>
@@ -470,7 +486,9 @@ const CodeView = (() => {
         ${f.error
           ? `<div class="code-tree-err">${_esc(f.error)}</div>`
           : `<pre class="code-file-body"><code>${_esc(f.content)}</code></pre>${f.endLine < f.totalLines ? `<div class="code-file-more">Showing lines 1 to ${f.endLine} of ${f.totalLines}.</div>` : ''}`}`;
-      body.querySelector('#code-file-back').addEventListener('click', () => { _openFile = null; _readSeq++; _renderFiles(); });
+      const back = body.querySelector('#code-file-back');
+      back.addEventListener('click', () => { _openFile = null; _readSeq++; _renderFiles(f.path); });
+      if (refocus) back.focus();
       return;
     }
     const gen = _gen;
@@ -479,14 +497,21 @@ const CodeView = (() => {
     if (!_el || seq !== _treeSeq || gen !== _gen || _panelState().tab !== 'files' || _openFile) return;
     const target = _el.querySelector('#code-panel-body');
     if (!target) return;
-    _treeRows = rows;
+    const focused = _focusIn(target);
     target.innerHTML = `<div class="code-tree">${html || '<div class="code-tree-err">This folder is empty.</div>'}
       </div><div class="code-tree-foot"><button type="button" class="btn btn-sm" id="code-refresh-files">Refresh</button></div>`;
-    target.querySelectorAll('.code-tree-row').forEach(row => {
-      const info = rows[Number(row.dataset.row)];
-      row.addEventListener('click', () => _onTreeClick(info));
+    const rowEls = [...target.querySelectorAll('.code-tree-row')];
+    rowEls.forEach(row => _rowInfo.set(row, rows[Number(row.dataset.row)]));
+    target.querySelector('.code-tree').addEventListener('click', (e) => {
+      const info = _rowInfo.get(e.target.closest('.code-tree-row'));
+      if (info) _onTreeClick(info);
     });
-    target.querySelector('#code-refresh-files').addEventListener('click', () => { _dirCache.clear(); _renderFiles(); });
+    const refresh = target.querySelector('#code-refresh-files');
+    refresh.addEventListener('click', () => { _dirCache.clear(); _renderFiles(); });
+    if (focused !== null) {
+      const want = focusPath !== undefined ? focusPath : focused;
+      (rowEls.find(r => _rowInfo.get(r).path === want) || refresh).focus();
+    }
   }
 
   async function _onTreeClick({ path: p, type, open }) {
@@ -530,7 +555,7 @@ const CodeView = (() => {
     if (!body) return;
     body.innerHTML = `
       <div class="code-term">
-        <pre class="code-term-out" id="code-term-out" aria-live="off"></pre>
+        <pre class="code-term-out" id="code-term-out"></pre>
         <form class="code-term-line" id="code-term-form">
           <span class="code-term-prompt" aria-hidden="true">$</span>
           <input id="code-term-input" type="text" autocomplete="off" spellcheck="false" aria-label="Command" placeholder="${_attr('Run a command in ' + _ws.name)}">
@@ -572,7 +597,17 @@ const CodeView = (() => {
     out.textContent = _termText;
     if (atBottom) out.scrollTop = out.scrollHeight;
     const stop = _el.querySelector('#code-term-stop');
-    if (stop) stop.hidden = !_termRun;
+    if (!stop) return;
+    const stopping = !!(_termRun && _termRun.stopAsked);
+    // Only touch the button when its state changes: this runs on every chunk.
+    const label = stopping ? 'Stopping…' : 'Stop';
+    if (stop.textContent !== label) stop.textContent = label;
+    if (stopping !== (stop.getAttribute('aria-disabled') === 'true')) {
+      if (stopping) stop.setAttribute('aria-disabled', 'true'); else stop.removeAttribute('aria-disabled');
+    }
+    // Hiding the focused Stop would drop focus to the page.
+    if (!_termRun && !stop.hidden && document.activeElement === stop) _el.querySelector('#code-term-input').focus();
+    stop.hidden = !_termRun;
   }
 
   async function _runTerminal(raw) {
@@ -614,11 +649,17 @@ const CodeView = (() => {
   }
 
   // Until the host's 'start' event the command has no id to kill (finding
-  // the login shell's PATH can take seconds), so the stop waits for it.
+  // the login shell's PATH can take seconds), so the kill waits for it.
+  // Stop says Stopping… from the press; one kill is enough, as the host
+  // follows SIGTERM with SIGKILL.
   function _stopTerminal() {
-    if (!_termRun) return;
+    if (!_termRun || _termRun.stopAsked) return;
+    _termRun.stopAsked = true;
     if (_termRun.id != null) _kill(_termRun.id);
-    else _termRun.stopAsked = true;
+    // No id yet (the host may still be looking up the shell's PATH): call the
+    // run off by its tag so it never spawns; the kill on 'start' covers a race.
+    else if (_host() && typeof _host().cancel === 'function') _host().cancel(_termRun.tag).catch(() => {});
+    _paintTerm();
   }
 
   function _onRunData(d) {
@@ -652,6 +693,6 @@ const CodeView = (() => {
 
   return {
     title, render, destroy,
-    _test: { reset: _resetAll, pathOf: (row) => (_treeRows[Number(row.dataset.row)] || {}).path },
+    _test: { reset: _resetAll, pathOf: (row) => (_rowInfo.get(row) || {}).path },
   };
 })();

@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { installViewMocks, loadModule, mountView } from './helpers/view-harness.js';
 
 const mocks = installViewMocks();
@@ -49,6 +52,7 @@ function fakeHost(files = {}, { ws: folder, links = [], truncated = [] } = {}) {
       return { id, exitCode: command === 'false' ? 1 : 0, stdout: '', stderr: '', timedOut: false, killed: false };
     }),
     kill: vi.fn(async () => true),
+    cancel: vi.fn(async () => true),
     onRunData: vi.fn((fn) => { listeners.add(fn); return () => listeners.delete(fn); }),
     emit: (d) => listeners.forEach(fn => fn(d)),
   };
@@ -269,6 +273,71 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelectorAll('.code-tree-more')).toHaveLength(1);
   });
 
+  it('keeps the tree, the file viewer and the terminal out of the page\'s live region', async () => {
+    const { el } = await openWorkspace({ 'a.txt': 'hello' });
+    const body = el.querySelector('#code-panel-body');
+    // #app-view is aria-live=polite, and the panel repaints whole trees,
+    // files of up to 2000 lines and terminal output.
+    expect(body.getAttribute('aria-live')).toBe('off');
+    expect(rowFor(el, 'a.txt').closest('[aria-live]')).toBe(body);
+    rowFor(el, 'a.txt').click();
+    await flush();
+    expect(el.querySelector('.code-file-body').closest('[aria-live]')).toBe(body);
+    el.querySelector('#code-tab-terminal').click();
+    expect(el.querySelector('#code-term-out').closest('[aria-live]')).toBe(body);
+    expect(el.querySelector('#code-thread').getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('puts focus back on the row it was on after a folder opens or closes', async () => {
+    const { el } = await openWorkspace({ 'src/a.js': '', 'README.md': '' });
+    rowFor(el, 'src').focus();
+    rowFor(el, 'src').click();
+    await flush();
+    expect(rowFor(el, 'src').getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(rowFor(el, 'src'));
+    rowFor(el, 'src').click();
+    await flush();
+    expect(rowFor(el, 'src').getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(rowFor(el, 'src'));
+  });
+
+  it('keeps focus on Refresh, and falls back to it when the focused row is gone', async () => {
+    const { host, el } = await openWorkspace({ 'a.txt': '', 'b.txt': '' });
+    const refresh = () => el.querySelector('#code-refresh-files');
+    refresh().focus();
+    refresh().click();
+    await flush();
+    expect(document.activeElement).toBe(refresh());
+
+    rowFor(el, 'b.txt').focus();
+    host.list.mockImplementation(async (dir) => ({ path: dir, entries: [{ name: 'a.txt', type: 'file' }], truncated: false }));
+    refresh().click();
+    await flush();
+    expect(rowFor(el, 'b.txt')).toBeUndefined();
+    expect(document.activeElement).toBe(refresh());
+  });
+
+  it('moves focus to Back when a focused row opens a file, and to that row on the way back', async () => {
+    const { el } = await openWorkspace({ 'src/a.js': '', 'README.md': '# Hi' });
+    rowFor(el, 'README.md').focus();
+    rowFor(el, 'README.md').click();
+    await flush();
+    expect(document.activeElement).toBe(el.querySelector('#code-file-back'));
+    el.querySelector('#code-file-back').click();
+    await flush();
+    expect(document.activeElement).toBe(rowFor(el, 'README.md'));
+  });
+
+  it('leaves focus where it is when it was outside the panel during a repaint', async () => {
+    const { el } = await openWorkspace({ 'src/a.js': '' });
+    const input = el.querySelector('#code-input');
+    input.focus();
+    rowFor(el, 'src').click();
+    await flush();
+    expect(rowFor(el, 'src/a.js')).toBeTruthy();
+    expect(document.activeElement).toBe(input);
+  });
+
   it('runs terminal commands, showing only its own output and the exit code', async () => {
     const { host, el } = await openWorkspace({ 'README.md': '' });
     el.querySelector('.code-panel-tab[data-tab="terminal"]').click();
@@ -282,7 +351,7 @@ describe('CodeView in the desktop app', () => {
     expect(out).not.toContain('NOT MINE');
     expect(host.run).toHaveBeenCalledWith('false', expect.objectContaining({ tag: expect.stringMatching(/^term-/) }));
     // #app-view is aria-live=polite; the output repaints on every chunk.
-    expect(el.querySelector('#code-term-out').getAttribute('aria-live')).toBe('off');
+    expect(el.querySelector('#code-term-out').closest('[aria-live]').getAttribute('aria-live')).toBe('off');
   });
 
   it('shows Stop while a command runs and kills it', async () => {
@@ -320,6 +389,8 @@ describe('CodeView in the desktop app', () => {
       await flush();
       press(el);
       expect(host.kill).not.toHaveBeenCalled();
+      // Called off by its tag, so the host never spawns it if it has not yet.
+      expect(host.cancel).toHaveBeenCalledWith(tag);
       expect(el.querySelector('#code-term-stop').hidden).toBe(false);
       expect(termOut(el)).toContain('$ sleep 2; echo finished');
 
@@ -336,6 +407,59 @@ describe('CodeView in the desktop app', () => {
       expect(el.querySelector('#code-term-stop').hidden).toBe(true);
     });
   }
+
+  it('says Stopping… from the press, before the host gave the command an id', async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    const done = deferred();
+    let tag = null;
+    host.run.mockImplementationOnce((cmd, opts) => { tag = opts.tag; return done.promise; });
+    el.querySelector('#code-tab-terminal').click();
+    runCommand(el, 'sleep 2');
+    await flush();
+    const stop = () => el.querySelector('#code-term-stop');
+    expect(stop().textContent).toBe('Stop');
+    stop().click();
+    expect(stop().textContent).toBe('Stopping…');
+    expect(stop().getAttribute('aria-disabled')).toBe('true');
+    stop().click();
+    termKey(el, 'c', { ctrlKey: true });
+
+    // A visit to Files and back draws the terminal again, still stopping.
+    el.querySelector('#code-tab-files').click();
+    el.querySelector('#code-tab-terminal').click();
+    expect(stop().textContent).toBe('Stopping…');
+
+    host.emit({ id: 3, tag, stream: 'start', data: '' });
+    expect(host.kill).toHaveBeenCalledTimes(1);
+    done.resolve({ id: 3, exitCode: null, killed: true, timedOut: false });
+    await flush();
+    expect(stop().hidden).toBe(true);
+    expect(stop().textContent).toBe('Stop');
+    expect(stop().hasAttribute('aria-disabled')).toBe(false);
+  });
+
+  it('says Stopping… for a command that has an id, and moves focus to the command line when Stop goes', async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    const done = deferred();
+    host.run.mockImplementationOnce((cmd, opts) => {
+      host.emit({ id: 5, tag: opts.tag, stream: 'start', data: '' });
+      return done.promise;
+    });
+    el.querySelector('#code-tab-terminal').click();
+    runCommand(el, 'sleep 10');
+    await flush();
+    const stop = el.querySelector('#code-term-stop');
+    stop.focus();
+    stop.click();
+    expect(host.kill).toHaveBeenCalledWith(5);
+    expect(stop.textContent).toBe('Stopping…');
+    stop.click();
+    expect(host.kill).toHaveBeenCalledTimes(1);
+    done.resolve({ id: 5, exitCode: null, killed: true, timedOut: false });
+    await flush();
+    expect(stop.hidden).toBe(true);
+    expect(document.activeElement).toBe(el.querySelector('#code-term-input'));
+  });
 
   it('kills a running command on Ctrl+C', async () => {
     const { host, el } = await openWorkspace({ a: '' });
@@ -713,5 +837,50 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelector('.code-msg-working')).toBeNull();
     expect(el.querySelector('.code-thread-empty')).not.toBeNull();
     expect(el.querySelector('#code-tab-files').getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+/* The layout itself is checked in the desktop app; these pin the rules of
+   app.css it depends on, read through jsdom's CSS parser. */
+describe('Code CSS', () => {
+  const sheet = (() => {
+    const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../css/app.css'), 'utf8');
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+    const rules = [...style.sheet.cssRules];
+    style.remove();
+    return rules;
+  })();
+  const squash = (t) => t.replace(/\s+/g, '');
+  // The last rule for `selector`, at the top level or inside `media`.
+  const rule = (selector, media) => {
+    const pool = media
+      ? sheet.filter(r => r.media && squash(r.media.mediaText) === squash(media)).flatMap(r => [...r.cssRules])
+      : sheet;
+    return pool.filter(r => r.selectorText === selector).pop();
+  };
+  const LANDSCAPE = '(max-height:500px) and (orientation:landscape)';
+
+  it('keeps focus scrolled into view clear of the sticky Refresh bar', () => {
+    const foot = rule('.code-tree-foot').style;
+    expect(foot.getPropertyValue('position')).toBe('sticky');
+    expect(foot.getPropertyValue('height')).toMatch(/^var\(--[\w-]+\)$/);
+    const scroller = rule('.code-panel-body:has(> .code-tree-foot)');
+    expect(scroller.style.getPropertyValue('scroll-padding-bottom')).toBe(foot.getPropertyValue('height'));
+  });
+
+  it('stops the view at the top of the landscape tab bar on phones', () => {
+    const tabbar = rule('.app-tabbar', LANDSCAPE).style.getPropertyValue('height');
+    const inset = rule('.app-main:has(.code-view)', '(max-width:768px) and ' + LANDSCAPE).style.getPropertyValue('padding-bottom');
+    expect(tabbar).toBe('52px');
+    expect(inset).toBe(tabbar);
+  });
+
+  it('leaves the chat the wider column in a 568px short landscape window', () => {
+    const cols = rule('.code-view', LANDSCAPE).style.getPropertyValue('grid-template-columns');
+    const [, min, pct] = cols.match(/minmax\(0,\s*1fr\)\s+minmax\((\d+)px,\s*(\d+)%\)/);
+    const panel = Math.max(Number(min), 568 * Number(pct) / 100);
+    expect(568 - panel).toBeGreaterThan(panel);
   });
 });
