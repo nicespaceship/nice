@@ -604,8 +604,9 @@ const SettingsView = (() => {
     let plan = 'free';
     let addons = [];
     if (typeof Subscription !== 'undefined') {
+      const loadedFor = State.get('user')?.id;
       await Subscription.init();
-      document.dispatchEvent(new CustomEvent('nice:subscription-change'));
+      document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: loadedFor } }));
       plan = Subscription.getCurrentPlan();
       addons = Subscription.getAddons();
     }

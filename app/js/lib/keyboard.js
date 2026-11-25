@@ -61,10 +61,11 @@ const Keyboard = (() => {
     }
 
     // Cmd/Ctrl+, → Settings; Cmd/Ctrl+/ → this shortcut list (the account menu shows both)
-    // (e.code covers layouts where "/" sits behind Shift.)
+    // Matched on the character typed, so layouts where that physical key is
+    // "-" keep their browser zoom shortcut.
     if ((e.metaKey || e.ctrlKey) && !e.altKey) {
       const comma = e.key === ',' && !e.shiftKey;
-      const slash = e.key === '/' || e.code === 'Slash';
+      const slash = e.key === '/';
       if (comma || slash) {
         e.preventDefault();
         if (comma) window.location.hash = '#/settings';

@@ -284,6 +284,22 @@ test.describe('Dashboard', () => {
     await expect(page).toHaveTitle(/Settings/);
   });
 
+  test('the plan shows only after that account\'s subscription has loaded', async ({ page }) => {
+    await waitForApp(page);
+    const plan = page.locator('#side-account-plan');
+    await expect(plan).toBeHidden();
+    await page.evaluate(() => { State.set('user', { id: 'acct-a', email: 'a@example.com' }); });
+    await expect(page.locator('#hdr-username')).toHaveText('a');
+    await expect(plan).toBeHidden();
+    // Another account's subscription landing must not label this one.
+    await page.evaluate(() => { document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: 'acct-b' } })); });
+    await expect(plan).toBeHidden();
+    await page.evaluate(() => { document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: 'acct-a' } })); });
+    await expect(plan).toHaveText(/· (Free|Pro)/);
+    await page.evaluate(() => { State.set('user', { id: 'acct-b', email: 'b@example.com' }); });
+    await expect(plan).toBeHidden();
+  });
+
   test('the shortcuts the account menu advertises work', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/', 'Home');

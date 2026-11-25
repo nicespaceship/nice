@@ -2337,7 +2337,8 @@ html:not([data-theme]),
    the labels follow their row (orange, black on hover) so they stay readable. */
 [data-theme="lcars"] .side-popover-item span,
 [data-theme="lcars"] .side-popover-item kbd,
-[data-theme="lcars"] .side-popover-item .side-menu-end { color:inherit; stroke:currentColor; }
+[data-theme="lcars"] .side-popover-item .side-menu-end,
+[data-theme="lcars"] .side-popover-item .side-menu-end * { color:inherit; }
 [data-theme="lcars"] .side-menu-id { color:#cc99cc; padding-left:18px; }
 [data-theme="lcars"] .side-menu-sep { background:#666688; }
 [data-theme="lcars"] .side-popover-item svg { display:none; }

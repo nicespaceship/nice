@@ -1463,7 +1463,7 @@ const NICE = (() => {
   /* ── Header user info (Name) ── */
   let _planUserId = null;   // the account whose subscription has finished loading
   document.addEventListener('nice:subscription-change', (e) => {
-    _planUserId = e.detail?.userId || State.get('user')?.id || null;
+    _planUserId = e.detail?.userId || null;
     _updateHeaderUser();
   });
 
@@ -1501,7 +1501,8 @@ const NICE = (() => {
       if (url) {
         const img = document.createElement('img');
         img.alt = '';
-        img.onerror = letter;   // an expired or broken photo falls back to the letter
+        // An expired or broken photo falls back to the letter, unless a newer render replaced it.
+        img.onerror = () => { if (img.isConnected) letter(); };
         img.src = url;
         avatar.appendChild(img);
       } else {
