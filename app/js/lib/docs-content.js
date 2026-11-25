@@ -157,9 +157,9 @@
       <h2>Interface Overview</h2>
       <dl>
         <dt>Sidebar</dt>
-        <dd>${_say('Dashboard', 'Bridge')}, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
+        <dd>Your projects. The NICE mark at the top opens Home. The account card at the bottom opens a menu with Settings, Usage, Get help, Blueprints, Integrations, and Security.</dd>
         <dt>${_say('Dashboard', 'Bridge')}</dt>
-        <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Outbox, Operations, ${_say('Activity log', 'Captain\'s Log')}, and Documentation.</dd>
+        <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Operations, and ${_say('Activity log', 'Captain\'s Log')}. Finished work waiting for your review is on the Ship page, counted on Home.</dd>
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
@@ -223,7 +223,7 @@
       <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) connect to the project, not to individual agents. Every ${_say('team', 'crew')} member on the project inherits the connections, so a single OAuth grant covers the whole ${_say('team', 'crew')}.</p>
 
       <h2>${_say('Team Designer', 'Crew Designer')}</h2>
-      <p>Use the ${_say('Team Designer', 'Crew Designer')} (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you ${_say('activate it', 'deploy')}.</p>
+      <p>Press <kbd>Cmd+K</kbd> and choose <strong>${_say('Team Designer', 'Crew Designer')}</strong> to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you ${_say('activate it', 'deploy')}.</p>
     `; },
 
     get 'missions'() { return `
@@ -234,7 +234,7 @@
       <ul>
         <li><strong>Project chat</strong>: open a project's ${_say('Diagram', 'Schematic')} view and chat. The project runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong>: visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong>: the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Top-level NICE chat</strong>: the prompt on Space (<strong>Ask anything</strong> on Home). Ephemeral, no persistence beyond your local message history.</li>
         <li><strong>Scheduled Mission</strong>: save a Mission with a cron schedule and the project fires Runs automatically.</li>
       </ul>
 
@@ -338,7 +338,7 @@
       <p>Five more integrations are pending partner approval: monday.com, Vercel, Asana, Figma, and DocuSign.</p>
 
       <h2>Adding Custom MCPs</h2>
-      <p>Any MCP-compatible server can be connected. Open <strong>Profile → Integrations</strong>, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
+      <p>Any MCP-compatible server can be connected. Open <strong>Integrations</strong> from the account menu, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
     `; },
 
     /* The 'models' section has dynamic content in-app: docs.js replaces
@@ -433,14 +433,14 @@
       <table>
         <thead><tr><th>Chord</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td><kbd>G  H</kbd></td><td>${_say('Go Home', 'Go Bridge')}</td></tr>
+          <tr><td><kbd>G  H</kbd></td><td>Go Home</td></tr>
           <tr><td><kbd>G  A</kbd></td><td>Go Agents</td></tr>
           <tr><td><kbd>G  S</kbd></td><td>Go Projects</td></tr>
           <tr><td><kbd>G  M</kbd></td><td>Go Missions</td></tr>
           <tr><td><kbd>G  B</kbd></td><td>Go Blueprints</td></tr>
           <tr><td><kbd>G  N</kbd></td><td>Go Operations</td></tr>
           <tr><td><kbd>G  C</kbd></td><td>${_say('Go Alerts', 'Go Comms')}</td></tr>
-          <tr><td><kbd>G  V</kbd></td><td>Go Vault</td></tr>
+          <tr><td><kbd>G  V</kbd></td><td>Go Models</td></tr>
           <tr><td><kbd>G  P</kbd></td><td>Go Profile</td></tr>
           <tr><td><kbd>G  T</kbd></td><td>Go Settings</td></tr>
           <tr><td><kbd>G  L</kbd></td><td>${_say('Go Activity log', 'Go Captain\'s Log')}</td></tr>
