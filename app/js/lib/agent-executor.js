@@ -455,18 +455,21 @@ const AgentExecutor = (() => {
       // ── No native tool_use — plain text response ─────────────────────
       // Model either gave a final answer or (on providers without native
       // tool-use) responded in legacy ReAct text format. Parse once, act.
-      // With no tools nothing in the reply can be a call: the parser reads
-      // "transaction: …" or a Redux {"action": …} example as one, so the
-      // reply stands as written. A parsed action for a tool this agent was
-      // not given is part of the answer too, never run.
+      // With no tools nothing in the reply can be a call, so it stands as
+      // written.
       const parsed = allowedTools && allowedTools.ids.size
         ? _parseReActResponse(combinedText || '')
         : { thought: null, action: null, actionInput: null, finalAnswer: null };
-      const textToolId = parsed.action && !parsed.finalAnswer
-        ? _allowedToolId(parsed.action, allowedTools)
-        : null;
+      const isCall = !!parsed.action && !parsed.finalAnswer;
+      const textToolId = isCall ? _allowedToolId(parsed.action, allowedTools) : null;
+      // A call for a tool outside the set is answered like the native path,
+      // so the model can carry on without it (the system prompt can still
+      // name a tool whose integration is not connected). It counts as a call
+      // only with an Action Input: "Action: Bob sends the deck" in meeting
+      // notes is part of the answer.
+      const refused = isCall && !textToolId && parsed.actionInput != null;
 
-      if (textToolId) {
+      if (textToolId || refused) {
         // Same shared gate as the native path: route through ToolRegistry.execute
         // with review-mode context. A declined action throws `declined`, which we
         // surface with the dedicated "try a different approach" nudge so the model
@@ -476,27 +479,32 @@ const AgentExecutor = (() => {
         let wasDeclined = false;
         let wasStopped = false;
         if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
-        try {
-          const result = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
-            approvalMode:     opts && opts.approvalMode,
-            onApprovalNeeded: opts && opts.onApprovalNeeded,
-            toolLabel:        parsed.action,
-            thought:          parsed.thought,
-            stepIndex:        stepIdx + 1,
-          });
-          observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-        } catch (err) {
-          if (err && err.declined && stopped()) {
-            // Turned down because the run was called off, not by the user.
-            wasStopped = true;
-            observation = _STOP_TOOL_NOTE;
-          } else if (err && err.declined) {
-            wasDeclined = true;
-            observation = 'Action blocked — user declined approval.';
-          } else {
-            observation = 'Error: ' + (err.message || 'Tool execution failed');
-          }
+        if (refused) {
+          observation = 'Error: tool "' + parsed.action + '" is not available to this agent';
           toolFailed = true;
+        } else {
+          try {
+            const result = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
+              approvalMode:     opts && opts.approvalMode,
+              onApprovalNeeded: opts && opts.onApprovalNeeded,
+              toolLabel:        parsed.action,
+              thought:          parsed.thought,
+              stepIndex:        stepIdx + 1,
+            });
+            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+          } catch (err) {
+            if (err && err.declined && stopped()) {
+              // Turned down because the run was called off, not by the user.
+              wasStopped = true;
+              observation = _STOP_TOOL_NOTE;
+            } else if (err && err.declined) {
+              wasDeclined = true;
+              observation = 'Action blocked — user declined approval.';
+            } else {
+              observation = 'Error: ' + (err.message || 'Tool execution failed');
+            }
+            toolFailed = true;
+          }
         }
         stepIdx++;
         const step = {
@@ -714,7 +722,7 @@ const AgentExecutor = (() => {
     // Fall back to text-based ReAct parsing
 
     // Extract Thought
-    const thoughtMatch = text.match(/Thought:\s*([\s\S]*?)(?=\n(?:Action:|Final Answer:)|$)/i);
+    const thoughtMatch = text.match(/Thought\**[ \t]*:\**\s*([\s\S]*?)(?=\n[ \t>*_#+\-\d.)]*\**[ \t]*(?:Action|Final Answer)\b|$)/i);
     if (thoughtMatch) result.thought = thoughtMatch[1].trim();
 
     // Check for Final Answer first
@@ -724,14 +732,19 @@ const AgentExecutor = (() => {
       return result;
     }
 
-    // Extract Action
-    const actionMatch = text.match(/Action:\s*(.+)/i);
+    // Action and Action Input count at the start of a line, with the
+    // Markdown models wrap them in (**Action:**, "- Action:", "1. Action:",
+    // "> Action:"), and never inside a word, so prose like "one transaction:
+    // BEGIN …" never reads as a call.
+    const LEAD = '^[ \\t>*_#+\\-\\d.)]*\\**[ \\t]*';
+    const TAIL = '[ \\t]*\\**[ \\t]*:[ \\t]*\\**[ \\t]*';
+    const actionMatch = text.match(new RegExp(LEAD + 'Action(?![ \\t]*Input)' + TAIL + '(\\S[^\\n]*)$', 'im'));
     if (actionMatch) {
-      result.action = actionMatch[1].trim();
+      result.action = actionMatch[1].replace(/[*`]+/g, ' ').trim();
     }
 
-    // Extract Action Input
-    const inputMatch = text.match(/Action Input:\s*([\s\S]*?)(?=\n(?:Thought:|Action:|Final Answer:)|$)/i);
+    const NEXT = '(?=\\n' + LEAD.slice(1) + '(?:Thought|Action|Final Answer)\\b|(?![\\s\\S]))';
+    const inputMatch = text.match(new RegExp(LEAD + 'Action[ \\t]+Input' + TAIL + '([\\s\\S]*?)' + NEXT, 'im'));
     if (inputMatch) {
       const raw = inputMatch[1].trim();
       try {
@@ -754,43 +767,47 @@ const AgentExecutor = (() => {
     return result;
   }
 
-  /* ── Try to parse structured JSON tool calls from LLM output ── */
+  /* ── Try to parse structured JSON tool calls from LLM output ──
+     Only a reply that IS the object, bare or as one fenced block, counts:
+     an object quoted inside an answer (a Redux action, an API example) is
+     part of the answer. */
   function _tryParseStructuredCall(text) {
     if (!text || typeof text !== 'string') return null;
-    // Look for a JSON object in the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    try {
-      const obj = JSON.parse(jsonMatch[0]);
+    const asCall = (obj, whole) => {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
       // Format 1: { tool_call: { name, arguments }, thought }
-      if (obj.tool_call && obj.tool_call.name) {
-        return {
-          thought: obj.thought || null,
-          action: obj.tool_call.name,
-          actionInput: obj.tool_call.arguments || {},
-          finalAnswer: null,
-        };
+      if (obj.tool_call && typeof obj.tool_call.name === 'string') {
+        return { thought: obj.thought || null, action: obj.tool_call.name, actionInput: obj.tool_call.arguments || {}, finalAnswer: null };
       }
-      // Format 2: { action, action_input, thought }
-      if (obj.action && typeof obj.action === 'string' && !obj.final_answer) {
-        return {
-          thought: obj.thought || null,
-          action: obj.action,
-          actionInput: obj.action_input || obj.actionInput || {},
-          finalAnswer: null,
-        };
+      // Format 2: { action, action_input, thought }. The input key is what
+      // makes it a call: { "action": "Send the deck", "owner": "Bob" } is data.
+      const hasInput = Object.prototype.hasOwnProperty.call(obj, 'action_input') || Object.prototype.hasOwnProperty.call(obj, 'actionInput');
+      if (typeof obj.action === 'string' && hasInput && !obj.final_answer) {
+        return { thought: obj.thought || null, action: obj.action, actionInput: obj.action_input || obj.actionInput || {}, finalAnswer: null };
       }
-      // Format 3: { final_answer, thought }
-      if (obj.final_answer) {
+      // Format 3: { final_answer, thought }, only as the whole reply
+      if (whole && obj.final_answer) {
         const fa = obj.final_answer;
-        return {
-          thought: obj.thought || null,
-          action: null,
-          actionInput: null,
-          finalAnswer: typeof fa === 'string' ? fa : JSON.stringify(fa, null, 2),
-        };
+        return { thought: obj.thought || null, action: null, actionInput: null, finalAnswer: typeof fa === 'string' ? fa : JSON.stringify(fa, null, 2) };
       }
-    } catch { /* not valid JSON — fall through to text parsing */ }
+      return null;
+    };
+    const parse = (body) => { try { return JSON.parse(body); } catch { return null; } };
+    // The whole reply as one object, bare or fenced.
+    let body = text.trim();
+    const fenced = body.match(/^```[\w-]*[ \t]*\n([\s\S]*?)\n[ \t]*```$/);
+    if (fenced) body = fenced[1].trim();
+    if (body.startsWith('{') && body.endsWith('}')) {
+      const call = asCall(parse(body), true);
+      if (call) return call;
+    }
+    // Or a fenced call after some prose ("Let me check. ```json {…}```").
+    for (const m of text.matchAll(/```[\w-]*[ \t]*\n([\s\S]*?)\n[ \t]*```/g)) {
+      const inner = m[1].trim();
+      if (!inner.startsWith('{') || !inner.endsWith('}')) continue;
+      const call = asCall(parse(inner), false);
+      if (call) return call;
+    }
     return null;
   }
 

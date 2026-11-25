@@ -135,11 +135,15 @@ const ToolRegistry = (() => {
      UI button) inherits the same prompt — not just AgentExecutor. A declined
      action throws an Error tagged `declined` so callers can distinguish a
      user rejection from a genuine tool failure. The 2-arg form
-     execute(id, input) stays valid — ctx defaults to no gate. */
+     execute(id, input) stays valid — ctx defaults to no gate.
+     Errors name the tool by `ctx.toolLabel` when given: the agent loop
+     dispatches by registry id (mcp:<provider>:<tool>), but the model and
+     the user know the tool by the name it was shown. */
   async function execute(toolId, input, ctx) {
-    const tool = resolve(toolId);
-    if (!tool) throw new Error('Tool not found: ' + toolId);
     ctx = ctx || {};
+    const label = ctx.toolLabel || toolId;
+    const tool = resolve(toolId);
+    if (!tool) throw new Error('Tool not found: ' + label);
     if (tool.sideEffect && ctx.approvalMode === 'review' && typeof ctx.onApprovalNeeded === 'function') {
       const approved = await ctx.onApprovalNeeded({
         tool:      ctx.toolLabel || tool.name || tool.id,
@@ -157,7 +161,7 @@ const ToolRegistry = (() => {
       return await tool.execute(input, ctx);
     } catch (err) {
       if (err && err.declined) throw err;
-      throw new Error('Tool "' + toolId + '" failed: ' + (err.message || err));
+      throw new Error('Tool "' + label + '" failed: ' + (err.message || err));
     }
   }
 

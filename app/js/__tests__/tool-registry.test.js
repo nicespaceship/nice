@@ -207,6 +207,23 @@ describe('ToolRegistry', () => {
       await expect(ToolRegistry.execute('nonexistent', {}))
         .rejects.toThrow(/Tool not found/);
     });
+
+    it('names the tool by ctx.toolLabel in its errors, and by the id without one', async () => {
+      ToolRegistry.register({
+        id: 'mcp:labeltest:search_mail', name: 'search_mail',
+        execute: async () => { throw new Error('boom'); },
+      });
+      try {
+        await expect(ToolRegistry.execute('mcp:labeltest:search_mail', {}, { toolLabel: 'search_mail' }))
+          .rejects.toThrow('Tool "search_mail" failed: boom');
+        await expect(ToolRegistry.execute('mcp:labeltest:search_mail', {}))
+          .rejects.toThrow('Tool "mcp:labeltest:search_mail" failed: boom');
+      } finally {
+        ToolRegistry.deregister('mcp:labeltest:search_mail');
+      }
+      await expect(ToolRegistry.execute('mcp:labeltest:search_mail', {}, { toolLabel: 'search_mail' }))
+        .rejects.toThrow(/^Tool not found: search_mail$/);
+    });
   });
 
   describe('command shape — surfaces + sideEffect', () => {
