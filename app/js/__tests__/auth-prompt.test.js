@@ -7,8 +7,9 @@ import { fileURLToPath } from 'url';
 // Load just that function, the way a <script> tag publishes it.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(resolve(HERE, '../views/agents.js'), 'utf-8');
-const fn = src.match(/^function _authPrompt\(el, feature\) \{[\s\S]*?^\}/m)[0];
-(0, eval)(fn + '\nglobalThis._authPrompt = _authPrompt;');
+const found = src.match(/^function _authPrompt\([^)]*\) \{[\s\S]*?^\}/m);
+if (!found) throw new Error('_authPrompt not found at column 0 in views/agents.js');
+(0, eval)(found[0] + '\nglobalThis._authPrompt = _authPrompt;');
 
 describe('_authPrompt', () => {
   let el;
