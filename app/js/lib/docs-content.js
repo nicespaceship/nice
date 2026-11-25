@@ -157,9 +157,9 @@
       <h2>Interface Overview</h2>
       <dl>
         <dt>Sidebar</dt>
-        <dd>${_say('Dashboard', 'Bridge')}, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
+        <dd>Your projects. The NICE mark at the top opens Home. The account card at the bottom opens a menu with Settings, Usage, Get help, Blueprints, Integrations, and Security.</dd>
         <dt>${_say('Dashboard', 'Bridge')}</dt>
-        <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Outbox, Operations, ${_say('Activity log', 'Captain\'s Log')}, and Documentation.</dd>
+        <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Operations, and ${_say('Activity log', 'Captain\'s Log')}. Finished work waiting for your review is on the Ship page, counted on Home.</dd>
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
@@ -178,11 +178,11 @@
       <h2>Building Custom Agents</h2>
       <p>Open the ${_say('Dashboard', 'Bridge')} → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
-        <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
-        <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). NICE Auto picks the best available if unset.</li>
-        <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
-        <li><strong>Category &amp; tags</strong> — for organization and search</li>
+        <li><strong>Name &amp; description</strong>: how the agent appears in the catalog</li>
+        <li><strong>System prompt</strong>: instructions that shape the agent's behavior</li>
+        <li><strong>Model</strong>: preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, Kimi, Nemotron). NICE Auto picks the best available if unset.</li>
+        <li><strong>Tools</strong>: capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
+        <li><strong>Category &amp; tags</strong>: for organization and search</li>
       </ul>
 
       <h2>Agent Categories</h2>
@@ -223,7 +223,7 @@
       <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) connect to the project, not to individual agents. Every ${_say('team', 'crew')} member on the project inherits the connections, so a single OAuth grant covers the whole ${_say('team', 'crew')}.</p>
 
       <h2>${_say('Team Designer', 'Crew Designer')}</h2>
-      <p>Use the ${_say('Team Designer', 'Crew Designer')} (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you ${_say('activate it', 'deploy')}.</p>
+      <p>Press <kbd>Cmd+K</kbd> and choose <strong>${_say('Team Designer', 'Crew Designer')}</strong> to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you ${_say('activate it', 'deploy')}.</p>
     `; },
 
     get 'missions'() { return `
@@ -234,7 +234,7 @@
       <ul>
         <li><strong>Project chat</strong>: open a project's ${_say('Diagram', 'Schematic')} view and chat. The project runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong>: visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong>: the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Top-level NICE chat</strong>: the prompt on Space (<strong>Ask anything</strong> on Home). Ephemeral, no persistence beyond your local message history.</li>
         <li><strong>Scheduled Mission</strong>: save a Mission with a cron schedule and the project fires Runs automatically.</li>
       </ul>
 
@@ -338,7 +338,7 @@
       <p>Five more integrations are pending partner approval: monday.com, Vercel, Asana, Figma, and DocuSign.</p>
 
       <h2>Adding Custom MCPs</h2>
-      <p>Any MCP-compatible server can be connected. Open <strong>Profile → Integrations</strong>, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
+      <p>Any MCP-compatible server can be connected. Open <strong>Integrations</strong> from the account menu, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
     `; },
 
     /* The 'models' section has dynamic content in-app: docs.js replaces
@@ -348,21 +348,21 @@
        attribute `data-models-table` is what docs.js targets. */
     get 'models'() { return `
       <h1>AI Models</h1>
-      <p class="docs-lead">NICE is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
+      <p class="docs-lead">NICE is your AI provider, so you never need API keys. Turn models on or off under <strong>Security → Models</strong>, and agents use whichever you enable.</p>
 
       <h2>Available Models</h2>
       <table data-models-table>
         <thead><tr><th>Model</th><th>Provider</th><th>Tier</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Gemini 2.5 Flash</td><td>Google</td><td><span class="docs-badge docs-badge-free">Free</span></td><td>Unlimited default model for all users</td></tr>
-          <tr><td>GPT-5 mini</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Low-cost reliable workhorse</td></tr>
-          <tr><td>GPT-OSS 120B</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Open-weights frontier reasoning on Groq silicon</td></tr>
-          <tr><td>Grok 4.3</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context, always-on reasoning, real-time research</td></tr>
-          <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
-          <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Agentic open-source model for long-horizon work</td></tr>
-          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
-          <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
-          <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Expert writing and nuanced synthesis</td></tr>
+          <tr><td>GPT-5 mini</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Low-cost reliable workhorse</td></tr>
+          <tr><td>GPT-OSS 120B</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Open-weights frontier reasoning on Groq silicon</td></tr>
+          <tr><td>Grok 4.3</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>1M context, always-on reasoning, real-time research</td></tr>
+          <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
+          <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Agentic open-source model for long-horizon work</td></tr>
+          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
+          <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
+          <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Expert writing and nuanced synthesis</td></tr>
           <tr><td>GPT-5.4 Pro</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context multimodal flagship</td></tr>
           <tr><td>OpenAI o3</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier reasoning and STEM</td></tr>
           <tr><td>Gemini 2.5 Pro</td><td>Google</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Native multimodal, 1M+ context</td></tr>
@@ -377,8 +377,8 @@
         <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 
-      <h2>Premium Models</h2>
-      <p>Premium models (Claude, GPT, Gemini Pro) consume tokens from your balance. The free model (Gemini Flash) is unlimited. Manage your token balance in <strong>Wallet</strong>.</p>
+      <h2>Paid Models</h2>
+      <p>Paid models spend tokens from the pool in their Tier column: Standard (with Pro), Claude, or Premium. The free model (Gemini 2.5 Flash) is unlimited. See your balance under <strong>Usage</strong> in the account menu.</p>
     `; },
 
     get 'tokens'() { return `
@@ -391,7 +391,7 @@
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
           <tr><td>Free</td><td>$0</td><td>One active project, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>Run as many projects as you need, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Run as many projects as you need, 1,000 Standard tokens/month covering GPT-5 mini, GPT-OSS 120B, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
@@ -433,14 +433,14 @@
       <table>
         <thead><tr><th>Chord</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td><kbd>G  H</kbd></td><td>${_say('Go Home', 'Go Bridge')}</td></tr>
+          <tr><td><kbd>G  H</kbd></td><td>Go Home</td></tr>
           <tr><td><kbd>G  A</kbd></td><td>Go Agents</td></tr>
           <tr><td><kbd>G  S</kbd></td><td>Go Projects</td></tr>
           <tr><td><kbd>G  M</kbd></td><td>Go Missions</td></tr>
           <tr><td><kbd>G  B</kbd></td><td>Go Blueprints</td></tr>
           <tr><td><kbd>G  N</kbd></td><td>Go Operations</td></tr>
           <tr><td><kbd>G  C</kbd></td><td>${_say('Go Alerts', 'Go Comms')}</td></tr>
-          <tr><td><kbd>G  V</kbd></td><td>Go Vault</td></tr>
+          <tr><td><kbd>G  V</kbd></td><td>Go Models</td></tr>
           <tr><td><kbd>G  P</kbd></td><td>Go Profile</td></tr>
           <tr><td><kbd>G  T</kbd></td><td>Go Settings</td></tr>
           <tr><td><kbd>G  L</kbd></td><td>${_say('Go Activity log', 'Go Captain\'s Log')}</td></tr>
