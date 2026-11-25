@@ -20,7 +20,7 @@ const Terminology = (() => {
   const PILOT = { singular: 'Pilot', plural: 'Pilots' };
   // What the sci-fi themes say where the plain looks use everyday words.
   const CREW = { singular: 'Crew', plural: 'Crew' };
-  const SCIFI = { spaceship: SPACESHIP, crew: CREW, guest: PILOT, account: PILOT, member: PILOT };
+  const SCIFI = { spaceship: SPACESHIP, crew: CREW, bridge: { singular: 'Bridge', plural: 'Bridges' }, guest: PILOT, account: PILOT, member: PILOT };
   const NOUNS = {
     default: {
       mission:   { singular: 'Mission',   plural: 'Missions' },
@@ -32,6 +32,8 @@ const Terminology = (() => {
       guest:     { singular: 'Guest',     plural: 'Guests' },
       account:   { singular: 'Profile',   plural: 'Profiles' },
       member:    { singular: 'Member',    plural: 'Members' },
+      // The hub page with the Schematic, Blueprints, Missions and Operations tabs.
+      bridge:    { singular: 'Dashboard', plural: 'Dashboards' },
     },
     office: {
       mission:   { singular: 'Assignment', plural: 'Assignments' },

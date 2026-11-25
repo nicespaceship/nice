@@ -8,7 +8,6 @@ const BlueprintsView = (() => {
   const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
-  const title = 'Bridge';
   const _esc = Utils.esc;
   // The spaceship noun follows the theme: "Project" in the default look.
   const _ship = (opts = {}) => Terminology.label('spaceship', opts);
@@ -2986,7 +2985,7 @@ const BlueprintsView = (() => {
     _clearPortals();
   }
 
-  return { title, render, renderEmbedded, destroy, _getSpaceshipSeed, SEED, SPACESHIP_SEED,
+  return { get title() { return Terminology.label('bridge'); }, render, renderEmbedded, destroy, _getSpaceshipSeed, SEED, SPACESHIP_SEED,
     serialHash: typeof CardRenderer !== 'undefined' ? CardRenderer.serialHash : _serialHash,
     avatarArt: typeof CardRenderer !== 'undefined' ? CardRenderer.avatarArt : _avatarArt,
     categoryColors: typeof CardRenderer !== 'undefined' ? CardRenderer.CATEGORY_COLORS : _categoryColors,

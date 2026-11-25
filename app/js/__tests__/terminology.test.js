@@ -70,6 +70,15 @@ describe('Terminology', () => {
       }
     });
 
+    it('calls the hub page Dashboard in the plain looks and Bridge in sci-fi themes', () => {
+      stubTheme('nice');
+      expect(Terminology.label('bridge')).toBe('Dashboard');
+      stubTheme('office-dark');
+      expect(Terminology.label('bridge')).toBe('Dashboard');
+      stubTheme('hal-9000');
+      expect(Terminology.label('bridge')).toBe('Bridge');
+    });
+
     it('pick() returns the sci-fi sentence only in a sci-fi theme', () => {
       stubTheme('nice');
       expect(Terminology.pick('plain', 'scifi')).toBe('plain');

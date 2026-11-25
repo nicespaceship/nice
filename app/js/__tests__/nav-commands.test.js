@@ -115,8 +115,16 @@ describe('NavCommands', () => {
     });
 
     it('preserves canonical labels for non-mission commands', () => {
-      const bridge = NavCommands.list().find(c => c.id === 'open-bridge');
-      expect(bridge.label).toBe('Bridge');
+      const label = () => NavCommands.list().find(c => c.id === 'open-bridge').label;
+      const theme = globalThis.Theme;
+      try {
+        globalThis.Theme = { current: () => 'nice' };
+        expect(label()).toBe('Home');
+        globalThis.Theme = { current: () => 'lcars' };
+        expect(label()).toBe('Bridge');
+      } finally {
+        globalThis.Theme = theme;
+      }
     });
   });
 

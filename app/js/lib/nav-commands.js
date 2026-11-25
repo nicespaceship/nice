@@ -137,6 +137,8 @@ const NavCommands = (() => {
       else if (c.id === 'open-log') { keywords = `log audit captain history events ${m.pluralLower} operations`; }
       else if (c.id === 'open-shipyard') { label = `${sh.singular} blueprints`; }
       else if (c.id === 'new-spaceship') { label = `New ${sh.lower}`; }
+      // This command opens Home; only the sci-fi themes call that the Bridge.
+      else if (c.id === 'open-bridge') { label = typeof Terminology !== 'undefined' ? Terminology.pick('Home', 'Bridge') : 'Home'; }
       else if (c.id === 'open-crew-designer') { label = `${typeof Terminology !== 'undefined' ? Terminology.label('crew') : 'Team'} Designer`; }
       if (skinOn && c.skinKey) label = Skin.text(c.skinKey, label);
       return { id: c.id, label, keywords, search: c.search || '', icon: c.icon, kind: c.kind, route: c.route };
