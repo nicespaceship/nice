@@ -129,7 +129,7 @@
       <ol>
         <li><strong>Sign in</strong>: create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free, with no API keys and no token meter.</li>
         <li><strong>${_say('Browse Blueprints', 'Browse the Bridge')}</strong>: explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
-        <li><strong>Activate your first agent</strong>: click any agent card and hit <kbd>Activate</kbd>. ${_say('The agent is added to your agents.', 'The agent appears in your fleet.')}</li>
+        <li><strong>Activate your first agent</strong>: click any agent card and hit <kbd>Activate</kbd>. ${_say('The agent joins your agents list.', 'The agent appears in your fleet.')}</li>
         <li><strong>Run a mission</strong>: type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
         <li><strong>Start a project</strong>: activate a project blueprint to create a multi-agent team. Assign agents to ${_say('team', 'crew')} slots and let them collaborate through the shared ${_say('team', 'crew')} log.</li>
       </ol>
@@ -172,7 +172,7 @@
       <p class="docs-lead">Agents are AI workers with specialized skills. Each agent has a system prompt that defines its personality, knowledge, and capabilities.</p>
 
       <h2>Activating Agents</h2>
-      <p>Browse the catalog on the ${_say('Dashboard', 'Bridge')} (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. ${_say('Activated agents are listed with your agents and can receive missions.', 'Activated agents appear in your fleet and can receive missions.')}</p>
+      <p>Browse the catalog on the ${_say('Dashboard', 'Bridge')} (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. ${_say('Activated agents appear in your agents list and can receive missions.', 'Activated agents appear in your fleet and can receive missions.')}</p>
       <p>Every blueprint and every ${_say('team', 'crew')} slot is open from day one. Free accounts run one active project at a time; <strong>NICE Pro</strong> runs as many as you need.</p>
 
       <h2>Building Custom Agents</h2>
