@@ -924,7 +924,6 @@ const NICE = (() => {
         const row = e.target.closest('.side-popover-item, .side-menu-id');
         if (!row) return;
         setMenu(false);
-        if (row.id === 'side-menu-shortcuts' && typeof Keyboard !== 'undefined') Keyboard.showHelp();
         // A plain toast: nothing is saved to Alerts for a row that does nothing yet.
         if (row.hasAttribute('data-soon') && typeof Notify !== 'undefined' && Notify.toast) {
           Notify.toast(row.querySelector('span')?.textContent || 'Not available', 'This is not available yet.');
