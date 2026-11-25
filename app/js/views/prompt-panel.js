@@ -331,8 +331,8 @@ const PromptPanel = (() => {
         };
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
-      // Let the sidebar Chats list lazily adopt an in-flight top-level chat
-      // (nice.js debounces and persists it into a conversation entry).
+      // nice.js adopts an in-flight top-level chat into its saved
+      // conversations (debounced).
       document.dispatchEvent(new CustomEvent('nice:chat-saved'));
     } catch {}
   }
@@ -346,8 +346,8 @@ const PromptPanel = (() => {
     // On the Schematic, keep the user in-view — responses render into the
     // mini-chat panel above the reactor. The expand button opts in to the
     // full monitor overlay by setting `_miniExpanded`. `force` is the
-    // explicit "open this conversation" path (sidebar Chats) which always
-    // wants the full monitor, never the schematic mini-chat.
+    // explicit "open this conversation" path (_showConversation), which
+    // always wants the full monitor, never the schematic mini-chat.
     if (!force && _isOnSchematicInView() && !_miniExpanded) {
       _ensureMiniObserver();
       _updateMiniChat();
@@ -4343,8 +4343,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   }
 
   /* Open a stored conversation on Space, each model's thread on its card.
-     Called by the sidebar Chats list after it writes the conversation to
-     STORAGE_KEY. When it also holds NICE's own replies (agents, commands,
+     The caller writes the conversation to STORAGE_KEY first. The sidebar
+     Chats list was its only caller and is gone; it stays for whatever
+     reopens saved chats next. When it also holds NICE's own replies (agents, commands,
      missions), the monitor opens over the cards as before; Back returns to
      the cards, and Space links back to the monitor while those replies exist.
      `current` says the conversation is the one already open (the user

@@ -649,7 +649,7 @@ const ContentQueue = (() => {
 
   /* ══════════════════════════════════════════════════════════════
      Live updates — reload when a run with an approval state changes, so
-     the Outbox badge follows runs that land in review (or get approved
+     Home's review count follows runs that land in review (or get approved
      elsewhere). Progress ticks on ordinary runs are ignored.
   ══════════════════════════════════════════════════════════════ */
   let _channel = null;

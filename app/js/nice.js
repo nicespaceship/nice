@@ -24,7 +24,7 @@ const Theme = (() => {
     // is ink, so CTAs, active nav and selection read black on white.
     // `reactor:false` keeps the centerpiece reactor off (CoreReactor never
     // shows it while a reactor-less theme is active).
-    { id:'nice', name:'NICE', persona:{ name:'NICE' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#0a0a0a', preview:['#ffffff','#0a0a0a','#a3a3a3'],
+    { id:'nice', name:'NICE', persona:{ name:'NICE' }, chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#0a0a0a', preview:['#ffffff','#0a0a0a','#a3a3a3'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#0a0a0a','--accent2':'#262626','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:false,
       // Voice — default voice every new user hears. Refined mid-baritone,
@@ -37,13 +37,13 @@ const Theme = (() => {
     // moon/sun toggle in the HUD dock — `Theme.toggleDarkLight` swaps
     // nice ↔ nice-dark, same pattern as office ↔ office-dark. builtin:false
     // keeps it out of the main dock row.
-    { id:'nice-dark', name:'NICE', persona:{ name:'NICE' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#fafafa', preview:['#0a0a0a','#fafafa','#737373'],
+    { id:'nice-dark', name:'NICE', persona:{ name:'NICE' }, chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#fafafa', preview:['#0a0a0a','#fafafa','#737373'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#fafafa','--accent2':'#e5e5e5','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:false,
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
-    { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, chatsLabel:'Mission Logs', chips:['Run a full system diagnostic',"What's our mission status?",'Open the pod bay doors'], builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
+    { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, chips:['Run a full system diagnostic',"What's our mission status?",'Open the pod bay doors'], builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#0a0a0a','--bg-alt':'#121212','--surface':'#121212','--surface2':'#1a1a1a','--border':'#2a2a2a','--border-hi':'#8a8a90','--accent':'#ef4444','--accent2':'#b0b0b6','--text':'#f5f5f5','--text-muted':'#8a8a90','--text-dim':'#555555','--glow':'0 0 12px rgba(239,68,68,0.25)','--panel-bg':'#121212','--panel-border':'#2a2a2a' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       copy:{
         placeholders:{
@@ -59,7 +59,7 @@ const Theme = (() => {
         // Slower than Majel, eerier consistency. Resolves to
         // ELEVENLABS_HAL_VOICE_ID server-side.
         settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
-    { id:'grid', name:'The Grid', persona:{ name:'End of Line', callsign:'User' }, chatsLabel:'Logs', chips:['Initialize a new program cycle','Locate the user','Show me the Grid'], builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
+    { id:'grid', name:'The Grid', persona:{ name:'End of Line', callsign:'User' }, chips:['Initialize a new program cycle','Locate the user','Show me the Grid'], builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'grid', speed:1.0, model:'eleven_turbo_v2_5', label:'End of Line',
@@ -67,7 +67,7 @@ const Theme = (() => {
         // Resolves to ELEVENLABS_GRID_VOICE_ID server-side. Stability tight
         // for PA-uniformity; faint style for synthetic edge.
         settings:{ stability:0.85, similarity_boost:0.85, style:0.1, use_speaker_boost:true } } },
-    { id:'matrix', name:'The Matrix', persona:{ name:'Morpheus', callsign:'Neo' }, chatsLabel:'Transmissions', chips:['Show me the truth',"What do you know that I don't?",'Free my mind'], builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
+    { id:'matrix', name:'The Matrix', persona:{ name:'Morpheus', callsign:'Neo' }, chips:['Show me the truth',"What do you know that I don't?",'Free my mind'], builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
       data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'morpheus', speed:1.0, model:'eleven_turbo_v2_5', label:'Morpheus',
@@ -76,7 +76,7 @@ const Theme = (() => {
         // prophetic emphasis without tipping into theatrical.
         settings:{ stability:0.75, similarity_boost:0.9, style:0.1, use_speaker_boost:true },
         intro:'Welcome, Neo.' } },
-    { id:'lcars', name:'LCARS', persona:{ name:'Computer', callsign:'Captain' }, chatsLabel:'Records', chips:['Run a level-1 diagnostic','Plot a course to the nearest objective','Locate the captain'], builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
+    { id:'lcars', name:'LCARS', persona:{ name:'Computer', callsign:'Captain' }, chips:['Run a level-1 diagnostic','Plot a course to the nearest objective','Locate the captain'], builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'computer', speed:1.0, model:'eleven_turbo_v2_5', label:'Computer',
@@ -85,7 +85,7 @@ const Theme = (() => {
         // High stability for the iconic monotone evenness — Computer should
         // sound like a computer.
         settings:{ stability:0.85, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
-    { id:'jarvis', name:'J.A.R.V.I.S.', persona:{ name:'JARVIS', callsign:'Sir' }, chatsLabel:'Sessions', chips:['Status report, please','Bring up the schematics',"What's on the agenda, sir?"], builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
+    { id:'jarvis', name:'J.A.R.V.I.S.', persona:{ name:'JARVIS', callsign:'Sir' }, chips:['Status report, please','Bring up the schematics',"What's on the agenda, sir?"], builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
       // Personality bundle. `labels` and `placeholders` feed Theme.rewrite
       // + the in-DOM swap.
@@ -138,7 +138,7 @@ const Theme = (() => {
       // distinctive voiced persona opt in by adding `intro` here.
       voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_turbo_v2_5', label:'J.A.R.V.I.S.',
         intro:'All systems online, sir. Standing by.' } },
-    { id:'cyberpunk', name:'Cyberpunk', persona:{ name:'Delamain', callsign:'V' }, chatsLabel:'Calls', chips:['Where are we going tonight?','Status of the fleet','Brief me on the city'], builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
+    { id:'cyberpunk', name:'Cyberpunk', persona:{ name:'Delamain', callsign:'V' }, chips:['Where are we going tonight?','Status of the fleet','Brief me on the city'], builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, model:'eleven_v3', label:'Delamain',
@@ -147,7 +147,7 @@ const Theme = (() => {
         // tighter than Morpheus for corporate-AI consistency.
         settings:{ stability:0.8, similarity_boost:0.9, style:0.05, use_speaker_boost:true },
         intro:'Welcome to Night City.' } },
-    { id:'rx-78-2', name:'RX-78-2', persona:{ name:'Operator', callsign:'Pilot' }, chatsLabel:'Comms', chips:['Pilot, system status','Mobile suit launch sequence','Initiate combat protocols'], builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
+    { id:'rx-78-2', name:'RX-78-2', persona:{ name:'Operator', callsign:'Pilot' }, chips:['Pilot, system status','Mobile suit launch sequence','Initiate combat protocols'], builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'operator', speed:1.0, model:'eleven_turbo_v2_5', label:'Operator',
@@ -155,7 +155,7 @@ const Theme = (() => {
         // Resolves to ELEVENLABS_OPERATOR_VOICE_ID server-side. Style 0.15
         // lets the anime cadence + accent shifts come through.
         settings:{ stability:0.7, similarity_boost:0.85, style:0.15, use_speaker_boost:true } } },
-    { id:'16bit', name:'16-BIT', persona:{ name:'Announcer', callsign:'Player One' }, chatsLabel:'Saves', chips:['Insert coin to continue','Player One ready','Show me the high score'], builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
+    { id:'16bit', name:'16-BIT', persona:{ name:'Announcer', callsign:'Player One' }, chips:['Insert coin to continue','Player One ready','Show me the high score'], builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, model:'eleven_v3', label:'Announcer',
@@ -165,7 +165,7 @@ const Theme = (() => {
         // this is the persona where character IS the value.
         settings:{ stability:0.55, similarity_boost:0.85, style:0.3, use_speaker_boost:true },
         intro:'Player One — ready!' } },
-    { id:'office', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, chatsLabel:'Memos', chips:['Run a security audit','Schedule the beet inventory','Identify all unauthorized personnel'], builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
+    { id:'office', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, chips:['Run a security audit','Schedule the beet inventory','Identify all unauthorized personnel'], builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-bg-hover':'#0a3d78','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
@@ -174,7 +174,7 @@ const Theme = (() => {
         // stability + style 0.2 amplify the stressed-emphasis delivery.
         settings:{ stability:0.55, similarity_boost:0.9, style:0.2, use_speaker_boost:true },
         intro:'Identify yourself.' } },
-    { id:'office-dark', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, chatsLabel:'Memos', chips:['Loyalty test all subordinates','Initiate Schrute Farms protocol','Identify all weaknesses'], builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
+    { id:'office-dark', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, chips:['Loyalty test all subordinates','Initiate Schrute Farms protocol','Identify all weaknesses'], builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
       data:{ colors:{ '--bg':'#09090b','--bg2':'#18181b','--bg-alt':'#18181b','--surface':'rgba(255,255,255,0.03)','--surface2':'#27272a','--border':'#3f3f46','--border-hi':'#71717a','--accent':'#e0e7ff','--accent2':'#a5b4fc','--text':'#fafafa','--text-muted':'#a1a1aa','--text-dim':'#3f3f46','--glow':'0 0 0 1px rgba(224,231,255,0.06)','--glow-hi':'0 0 12px rgba(224,231,255,0.08)','--panel-bg':'rgba(24,24,27,0.75)','--panel-border':'#3f3f46','--nav-bg':'#111114','--nav-bg-dk':'#3730a3','--nav-bg-hover':'#312e81','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.12)','--nav-surface':'rgba(255,255,255,0.06)','--nav-surface2':'rgba(255,255,255,0.1)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
@@ -260,13 +260,6 @@ const Theme = (() => {
     if (nameEl) nameEl.textContent = themeLabel;
     const mobileLabel = document.getElementById('mobile-bar-theme');
     if (mobileLabel) mobileLabel.textContent = themeLabel;
-
-    // Sidebar Chats folder label — themed per persona's vocabulary
-    // (HAL → Mission Logs, LCARS → Records, Office → Memos, etc.).
-    const chatsLabelEl = document.getElementById('side-chats-label');
-    if (chatsLabelEl) chatsLabelEl.textContent = (t && t.chatsLabel) || 'Chats';
-    const chatsToggle = document.getElementById('side-chats-toggle');
-    if (chatsToggle) chatsToggle.setAttribute('aria-label', (t && t.chatsLabel) || 'Chats');
 
     // Update theme-color meta for PWA
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -385,7 +378,7 @@ const Theme = (() => {
       }
     });
     // Sidebar link text (direct text nodes)
-    document.querySelectorAll('.side-link, .side-folder-toggle, .side-folder-label, .sidebar-section-label').forEach(el => {
+    document.querySelectorAll('.side-link, .sidebar-section-label').forEach(el => {
       const nodes = [];
       el.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); });
       el.querySelectorAll('span').forEach(s => { s.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); }); });
@@ -946,8 +939,7 @@ const NICE = (() => {
       }
     }
 
-    // ── Chats folder (collapsible) ──
-    _initChatsFolder();
+    _initConversations();
   }
 
   /* ── Sidebar: your spaceships ──
@@ -1002,7 +994,7 @@ const NICE = (() => {
     window.addEventListener('storage', (e) => { if (e.key === Utils.KEYS.mcShip) _highlightSidebarShip(); });
   }
 
-  /* ── Chats folder (collapsible, conversation history) ── */
+  /* ── Saved conversations: the Space chat history kept in localStorage ── */
   const CONVS_KEY = Utils.KEYS.conversations;
   const ACTIVE_CONV_KEY = Utils.KEYS.activeConv;
 
@@ -1052,7 +1044,6 @@ const NICE = (() => {
     if (active && (active.messages || []).length === 0) {
       window.location.hash = '#/space';
       if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-      _renderChatsList();
       return;
     }
 
@@ -1069,36 +1060,6 @@ const NICE = (() => {
     _setActiveConvId(conv.id);
     localStorage.setItem(Utils.KEYS.aiMessages, '[]');
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-    _renderChatsList();
-    window.location.hash = '#/space';
-  }
-
-  function _loadConversation(id, openMonitor) {
-    // Save current conversation first
-    _saveActiveConversation();
-    const convs = _getConversations();
-    const conv = convs.find(c => c.id === id);
-    if (!conv) return;
-    // The chat already open: show it on Space without reloading it, so the
-    // replies it is still waiting for land instead of being cut off.
-    if (id === _getActiveConvId()) {
-      if (typeof PromptPanel !== 'undefined' && PromptPanel._showConversation) {
-        PromptPanel._showConversation({ current: true });
-      } else {
-        window.location.hash = '#/space';
-      }
-      return;
-    }
-    _setActiveConvId(id);
-    localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(conv.messages || []));
-    _renderChatsList();
-    // Opened from the sidebar Chats list: show the conversation on Space,
-    // each model's thread on its card.
-    if (openMonitor && typeof PromptPanel !== 'undefined' && PromptPanel._showConversation) {
-      PromptPanel._showConversation();
-      return;
-    }
-    if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     window.location.hash = '#/space';
   }
 
@@ -1107,9 +1068,9 @@ const NICE = (() => {
     try { msgs = JSON.parse(localStorage.getItem(Utils.KEYS.aiMessages) || '[]'); } catch { return false; }
     const id = _getActiveConvId();
 
-    // No active conversation yet: lazily adopt an in-flight top-level NICE
-    // chat the moment it has messages, so it appears in the Chats list
-    // without waiting for a reload to trigger _migrateMessages.
+    // No active conversation yet: adopt an in-flight top-level NICE chat
+    // the moment it has messages, without waiting for a reload to trigger
+    // _migrateMessages.
     if (!id) {
       if (!msgs.length) return false;
       const convs = _getConversations();
@@ -1144,253 +1105,19 @@ const NICE = (() => {
   let _chatSavedTimer = null;
   function _onChatSaved() {
     clearTimeout(_chatSavedTimer);
-    _chatSavedTimer = setTimeout(() => {
-      if (_saveActiveConversation()) _renderChatsList();
-    }, 600);
+    _chatSavedTimer = setTimeout(_saveActiveConversation, 600);
   }
 
-  function _deleteConversation(id) {
-    let convs = _getConversations();
-    convs = convs.filter(c => c.id !== id);
-    _saveConversations(convs);
-    if (_getActiveConvId() === id) {
-      if (convs.length > 0) {
-        _loadConversation(convs[0].id);
-      } else {
-        _setActiveConvId('');
-        localStorage.setItem(Utils.KEYS.aiMessages, '[]');
-        if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-        window.location.hash = '#/space';
-      }
-    }
-    _renderChatsList();
-  }
-
-  function _pinConversation(id) {
-    const convs = _getConversations();
-    const conv = convs.find(c => c.id === id);
-    if (conv) conv.pinned = !conv.pinned;
-    _saveConversations(convs);
-    _renderChatsList();
-  }
-
-  function _renameConversation(id) {
-    const item = document.querySelector(`.side-chat-item[data-conv-id="${id}"] .side-chat-title`);
-    if (!item) return;
-    const current = item.textContent;
-    item.contentEditable = 'true';
-    item.focus();
-    // Select all text
-    const range = document.createRange();
-    range.selectNodeContents(item);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-
-    const finish = () => {
-      item.contentEditable = 'false';
-      const newTitle = item.textContent.trim() || current;
-      const convs = _getConversations();
-      const conv = convs.find(c => c.id === id);
-      if (conv) conv.title = newTitle.slice(0, 60);
-      _saveConversations(convs);
-    };
-    item.addEventListener('blur', finish, { once: true });
-    item.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); item.blur(); }
-      if (e.key === 'Escape') { item.textContent = current; item.blur(); }
-    });
-  }
-
-  function _shareConversation(id) {
-    const convs = _getConversations();
-    const conv = convs.find(c => c.id === id);
-    if (!conv || !conv.messages.length) return;
-    const text = conv.messages.map(m => (m.role === 'user' ? 'You' : 'NICE') + ': ' + m.text).join('\n\n');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied', message: 'Conversation copied to clipboard', type: 'success' });
-      });
-    }
-  }
-
-  let _chatMenuEl = null;
-  function _showChatMenu(id, x, y) {
-    _closeChatMenu();
-    const menu = document.createElement('div');
-    menu.className = 'side-chat-menu';
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
-    const convs = _getConversations();
-    const conv = convs.find(c => c.id === id);
-    const pinLabel = conv?.pinned ? 'Unpin' : 'Pin';
-    menu.innerHTML = `
-      <button class="side-chat-menu-item" data-action="share">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
-        Share conversation
-      </button>
-      <button class="side-chat-menu-item" data-action="pin">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9"/></svg>
-        ${pinLabel}
-      </button>
-      <button class="side-chat-menu-item" data-action="rename">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
-        Rename
-      </button>
-      <button class="side-chat-menu-item side-chat-menu-item--danger" data-action="delete">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
-        Delete
-      </button>`;
-    document.body.appendChild(menu);
-    _chatMenuEl = menu;
-
-    // Keep menu in viewport
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
-    if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
-
-    menu.addEventListener('click', (e) => {
-      const action = e.target.closest('[data-action]')?.dataset.action;
-      if (!action) return;
-      _closeChatMenu();
-      if (action === 'share') _shareConversation(id);
-      else if (action === 'pin') _pinConversation(id);
-      else if (action === 'rename') _renameConversation(id);
-      else if (action === 'delete') _deleteConversation(id);
-    });
-
-    // Close on click outside
-    setTimeout(() => document.addEventListener('click', _closeChatMenu, { once: true }), 10);
-  }
-
-  function _closeChatMenu() {
-    if (_chatMenuEl) { _chatMenuEl.remove(); _chatMenuEl = null; }
-  }
-
-  function _initChatsFolder() {
+  function _initConversations() {
     _migrateMessages();
-
-    const newBtn = document.getElementById('side-chat-new');
-
-    if (newBtn) {
-      newBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        _newConversation();
-      });
-    }
-
-    const chatsToggle = document.getElementById('side-chats-toggle');
-    if (chatsToggle) {
-      chatsToggle.addEventListener('click', (e) => {
-        if (e.target.closest('#side-chat-new')) return;
-        if (window.location.hash !== '#/space') {
-          window.location.hash = '#/space';
-        }
-      });
-    }
 
     // Auto-save active conversation periodically
     setInterval(_saveActiveConversation, 30000);
     window.addEventListener('beforeunload', _saveActiveConversation);
 
-    // A top-level NICE chat just persisted messages — adopt/refresh its entry
-    // in the Chats list. Debounced so a burst of saves coalesces into one.
+    // A top-level NICE chat just persisted messages: adopt or refresh its
+    // saved conversation. Debounced so a burst of saves coalesces into one.
     document.addEventListener('nice:chat-saved', _onChatSaved);
-
-    // Re-render on theme change so the empty-state copy picks up the
-    // active persona's rewrite (Theme.rewrite is consulted at render).
-    document.addEventListener('nice:theme-change', _renderChatsList);
-
-    _renderChatsList();
-  }
-
-  function _bucketConv(c) {
-    if (c.pinned) return 'pinned';
-    const ts = c.updatedAt || c.createdAt || 0;
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const day = 86400000;
-    if (ts >= startOfToday) return 'today';
-    if (ts >= startOfToday - day) return 'yesterday';
-    if (ts >= startOfToday - 7 * day) return 'week';
-    if (ts >= startOfToday - 30 * day) return 'month';
-    return 'older';
-  }
-
-  const _BUCKET_ORDER = ['pinned', 'today', 'yesterday', 'week', 'month', 'older'];
-  const _BUCKET_LABELS = {
-    pinned: 'Pinned',
-    today: 'Today',
-    yesterday: 'Yesterday',
-    week: 'Previous 7 Days',
-    month: 'Previous 30 Days',
-    older: 'Older',
-  };
-
-  function _renderChatsList() {
-    const list = document.getElementById('side-chats-list');
-    if (!list) return;
-    const convs = _getConversations();
-    const activeId = _getActiveConvId();
-
-    const sorted = [...convs]
-      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-      .slice(0, 100);
-
-    if (!sorted.length) {
-      const base = 'Start a chat to see it here.';
-      const msg = (typeof Theme !== 'undefined' && Theme.rewrite) ? Theme.rewrite(base) : base;
-      list.innerHTML = `<div class="side-folder-item" style="opacity:.4;cursor:default">${Utils.esc(msg)}</div>`;
-      return;
-    }
-
-    const groups = { pinned: [], today: [], yesterday: [], week: [], month: [], older: [] };
-    sorted.forEach(c => groups[_bucketConv(c)].push(c));
-
-    const renderItem = (c) => {
-      const active = c.id === activeId ? ' side-chat-active' : '';
-      const title = Utils.esc((c.title || 'Untitled').slice(0, 30));
-      return `<div class="side-folder-item side-chat-item${active}" data-conv-id="${c.id}" title="${Utils.esc(c.title)}">
-        <span class="side-chat-title">${title}</span>
-        <button class="side-chat-dots" data-conv-id="${c.id}" aria-label="Chat options">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-        </button>
-      </div>`;
-    };
-
-    list.innerHTML = _BUCKET_ORDER
-      .filter(k => groups[k].length > 0)
-      .map(k => `<div class="side-chat-group-label">${_BUCKET_LABELS[k]}</div>${groups[k].map(renderItem).join('')}`)
-      .join('');
-
-    // Bind click, 3-dot menu, and context menu
-    list.querySelectorAll('.side-chat-item').forEach(item => {
-      const id = item.dataset.convId;
-      item.addEventListener('click', (e) => {
-        if (e.target.closest('.side-chat-dots')) return; // don't load when clicking dots
-        _loadConversation(id, true);
-      });
-      // 3-dot menu button
-      item.querySelector('.side-chat-dots')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
-        _showChatMenu(id, rect.right, rect.bottom);
-      });
-      item.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        _showChatMenu(id, e.clientX, e.clientY);
-      });
-      // Long-press for mobile
-      let _lp;
-      item.addEventListener('touchstart', (e) => {
-        _lp = setTimeout(() => {
-          e.preventDefault();
-          const t = e.touches[0];
-          _showChatMenu(id, t.clientX, t.clientY);
-        }, 500);
-      }, { passive: false });
-      item.addEventListener('touchend', () => clearTimeout(_lp));
-      item.addEventListener('touchmove', () => clearTimeout(_lp));
-    });
   }
 
   /* ── Ship → Theme auto-switching ── */
@@ -2727,8 +2454,8 @@ const NICE = (() => {
     });
   }
 
-  // The Outbox badge and Home read the review queue, so load it at sign-in
-  // (not only when the Outbox opens) and keep it live. One load per user;
+  // Home reads the review queue, so load it at sign-in (not only when the
+  // Ship page opens) and keep it live. One load per user;
   // signing out clears it.
   let _queueUserId = null;
   function _initOutboxSync() {
@@ -2744,19 +2471,17 @@ const NICE = (() => {
 
   // One rule (item dot when count > 0; a parent shows the sum), all sourced
   // from the AlertCounts SSOT:
-  //   • Outbox gets a count badge; the spaceships section and the Crew tab a
-  //     dot. The Bridge tabs render their own per-tab dots (blueprints.js).
+  //   • The spaceships section and the Crew tab get a dot. The Bridge tabs
+  //     render their own per-tab dots (blueprints.js); the review count
+  //     shows on Home.
   //   • The Settings popover items (integrations/wallet/security/moderation)
   //     each show their own dot; the gear aggregates them, but only while the
   //     popover is closed — once open, the per-item dots are visible and the
   //     gear dot would be redundant.
   function _updateAlertIndicators() {
     if (typeof AlertCounts === 'undefined') return;
-    // Outbox shows how many results wait for review; the spaceships section
-    // and the Crew tab show a dot for crew trouble or failed runs.
-    const outbox = AlertCounts.count('outbox');
-    _setBadge('side-outbox-badge', outbox);
-    _setBadge('tab-outbox-badge', outbox);
+    // The spaceships section and the Crew tab show a dot for crew trouble
+    // or failed runs.
     const crew = AlertCounts.count('schematic') + AlertCounts.count('missions');
     _setDot('side-ships-alert-dot', crew);
     _setDot('tab-crew-alert-dot', crew);
@@ -2772,13 +2497,6 @@ const NICE = (() => {
   function _setDot(id, count) {
     const el = document.getElementById(id);
     if (el) el.hidden = !(count > 0);
-  }
-
-  function _setBadge(id, count) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.hidden = !(count > 0);
-    el.textContent = count > 99 ? '99+' : String(count);
   }
 
   return { init, openModal, closeModal, guardWrite, signOut, newChat: _newConversation, _trapFocus };
