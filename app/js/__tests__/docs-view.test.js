@@ -12,6 +12,8 @@ beforeAll(() => {
   loadModule('views/docs.js');
 });
 
+const ModelCatalogList = () => globalThis.VaultView.MODEL_CATALOG;
+
 describe('DocsView AI Models table', () => {
   function rows() {
     const el = document.createElement('div');
@@ -27,6 +29,11 @@ describe('DocsView AI Models table', () => {
     expect(byName['GPT-5 mini'][2]).toBe('Standard');
     expect(byName['Claude 4.6 Sonnet'][2]).toBe('Claude');
     expect(byName['OpenAI o3'][2]).toBe('Premium');
+  });
+
+  it('has a pool for every catalog model except the free one', () => {
+    ModelCatalogList().filter(m => m.id !== 'gemini-2-5-flash')
+      .forEach(m => expect(TokenConfig.poolFor(m.id), m.id).toBeTruthy());
   });
 
   it('fills the notes column from the catalog', () => {

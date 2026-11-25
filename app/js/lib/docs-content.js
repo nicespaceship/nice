@@ -180,7 +180,7 @@
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, Kimi, Nemotron). NICE Auto picks the best available if unset.</li>
+        <li><strong>Model</strong>: preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, Kimi, Nemotron). NICE Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>
@@ -348,7 +348,7 @@
        attribute `data-models-table` is what docs.js targets. */
     get 'models'() { return `
       <h1>AI Models</h1>
-      <p class="docs-lead">NICE is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
+      <p class="docs-lead">NICE is your AI provider, so you never need API keys. Turn models on or off under <strong>Security → Models</strong>, and agents use whichever you enable.</p>
 
       <h2>Available Models</h2>
       <table data-models-table>
@@ -377,8 +377,8 @@
         <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 
-      <h2>Premium Models</h2>
-      <p>Premium models (Claude, GPT, Gemini Pro) consume tokens from your balance. The free model (Gemini Flash) is unlimited. Manage your token balance in <strong>Wallet</strong>.</p>
+      <h2>Paid Models</h2>
+      <p>Paid models spend tokens from the pool in their Tier column: Standard (with Pro), Claude, or Premium. The free model (Gemini 2.5 Flash) is unlimited. See your balance under <strong>Usage</strong> in the account menu.</p>
     `; },
 
     get 'tokens'() { return `
