@@ -2781,7 +2781,7 @@ const NICE = (() => {
     el.textContent = count > 99 ? '99+' : String(count);
   }
 
-  return { init, openModal, closeModal, guardWrite, signOut, _trapFocus };
+  return { init, openModal, closeModal, guardWrite, signOut, newChat: _newConversation, _trapFocus };
 })();
 
 /* ── Boot ── */

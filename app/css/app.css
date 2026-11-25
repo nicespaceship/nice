@@ -1287,12 +1287,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 
-/* Primary destinations (Space, Ship, Blueprints) and the user's
-   spaceships. Both stay on the collapsed rail as icons; labels, section
-   titles and the chats list need the open width. */
-.side-primary,
-.side-ships { display:flex; flex-direction:column; gap:2px; padding:0 8px; flex-shrink:0; }
-.side-primary { padding-top:4px; }
+/* The user's projects. They stay on the collapsed rail as marks; labels
+   and the section title need the open width. The list is the part of the
+   sidebar that stretches and scrolls, so a long one never pushes the
+   account footer off screen. */
+.side-ships { display:flex; flex-direction:column; gap:2px; padding:4px 8px 0; flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
 .side-link > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sidebar-section-label {
   display:flex; align-items:center; gap:6px; padding:16px 12px 4px;
@@ -1320,9 +1319,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   letter-spacing:var(--tracking-caps); text-transform:uppercase;
 }
 #side-chats-toggle > svg { display:none; }
-
-/* Collapsed: hide the open-state nav — the rail replaces it. */
-.app-sidebar:not(.open) .app-side-nav { display:none; }
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
@@ -1442,7 +1438,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-menu-sep { height:1px; margin:6px 14px; background:var(--border); }
 .side-menu-end { margin-left:auto; flex-shrink:0; width:14px; height:14px; opacity:.7; }
 
-.app-side-nav { display:flex; flex-direction:column; padding:8px; gap:2px; flex:1; overflow-y:auto; }
 .side-link {
   display:flex; align-items:center; gap:10px; padding:10px 12px;
   color:var(--nav-text-muted, var(--text-muted)); text-decoration:none; font-family:var(--font-b);
@@ -1512,9 +1507,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 .side-footer {
   flex-shrink:0;
-  /* Pin to the bottom in both states. When open, .app-side-nav (flex:1)
-     already pushes it down; when collapsed that nav is hidden, so the auto
-     margin keeps the footer on the floor instead of floating up under the rail. */
+  /* Pin to the bottom in both states: the project list above stretches, and
+     the auto margin keeps the footer on the floor when that list is hidden. */
   margin-top:auto;
   padding:12px 16px;
   background:var(--nav-bg-dk, transparent);

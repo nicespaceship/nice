@@ -311,15 +311,17 @@ describe('ChatView', () => {
     expect(el.querySelector('a.space-link').getAttribute('href')).toBe('#/security?tab=models');
   });
 
-  it('offers a new chat once there is one, through the sidebar button', () => {
+  it('offers a new chat once there is one', () => {
     messages = [{ role: 'user', text: 'Hi', to: ['gemini-2-5-flash'], v: 2 }];
-    const side = document.createElement('button');
-    side.id = 'side-chat-new';
     const onNew = vi.fn();
-    side.addEventListener('click', onNew);
-    document.body.appendChild(side);
-    mount();
-    el.querySelector('[data-act="new"]').click();
+    const prev = globalThis.NICE;
+    globalThis.NICE = { newChat: onNew };
+    try {
+      mount();
+      el.querySelector('[data-act="new"]').click();
+    } finally {
+      if (prev === undefined) delete globalThis.NICE; else globalThis.NICE = prev;
+    }
     expect(onNew).toHaveBeenCalledTimes(1);
   });
 

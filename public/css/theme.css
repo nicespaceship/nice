@@ -2267,10 +2267,6 @@ html:not([data-theme]),
 [data-theme="lcars"] .app-sidebar.open .side-mode-tab[aria-selected="true"] { color:#ff9966; }
 
 /* Sidebar nav links — pill buttons */
-[data-theme="lcars"] .app-side-nav {
-  padding-top:28px; /* clear the elbow */
-  flex:1;
-}
 [data-theme="lcars"] .side-link {
   border-radius:0 24px 24px 0;
   margin:3px 10px 3px 0;
@@ -2295,8 +2291,11 @@ html:not([data-theme]),
 [data-theme="lcars"] .side-link svg { display:none; }
 [data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
 
+/* The project list is first under the header now: clear the elbow. */
+[data-theme="lcars"] .app-sidebar.open .side-ships { padding-top:28px; }
+
 /* Fill empty sidebar space with colored bar — only when open */
-[data-theme="lcars"] .app-sidebar.open .app-side-nav::after {
+[data-theme="lcars"] .app-sidebar.open .side-ships::after {
   content:'';
   display:block;
   flex:1;
@@ -2306,7 +2305,7 @@ html:not([data-theme]),
   min-height:120px;
 }
 /* Hide filler when sidebar collapsed */
-[data-theme="lcars"] .app-sidebar:not(.open) .app-side-nav::after { display:none; }
+[data-theme="lcars"] .app-sidebar:not(.open) .side-ships::after { display:none; }
 
 /* Bottom elbow */
 [data-theme="lcars"] .side-footer {

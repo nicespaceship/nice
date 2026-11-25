@@ -64,23 +64,26 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // Desktop opens with the sidebar docked and the three destinations
-    // labeled; the NICE mark is Home.
+    // Desktop opens with the sidebar docked: the projects, and nothing else.
+    // The NICE mark is Home; Blueprints lives in the account menu.
     await expect(sidebar).toHaveClass(/\bopen\b/);
     await expect(page.locator('.side-brand')).toHaveAttribute('href', '#/');
-    await expect(page.locator('.side-primary .side-link')).toHaveCount(3);
-    for (const label of ['Space', 'Ship', 'Blueprints']) {
-      await expect(page.locator('.side-primary .side-link', { hasText: label })).toBeVisible();
+    await expect(page.locator('.side-primary')).toHaveCount(0);
+    await expect(page.locator('#side-ships')).toBeAttached();
+    await expect(page.locator('#side-chats-folder')).toHaveCount(0);
+    for (const gone of ['#/space', '#/ship']) {
+      await expect(sidebar.locator(`a[href="${gone}"]`)).toHaveCount(0);
     }
-    // A destination navigates and becomes the highlighted link.
-    await page.locator('.side-primary .side-link[data-nav="ship"]').click();
-    await page.waitForFunction(() => location.hash === '#/ship');
-    await expect(page.locator('.side-primary .side-link[data-nav="ship"]')).toHaveAttribute('aria-current', 'page');
+    // Blueprints is a row in the account menu, above Integrations.
+    await page.locator('#side-more-btn').click();
+    const rows = await page.locator('#side-popover .side-popover-item span:first-of-type').allTextContents();
+    expect(rows.indexOf('Blueprints')).toBe(rows.indexOf('Integrations') - 1);
+    await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
+    await page.waitForFunction(() => location.hash === '#/blueprints');
     // Collapsing keeps the destinations on the rail as icons. There the NICE
     // mark still goes Home, and the button under it expands the menu.
     await page.locator('#side-collapse').click();
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
-    await expect(page.locator('.side-primary .side-link[data-nav="space"]')).toBeVisible();
     await page.locator('#side-rail-nice').click();
     await page.waitForFunction(() => location.hash === '#/');
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
@@ -150,8 +153,8 @@ test.describe('Smoke Tests', () => {
     // Phones navigate with the bottom tab bar; the sidebar is a closed drawer.
     const tabbar = page.locator('#app-tabbar');
     await expect(tabbar).toBeVisible();
-    await expect(tabbar.locator('.tab')).toHaveCount(4);
-    for (const label of ['Space', 'Team', 'Ship', 'Blueprints']) {
+    await expect(tabbar.locator('.tab')).toHaveCount(2);
+    for (const label of ['Team', 'Blueprints']) {
       await expect(tabbar.locator('.tab', { hasText: label })).toBeVisible();
     }
     await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
