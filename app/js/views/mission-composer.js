@@ -64,7 +64,7 @@ const MissionComposerView = (() => {
         </div>
         <div class="mc-composer-hero">
           <h1 class="mc-composer-title">New ${_N()}</h1>
-          <p class="mc-composer-sub">Describe what you want in plain English. Your captain figures out the rest.</p>
+          <p class="mc-composer-sub">Describe what you want in plain English. Your ${Terminology.label('captain', { lowercase: true })} figures out the rest.</p>
         </div>
         <div class="mc-composer-body" id="mc-composer-body">${_bodyHTML()}</div>
       </div>

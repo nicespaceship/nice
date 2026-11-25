@@ -369,7 +369,7 @@ const BlueprintUtils = (() => {
       .replace(/\s+(officer|specialist|lead|manager|director|chief|head|senior|junior)$/i, '')
       .trim();
     const lc = s.toLowerCase();
-    if (lc === 'captain' || lc === 'commander' || lc === 'admiral' || lc === 'co') return 'Captain';
+    if (lc === 'captain' || lc === 'commander' || lc === 'admiral' || lc === 'co') return Terminology.label('captain');
     if (lc.includes('comm') || lc.includes('message') || lc.includes('contact')) return 'Communications';
     if (lc.includes('sales') || lc.includes('deal') || lc.includes('revenue') || lc.includes('tactical')) return 'Sales';
     if (lc.includes('market') || lc.includes('brand') || lc.includes('content') || lc.includes('growth')) return 'Marketing';

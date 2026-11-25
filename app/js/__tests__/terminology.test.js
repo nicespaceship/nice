@@ -70,6 +70,19 @@ describe('Terminology', () => {
       }
     });
 
+    it('calls the coordinating agent a lead in the plain looks and a captain in sci-fi themes', () => {
+      for (const theme of ['nice', 'nice-dark', 'office', 'office-dark', 'my-custom-theme']) {
+        stubTheme(theme);
+        expect(Terminology.label('captain')).toBe('Lead');
+        expect(Terminology.label('captain', { plural: true, lowercase: true })).toBe('leads');
+      }
+      for (const theme of ['hal-9000', 'grid', 'matrix', 'lcars', 'jarvis', 'cyberpunk', 'rx-78-2', '16bit']) {
+        stubTheme(theme);
+        expect(Terminology.label('captain')).toBe('Captain');
+        expect(Terminology.label('captain', { plural: true, lowercase: true })).toBe('captains');
+      }
+    });
+
     it('calls the hub page Dashboard in the plain looks and Bridge in sci-fi themes', () => {
       stubTheme('nice');
       expect(Terminology.label('bridge')).toBe('Dashboard');
