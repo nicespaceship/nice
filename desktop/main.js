@@ -5,7 +5,6 @@
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog } = require('electron');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
 const { Workspace, serializeError } = require('./code-host');
@@ -116,12 +115,14 @@ function createWindow() {
   });
 
   // Commands started by a page stop when that page goes away: a reload, a
-  // crash or the window closing. The open folder stays open.
+  // crash or the window closing. The open folder stays open. A link to
+  // another site also starts a navigation, but will-navigate cancels it and
+  // the page stays, so its commands keep running.
   const contents = mainWindow.webContents;
   const contentsId = contents.id;
   const stopCommands = () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); };
   contents.on('did-start-navigation', (details) => {
-    if (details && details.isMainFrame && !details.isSameDocument) stopCommands();
+    if (AppProtocol.replacesAppPage(details)) stopCommands();
   });
   contents.on('render-process-gone', stopCommands);
 
@@ -131,7 +132,8 @@ function createWindow() {
   });
 
   mainWindow.on('closed', () => {
-    stopCommands();
+    const ws = workspaces.get(contentsId);
+    if (ws) _retire(ws);
     workspaces.delete(contentsId);
     mainWindow = null;
   });
@@ -142,11 +144,25 @@ function createWindow() {
    Each call answers { ok, value } or { ok:false, error:{ code, message } },
    and only NICE's own page (the main frame on nice://app/app/) may call. */
 const workspaces = new Map();
-const APP_PAGE_PREFIX = AppProtocol.ORIGIN + '/app/';
+// Workspaces no window holds any more whose processes are still being
+// stopped, so quitting can still kill them.
+const retired = new Set();
+
+function _retire(ws) {
+  ws.killAll();
+  for (const r of retired) if (!r.busy) retired.delete(r);
+  if (ws.busy) retired.add(ws);
+}
+
+// The SIGKILL that follows a SIGTERM runs on a timer, which dies with the
+// app: on quit every process group gets SIGKILL at once instead.
+function _killEverything() {
+  for (const ws of [...workspaces.values(), ...retired]) ws.killAll({ hard: true });
+}
 
 function _fromApp(event) {
   const frame = event.senderFrame;
-  return !!frame && frame === event.sender.mainFrame && String(frame.url).startsWith(APP_PAGE_PREFIX);
+  return !!frame && frame === event.sender.mainFrame && AppProtocol.isAppPage(frame.url);
 }
 
 function handle(channel, fn) {
@@ -173,26 +189,29 @@ handle('code:open-folder', async (event) => {
   const pick = await dialog.showOpenDialog(win, { title: 'Open a folder for Code', properties: ['openDirectory', 'createDirectory'] });
   if (pick.canceled || !pick.filePaths[0]) return null;
   const dir = pick.filePaths[0];
-  if (Workspace.isBroad(dir)) {
+  // Judged by the real path: /Volumes/Macintosh HD is the whole disk.
+  const broad = await Workspace.isBroad(dir);
+  if (broad) {
+    const what = { disk: 'your whole disk', home: 'your whole home folder', 'above-home': 'the folder that holds your home folder', volume: 'a whole drive' }[broad] || 'a folder this broad';
     const ok = await dialog.showMessageBox(win, {
       type: 'warning',
       buttons: ['Choose another folder', 'Open anyway'],
       defaultId: 0,
       cancelId: 0,
-      message: 'Give Code your whole ' + (dir === os.homedir() ? 'home folder' : 'disk') + '?',
+      message: 'Give Code ' + what + '?',
       detail: 'Code can read and change every file inside the folder you open, and run commands there. A project folder is safer.',
     });
     if (ok.response !== 1) return null;
   }
   const ws = await Workspace.open(dir);
   const old = workspaces.get(event.sender.id);
-  if (old) old.killAll();
+  if (old) _retire(old);
   workspaces.set(event.sender.id, ws);
   return _describe(ws);
 });
 handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
 handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
-handle('code:write', (event, p, content) => _workspace(event).writeFile(p, content));
+handle('code:write', (event, p, content, opts) => _workspace(event).writeFile(p, content, { overwrite: !!(opts && opts.overwrite === true) }));
 handle('code:edit', (event, p, oldText, newText, opts) => _workspace(event).editFile(p, oldText, newText, opts || {}));
 handle('code:list', (event, p) => _workspace(event).listDir(p || '.'));
 handle('code:search', (event, pattern, opts) => _workspace(event).search(pattern, opts || {}));
@@ -268,6 +287,9 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('before-quit', _killEverything);
+app.on('will-quit', _killEverything);
 
 app.on('window-all-closed', () => {
   // Keep running in tray on macOS
