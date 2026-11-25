@@ -244,24 +244,11 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Collapsed rail: the NICE mark goes Home, the button under it expands
-       the menu. The labeled links below stay visible as icons in both states. -->
-  <div class="side-rail">
-    <a href="#/" class="side-rail-btn side-rail-nice" id="side-rail-nice" data-home-link aria-label="Home" title="Home">
-      <svg class="side-rail-nice-logo" viewBox="0 0 79 64" aria-hidden="true"><use href="#icon-nice"/></svg>
-    </a>
-    <button type="button" class="side-rail-btn side-rail-expand" id="side-rail-expand" aria-label="Expand menu" title="Expand menu">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-collapse"/></svg>
-    </button>
-  </div>
-
-  <!-- Open header: NICE wordmark (Home) on the left; collapse on the right.
-       Themes (#btn-hud, in the account menu) slides the HUD panel down. -->
+  <!-- Top strip: as tall as the page's top bar, so the sidebar lines up
+       with it; themes decorate it. On phones it holds the drawer's close
+       button. Themes (#btn-hud, in the account menu) slides the HUD panel
+       down under it. -->
   <div class="side-header">
-    <a href="#/" class="side-brand" id="side-brand" data-home-link aria-label="Home">
-      <svg class="side-brand-logo" viewBox="0 0 79 64" aria-hidden="true"><use href="#icon-nice"/></svg>
-      <span class="side-brand-text">NICE</span>
-    </a>
     <div class="side-header-actions">
       <button type="button" class="side-theme-btn" id="side-collapse" aria-label="Collapse menu" title="Collapse menu">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-collapse"/></svg>
@@ -401,6 +388,17 @@
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <main class="app-main" role="main">
+  <!-- Top bar (tablet and desktop): the sidebar toggle on the left, the
+       NICE / Code switch on the right. Phones use the mobile bar. -->
+  <header class="app-topbar" id="app-topbar">
+    <button type="button" class="app-topbar-btn" id="app-sidebar-toggle" aria-controls="app-sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-collapse"/></svg>
+    </button>
+    <div class="app-mode" role="group" aria-label="Switch between NICE and Code">
+      <a href="#/" class="app-mode-btn is-on" data-home-link>NICE</a>
+      <button type="button" class="app-mode-btn" id="app-mode-code">Code</button>
+    </div>
+  </header>
   <div id="app-fixed-tabs"></div>
   <div class="app-view-content" id="app-view" aria-live="polite">
     <!-- Views rendered here by router -->

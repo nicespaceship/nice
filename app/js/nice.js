@@ -827,17 +827,36 @@ const NICE = (() => {
     _applySidebarDefault(sidebar);
     _mobileMQ.addEventListener('change', () => _applySidebarDefault(sidebar));
 
-    // Collapsed rail — the NICE mark goes Home (a plain link); the button
-    // under it expands the sidebar again.
-    document.getElementById('side-rail-expand')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      sidebar.classList.add('open');
-      if (!_isMobile()) localStorage.removeItem(Utils.KEYS.sidebarCollapsed);
+    // Top bar toggle (tablet and desktop): collapses the sidebar to the
+    // rail or opens it again, and remembers the choice.
+    const toggle = document.getElementById('app-sidebar-toggle');
+    const syncToggle = () => {
+      if (!toggle) return;
+      const open = sidebar.classList.contains('open');
+      const label = open ? 'Close sidebar' : 'Open sidebar';
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+    };
+    if (toggle) {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = !sidebar.classList.contains('open');
+        sidebar.classList.toggle('open', open);
+        if (!_isMobile()) {
+          if (open) localStorage.removeItem(Utils.KEYS.sidebarCollapsed);
+          else localStorage.setItem(Utils.KEYS.sidebarCollapsed, '1');
+        }
+      });
+      new MutationObserver(syncToggle).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+      syncToggle();
+    }
+    // Code is not built yet; the switch says so.
+    document.getElementById('app-mode-code')?.addEventListener('click', () => {
+      if (typeof Notify !== 'undefined' && Notify.toast) Notify.toast('Code', 'This is not available yet.');
     });
 
-    // Header collapse button: collapses to the rail on desktop, closes the
-    // drawer on phones.
+    // Drawer close button (phones).
     document.getElementById('side-collapse')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -870,7 +889,7 @@ const NICE = (() => {
       if (!_isMobile()) return;
       // Themes opens a panel inside the sidebar, so the drawer stays open.
       if (e.target.closest('#btn-hud')) return;
-      if (e.target.closest('.side-link, .side-brand, .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
+      if (e.target.closest('.side-link, .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
     });
 
     _initSidebarShips();
