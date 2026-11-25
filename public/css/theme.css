@@ -408,10 +408,10 @@ html:not([data-theme]),
 /* Popover */
 /* --border is transparent in NICE, so the menu takes the stronger hairline. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { background: var(--bg); border: 1px solid var(--border-hi); }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { border-radius: 12px; padding: 6px; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { padding: 6px; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item {
   color: var(--text); font-family: var(--font-b); font-size: var(--text-sm);
-  padding: 8px 10px; border-radius: 8px;
+  padding: 8px 10px; border-radius: var(--radius);
   transition: background .15s;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-menu-id { padding: 6px 10px; }
@@ -2336,7 +2336,8 @@ html:not([data-theme]),
 /* The footer paints everything black for its blue bar; inside the black menu
    the labels follow their row (orange, black on hover) so they stay readable. */
 [data-theme="lcars"] .side-popover-item span,
-[data-theme="lcars"] .side-popover-item kbd { color:inherit; }
+[data-theme="lcars"] .side-popover-item kbd,
+[data-theme="lcars"] .side-popover-item .side-menu-end { color:inherit; stroke:currentColor; }
 [data-theme="lcars"] .side-menu-id { color:#cc99cc; padding-left:18px; }
 [data-theme="lcars"] .side-menu-sep { background:#666688; }
 [data-theme="lcars"] .side-popover-item svg { display:none; }

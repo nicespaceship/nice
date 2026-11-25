@@ -902,7 +902,7 @@ const NICE = (() => {
         _updateAlertIndicators();
       };
       // Shortcut hints follow the platform's modifier key.
-      const mod = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl+';
+      const mod = /Mac|iPhone|iPad/.test(navigator.userAgent || '') ? '⌘' : 'Ctrl+';
       popover.querySelectorAll('[data-kbd]').forEach(k => { k.textContent = mod + k.getAttribute('data-kbd'); });
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -925,8 +925,9 @@ const NICE = (() => {
         if (!row) return;
         setMenu(false);
         if (row.id === 'side-menu-shortcuts' && typeof Keyboard !== 'undefined') Keyboard.showHelp();
-        if (row.hasAttribute('data-soon') && typeof Notify !== 'undefined') {
-          Notify.send({ title: row.querySelector('span')?.textContent || 'Not available', message: 'This is not available yet.', type: 'system' });
+        // A plain toast: nothing is saved to Alerts for a row that does nothing yet.
+        if (row.hasAttribute('data-soon') && typeof Notify !== 'undefined' && Notify.toast) {
+          Notify.toast(row.querySelector('span')?.textContent || 'Not available', 'This is not available yet.');
         }
       });
       // Export data button
@@ -1460,19 +1461,28 @@ const NICE = (() => {
   }
 
   /* ── Header user info (Name) ── */
+  let _planUserId = null;   // the account whose subscription has finished loading
+  document.addEventListener('nice:subscription-change', (e) => {
+    _planUserId = e.detail?.userId || State.get('user')?.id || null;
+    _updateHeaderUser();
+  });
+
   function _updateHeaderUser() {
     const user = State.get('user');
     const nameEl = document.getElementById('hdr-username');
     if (!nameEl) return;
     const meta = user?.user_metadata || {};
-    const name = meta.display_name || user?.email?.split('@')[0] || '';
+    const name = String(meta.display_name || user?.email?.split('@')[0] || '');
     nameEl.textContent = name || Terminology.label('account');
 
+    // The plan shows only once this account's subscription has loaded, so it
+    // never reads "Free" for a paying user or carries over from another account.
     const planEl = document.getElementById('side-account-plan');
     if (planEl) {
-      const pro = !!user && typeof Subscription !== 'undefined' && Subscription.isPro();
-      planEl.textContent = user ? ` · ${pro ? 'Pro' : 'Free'}` : '';
-      planEl.hidden = !user;
+      const paywall = !(window.NICE_CONFIG && window.NICE_CONFIG.paywallEnabled === false);
+      const known = !!user && paywall && _planUserId === user.id && typeof Subscription !== 'undefined';
+      planEl.textContent = known ? ` · ${Subscription.isPro() ? 'Pro' : 'Free'}` : '';
+      planEl.hidden = !known;
     }
     const idEl = document.getElementById('side-menu-id');
     if (idEl) idEl.textContent = user?.email || 'Sign in';
@@ -1483,15 +1493,19 @@ const NICE = (() => {
     const avatar = document.getElementById('hdr-user');
     if (avatar) {
       const url = user ? (meta.avatar_url || localStorage.getItem(Utils.KEYS.avatarUrl) || '') : '';
+      const letter = () => {
+        if (name) avatar.textContent = (Array.from(name)[0] || '').toUpperCase();
+        else avatar.innerHTML = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>';
+      };
       avatar.textContent = '';
       if (url) {
         const img = document.createElement('img');
-        img.src = url; img.alt = '';
+        img.alt = '';
+        img.onerror = letter;   // an expired or broken photo falls back to the letter
+        img.src = url;
         avatar.appendChild(img);
-      } else if (name) {
-        avatar.textContent = name.charAt(0).toUpperCase();
       } else {
-        avatar.innerHTML = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>';
+        letter();
       }
     }
   }
@@ -1615,7 +1629,9 @@ const NICE = (() => {
         // also calls this, but the app needs it up front so the prompt
         // panel's model dropdown populates with the user's paid-tier
         // models the moment they land on any view.
-        if (typeof Subscription !== 'undefined' && Subscription.init) Subscription.init().catch(() => {});
+        if (typeof Subscription !== 'undefined' && Subscription.init) {
+          Subscription.init().catch(() => {}).then(() => document.dispatchEvent(new CustomEvent('nice:subscription-change', { detail: { userId: user.id } })));
+        }
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
         // Hydrate the notification store from Supabase so the Alerts page and
         // PWA badge survive a reload (the store was previously session-only).

@@ -605,6 +605,7 @@ const SettingsView = (() => {
     let addons = [];
     if (typeof Subscription !== 'undefined') {
       await Subscription.init();
+      document.dispatchEvent(new CustomEvent('nice:subscription-change'));
       plan = Subscription.getCurrentPlan();
       addons = Subscription.getAddons();
     }

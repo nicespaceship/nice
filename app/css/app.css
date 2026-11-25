@@ -163,8 +163,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-hdr-menu { display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; }
 
 /* User info (now in sidebar footer) */
-.hdr-user { display:flex; align-items:center; gap:8px; }
-.side-user-top { display:flex; align-items:center; gap:8px; min-width:0; }
 .hdr-username { font-size:var(--text-sm); font-family:var(--font-b); color:var(--nav-text-muted, var(--text-muted)); white-space:nowrap; }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1389,7 +1387,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* Sidebar user card (footer) */
 .side-account {
-  display:flex; align-items:center; gap:10px; width:100%;
+  display:flex; align-items:center; gap:10px; width:100%; position:relative;
   padding:8px 10px; border-radius:var(--radius);
   background:transparent; border:none; cursor:pointer; text-align:left;
   color:var(--nav-text-muted, var(--text-muted));
@@ -1420,7 +1418,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-popover.open { display:block; }
 /* Tall menu: scroll inside itself when the window is short. */
-.side-menu { max-height:calc(100vh - var(--app-banner-height, 0px) - 72px); overflow-y:auto; }
+.side-menu { max-height:calc(100dvh - var(--app-banner-height, 0px) - 96px); overflow-y:auto; }
 .side-popover-item {
   display:flex; align-items:center; gap:10px;
   padding:9px 14px; width:100%;
@@ -1849,13 +1847,13 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
-/* Collapsed footer: stack the settings gear above the profile icon as a
-   vertical icon column (column-reverse keeps DOM order profile→gear but
-   paints gear on top). Collapsed, the gear is a quick Settings shortcut —
-   the full popover menu needs the expanded width (see nice.js). */
+/* Collapsed footer: only the avatar shows. There the account button is a
+   quick Settings shortcut; the menu needs the expanded width (see nice.js). */
 .app-sidebar:not(.open) .side-account { justify-content:center; padding:4px 0; }
 .app-sidebar:not(.open) .side-account-text,
 .app-sidebar:not(.open) .side-account-chev { display:none; }
+/* On the rail the dot sits on the avatar's corner instead of taking a column. */
+.app-sidebar:not(.open) .side-account .nav-alert-dot { position:absolute; top:2px; right:8px; margin:0; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {

@@ -33,6 +33,8 @@ const Keyboard = (() => {
     // Single key
     { chord: ['?'],      label: 'Show Shortcuts',   action: () => Keyboard.showHelp() },
     // Modifier shortcuts (handled separately in _handleKey, listed here for help overlay)
+    { chord: ['⌘',','],     label: 'Settings',        action: () => {} },
+    { chord: ['⌘','/'],     label: 'Show Shortcuts',  action: () => {} },
     { chord: ['⌘','⇧','P'], label: 'Toggle Preview',  action: () => {} },
     { chord: ['⌘','⇧','O'], label: 'New Chat',        action: () => {} },
   ];
@@ -59,11 +61,16 @@ const Keyboard = (() => {
     }
 
     // Cmd/Ctrl+, → Settings; Cmd/Ctrl+/ → this shortcut list (the account menu shows both)
-    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === ',' || e.key === '/')) {
-      e.preventDefault();
-      if (e.key === ',') window.location.hash = '#/settings';
-      else showHelp();
-      return;
+    // (e.code covers layouts where "/" sits behind Shift.)
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      const comma = e.key === ',' && !e.shiftKey;
+      const slash = e.key === '/' || e.code === 'Slash';
+      if (comma || slash) {
+        e.preventDefault();
+        if (comma) window.location.hash = '#/settings';
+        else showHelp();
+        return;
+      }
     }
 
     // Ignore when typing in inputs

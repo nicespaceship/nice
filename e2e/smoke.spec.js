@@ -253,6 +253,46 @@ test.describe('Dashboard', () => {
     await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toHaveText('Choose a project');
   });
 
+  test('the account button opens the account menu', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); });
+    const button = page.locator('#side-more-btn');
+    const menu = page.locator('#side-popover');
+    await expect(button).toContainText('Profile');
+    await expect(menu).toBeHidden();
+    await button.click();
+    await expect(menu).toBeVisible();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    // Signed out: the identity line offers sign-in, and there is nothing to log out of.
+    await expect(menu.locator('#side-menu-id')).toHaveText('Sign in');
+    await expect(menu.locator('#btn-logout')).toBeHidden();
+    await expect(menu.locator('.admin-only')).toBeHidden();
+    for (const label of ['Settings', 'Keyboard shortcuts', 'Usage', 'Get help', 'View all plans', 'Integrations', 'Security']) {
+      await expect(menu.locator('.side-popover-item', { hasText: label }).first()).toBeVisible();
+    }
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+    // A row NICE does not have yet says so and closes the menu.
+    await button.click();
+    await menu.locator('.side-popover-item', { hasText: 'Send feedback' }).click();
+    await expect(menu).toBeHidden();
+    await expect(page.locator('#notify-container')).toContainText('not available yet');
+    // A real row navigates.
+    await button.click();
+    await menu.locator('.side-popover-item', { hasText: 'Settings' }).click();
+    await expect(page).toHaveTitle(/Settings/);
+  });
+
+  test('the shortcuts the account menu advertises work', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/', 'Home');
+    await page.keyboard.press('Control+,');
+    await expect(page).toHaveTitle(/Settings/);
+    await page.keyboard.press('Control+/');
+    await expect(page.locator('#shortcut-help')).toBeVisible();
+  });
+
   test('the default look says project and sci-fi themes say spaceship', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); });
