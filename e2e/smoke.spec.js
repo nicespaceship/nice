@@ -151,7 +151,7 @@ test.describe('Smoke Tests', () => {
     const tabbar = page.locator('#app-tabbar');
     await expect(tabbar).toBeVisible();
     await expect(tabbar.locator('.tab')).toHaveCount(4);
-    for (const label of ['Space', 'Crew', 'Ship', 'Blueprints']) {
+    for (const label of ['Space', 'Team', 'Ship', 'Blueprints']) {
       await expect(tabbar.locator('.tab', { hasText: label })).toBeVisible();
     }
     await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
@@ -249,7 +249,7 @@ test.describe('Dashboard', () => {
 
   test('crew view points a new visitor to a project', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/crew', 'Crew');
+    await navigateTo(page, '#/crew', 'Team');
     await expect(page.locator('.crew-empty a[href="#/blueprints?tab=spaceship"]')).toHaveText('Choose a project');
   });
 
@@ -270,6 +270,16 @@ test.describe('Dashboard', () => {
     await expect(page.locator('#home-ships-title')).toHaveText('Your projects');
   });
 
+  test('the default look says team and sci-fi themes say crew', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); });
+    await navigateTo(page, '#/crew', 'Team');
+    await page.evaluate(() => { Theme.set('matrix'); });
+    await expect(page).toHaveTitle(/Crew/);
+    await page.evaluate(() => { Theme.set('nice'); });
+    await expect(page).toHaveTitle(/Team/);
+  });
+
   test('crew view shows a card per crew member once a project is active', async ({ page }) => {
     await waitForApp(page);
     const errors = [];
@@ -279,7 +289,7 @@ test.describe('Dashboard', () => {
       const bakery = Blueprints.listSpaceships().find(s => s.name === 'Bakery');
       Blueprints.activateShip(bakery.id);
     });
-    await navigateTo(page, '#/crew', 'Crew');
+    await navigateTo(page, '#/crew', 'Team');
     await expect(page.locator('.crew-card:not(.crew-card-open)').first()).toBeVisible();
     expect(await page.locator('.crew-card:not(.crew-card-open)').count()).toBeGreaterThan(1);
     await expect(page.locator('.crew-runs')).toBeVisible();
@@ -299,7 +309,7 @@ test.describe('Dashboard', () => {
     await expect(page.locator('#nice-ai-compare')).toHaveCount(0);
     await expect(page.locator('#nice-ai-targets')).toHaveText('To Gemini 2.5 Flash');
     await expect(page.locator('#nice-ai-model')).toBeHidden();
-    await navigateTo(page, '#/crew', 'Crew');
+    await navigateTo(page, '#/crew', 'Team');
     await expect(page.locator('#nice-ai-targets')).toBeHidden();
   });
 

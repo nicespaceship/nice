@@ -166,7 +166,7 @@ const SpaceshipBuilderView = (() => {
     const labels = BlueprintUtils.SLOT_LABELS;
     return {
       name: 'Spaceship',
-      slots: Array.from({ length: BlueprintUtils.MAX_SHIP_SLOTS }, (_, i) => ({ label: labels[i] || _crewWord(true) + ' ' + (i + 1) })),
+      slots: Array.from({ length: BlueprintUtils.MAX_SHIP_SLOTS }, (_, i) => ({ label: labels[i] || 'Slot ' + (i + 1) })),
     };
   }
 
@@ -652,7 +652,7 @@ const SpaceshipBuilderView = (() => {
           <button class="crew-setup-option" id="btn-skip-setup">
             <span class="crew-setup-icon">&#8594;</span>
             <span class="crew-setup-label">Skip for Now</span>
-            <span class="crew-setup-desc">Set up your ${_esc(_crewWord())} later from the Schematic view</span>
+            <span class="crew-setup-desc">${Terminology.pick('Set up your team later from the Schematic view', 'Set up crew later from the Schematic view')}</span>
           </button>
         </div>
 
@@ -756,7 +756,7 @@ const SpaceshipBuilderView = (() => {
         caps: ship?.metadata?.caps || [category + ' operations'],
         crew: Object.keys(slots).map(s => ({
           slot: parseInt(s, 10),
-          role: cls.slots[parseInt(s, 10)]?.label || _crewWord(true) + ' ' + s,
+          role: cls.slots[parseInt(s, 10)]?.label || 'Slot ' + s,
           agent: slots[s],
         })),
       },

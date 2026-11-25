@@ -125,7 +125,7 @@ const CrewDesigner = (() => {
           ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${_esc(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
         </div>
         <div class="cd-actions">
-          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>Design my ${_crewWord()} →</button>
+          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>${Terminology.pick('Design my team', 'Design My Crew')} →</button>
         </div>
       </div>
     `;
