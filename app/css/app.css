@@ -10056,24 +10056,27 @@ body.preview-active .nice-ai {
 /* ═══════════════════════════════════════════════════════════════════
    Documentation Hub
 ═══════════════════════════════════════════════════════════════════ */
+/* The page scrolls in .app-view-content like every view; the section
+   list stays in reach by sticking to the top of it. */
 .docs-wrap {
   display:flex;
-  height:calc(100vh - 60px);
+  align-items:flex-start;
   max-width:1200px;
   margin:0 auto;
 }
 .docs-sidebar {
   width:220px;
   flex-shrink:0;
+  position:sticky; top:0;
+  background:var(--bg);
   border-right:1px solid var(--border);
   padding:16px 0;
-  overflow-y:auto;
 }
 .docs-search-wrap { padding:0 12px 12px; }
 .docs-search {
   width:100%;
   padding:6px 10px;
-  font-size:.8rem;
+  font-size:var(--text-sm);
   border:1px solid var(--border);
   border-radius:var(--radius);
   background:var(--bg-alt);
@@ -10104,10 +10107,13 @@ body.preview-active .nice-ai {
 .docs-search-hit-title .docs-nav-icon { vertical-align:-2px; margin-right:4px; }
 .docs-content {
   flex:1;
-  overflow-y:auto;
-  padding:40px 48px 64px;
+  padding:16px 48px 64px;
   max-width:880px;
   min-width:0;
+}
+/* iOS (iPad with a trackpad included) zooms into fields under 16px. */
+@supports (-webkit-touch-callout:none) {
+  .docs-search { font-size:16px; }
 }
 
 /* Typography — scoped under .docs-content so plain semantic HTML
@@ -10298,8 +10304,9 @@ body.preview-active .nice-ai {
 
 /* Responsive */
 @media (max-width:768px) {
-  .docs-wrap { flex-direction:column; height:auto; }
+  .docs-wrap { flex-direction:column; align-items:stretch; }
   .docs-sidebar {
+    position:static;
     width:100%;
     border-right:none;
     border-bottom:1px solid var(--border);

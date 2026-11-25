@@ -120,6 +120,16 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('.docs-nav-btn.active[data-section="missions"]')).toBeVisible();
     await page.locator('.docs-nav-btn[data-section="agents"]').click();
     await page.waitForFunction(() => location.hash === '#/docs?s=agents');
+    // One scroller per view: the docs page scrolls in .app-view-content.
+    expect(await page.locator('#docs-content').evaluate(el => getComputedStyle(el).overflowY)).toBe('visible');
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    const ids = results.violations.map(v => v.id);
+    expect(results.violations.filter(v => v.impact === 'critical')).toHaveLength(0);
+    expect(ids).not.toContain('landmark-no-duplicate-main');
+    expect(ids).not.toContain('landmark-main-is-top-level');
   });
 
   test('ship has its own page and old bridge links land on it', async ({ page }) => {
