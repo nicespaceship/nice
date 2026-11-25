@@ -2333,6 +2333,12 @@ html:not([data-theme]),
   color:#ff9966; border-radius:24px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:.65rem;
 }
 [data-theme="lcars"] .side-popover-item:hover { background:#ff9966; color:#000; }
+/* The footer paints everything black for its blue bar; inside the black menu
+   the labels follow their row (orange, black on hover) so they stay readable. */
+[data-theme="lcars"] .side-popover-item span,
+[data-theme="lcars"] .side-popover-item kbd { color:inherit; }
+[data-theme="lcars"] .side-menu-id { color:#cc99cc; padding-left:18px; }
+[data-theme="lcars"] .side-menu-sep { background:#666688; }
 [data-theme="lcars"] .side-popover-item svg { display:none; }
 
 /* User card in footer */
