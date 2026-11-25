@@ -172,10 +172,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    sidebar's visual slot (just below the sidebar header). Previously
    lived inside the sidebar and flexed it open; now fixed to the same
    viewport coordinates with a slide-in via max-height + opacity. */
-/* In-flow inside the sidebar, directly under the header CTA. Collapsed
-   to zero height so it adds no space; opening it slides down and pushes
-   the mode tabs + sub-nav below. Only expands while the sidebar is open
-   (the CTA that toggles it only shows when open). */
+/* In-flow inside the sidebar, directly under the header. Collapsed to
+   zero height so it adds no space; Themes in the account menu slides it
+   down and pushes the project list below. Only expands while the sidebar
+   is open (the account menu only shows when open). */
 .app-hud-panel {
   flex-shrink:0;
   margin:0 12px;
@@ -1211,7 +1211,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* Sidebar top — two states share the top of the sidebar:
    - Collapsed: the .side-rail icon stack (NICE mark for Home + expand).
-   - Open: the .side-header — NICE wordmark (Home) + theme and collapse.
+   - Open: the .side-header — NICE wordmark (Home) + collapse.
    Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
    light strip — see theme.css) anchor on .side-header. */
 

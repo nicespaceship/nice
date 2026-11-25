@@ -90,6 +90,16 @@ test.describe('Smoke Tests', () => {
     await page.evaluate(() => Theme.set('nice'));
     await page.locator('#app-main, .app-main').first().click({ position: { x: 5, y: 5 } });
     await expect(page.locator('#app-hud-panel')).not.toHaveClass(/\bopen\b/);
+    // By keyboard: focus lands on the current theme's swatch; Escape closes
+    // the panel and returns focus to the account button.
+    await page.locator('#side-more-btn').click();
+    await page.locator('#btn-hud').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#app-hud-panel')).toHaveClass(/\bopen\b/);
+    expect(await page.evaluate(() => document.getElementById('app-hud-panel').contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#app-hud-panel')).not.toHaveClass(/\bopen\b/);
+    await expect(page.locator('#side-more-btn')).toBeFocused();
     await page.locator('#side-more-btn').click();
     await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
     await page.waitForFunction(() => location.hash === '#/blueprints');

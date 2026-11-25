@@ -157,13 +157,13 @@
       <h2>Interface Overview</h2>
       <dl>
         <dt>Sidebar</dt>
-        <dd>Your projects. The NICE mark at the top opens Home. The account card at the bottom opens a menu with Settings, Usage, Get help, Blueprints, Integrations, and Security.</dd>
+        <dd>Your projects. The NICE mark at the top opens Home. The account card at the bottom opens a menu with Settings, Usage, Get help, Themes, Blueprints, Integrations, and Security.</dd>
         <dt>${_say('Dashboard', 'Bridge')}</dt>
         <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Operations, and ${_say('Activity log', 'Captain\'s Log')}. Finished work waiting for your review is on the Ship page, counted on Home.</dd>
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
-        <dt>Theme</dt>
-        <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin and notification alerts.</dd>
+        <dt>Themes</dt>
+        <dd>Themes in the account menu opens a panel at the top of the sidebar to pick a look, switch light or dark, and choose a font.</dd>
       </dl>
     `; },
 

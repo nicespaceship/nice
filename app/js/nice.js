@@ -1255,7 +1255,19 @@ const NICE = (() => {
         panel.classList.toggle('open', on);
         btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       };
-      const toggleHUD = () => setHUD(!panel.classList.contains('open'));
+      // The row lives in the account menu, which hides as it closes, so
+      // focus moves into the panel (the current theme's swatch) on open.
+      const toggleHUD = () => {
+        const on = !panel.classList.contains('open');
+        setHUD(on);
+        if (on) (panel.querySelector('.db.active') || panel.querySelector('button, [tabindex]'))?.focus();
+      };
+      // Escape closes the panel and returns focus to the account button.
+      panel.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        setHUD(false);
+        document.getElementById('side-more-btn')?.focus();
+      });
       btn.addEventListener('click', toggleHUD);
       // The sidebar collapses by many paths (overlay, outside-click, nav,
       // swipe). When it does, reset the panel so it doesn't reopen
