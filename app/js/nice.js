@@ -881,7 +881,7 @@ const NICE = (() => {
       if (!_isMobile()) return;
       // Themes opens a panel inside the sidebar, so the drawer stays open.
       if (e.target.closest('#btn-hud')) return;
-      if (e.target.closest('.side-link, .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
+      if (e.target.closest('.side-link, [data-home-link], .side-popover-item, .side-menu-id')) sidebar.classList.remove('open');
     });
 
     _initSidebarShips();

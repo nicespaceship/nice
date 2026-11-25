@@ -217,6 +217,17 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('#app-mobile-bar .mobile-bar-btn-nice')).toHaveAttribute('href', '#/');
     await page.locator('#mobile-sidebar-toggle').click();
     await expect(page.locator('#app-sidebar')).toHaveClass(/\bopen\b/);
+    // In the drawer, NICE goes Home and closes the drawer; the header's
+    // toggle closes it too.
+    await page.evaluate(() => { location.hash = '#/blueprints'; });
+    await page.waitForFunction(() => location.hash === '#/blueprints');
+    await page.locator('#app-sidebar .app-mode-btn', { hasText: 'NICE' }).click();
+    await page.waitForFunction(() => location.hash === '#/');
+    await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
+    await page.locator('#mobile-sidebar-toggle').click();
+    await expect(page.locator('#app-sidebar')).toHaveClass(/\bopen\b/);
+    await page.locator('#app-sidebar-toggle').click();
+    await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
   });
 });
 
@@ -262,8 +273,8 @@ test.describe('Accessibility', () => {
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
     // The sidebar header's toggle is the first control; Tab moves on.
-    const brand = page.locator('#app-sidebar-toggle');
-    await brand.focus();
+    const toggle = page.locator('#app-sidebar-toggle');
+    await toggle.focus();
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(focused).toBeTruthy();

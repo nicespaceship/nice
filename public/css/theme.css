@@ -2194,8 +2194,11 @@ html:not([data-theme]),
 }
 /* Closed-state hamburger: #ff9966 orange on #cc99ff violet is
    same-luminance pastel mush. Force black for clear contrast against
-   the violet elbow. */
-[data-theme="lcars"] .side-rail-hamburger { color:#000; }
+   the violet elbow: the sidebar toggle and the NICE / Code switch sit on
+   it, open or collapsed. The active segment keeps its black pill. */
+[data-theme="lcars"] .side-header .side-theme-btn,
+[data-theme="lcars"] .side-header .app-mode-btn:not(.is-on) { color:#000; }
+[data-theme="lcars"] .side-header .app-mode { background:rgba(0,0,0,0.12); }
 /* Mode tabs sit in the overlap zone of the elbow's bottom curve
    (.side-header::after, positioned -24px below the header). Bump the
    tabs above the curve so the Spaceship / Chat / Code controls stay
@@ -3668,8 +3671,9 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   0%   { transform:translateX(0); }
   100% { transform:translateX(-50%); }
 }
+/* Room under the controls for the ticker: the header grows past its 52px. */
 [data-theme="jarvis"] .side-header {
-  padding-bottom:18px; margin-bottom:4px;
+  height:auto; min-height:52px; padding-top:4px; padding-bottom:16px; margin-bottom:4px;
   overflow:hidden;
 }
 [data-theme="jarvis"] .side-header::after {
@@ -4177,7 +4181,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 /* Hazard bar under sidebar header.
    Positioned absolutely so it doesn't become a flex child of .side-header
    (which uses justify-content:space-between) — otherwise the hazard bar
-   counts as a third item and shoves .side-header-actions into the middle
+   counts as a third item and shoves the header's controls into the middle
    instead of the right edge. */
 [data-theme="cyberpunk"] .side-header { position:relative; }
 [data-theme="cyberpunk"] .side-header::after {

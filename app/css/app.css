@@ -489,7 +489,9 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
 /* Sidebar utility icons — boost contrast against Federation blue background */
-[data-theme="rx-78-2"] .app-sidebar #btn-darklight { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar #btn-darklight,
+[data-theme="rx-78-2"] .app-sidebar #app-sidebar-toggle { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar .app-mode-btn:not(.is-on) { color: rgba(255,255,255,0.85); }
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight svg { color: #d4a017; }
 /* Active state for header buttons + font-picker — Gundam gold for contrast */
 [data-theme="rx-78-2"] .app-hdr-btn.active { color: #d4a017; border-color: #d4a017; background: rgba(212,160,23,0.1); }
@@ -1216,8 +1218,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   background:var(--nav-bg-dk, transparent);
 }
-.app-sidebar:not(.open) .side-header { justify-content:center; padding:0; }
-.app-sidebar:not(.open) .app-mode { display:none; }
+/* Collapsed to the rail (tablet and desktop): only the toggle, its arrow
+   turned to point out. */
+@media (min-width:769px) {
+  .app-sidebar:not(.open) .side-header { justify-content:center; padding:0; }
+  .app-sidebar:not(.open) .app-mode { display:none; }
+  .app-sidebar:not(.open) #app-sidebar-toggle .icon { transform:scaleX(-1); }
+}
 /* NICE / Code switch */
 .app-mode {
   display:inline-flex; align-items:center; gap:2px; padding:3px;
@@ -1748,7 +1755,6 @@ html:not([data-theme]) .app-main,
   .app-sidebar:not(.open) .side-link span,
   .app-sidebar:not(.open) .app-brand-text,
   .app-sidebar:not(.open) .side-footer { display:initial; }
-  .app-sidebar:not(.open) .side-header { justify-content:space-between; padding:16px 16px 12px; }
   .app-sidebar:not(.open) .side-link { justify-content:initial; padding:10px 16px; }
   .app-main { padding:0; }
   /* padding-bottom clears the bottom tab bar (64px) and the floating prompt
