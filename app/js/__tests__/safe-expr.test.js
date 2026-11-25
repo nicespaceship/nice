@@ -24,6 +24,7 @@ describe('SafeExpr.arithmetic', () => {
 
   it('refuses anything but numbers and the listed names', () => {
     for (const bad of [
+      '(1).constructor.constructor(String.fromCharCode(97))()',
       'Math.max.constructor(String.fromCharCode(97))()',
       'constructor', 'this', 'globalThis', 'alert(1)', '"a"', 'x = 1', '2 > 1', 'sqrt.call(1)', '2 +', '',
     ]) {
@@ -35,8 +36,9 @@ describe('SafeExpr.arithmetic', () => {
     expect(() => SafeExpr.arithmetic('1 / 0')).toThrow(/finite/);
   });
 
-  it('refuses very long or deeply nested input', () => {
-    expect(() => SafeExpr.arithmetic('1+'.repeat(600) + '1')).toThrow(/too long/);
+  it('takes long sums but refuses huge or deeply nested input', () => {
+    expect(SafeExpr.arithmetic(Array.from({ length: 500 }, (_, i) => i + 1).join(' + '))).toBe(125250);
+    expect(() => SafeExpr.arithmetic('1+'.repeat(6000) + '1')).toThrow(/too long/);
     expect(() => SafeExpr.arithmetic('('.repeat(100) + '1' + ')'.repeat(100))).toThrow(/nested/);
   });
 });
@@ -52,6 +54,17 @@ describe('SafeExpr.condition', () => {
     expect(SafeExpr.condition('result.text.indexOf("world") >= 0', { result })).toBe(true);
     expect(SafeExpr.condition('true', {})).toBe(true);
     expect(SafeExpr.condition('null == null', {})).toBe(true);
+  });
+
+  it('takes a boolean or number as the whole expression', () => {
+    expect(SafeExpr.condition(true, {})).toBe(true);
+    expect(SafeExpr.condition(false, {})).toBe(false);
+    expect(SafeExpr.condition(1, {})).toBe(true);
+  });
+
+  it('stops a condition from building huge strings', () => {
+    const big = { text: 'x'.repeat(600000), length: 600000, success: true };
+    expect(() => SafeExpr.condition('(result.text + result.text).length > 0', { result: big })).toThrow(/too long/);
   });
 
   it('cannot reach constructors, prototypes, functions or globals', () => {

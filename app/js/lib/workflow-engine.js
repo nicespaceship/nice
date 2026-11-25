@@ -878,8 +878,11 @@ const WorkflowEngine = (() => {
       const result = { text: input, length: input.length, success: input.length > 0 };
       const pass = SafeExpr.condition(expr, { result });
       return pass ? input : '';
-    } catch {
-      return input; // pass through on eval error
+    } catch (e) {
+      // An expression SafeExpr cannot read lets the input through, as before;
+      // say so, since the gate is then open.
+      console.warn('[WorkflowEngine] condition "' + node.id + '" not evaluated, passing input through:', e && e.message);
+      return input;
     }
   }
 
@@ -961,7 +964,9 @@ const WorkflowEngine = (() => {
           chosenTarget = cond.targetNodeId;
           break;
         }
-      } catch { /* skip invalid expressions */ }
+      } catch (e) {
+        console.warn('[WorkflowEngine] branch "' + node.id + '" skipped a condition it could not evaluate:', e && e.message);
+      }
     }
 
     const downstreamIds = workflow.connections

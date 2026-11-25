@@ -360,7 +360,7 @@ const ToolRegistry = (() => {
     },
   });
 
-  /* ── calculator: Evaluate math expressions (client-side, safe eval) ── */
+  /* ── calculator: Evaluate math expressions (client-side, parsed by SafeExpr) ── */
   register({
     id:          'calculator',
     name:        'Calculator',

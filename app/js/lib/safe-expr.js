@@ -15,12 +15,16 @@
      names in `scope`, members of plain scope objects, string .length and
      a few string methods (includes, startsWith, endsWith, indexOf,
      toLowerCase, toUpperCase, trim), ! && || == != === !== < <= > >=
-     + - * / %, parentheses. Returns a boolean.
+     + - * / % **, parentheses. A boolean or number given as the whole
+     expression counts as that value. Returns a boolean.
 ═══════════════════════════════════════════════════════════════════ */
 
 const SafeExpr = (() => {
-  const MAX_LENGTH = 1000;
+  // Long sums are fine (operator chains parse in a loop); nesting is what
+  // costs, and MAX_DEPTH caps it.
+  const MAX_LENGTH = { arithmetic: 10000, condition: 2000 };
   const MAX_DEPTH = 64;
+  const MAX_STRING = 1000000;   // a condition cannot build strings past this
 
   const OPS = ['===', '!==', '**', '==', '!=', '<=', '>=', '&&', '||', '(', ')', ',', '.', '!', '<', '>', '+', '-', '*', '/', '%', '^'];
   const BINARY = {
@@ -85,8 +89,9 @@ const SafeExpr = (() => {
   }
 
   function parse(src, mode) {
+    if (typeof src === 'number' || typeof src === 'boolean') src = String(src);
     if (typeof src !== 'string' || !src.trim()) fail('Expression is empty');
-    if (src.length > MAX_LENGTH) fail('Expression is too long');
+    if (src.length > MAX_LENGTH[mode]) fail('Expression is too long');
     const tokens = tokenize(src);
     let pos = 0;
     let depth = 0;
@@ -217,7 +222,11 @@ const SafeExpr = (() => {
           case '<=': return a <= b;
           case '>': return a > b;
           case '>=': return a >= b;
-          case '+': return a + b;
+          case '+': {
+            const v = a + b;
+            if (typeof v === 'string' && v.length > MAX_STRING) fail('String is too long');
+            return v;
+          }
           case '-': return a - b;
           case '*': return a * b;
           case '/': return a / b;
