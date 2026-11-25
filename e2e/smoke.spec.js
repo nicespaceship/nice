@@ -281,6 +281,18 @@ test.describe('Dashboard', () => {
     await expect(page).toHaveTitle(/Team/);
   });
 
+  test('the default look says activate and sci-fi themes say deploy', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); });
+    await navigateTo(page, '#/blueprints', 'Blueprints');
+    const button = page.locator('.bp-deploy-ship-btn:not(.bp-activated)').first();
+    await expect(button).toHaveText('Activate');
+    await page.evaluate(() => { Theme.set('matrix'); });
+    await expect(page.locator('.bp-deploy-ship-btn:not(.bp-activated)').first()).toHaveText('Deploy');
+    await page.evaluate(() => { Theme.set('nice'); });
+    await expect(page.locator('.bp-deploy-ship-btn:not(.bp-activated)').first()).toHaveText('Activate');
+  });
+
   test('crew view shows a card per crew member once a project is active', async ({ page }) => {
     await waitForApp(page);
     const errors = [];

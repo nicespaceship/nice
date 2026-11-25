@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SetupWizard = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   let _overlay = null;
@@ -252,7 +254,7 @@ const SetupWizard = (() => {
 
     body.innerHTML = `
       <h2 class="wizard-title">Your AI Team</h2>
-      <p class="wizard-subtitle">${_esc(proposal.spaceship?.rationale || `Here is your custom ${_crewWord()}, ready to deploy.`)}</p>
+      <p class="wizard-subtitle">${_esc(proposal.spaceship?.rationale || `Here is your custom ${_crewWord()}, ready to ${_say('activate', 'deploy')}.`)}</p>
       <div class="wizard-rec-card">
         <div class="wizard-rec-header">
           <span class="wizard-rec-class">${_esc(_data.shipName)}</span>
@@ -283,7 +285,7 @@ const SetupWizard = (() => {
       <button class="btn btn-sm" id="wiz-back-3b">Back</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm" id="wiz-skip-3">Skip</button>
-        <button class="btn btn-sm btn-primary" id="wiz-deploy">Deploy Team</button>
+        <button class="btn btn-sm btn-primary" id="wiz-deploy">${_say('Activate team', 'Deploy Team')}</button>
       </div>
     `;
     actions.querySelector('#wiz-back-3b').addEventListener('click', () => _showStep(1));
@@ -296,7 +298,7 @@ const SetupWizard = (() => {
     body.innerHTML = `
       <div class="wizard-launching">
         <div class="wizard-spinner"></div>
-        <h2 class="wizard-title">Deploying ${_esc(_data.shipName)}...</h2>
+        <h2 class="wizard-title">${_say('Activating', 'Deploying')} ${_esc(_data.shipName)}...</h2>
         <p id="wiz-deploy-status">Creating agents...</p>
       </div>
     `;
@@ -542,7 +544,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
 
   async function _deployCrew() {
     const proposal = _data.proposal;
-    if (!proposal?.agents?.length) throw new Error(`No ${_crewWord()} to deploy`);
+    if (!proposal?.agents?.length) throw new Error(`No ${_crewWord()} to ${_say('activate', 'deploy')}`);
 
     const agents = proposal.agents;
     const userId = typeof State !== 'undefined' ? State.get('user')?.id : null;
@@ -581,7 +583,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 2. Create spaceship
-    setStatus(`Deploying ${Terminology.label('spaceship', { lowercase: true })}...`);
+    setStatus(`${_say('Activating', 'Deploying')} ${Terminology.label('spaceship', { lowercase: true })}...`);
     // Numeric slot keys match the catalog convention (slot.id = position
     // index) so downstream readers find slots via positional lookup.
     const slotAssignments = {};
@@ -693,7 +695,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
       });
     }
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Team Deployed', message: `${_data.shipName} with ${createdAgentIds.length} agents`, type: 'success' });
+      Notify.send({ title: _say('Team activated', 'Team Deployed'), message: `${_data.shipName} with ${createdAgentIds.length} agents`, type: 'success' });
     }
 
     return { shipId, agentCount: createdAgentIds.length };

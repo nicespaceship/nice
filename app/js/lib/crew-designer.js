@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewDesigner = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   let _overlay = null;
@@ -96,7 +98,7 @@ const CrewDesigner = (() => {
       <div class="wizard-container cd-container">
         <button class="wizard-close cd-close" aria-label="Close">&times;</button>
         <div class="cd-progress">
-          ${['Describe', 'Design', 'Deploy'].map((s, i) => `
+          ${['Describe', 'Design', _say('Activate', 'Deploy')].map((s, i) => `
             <div class="cd-progress-step ${i === _step ? 'active' : ''} ${i < _step ? 'done' : ''}">
               <span class="cd-progress-dot">${i < _step ? '✓' : i + 1}</span>
               <span class="cd-progress-label">${s}</span>
@@ -396,7 +398,7 @@ Rules:
           <button class="btn cd-btn-secondary cd-regenerate" id="cd-regenerate">↻ Regenerate</button>
         </div>
 
-        ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
+        ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to ${_say('activate', 'deploy')}.</div>` : ''}
 
         <!-- Crew Grid -->
         <div class="cd-section-label">${_crewWord(true)} <span class="cd-count">${_data.editedAgents.length} agents</span></div>
@@ -427,7 +429,7 @@ Rules:
         <!-- Actions -->
         <div class="cd-actions cd-actions-split">
           <button class="btn cd-btn-secondary" id="cd-back">← Back</button>
-          <button class="btn cd-btn-primary" id="cd-deploy-btn" ${overLimit ? 'disabled' : ''}>Deploy →</button>
+          <button class="btn cd-btn-primary" id="cd-deploy-btn" ${overLimit ? 'disabled' : ''}>${_say('Activate', 'Deploy')} →</button>
         </div>
       </div>
     `;
@@ -738,7 +740,7 @@ Rules:
         <div class="cd-deploy">
           <div class="cd-success">
             <div class="cd-success-icon">✕</div>
-            <h2 class="cd-heading">Deployment Failed</h2>
+            <h2 class="cd-heading">${_say('Activation failed', 'Deployment Failed')}</h2>
             <p class="cd-subheading">${_esc(err.message || 'Something went wrong. Please try again.')}</p>
             <div class="cd-actions">
               <button class="btn cd-btn-secondary" id="cd-retry">← Try Again</button>
@@ -758,7 +760,7 @@ Rules:
         <div class="cd-success">
           <div class="cd-success-icon">✓</div>
           <h2 class="cd-heading">${_esc(_data.shipName)}</h2>
-          <p class="cd-subheading">${agentCount} agents deployed and ready for action.</p>
+          <p class="cd-subheading">${agentCount} ${_say('agents active and ready to work.', 'agents deployed and ready for action.')}</p>
           <p class="cd-rationale">${_esc(_data.rationale)}</p>
           <div class="cd-actions cd-actions-stack">
             <button class="btn cd-btn-primary" id="cd-view-schematic">View Schematic</button>
@@ -788,7 +790,7 @@ Rules:
     el.querySelector('#cd-close-success')?.addEventListener('click', close);
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: _crewWord(true) + ' Deployed', message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
+      Notify.send({ title: _say('Team activated', 'Crew Deployed'), message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
     }
   }
 
