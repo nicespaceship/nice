@@ -215,5 +215,13 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, toStardate, icon, titleCase, initials, sanitizeCallsign, hasAuthSession, KEYS };
+  // Origin for links people share: the site's own, also from the desktop
+  // app (whose page lives at nice://app, which nobody else can open).
+  function publicOrigin() {
+    return (typeof window !== 'undefined' && window.NiceDesktop && window.NiceDesktop.isDesktop)
+      ? 'https://nicespaceship.ai'
+      : window.location.origin;
+  }
+
+  return { esc, escAttr, safeUrl, publicOrigin, timeAgo, formatDate, formatDateTime, toStardate, icon, titleCase, initials, sanitizeCallsign, hasAuthSession, KEYS };
 })();

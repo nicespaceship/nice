@@ -120,7 +120,7 @@ const SecurityView = (() => {
         <svg class="icon icon-xl" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
         <h2>Sign in to access ${area}</h2>
         <p class="text-muted">Authentication is required to manage security settings.</p>
-        <button class="btn btn-primary" onclick="location.hash='#/profile'">Sign In</button>
+        <a class="btn btn-primary" href="#/profile">Sign In</a>
       </div>`;
   }
 

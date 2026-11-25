@@ -49,12 +49,12 @@ const ProfileView = (() => {
           <p class="auth-sub">Neural Intelligence Command Engine</p>
 
           <div class="auth-tabs">
-            <button class="auth-tab active" data-tab="signin" onclick="ProfileView._switchTab('signin')">Sign In</button>
-            <button class="auth-tab" data-tab="signup" onclick="ProfileView._switchTab('signup')">Sign Up</button>
+            <button class="auth-tab active" data-tab="signin">Sign In</button>
+            <button class="auth-tab" data-tab="signup">Sign Up</button>
           </div>
 
           <!-- Sign In Form -->
-          <form class="auth-form" id="form-signin" onsubmit="ProfileView._handleSignIn(event)">
+          <form class="auth-form" id="form-signin">
             <div class="auth-field">
               <label for="si-email">Email</label>
               <input type="email" id="si-email" required autocomplete="email" placeholder="you@example.com" />
@@ -70,15 +70,15 @@ const ProfileView = (() => {
             <div class="auth-error" id="si-error"></div>
             <button type="submit" class="auth-submit" id="si-btn">Sign In</button>
             <div class="auth-divider"><span>or</span></div>
-            <button type="button" class="auth-google-btn" onclick="ProfileView._handleOAuth('google')">
+            <button type="button" class="auth-google-btn" data-oauth="google">
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
               Continue with Google
             </button>
-            <button type="button" class="auth-microsoft-btn" onclick="ProfileView._handleOAuth('azure')">
+            <button type="button" class="auth-microsoft-btn" data-oauth="azure">
               <svg width="18" height="18" viewBox="0 0 24 24"><rect fill="#F25022" x="2" y="2" width="9.5" height="9.5"/><rect fill="#7FBA00" x="12.5" y="2" width="9.5" height="9.5"/><rect fill="#00A4EF" x="2" y="12.5" width="9.5" height="9.5"/><rect fill="#FFB900" x="12.5" y="12.5" width="9.5" height="9.5"/></svg>
               Continue with Microsoft
             </button>
-            <button type="button" class="auth-github-btn" onclick="ProfileView._handleOAuth('github')">
+            <button type="button" class="auth-github-btn" data-oauth="github">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
               Continue with GitHub
             </button>
@@ -86,7 +86,7 @@ const ProfileView = (() => {
           </form>
 
           <!-- Sign Up Form -->
-          <form class="auth-form" id="form-signup" style="display:none" onsubmit="ProfileView._handleSignUp(event)">
+          <form class="auth-form" id="form-signup" style="display:none">
             <div class="auth-field">
               <label for="su-name">Display Name</label>
               <input type="text" id="su-name" required placeholder="Your name" />
@@ -106,15 +106,15 @@ const ProfileView = (() => {
             <div class="auth-error" id="su-error"></div>
             <button type="submit" class="auth-submit" id="su-btn">Create Account</button>
             <div class="auth-divider"><span>or</span></div>
-            <button type="button" class="auth-google-btn" onclick="ProfileView._handleOAuth('google', true)">
+            <button type="button" class="auth-google-btn" data-oauth="google" data-oauth-signup="1">
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
               Continue with Google
             </button>
-            <button type="button" class="auth-microsoft-btn" onclick="ProfileView._handleOAuth('azure', true)">
+            <button type="button" class="auth-microsoft-btn" data-oauth="azure" data-oauth-signup="1">
               <svg width="18" height="18" viewBox="0 0 24 24"><rect fill="#F25022" x="2" y="2" width="9.5" height="9.5"/><rect fill="#7FBA00" x="12.5" y="2" width="9.5" height="9.5"/><rect fill="#00A4EF" x="2" y="12.5" width="9.5" height="9.5"/><rect fill="#FFB900" x="12.5" y="12.5" width="9.5" height="9.5"/></svg>
               Continue with Microsoft
             </button>
-            <button type="button" class="auth-github-btn" onclick="ProfileView._handleOAuth('github', true)">
+            <button type="button" class="auth-github-btn" data-oauth="github" data-oauth-signup="1">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
               Continue with GitHub
             </button>
@@ -126,6 +126,10 @@ const ProfileView = (() => {
         </div>
       </div>
     `;
+    el.querySelectorAll('.auth-tab[data-tab]').forEach(b => b.addEventListener('click', () => _switchTab(b.dataset.tab)));
+    el.querySelector('#form-signin')?.addEventListener('submit', _handleSignIn);
+    el.querySelector('#form-signup')?.addEventListener('submit', _handleSignUp);
+    el.querySelectorAll('[data-oauth]').forEach(b => b.addEventListener('click', () => _handleOAuth(b.dataset.oauth, b.dataset.oauthSignup === '1')));
   }
 
   function _renderProfile(el, user) {
@@ -220,13 +224,15 @@ const ProfileView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-dashboard"/></svg>
             Mission Dashboard
           </a>
-          <button class="profile-action-btn" onclick="ProfileView._signOut()">
+          <button class="profile-action-btn" id="profile-sign-out">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-logout"/></svg>
             Sign Out
           </button>
         </div>
       </div>
     `;
+
+    document.getElementById('profile-sign-out')?.addEventListener('click', _signOut);
 
     // Load referral count
     _loadReferralData(user);

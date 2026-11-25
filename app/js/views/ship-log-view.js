@@ -110,12 +110,13 @@ const ShipLogView = (() => {
           <h2>No Log Entries</h2>
           <p>Send a command via NICE AI to start building your Log.</p>
           <div class="app-empty-acts">
-            <button class="btn btn-primary btn-sm" onclick="if(typeof PromptPanel!=='undefined')PromptPanel.toggle()">
+            <button class="btn btn-primary btn-sm" id="slv-open-ai">
               Open NICE AI
             </button>
           </div>
         </div>
       `;
+      container.querySelector('#slv-open-ai')?.addEventListener('click', () => { if (typeof PromptPanel !== 'undefined') PromptPanel.toggle(); });
       return;
     }
 

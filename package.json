@@ -2,7 +2,7 @@
   "name": "nice-spaceship",
   "version": "3.5.0",
   "private": true,
-  "description": "NICE \u2014 Mission Control for AI Agent Fleets",
+  "description": "NICE — Mission Control for AI Agent Fleets",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.11.1",
     "@playwright/test": "1.58.2",
+    "@supabase/supabase-js": "2.119.2",
     "@vitest/coverage-v8": "4.1.0",
     "esbuild": "0.27.4",
     "jsdom": "25.0.1",
