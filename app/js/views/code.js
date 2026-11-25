@@ -21,6 +21,7 @@ const CodeView = (() => {
   const TERM_MAX_CHARS = 200000;
   const SEND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   const STOP_ICON = '<span class="code-stop-square" aria-hidden="true"></span>';
+  const STOPPING_TEXT = 'Stopping. Code drops the reply when it arrives, and then you can send a new message.';
 
   let _el = null;
   let _ws = null;            // { root, name } of the open folder
@@ -38,17 +39,23 @@ const CodeView = (() => {
   // Files tab
   const _dirCache = new Map();   // dir path → { entries, truncated }
   const _expanded = new Set(['.']);
+  // Links that listed as folders. Refresh clears _dirCache but not this, so
+  // an open linked folder stays open.
+  const _linkDirs = new Set();
+  // The rows of the latest tree paint, indexed by each row's data-row. The
+  // path never goes through an attribute: HTML parsing turns a \r in one
+  // into \n, and macOS puts a file named "Icon\r" in some folders.
+  let _treeRows = [];            // { path, type, open }
   let _openFile = null;          // { path, content, totalLines, endLine } | { path, error }
   let _treeSeq = 0;              // the latest tree paint wins
   let _readSeq = 0;              // the latest file click wins
 
   // Terminal tab
   let _termText = '';
-  let _termRun = null;           // { tag, id } while a command runs
+  // While a command runs: its tag, the id the host's 'start' event gives
+  // it, and whether Stop was asked for before that id came.
+  let _termRun = null;           // { tag, id, stopAsked }
   let _runSeq = 0;
-  // Commands left behind by a folder change before their id arrived; they
-  // are killed as soon as it does.
-  const _strayTags = new Set();
   let _termHistory = [];
   let _termHistoryAt = -1;
 
@@ -122,13 +129,14 @@ const CodeView = (() => {
     _expanded.clear();
     _expanded.add('.');
     _openFile = null;
+    _linkDirs.clear();
+    _treeRows = [];
     _termText = '';
-    // A command still running in the old folder would go on unseen.
-    if (_termRun) {
-      if (_termRun.id != null) _kill(_termRun.id);
-      else _strayTags.add(_termRun.tag);
-      _termRun = null;
-    }
+    // No kill from here: by now host.openFolder() has swapped the workspace,
+    // so a kill would reach the new folder and find nothing. The
+    // code:open-folder handler in desktop/main.js stops the old folder's
+    // commands when it retires that workspace.
+    _termRun = null;
   }
 
   function _renderWorkspace(el) {
@@ -280,7 +288,7 @@ const CodeView = (() => {
 
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (!user) {
-      _addMsg({ role: 'note', text: 'Sign in to use NICE\'s models. Using your own API keys comes in a later version.' });
+      _addMsg({ role: 'note', text: 'Sign in to chat with Code. It answers with NICE\'s hosted models, which need a NICE account.' });
       return;
     }
     if (typeof AgentExecutor === 'undefined') {
@@ -310,7 +318,10 @@ const CodeView = (() => {
     // a conversation that is gone.
     if (turnState.gen !== _gen) return;
     // The model call can't be cut off mid-flight, so a reply that comes
-    // back after Stop is dropped here.
+    // back after Stop is dropped here. Until then the prompt can't send:
+    // converse keeps one history and one shouldStop, so a second turn
+    // started now would read this one's prompt as its own and could let
+    // the late answer into the history.
     if (turnState.stopAsked || (turn && turn.stopped)) _addMsg({ role: 'note', text: 'Stopped.' });
     else if (failure) _addMsg({ role: 'note', text: 'Something went wrong: ' + (failure.message || String(failure)) });
     else if (turn && turn.error) _addMsg({ role: 'note', text: String(turn.text || '').replace(/^Error:\s*/, 'Something went wrong: ') });
@@ -334,6 +345,7 @@ const CodeView = (() => {
     btn.classList.toggle('is-busy', busy);
     btn.classList.toggle('is-stopping', stopping);
     btn.setAttribute('aria-label', stopping ? 'Stopping' : busy ? 'Stop' : 'Send');
+    if (stopping) btn.setAttribute('aria-disabled', 'true'); else btn.removeAttribute('aria-disabled');
     btn.innerHTML = busy ? STOP_ICON : SEND_ICON;
   }
 
@@ -379,7 +391,7 @@ const CodeView = (() => {
     if (!box) return;
     let line = box.querySelector('.code-msg-working');
     if (!_busyNow()) { if (line) line.remove(); return; }
-    const text = _turn.stopAsked ? 'Stopping…' : 'Working…';
+    const text = _turn.stopAsked ? STOPPING_TEXT : 'Working…';
     if (!line) {
       box.insertAdjacentHTML('beforeend', '<div class="code-msg code-msg-working"><span class="status-dot dot-a" aria-hidden="true"></span><span class="code-working-text"></span></div>');
       line = box.lastElementChild;
@@ -409,27 +421,39 @@ const CodeView = (() => {
 
   const _join = (dir, name) => dir === '.' ? name : dir + '/' + name;
 
-  async function _treeHTML(dir, depth) {
+  // A link is a folder once it has listed like one. An open one is listed
+  // again before it is drawn, so a link that stopped pointing at a folder
+  // goes back to a plain row.
+  async function _isLinkDir(p) {
+    if (!_linkDirs.has(p)) return false;
+    if (!_expanded.has(p) || _dirCache.has(p)) return true;
+    try { await _list(p); return true; }
+    catch { _linkDirs.delete(p); _expanded.delete(p); return false; }
+  }
+
+  // `rows` collects { path, type, open } for each row, at its data-row.
+  async function _treeHTML(dir, depth, rows) {
     let listing;
     try { listing = await _list(dir); }
     catch (e) { return `<div class="code-tree-err" style="--depth:${depth}">${_esc(e.message || 'Could not list this folder')}</div>`; }
-    const rows = [];
+    const html = [];
     for (const e of listing.entries) {
       const p = _join(dir, e.name);
       const isLink = e.type === 'link';
-      // A link is a folder once it has listed like one.
-      const isDir = e.type === 'dir' || (isLink && _dirCache.has(p));
+      const isDir = e.type === 'dir' || (isLink && await _isLinkDir(p));
       const open = isDir && _expanded.has(p);
+      const type = isLink ? 'link' : isDir ? 'dir' : 'file';
       const icon = isLink ? 'external' : isDir ? (open ? 'chevron-down' : 'chevron-right') : 'file';
-      rows.push(`<button type="button" class="code-tree-row${_openFile && _openFile.path === p ? ' active' : ''}" style="--depth:${depth}" data-path="${_attr(p)}" data-type="${isLink ? 'link' : isDir ? 'dir' : 'file'}"${isDir ? ` aria-expanded="${open}"` : ''}>
+      const idx = rows.push({ path: p, type, open }) - 1;
+      html.push(`<button type="button" class="code-tree-row${_openFile && _openFile.path === p ? ' active' : ''}" style="--depth:${depth}" data-row="${idx}" data-type="${type}"${isDir ? ` aria-expanded="${open}"` : ''}>
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-${icon}"/></svg>
         <span class="code-tree-name">${_esc(e.name)}</span>${isLink ? '<span class="sr-only"> (link)</span>' : ''}</button>`);
-      if (open) rows.push(await _treeHTML(p, depth + 1));
+      if (open) html.push(await _treeHTML(p, depth + 1, rows));
     }
     if (listing.truncated) {
-      rows.push(`<div class="code-tree-more" style="--depth:${depth}">Only the first ${listing.entries.length} items are shown.</div>`);
+      html.push(`<div class="code-tree-more" style="--depth:${depth}">Only the first ${listing.entries.length} items are shown.</div>`);
     }
-    return rows.join('');
+    return html.join('');
   }
 
   async function _renderFiles() {
@@ -450,20 +474,23 @@ const CodeView = (() => {
       return;
     }
     const gen = _gen;
-    const html = await _treeHTML('.', 0);
+    const rows = [];
+    const html = await _treeHTML('.', 0, rows);
     if (!_el || seq !== _treeSeq || gen !== _gen || _panelState().tab !== 'files' || _openFile) return;
     const target = _el.querySelector('#code-panel-body');
     if (!target) return;
+    _treeRows = rows;
     target.innerHTML = `<div class="code-tree">${html || '<div class="code-tree-err">This folder is empty.</div>'}
       </div><div class="code-tree-foot"><button type="button" class="btn btn-sm" id="code-refresh-files">Refresh</button></div>`;
-    target.querySelectorAll('.code-tree-row').forEach(row => row.addEventListener('click', () => _onTreeClick(row)));
+    target.querySelectorAll('.code-tree-row').forEach(row => {
+      const info = rows[Number(row.dataset.row)];
+      row.addEventListener('click', () => _onTreeClick(info));
+    });
     target.querySelector('#code-refresh-files').addEventListener('click', () => { _dirCache.clear(); _renderFiles(); });
   }
 
-  async function _onTreeClick(row) {
-    const p = row.dataset.path;
-    const type = row.dataset.type;
-    if (row.getAttribute('aria-expanded') === 'true') {
+  async function _onTreeClick({ path: p, type, open }) {
+    if (open) {
       _expanded.delete(p);
       _renderFiles();
       return;
@@ -481,7 +508,8 @@ const CodeView = (() => {
       let listed = false;
       try { await _list(p); listed = true; } catch { listed = false; }
       if (gen !== _gen || req !== _readSeq) return;
-      if (listed) { _expanded.add(p); _renderFiles(); return; }
+      if (listed) { _linkDirs.add(p); _expanded.add(p); _renderFiles(); return; }
+      _linkDirs.delete(p);
     }
     let file;
     try {
@@ -502,7 +530,7 @@ const CodeView = (() => {
     if (!body) return;
     body.innerHTML = `
       <div class="code-term">
-        <pre class="code-term-out" id="code-term-out"></pre>
+        <pre class="code-term-out" id="code-term-out" aria-live="off"></pre>
         <form class="code-term-line" id="code-term-form">
           <span class="code-term-prompt" aria-hidden="true">$</span>
           <input id="code-term-input" type="text" autocomplete="off" spellcheck="false" aria-label="Command" placeholder="${_attr('Run a command in ' + _ws.name)}">
@@ -535,11 +563,14 @@ const CodeView = (() => {
     _paintTerm();
   }
 
+  // The output follows new lines only while the user is at the bottom, so
+  // scrolling up to read earlier output isn't undone by the next chunk.
   function _paintTerm() {
     const out = _el && _el.querySelector('#code-term-out');
     if (!out) return;
+    const atBottom = out.scrollHeight - out.scrollTop - out.clientHeight <= 4;
     out.textContent = _termText;
-    out.scrollTop = out.scrollHeight;
+    if (atBottom) out.scrollTop = out.scrollHeight;
     const stop = _el.querySelector('#code-term-stop');
     if (stop) stop.hidden = !_termRun;
   }
@@ -556,7 +587,7 @@ const CodeView = (() => {
     _termHistoryAt = -1;
     if (cmd === 'clear') { _termText = ''; _paintTerm(); return; }
     const tag = 'term-' + Date.now() + '-' + (++_runSeq);
-    const run = { tag, id: null };
+    const run = { tag, id: null, stopAsked: false };
     const gen = _gen;
     _termRun = run;
     _termAppend('$ ' + cmd + '\n');
@@ -573,7 +604,6 @@ const CodeView = (() => {
     } catch (e) {
       if (gen === _gen) _termAppend((e.message || String(e)) + '\n');
     } finally {
-      _strayTags.delete(tag);
       if (_termRun === run) { _termRun = null; _paintTerm(); }
     }
   }
@@ -583,15 +613,22 @@ const CodeView = (() => {
     if (host) host.kill(id).catch(() => {});
   }
 
+  // Until the host's 'start' event the command has no id to kill (finding
+  // the login shell's PATH can take seconds), so the stop waits for it.
   function _stopTerminal() {
-    if (_termRun && _termRun.id != null) _kill(_termRun.id);
+    if (!_termRun) return;
+    if (_termRun.id != null) _kill(_termRun.id);
+    else _termRun.stopAsked = true;
   }
 
   function _onRunData(d) {
     if (!d) return;
-    if (d.stream === 'start' && _strayTags.delete(d.tag)) { _kill(d.id); return; }
     if (!_termRun || d.tag !== _termRun.tag) return;
-    if (d.stream === 'start') { _termRun.id = d.id; return; }
+    if (d.stream === 'start') {
+      _termRun.id = d.id;
+      if (_termRun.stopAsked) _kill(d.id);
+      return;
+    }
     _termAppend(d.data);
   }
 
@@ -605,7 +642,6 @@ const CodeView = (() => {
     _resetForFolder(null);
     _el = null;
     _turn = null;
-    _strayTags.clear();
     _termHistory = [];
     _termHistoryAt = -1;
     _treeSeq = 0;
@@ -614,5 +650,8 @@ const CodeView = (() => {
     if (_offRunData) { _offRunData(); _offRunData = null; }
   }
 
-  return { title, render, destroy, _test: { reset: _resetAll } };
+  return {
+    title, render, destroy,
+    _test: { reset: _resetAll, pathOf: (row) => (_treeRows[Number(row.dataset.row)] || {}).path },
+  };
 })();

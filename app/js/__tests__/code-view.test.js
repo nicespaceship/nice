@@ -72,7 +72,9 @@ const runCommand = (el, cmd) => {
   el.querySelector('#code-term-input').value = cmd;
   el.querySelector('#code-term-form').dispatchEvent(new Event('submit', { cancelable: true }));
 };
-const rowFor = (el, path) => [...el.querySelectorAll('.code-tree-row')].find(r => r.dataset.path === path);
+const rowFor = (el, path) => [...el.querySelectorAll('.code-tree-row')].find(r => CodeView._test.pathOf(r) === path);
+const termOut = (el) => el.querySelector('#code-term-out').textContent;
+const termKey = (el, key, init = {}) => el.querySelector('#code-term-input').dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
 const sendLabel = (el) => el.querySelector('#code-send').getAttribute('aria-label');
 
 /* A model whose reply comes back when the test says so. */
@@ -153,8 +155,8 @@ describe('CodeView in the desktop app', () => {
     );
     const fileRow = rowFor(el, evilFile);
     const dirRow = rowFor(el, evilDir);
-    expect(fileRow.getAttributeNames().sort()).toEqual(['class', 'data-path', 'data-type', 'style', 'type']);
-    expect(dirRow.getAttributeNames().sort()).toEqual(['aria-expanded', 'class', 'data-path', 'data-type', 'style', 'type']);
+    expect(fileRow.getAttributeNames().sort()).toEqual(['class', 'data-row', 'data-type', 'style', 'type']);
+    expect(dirRow.getAttributeNames().sort()).toEqual(['aria-expanded', 'class', 'data-row', 'data-type', 'style', 'type']);
     expect(fileRow.dataset.type).toBe('file');
     expect(fileRow.querySelector('.code-tree-name').textContent).toBe(evilFile);
     expect(el.querySelector('[onmouseover], [onfocus], [data-x], b')).toBeNull();
@@ -203,6 +205,60 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelector('.code-file-body').textContent).toBe('hello');
   });
 
+  it('keeps an open linked folder open after Refresh, and closes it once the link stops listing', async () => {
+    const { host, el } = await openWorkspace({ 'lib/x.js': '1', 'a.txt': '' }, { links: ['lib'] });
+    rowFor(el, 'lib').click();
+    await flush();
+    expect(rowFor(el, 'lib/x.js')).toBeTruthy();
+
+    el.querySelector('#code-refresh-files').click();
+    await flush();
+    expect(rowFor(el, 'lib').getAttribute('aria-expanded')).toBe('true');
+    expect(rowFor(el, 'lib/x.js')).toBeTruthy();
+    expect(host.list.mock.calls.filter(c => c[0] === 'lib')).toHaveLength(2);
+
+    host.list.mockImplementation(async (dir) => {
+      if (dir === 'lib') throw { code: 'ENOTDIR', message: 'Not a folder: lib' };
+      return { path: dir, entries: [{ name: 'lib', type: 'link' }, { name: 'a.txt', type: 'file' }], truncated: false };
+    });
+    el.querySelector('#code-refresh-files').click();
+    await flush();
+    expect(rowFor(el, 'lib').hasAttribute('aria-expanded')).toBe(false);
+    expect(rowFor(el, 'lib/x.js')).toBeUndefined();
+    expect(el.querySelector('.code-tree-err')).toBeNull();
+  });
+
+  it('opens the file a row names even when the name has a carriage return', async () => {
+    // HTML parsing turns \r into \n, so a path read back from an attribute
+    // would name the decoy (macOS writes "Icon\r" into folders).
+    const { host, el } = await openWorkspace({
+      'a\rb.txt': 'REAL CR FILE',
+      'a\nb.txt': 'DECOY LF FILE',
+      'Icon\r': '',
+      'd\rx/inner.txt': 'inside',
+    });
+    rowFor(el, 'a\rb.txt').click();
+    await flush();
+    expect(host.read).toHaveBeenLastCalledWith('a\rb.txt', expect.anything());
+    expect(el.querySelector('.code-file-body').textContent).toBe('REAL CR FILE');
+    el.querySelector('#code-file-back').click();
+    await flush();
+
+    rowFor(el, 'Icon\r').click();
+    await flush();
+    expect(host.read).toHaveBeenLastCalledWith('Icon\r', expect.anything());
+    expect(el.querySelector('.code-tree-err')).toBeNull();
+    el.querySelector('#code-file-back').click();
+    await flush();
+
+    rowFor(el, 'd\rx').click();
+    await flush();
+    expect(rowFor(el, 'd\rx').getAttribute('aria-expanded')).toBe('true');
+    rowFor(el, 'd\rx/inner.txt').click();
+    await flush();
+    expect(el.querySelector('.code-file-body').textContent).toBe('inside');
+  });
+
   it('says when a folder listing was cut short', async () => {
     const { el } = await openWorkspace({ 'a.txt': '', 'b.txt': '', 'src/c.js': '' }, { truncated: ['.'] });
     const more = el.querySelectorAll('.code-tree-more');
@@ -225,7 +281,8 @@ describe('CodeView in the desktop app', () => {
     expect(out).toContain('Exit code 1');
     expect(out).not.toContain('NOT MINE');
     expect(host.run).toHaveBeenCalledWith('false', expect.objectContaining({ tag: expect.stringMatching(/^term-/) }));
-    expect(el.querySelector('#code-term-out').hasAttribute('aria-live')).toBe(false);
+    // #app-view is aria-live=polite; the output repaints on every chunk.
+    expect(el.querySelector('#code-term-out').getAttribute('aria-live')).toBe('off');
   });
 
   it('shows Stop while a command runs and kills it', async () => {
@@ -247,6 +304,141 @@ describe('CodeView in the desktop app', () => {
     await flush();
     expect(stop().hidden).toBe(true);
     expect(el.querySelector('#code-term-out').textContent).toContain('Stopped.');
+  });
+
+  for (const [how, press] of [
+    ['Stop', (el) => el.querySelector('#code-term-stop').click()],
+    ['Ctrl+C', (el) => termKey(el, 'c', { ctrlKey: true })],
+  ]) {
+    it(`kills a command stopped with ${how} before the host gave it an id, once the id comes`, async () => {
+      const { host, el } = await openWorkspace({ a: '' });
+      const done = deferred();
+      let tag = null;
+      host.run.mockImplementationOnce((cmd, opts) => { tag = opts.tag; return done.promise; });
+      el.querySelector('#code-tab-terminal').click();
+      runCommand(el, 'sleep 2; echo finished');
+      await flush();
+      press(el);
+      expect(host.kill).not.toHaveBeenCalled();
+      expect(el.querySelector('#code-term-stop').hidden).toBe(false);
+      expect(termOut(el)).toContain('$ sleep 2; echo finished');
+
+      host.emit({ id: 12, tag, stream: 'start', data: '' });
+      expect(host.kill).toHaveBeenCalledTimes(1);
+      expect(host.kill).toHaveBeenCalledWith(12);
+      host.emit({ id: 12, tag, stream: 'stdout', data: 'partial\n' });
+      expect(termOut(el)).toContain('partial');
+      expect(el.querySelector('#code-term-stop').hidden).toBe(false);
+
+      done.resolve({ id: 12, exitCode: null, killed: true, timedOut: false });
+      await flush();
+      expect(termOut(el)).toContain('Stopped.');
+      expect(el.querySelector('#code-term-stop').hidden).toBe(true);
+    });
+  }
+
+  it('kills a running command on Ctrl+C', async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    host.run.mockImplementationOnce((cmd, opts) => {
+      host.emit({ id: 5, tag: opts.tag, stream: 'start', data: '' });
+      return new Promise(() => {});
+    });
+    el.querySelector('#code-tab-terminal').click();
+    termKey(el, 'c', { ctrlKey: true });
+    expect(host.kill).not.toHaveBeenCalled();
+    runCommand(el, 'sleep 10');
+    await flush();
+    termKey(el, 'c');
+    expect(host.kill).not.toHaveBeenCalled();
+    termKey(el, 'c', { ctrlKey: true });
+    expect(host.kill).toHaveBeenCalledWith(5);
+  });
+
+  it('keeps the terminal at the bottom only while the user is there', async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    let tag = null;
+    host.run.mockImplementationOnce((cmd, opts) => {
+      tag = opts.tag;
+      host.emit({ id: 3, tag, stream: 'start', data: '' });
+      return new Promise(() => {});
+    });
+    el.querySelector('#code-tab-terminal').click();
+    const out = el.querySelector('#code-term-out');
+    // jsdom has no layout: 10px per character, a 100px box, and a
+    // scrollTop clamped the way a browser clamps it.
+    let top = 0;
+    const max = () => Math.max(0, out.textContent.length * 10 - 100);
+    Object.defineProperty(out, 'clientHeight', { configurable: true, get: () => 100 });
+    Object.defineProperty(out, 'scrollHeight', { configurable: true, get: () => out.textContent.length * 10 });
+    Object.defineProperty(out, 'scrollTop', { configurable: true, get: () => top, set: (v) => { top = Math.max(0, Math.min(v, max())); } });
+
+    runCommand(el, 'npm test');
+    await flush();
+    expect(out.scrollTop).toBe(max());
+    host.emit({ id: 3, tag, stream: 'stdout', data: 'line one\n' });
+    expect(out.scrollTop).toBe(max());
+
+    out.scrollTop = 0;
+    host.emit({ id: 3, tag, stream: 'stdout', data: 'line two\n' });
+    expect(out.textContent).toContain('line two');
+    expect(out.scrollTop).toBe(0);
+
+    out.scrollTop = max();
+    host.emit({ id: 3, tag, stream: 'stdout', data: 'line three\n' });
+    expect(out.scrollTop).toBe(max());
+  });
+
+  it('walks back and forth through earlier commands with the arrow keys', async () => {
+    const { el } = await openWorkspace({ a: '' });
+    el.querySelector('#code-tab-terminal').click();
+    runCommand(el, 'echo one');
+    await flush();
+    runCommand(el, 'echo two');
+    await flush();
+    const input = el.querySelector('#code-term-input');
+    const seen = [];
+    for (const key of ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown']) {
+      termKey(el, key);
+      seen.push(input.value);
+    }
+    expect(seen).toEqual(['echo two', 'echo one', 'echo one', 'echo two', '']);
+  });
+
+  it("empties the terminal on 'clear' without running it", async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    el.querySelector('#code-tab-terminal').click();
+    runCommand(el, 'echo hi');
+    await flush();
+    expect(termOut(el)).toContain('out of echo hi');
+    runCommand(el, 'clear');
+    await flush();
+    expect(termOut(el)).toBe('');
+    expect(host.run).toHaveBeenCalledTimes(1);
+    termKey(el, 'ArrowUp');
+    expect(el.querySelector('#code-term-input').value).toBe('clear');
+  });
+
+  it('refuses a second command while one is still running', async () => {
+    const { host, el } = await openWorkspace({ a: '' });
+    const done = deferred();
+    host.run.mockImplementationOnce((cmd, opts) => {
+      host.emit({ id: 4, tag: opts.tag, stream: 'start', data: '' });
+      return done.promise;
+    });
+    el.querySelector('#code-tab-terminal').click();
+    runCommand(el, 'sleep 10');
+    await flush();
+    runCommand(el, 'ls');
+    await flush();
+    expect(host.run).toHaveBeenCalledTimes(1);
+    expect(termOut(el)).toContain('A command is still running. Stop it first.');
+    expect(el.querySelector('#code-term-input').value).toBe('ls');
+
+    done.resolve({ id: 4, exitCode: 0, killed: false, timedOut: false });
+    await flush();
+    runCommand(el, 'ls');
+    await flush();
+    expect(host.run).toHaveBeenLastCalledWith('ls', expect.anything());
   });
 
   it('remembers the panel tab and can close it', async () => {
@@ -311,7 +503,7 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelector('.code-file-path').textContent).toBe('a.js');
   });
 
-  it('drops terminal output and file reads from the folder it left, and kills its command', async () => {
+  it('drops terminal output and file reads from the folder it left, and leaves its command to the host', async () => {
     const { host, el } = await openWorkspace({ 'a.js': 'x' });
     const read = deferred();
     host.read.mockImplementationOnce(() => read.promise);
@@ -331,7 +523,9 @@ describe('CodeView in the desktop app', () => {
     host.openFolder.mockImplementationOnce(async () => ({ root: '/Users/me/other', name: 'other' }));
     el.querySelector('#code-change-folder').click();
     await flush();
-    expect(host.kill).toHaveBeenCalledWith(9);
+    // By now the kill would reach the new folder's workspace; main.js stops
+    // the old one's commands when the folder changes.
+    expect(host.kill).not.toHaveBeenCalled();
     expect(el.querySelector('#code-term-out').textContent).toBe('');
     expect(el.querySelector('#code-term-stop').hidden).toBe(true);
 
@@ -345,28 +539,16 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelector('.code-file-body')).toBeNull();
   });
 
-  it('kills a command left behind before its id arrived, once it does', async () => {
-    const { host, el } = await openWorkspace({ a: '' });
-    let oldTag = null;
-    host.run.mockImplementationOnce((cmd, opts) => { oldTag = opts.tag; return new Promise(() => {}); });
-    el.querySelector('#code-tab-terminal').click();
-    runCommand(el, 'sleep 10');
-    await flush();
-    host.openFolder.mockImplementationOnce(async () => ({ root: '/Users/me/other', name: 'other' }));
-    el.querySelector('#code-change-folder').click();
-    await flush();
-    expect(host.kill).not.toHaveBeenCalled();
-    host.emit({ id: 11, tag: oldTag, stream: 'start', data: '' });
-    expect(host.kill).toHaveBeenCalledWith(11);
-  });
-
   it('asks a signed-out user to sign in instead of calling a model', async () => {
     globalThis.AgentExecutor = { converse: vi.fn() };
     const { el } = await openWorkspace({ a: '' });
     submitPrompt(el, 'hello');
     await flush();
     expect(AgentExecutor.converse).not.toHaveBeenCalled();
-    expect(el.querySelector('.code-msg-note').textContent).toContain('Sign in');
+    const note = el.querySelector('.code-msg-note').textContent;
+    expect(note).toContain('Sign in');
+    expect(note).toContain("NICE's hosted models");
+    expect(note).not.toMatch(/later version|API keys/);
   });
 
   it('sends a signed-in prompt to the chosen model and shows the reply', async () => {
@@ -433,7 +615,6 @@ describe('CodeView in the desktop app', () => {
     expect(model.opts().shouldStop()).toBe(false);
     submitPrompt(el);
     expect(sendLabel(el)).toBe('Stopping');
-    expect(el.querySelector('.code-msg-working').textContent).toBe('Stopping…');
     expect(model.opts().shouldStop()).toBe(true);
 
     model.reply.resolve({ text: 'late answer', done: true });
@@ -442,6 +623,61 @@ describe('CodeView in the desktop app', () => {
     const notes = [...el.querySelectorAll('.code-msg-note')].map(n => n.textContent);
     expect(notes).toEqual(['Stopped.']);
     expect(sendLabel(el)).toBe('Send');
+  });
+
+  it('says while stopping that the reply will be dropped and when a new message can go', async () => {
+    const model = slowModel();
+    const { el } = await openWorkspace({ a: '' }, {}, { state: { user: { id: 'u1' } } });
+    const send = el.querySelector('#code-send');
+    const input = el.querySelector('#code-input');
+    const enter = () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    submitPrompt(el, 'hi');
+    await flush();
+    expect(send.hasAttribute('aria-disabled')).toBe(false);
+    submitPrompt(el);
+    const working = el.querySelector('.code-msg-working').textContent;
+    expect(working).toMatch(/^Stopping\./);
+    expect(working).toContain('drops the reply when it arrives');
+    expect(working).toContain('send a new message');
+    expect(working).not.toContain('—');
+    expect(send.getAttribute('aria-disabled')).toBe('true');
+
+    // converse holds one history, so the next turn waits for the stopped one.
+    input.value = 'next';
+    enter();
+    await flush();
+    expect(model.send).toHaveBeenCalledTimes(1);
+    expect(input.value).toBe('next');
+
+    model.reply.resolve({ text: 'late answer', done: true });
+    await flush();
+    expect(send.hasAttribute('aria-disabled')).toBe(false);
+    model.send.mockResolvedValueOnce({ text: 'second answer', done: true });
+    enter();
+    await flush();
+    expect(model.send).toHaveBeenLastCalledWith('next');
+    expect(el.querySelector('.code-msg-assistant').textContent).toBe('second answer');
+  });
+
+  it('sends with the model picked in the prompt bar, also after the conversation started', async () => {
+    globalThis.LLM_MODELS = [{ id: 'm1', label: 'One' }, { id: 'm2', label: 'Two' }];
+    const send = vi.fn(async () => ({ text: 'ok', done: true }));
+    globalThis.AgentExecutor = { converse: vi.fn(() => ({ send })) };
+    const { el } = await openWorkspace({ a: '' }, {}, { state: { user: { id: 'u1' }, enabled_models: { m1: true, m2: true } } });
+    submitPrompt(el, 'one');
+    await flush();
+    const bp = AgentExecutor.converse.mock.calls[0][0];
+    expect(bp.config.llm_engine).toBe('m1');
+
+    const select = el.querySelector('#code-model');
+    select.value = 'm2';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(bp.config.llm_engine).toBe('m2');
+    expect(localStorage.getItem(Utils.KEYS.codeModel)).toBe('m2');
+    submitPrompt(el, 'two');
+    await flush();
+    expect(AgentExecutor.converse).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenLastCalledWith('two');
   });
 
   it('drops a reply that arrives after the folder changed', async () => {

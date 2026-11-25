@@ -10995,6 +10995,8 @@ body.preview-active .nice-ai {
    the right, after Claude Code. The view fills the content area like
    Space and the Diagram: the thread, the panel body and the terminal
    each scroll inside it, so .app-view-content itself does not.
+   Corner radii scale the theme's --radius, so NICE keeps 8 / 12 / 14px
+   and the square themes stay square.
 ═══════════════════════════════════════════════════════════════════ */
 .app-main:has(.code-view) .app-view-content { overflow:hidden; padding:0; }
 .code-view {
@@ -11011,14 +11013,14 @@ body.preview-active .nice-ai {
 }
 .code-folder {
   display:inline-flex; align-items:center; gap:8px; min-width:0;
-  padding:6px 8px; border:0; border-radius:8px; background:none; cursor:pointer;
+  padding:6px 8px; border:0; border-radius:calc(var(--radius) * .8); background:none; cursor:pointer;
   color:var(--text); font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
 }
 .code-folder span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .code-chat-tools { display:flex; gap:2px; }
 .code-icon-btn {
   display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
-  width:32px; height:32px; padding:0; border:0; border-radius:8px; background:none;
+  width:32px; height:32px; padding:0; border:0; border-radius:calc(var(--radius) * .8); background:none;
   color:var(--text-muted); cursor:pointer;
 }
 .code-folder:hover, .code-icon-btn:hover { background:var(--tint, var(--surface)); color:var(--text); }
@@ -11031,7 +11033,7 @@ body.preview-active .nice-ai {
 .code-msg { max-width:760px; color:var(--text); font-size:var(--text-base); line-height:var(--lh-base); overflow-wrap:anywhere; }
 .code-msg pre { overflow-x:auto; }
 .code-msg-user {
-  align-self:flex-end; max-width:80%; padding:10px 14px; border-radius:12px;
+  align-self:flex-end; max-width:80%; padding:10px 14px; border-radius:calc(var(--radius) * 1.2);
   background:var(--surface); white-space:pre-wrap;
 }
 .code-msg-note, .code-msg-working { color:var(--text-muted); font-size:var(--text-sm); }
@@ -11039,7 +11041,7 @@ body.preview-active .nice-ai {
 
 .code-prompt {
   flex-shrink:0; margin:8px 16px 16px; padding:10px 10px 8px 14px;
-  border:1px solid var(--border); border-radius:14px; background:var(--bg);
+  border:1px solid var(--border); border-radius:calc(var(--radius) * 1.4); background:var(--bg);
 }
 .code-prompt:focus-within { border-color:var(--border-hi, var(--accent)); }
 /* `.code-view` lifts these past the themes' blanket input / textarea styles. */
@@ -11054,18 +11056,22 @@ body.preview-active .nice-ai {
    the class on the select is what lifts these past them. */
 .code-view .code-prompt-bar select.code-model,
 .code-view .code-prompt-bar select.code-model:focus {
-  max-width:60%; padding:4px 8px; border:0; border-radius:8px; outline:0; box-shadow:none; clip-path:none;
+  max-width:60%; padding:4px 8px; border:0; border-radius:calc(var(--radius) * .8); outline:0; box-shadow:none; clip-path:none;
   appearance:auto; -webkit-appearance:auto; background:transparent;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); cursor:pointer;
 }
 .code-view .code-prompt-bar select.code-model:hover { background:var(--tint, var(--surface)); color:var(--text); }
 .code-view .code-prompt-bar select.code-model:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .code-view .code-prompt-bar select.code-model option { background:var(--bg); color:var(--text); }
+/* --bg, as .btn-primary uses, not --on-accent: --on-accent is #fff outside
+   NICE and vanishes on the pale accents of office-dark, matrix and jarvis.
+   RX-78-2 is the one theme whose accent is darker than its --bg. */
 .code-send {
   display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
   width:32px; height:32px; padding:0; border:0; border-radius:50%;
-  background:var(--accent); color:var(--on-accent, #fff); cursor:pointer;
+  background:var(--accent); color:var(--bg); cursor:pointer;
 }
+[data-theme="rx-78-2"] .code-send { color:var(--text); }
 .code-send.is-stopping { opacity:.6; cursor:default; }
 .code-stop-square { width:10px; height:10px; border-radius:2px; background:currentColor; }
 
@@ -11081,7 +11087,7 @@ body.preview-active .nice-ai {
 }
 .code-panel-tabs { display:flex; align-items:center; gap:4px; }
 .code-panel-tab {
-  padding:6px 10px; border:0; border-radius:8px; background:none; cursor:pointer;
+  padding:6px 10px; border:0; border-radius:calc(var(--radius) * .8); background:none; cursor:pointer;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
 }
 .code-panel-tab:hover { color:var(--text); }
@@ -11101,7 +11107,10 @@ body.preview-active .nice-ai {
 .code-tree-row .icon { width:14px; height:14px; flex-shrink:0; color:var(--text-muted); }
 .code-tree-err,
 .code-tree-more { padding:8px 12px 8px calc(12px + var(--depth, 0) * 14px); color:var(--text-muted); font-size:var(--text-sm); }
-.code-tree-foot { flex-shrink:0; padding:8px 12px; border-top:1px solid var(--border); }
+.code-tree-foot {
+  position:sticky; bottom:0; flex-shrink:0;
+  padding:8px 12px; border-top:1px solid var(--border); background:var(--bg2);
+}
 .code-file-hdr {
   position:sticky; top:0; display:flex; align-items:center; gap:6px;
   padding:6px 8px; border-bottom:1px solid var(--border); background:var(--bg2);
@@ -11133,7 +11142,10 @@ body.preview-active .nice-ai {
 .code-empty-title { margin:0; font-size:var(--text-xl); font-weight:var(--fw-bold); }
 .code-empty-text { margin:0 0 8px; color:var(--text-muted); font-size:var(--text-base); line-height:var(--lh-base); }
 
-@media (max-width:900px) {
+/* Narrow windows stack the panel under the chat, but not short landscape
+   ones (the range of the landscape rule above): there a chat row can't
+   hold its header, the thread and the prompt, so the columns stay. */
+@media (max-width:900px) and (min-height:501px), (max-width:900px) and (orientation:portrait) {
   .code-view { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) minmax(0,45%); }
   .code-view.code-panel-closed { grid-template-rows:minmax(0,1fr); }
   .code-panel { border-left:0; border-top:1px solid var(--border); }
@@ -11141,11 +11153,14 @@ body.preview-active .nice-ai {
 /* Phones. .app-main's height leaves out the 48px mobile bar its own
    margin-top adds, so a view that fills it would run 48px past the
    screen: Code sizes it to what is visible. The fixed tab bar then covers
-   the bottom, so the view stops above it, by the height .nice-ai sits on. */
+   the bottom, so the view stops above it, by the height .nice-ai sits on.
+   The inset is .app-main's padding, so in a short landscape window it
+   takes the place of the 60px the landscape rule gives .app-main for its
+   52px tab bar instead of adding to it. */
 @media (max-width:768px) {
   .app-main:has(.code-view) {
     height:calc(100vh - 48px - var(--app-banner-height, 0px));
     height:calc(100dvh - 48px - var(--app-banner-height, 0px));
+    padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px));
   }
-  .app-main:has(.code-view) .app-view-content { padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
