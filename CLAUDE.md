@@ -368,7 +368,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 71 modules
+### Lib Modules (`app/js/lib/`) — 69 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -418,7 +418,6 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ShipSetupWizard` | `ship-setup-wizard.js` | Spaceship activation wizard |
 | `PromptBuilder` | `prompt-builder.js` | System prompt construction |
 | `PreviewPanel` | `preview-panel.js` | Content preview rendering |
-| `MessageBar` | `message-bar.js` | Status message display |
 | `UpgradeModal` | `upgrade-modal.js` | Subscription upgrade prompts |
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
