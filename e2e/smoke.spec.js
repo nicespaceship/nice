@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright';
  * Routes:
  *   #/           → HomeView ('Home') — what needs you, your projects (the NICE mark)
  *   #/space      → ChatView ('Space') — model cards above the prompt; the prompt goes to the selected cards
- *   #/crew       → CrewView ('Crew') — one project's crew as cards, recent runs, approvals
+ *   #/crew       → CrewView ('Team') — one project's crew as cards, recent runs, approvals
  *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
  *   #/blueprints → BlueprintsView on its Blueprints tab
  *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
@@ -276,6 +276,7 @@ test.describe('Dashboard', () => {
     await navigateTo(page, '#/crew', 'Team');
     await page.evaluate(() => { Theme.set('matrix'); });
     await expect(page).toHaveTitle(/Crew/);
+    await expect(page.locator('.tab[data-tab="crew"] [data-term="crew"]')).toHaveText('Crew');
     await page.evaluate(() => { Theme.set('nice'); });
     await expect(page).toHaveTitle(/Team/);
   });

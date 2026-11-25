@@ -1251,7 +1251,7 @@ const PromptPanel = (() => {
   function _detectStatusQuery(text) {
     const lower = text.toLowerCase();
 
-    if (/how many (agent|crew)/i.test(lower) || /agent count/i.test(lower)) {
+    if (/how many (agent|crew|team)/i.test(lower) || /agent count/i.test(lower)) {
       const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
       const slotted = _getSlottedAgents();
       return { text: `You have ${agents.length || slotted.length || 0} agent${agents.length !== 1 ? 's' : ''}.${slotted.length ? ' ' + slotted.length + ' currently assigned to ' + _crewWord() + ' slots.' : ''}` };
