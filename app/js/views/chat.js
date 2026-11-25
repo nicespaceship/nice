@@ -388,9 +388,9 @@ const ChatView = (() => {
     const actEl = e.target.closest('[data-act]');
     const act = actEl ? actEl.dataset.act : null;
     if (act === 'new') {
-      // The sidebar's new chat is the one that files the current chat in
-      // the Chats list first (the Cmd+Shift+O shortcut uses it too).
-      document.getElementById('side-chat-new')?.click();
+      // Files the current chat before opening an empty one (the
+      // Cmd+Shift+O shortcut uses it too).
+      if (typeof NICE !== 'undefined' && NICE.newChat) NICE.newChat();
       return;
     }
     if (act === 'full') {

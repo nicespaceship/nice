@@ -55,8 +55,7 @@ const Keyboard = (() => {
     // Cmd/Ctrl+Shift+O → new chat (Claude/ChatGPT convention)
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
       e.preventDefault();
-      const btn = document.getElementById('side-chat-new');
-      if (btn) btn.click();
+      if (typeof NICE !== 'undefined' && NICE.newChat) NICE.newChat();
       return;
     }
 

@@ -300,18 +300,9 @@
   </div>
 
   <!-- Primary destinations: labeled when open, icons on the collapsed rail.
-       Home is the NICE mark above. Space is where the crew works, Ship is
-       where finished work goes out, Blueprints is what a crew starts from. -->
+       Home is the NICE mark above. Blueprints is what a project starts from;
+       the projects themselves are listed below. -->
   <nav class="side-primary" aria-label="Primary">
-    <a href="#/space" class="side-link" data-nav="space" title="Space">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-space"/></svg>
-      <span>Space</span>
-    </a>
-    <a href="#/ship" class="side-link" data-nav="ship" title="Ship">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-ship"/></svg>
-      <span>Ship</span>
-      <b class="side-badge badge-warn" id="side-outbox-badge" hidden></b>
-    </a>
     <a href="#/blueprints" class="side-link" data-nav="blueprints" title="Blueprints">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg>
       <span>Blueprints</span>
@@ -321,19 +312,6 @@
   <!-- Your projects (activated spaceships), rendered by nice.js. -->
   <div class="side-ships" id="side-ships"></div>
 
-  <nav class="app-side-nav" aria-label="Chats">
-    <!-- Recent standalone chats. -->
-    <div class="side-folder open" id="side-chats-folder">
-      <div class="side-folder-toggle" id="side-chats-toggle" role="button" tabindex="0" aria-label="Chats">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
-        <span id="side-chats-label">Chats</span>
-        <button class="side-chat-new" id="side-chat-new" title="New chat" aria-label="New chat">+</button>
-      </div>
-      <div class="side-folder-body side-chats-body" id="side-chats-list">
-        <!-- Populated dynamically by nice.js -->
-      </div>
-    </div>
-  </nav>
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
   <div class="side-footer">
     <div id="sidebar-presence"></div>
@@ -524,19 +502,10 @@
 
 <!-- ═══ BOTTOM TAB BAR (Mobile) ═══ -->
 <nav class="app-tabbar" id="app-tabbar" aria-label="Main navigation">
-  <a href="#/space" class="tab" data-tab="space">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-space"/></svg>
-    <span>Space</span>
-  </a>
   <a href="#/crew" class="tab" data-tab="crew">
     <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-agent"/></svg>
     <span data-term="crew">Team</span>
     <span class="nav-alert-dot nav-alert-dot--corner" id="tab-crew-alert-dot" hidden></span>
-  </a>
-  <a href="#/ship" class="tab" data-tab="ship">
-    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-ship"/></svg>
-    <span>Ship</span>
-    <b class="tab-badge" id="tab-outbox-badge" hidden></b>
   </a>
   <a href="#/blueprints" class="tab" data-tab="blueprints">
     <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg>
