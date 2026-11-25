@@ -88,7 +88,7 @@ const MessageBar = (() => {
 
     // System status
     msgs.push({
-      text: Terminology.pick('NICE v3.5 is up to date and running.', 'NICE v3.5 — All subsystems nominal.'),
+      text: Terminology.pick('NICE v3.5 is running.', 'NICE v3.5 — All subsystems nominal.'),
       icon: '#icon-settings',
       route: '#/settings',
       type: 'system',

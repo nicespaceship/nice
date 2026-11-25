@@ -97,7 +97,7 @@ describe('MessageBar._collectMessages (via rendered ticker)', () => {
   it('always appends the two system-status lines', () => {
     mountBar();
     MessageBar.init();
-    expect(track().innerHTML).toContain('NICE v3.5 is up to date and running.');
+    expect(track().innerHTML).toContain('NICE v3.5 is running.');
     expect(track().innerHTML).toContain('Your agents are ready for work.');
     expect(track().innerHTML).toContain('Everything is running.');
   });

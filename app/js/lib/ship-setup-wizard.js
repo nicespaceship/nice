@@ -473,7 +473,7 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-close">Close</button>
-        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View ${_esc(Terminology.label('spaceship', { lowercase: true }))} schematic</button>
+        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View ${_esc(Terminology.label('spaceship', { lowercase: true }))} ${Terminology.pick('diagram', 'schematic')}</button>
       `;
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
