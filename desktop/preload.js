@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
     /** opts.tag, a string or a number (anything else is EINVAL), comes back on every event of this run. */
     run: (command, opts) => call('code:run', command, opts),
     kill: (id) => call('code:kill', id),
+    /** Call off a run by its tag before it has an id; it then never starts. */
+    cancel: (tag) => call('code:cancel', tag),
     /** Live output of running commands: fn({ id, tag, stream: 'start'|'stdout'|'stderr', data, truncated? }), `tag` as passed to run() as a string of at most 200 characters (or null). Returns an unsubscribe. */
     onRunData: (fn) => {
       const listener = (_e, d) => fn(d);

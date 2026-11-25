@@ -124,6 +124,43 @@ describe('paths stay inside the workspace', () => {
     }
   });
 
+  it.skipIf(process.platform !== 'darwin' || !fs.existsSync('/System/Volumes/Data/Volumes'))('flags a mounted volume reached through the data volume, /System/Volumes/Data/Volumes/<name>', async () => {
+    const parentDev = fs.statSync('/Volumes').dev;
+    for (const name of fs.readdirSync('/Volumes')) {
+      const p = path.join('/System/Volumes/Data/Volumes', name);
+      let st;
+      try { st = fs.statSync(p); } catch { continue; }
+      const real = fs.realpathSync(p);
+      if (real !== '/' && st.dev === parentDev) continue; // a leftover folder, not a mount
+      expect(await Workspace.isBroad(p), p).toBe(real === '/' ? 'disk' : 'volume');
+    }
+  });
+
+  it.skipIf(process.platform === 'win32')('still judges a folder when one of the folders it is compared with does not answer', async () => {
+    // `alias` stands for a second path to home (a bind mount or firmlink), and the folder above home hangs.
+    const alias = path.join(tmp, 'alias');
+    fs.mkdirSync(alias);
+    const slow = path.dirname(os.homedir());
+    const realStat = fs.promises.stat;
+    vi.spyOn(fs.promises, 'stat').mockImplementation((p, ...rest) => {
+      if (String(p) === slow) return new Promise(() => {});
+      return realStat.call(fs.promises, String(p) === alias ? os.homedir() : p, ...rest);
+    });
+    const t0 = Date.now();
+    expect(await Workspace.isBroad(alias)).toBe('home');
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
+  it.skipIf(process.platform !== 'darwin')('asks none of the volumes under /Volumes when judging a folder', async () => {
+    const asked = [];
+    const realStat = fs.promises.stat;
+    const realReaddir = fs.promises.readdir;
+    vi.spyOn(fs.promises, 'stat').mockImplementation((p, ...rest) => { asked.push(String(p)); return realStat.call(fs.promises, p, ...rest); });
+    vi.spyOn(fs.promises, 'readdir').mockImplementation((p, ...rest) => { asked.push(String(p)); return realReaddir.call(fs.promises, p, ...rest); });
+    expect(await Workspace.isBroad(root)).toBe(null);
+    expect(asked.filter((q) => q === '/Volumes' || q.startsWith('/Volumes/'))).toEqual([]);
+  });
+
   it('accepts absolute paths inside and a NUL byte never', async () => {
     expect((await ws.readFile(path.join(root, 'README.md'))).content).toBe('# Hello\n');
     expect(await code(ws.readFile('README.md\0.txt'))).toBe('EINVAL');
@@ -437,6 +474,47 @@ describe('files', () => {
     expect(read('README.md')).toBe('lf\nfile\n');
   });
 
+  it.skipIf(process.platform === 'win32' || (process.getuid && process.getuid() === 0))('replaces a file it can write but not read only with overwrite', async () => {
+    const f = path.join(root, 'wo.txt');
+    fs.writeFileSync(f, 'x');
+    fs.chmodSync(f, 0o200);
+    try {
+      expect(await code(ws.writeFile('wo.txt', 'y'))).toBe('EACCES');
+      await expect(ws.writeFile('wo.txt', 'y')).rejects.toThrow(/cannot be read.*Pass overwrite/);
+      expect(await ws.writeFile('wo.txt', 'y', { overwrite: true })).toEqual({ path: 'wo.txt', created: false, bytes: 1, convertedToCrlf: false });
+      expect(fs.statSync(f).mode & 0o777).toBe(0o200);
+    } finally {
+      fs.chmodSync(f, 0o600);
+    }
+    expect(read('wo.txt')).toBe('y');
+  });
+
+  it('reads files with a lone CR (CR CR LF included) as mixed, as they are, and writes them back unchanged', async () => {
+    for (const [name, body] of [['crcrlf.txt', 'a\r\r\nb\r\n'], ['cr.txt', 'a\rb\rc\r'], ['crthen.txt', 'x\ry\r\nz\r\n'], ['crcrlf-only.txt', 'a\r\r\n']]) {
+      fs.writeFileSync(path.join(root, name), body);
+      const r = await ws.readFile(name);
+      expect(r, name).toMatchObject({ content: body, lineEndings: 'mixed' });
+      expect(await ws.writeFile(name, r.content), name).toMatchObject({ convertedToCrlf: false });
+      expect(read(name), name).toBe(body);
+    }
+    await expect(ws.editFile('cr.txt', 'a\nb', 'x')).rejects.toThrow(/its lines end in lone CR,/);
+  });
+
+  it('judges the line ends of a file that is not UTF-8 by its bytes, so overwrite keeps its CRLF', async () => {
+    fs.writeFileSync(path.join(root, 'w1252.txt'), Buffer.from('caf\xe9\r\nline2\r\n', 'latin1'));
+    const r = await ws.readFile('w1252.txt');
+    expect(r).toMatchObject({ content: 'caf\ufffd\nline2\n', lineEndings: 'crlf', exact: false, encoding: 'lossy' });
+    expect(await code(ws.writeFile('w1252.txt', r.content))).toBe('EENCODING');
+    expect(await ws.writeFile('w1252.txt', r.content.replace('line2', 'LINE2'), { overwrite: true })).toMatchObject({ convertedToCrlf: true });
+    expect(read('w1252.txt')).toBe('caf\ufffd\r\nLINE2\r\n');
+    // One with a lone CR is mixed, and overwrite leaves its line ends as they come.
+    fs.writeFileSync(path.join(root, 'w1252-mixed.txt'), Buffer.from('caf\xe9\r\r\nx\r\n', 'latin1'));
+    const m = await ws.readFile('w1252-mixed.txt');
+    expect(m).toMatchObject({ content: 'caf\ufffd\r\r\nx\r\n', lineEndings: 'mixed' });
+    expect(await ws.writeFile('w1252-mixed.txt', m.content, { overwrite: true })).toMatchObject({ convertedToCrlf: false });
+    expect(read('w1252-mixed.txt')).toBe('caf\ufffd\r\r\nx\r\n');
+  });
+
   it('keeps the file mode on edit and leaves no temporary files', async () => {
     fs.chmodSync(path.join(root, 'README.md'), 0o755);
     await ws.editFile('README.md', 'Hello', 'Hi');
@@ -657,6 +735,33 @@ describe('search', () => {
     expect(_globToRegExp('x[.md').test('x[.md')).toBe(true);
     expect(_globToRegExp('{a,b.md').test('{a,b.md')).toBe(true);
   });
+
+  it('lets a class take a } before a brace does, and leaves a brace nothing closes literal, commas included', () => {
+    // The class [b}] swallows the }, so the { before it closes nothing.
+    expect(_globToRegExp('{a,[b}]').test('{a,b')).toBe(true);
+    expect(_globToRegExp('{a,[b}]').test('a')).toBe(false);
+    const g = _globToRegExp('{{x,{a,b},y}');
+    for (const ok of ['{x', '{a', '{b', '{y']) expect(g.test(ok), ok).toBe(true);
+    for (const no of ['x', 'a', '{{x']) expect(g.test(no), no).toBe(false);
+    expect(_globToRegExp('{a,{b,c}').test('{a,c')).toBe(true);
+    expect(_globToRegExp('{a,{b,c}').test('a')).toBe(false);
+  });
+
+  it('refuses a glob over the length limit at once, and reads one at the limit in linear time', async () => {
+    const t0 = performance.now();
+    const err = await ws.search('x', { glob: '{['.repeat(2500) }).then(() => null, (e) => e);
+    expect(err && err.code).toBe('EINVAL');
+    expect(err.message).toMatch(new RegExp('limit is ' + limits.MAX_GLOB_CHARS));
+    expect(performance.now() - t0).toBeLessThan(50);
+    const n = limits.MAX_GLOB_CHARS;
+    for (const g of ['{['.repeat(n / 2), '[{'.repeat(n / 2), '{'.repeat(n), '{,'.repeat(n / 2), '['.repeat(n), '{'.repeat(n / 2) + '}'.repeat(n / 2), '{[!]'.repeat(n / 4)]) {
+      expect(g.length).toBe(n);
+      const t = performance.now();
+      _globToRegExp(g);
+      expect(performance.now() - t, g.slice(0, 8)).toBeLessThan(50);
+    }
+    expect(codeOf(() => _globToRegExp('a'.repeat(n + 1)))).toBe('EINVAL');
+  });
 });
 
 describe('the login shell PATH', () => {
@@ -741,13 +846,34 @@ describe('the login shell PATH', () => {
       expect(await pathNow()).toBe(process.env.PATH);
       expect(calls()).toBe(2);
       fs.writeFileSync(path.join(bin, 'ok'), '');
-      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + limits.PATH_RETRY_MS + 1000);
+      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + limits.PATH_RETRY_MS[0] + 1000);
       expect(await pathNow()).toBe('/ok/bin:/usr/bin:/bin');
       expect(calls()).toBe(3);
       expect(await pathNow()).toBe('/ok/bin:/usr/bin:/bin');
       expect(calls()).toBe(3);
     });
   }, 20000);
+
+  it.skipIf(process.platform === 'win32')('backs off a lookup that keeps failing: a minute, then 5, then every 30', async () => {
+    const { bin, fake } = fakeShell(['    echo x >> "$d/calls"', '    exit 1']);
+    // Each failed lookup asks twice: as an interactive login shell, then as a plain one.
+    const lookups = () => fs.readFileSync(path.join(bin, 'calls'), 'utf8').trim().split('\n').length / 2;
+    const MIN = 60000;
+    let now = Date.now();
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    await withShell(fake, async () => {
+      const after = async (ms) => { now += ms; await pathNow(); return lookups(); };
+      expect(await after(0)).toBe(1);
+      expect(await after(MIN)).toBe(2);
+      expect(await after(MIN)).toBe(2);
+      expect(await after(4 * MIN)).toBe(3);
+      expect(await after(29 * MIN)).toBe(3);
+      expect(await after(MIN)).toBe(4);
+      expect(await after(29 * MIN)).toBe(4);
+      expect(await after(MIN)).toBe(5);
+    });
+    expect(limits.PATH_RETRY_MS).toEqual([MIN, 5 * MIN, 30 * MIN]);
+  }, 30000);
 
   it.skipIf(process.platform === 'win32')('sends what the lookup shell leaves behind SIGTERM, and SIGKILL only after the grace period', async () => {
     const { bin, fake } = fakeShell([
@@ -804,6 +930,14 @@ describe.skipIf(process.platform === 'win32')('commands', () => {
     await ws.run('echo one; echo two', { onData: (d) => seen.push(d.stream) });
     expect(seen[0]).toBe('start');
     expect(seen).toContain('stdout');
+  });
+
+  it('does not spawn a run whose shouldStart says no', async () => {
+    const marker = path.join(root, 'ran.txt');
+    expect(await code(ws.run('touch ran.txt', { shouldStart: () => false }))).toBe('ESTOPPED');
+    expect(fs.existsSync(marker)).toBe(false);
+    await ws.run('touch ran.txt', { shouldStart: () => true });
+    expect(fs.existsSync(marker)).toBe(true);
   });
 
   it('closes stdin, so a command waiting for input ends at once', async () => {

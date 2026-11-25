@@ -14,7 +14,9 @@
  * write through a symlink. Nothing is written inside a git directory. A
  * file that is not exact UTF-8 text is not replaced from text unless the
  * caller says overwrite. A file whose lines all end in CRLF reads with LF
- * line ends, and writes and edits put CRLF back.
+ * line ends, and writes put CRLF back whatever its encoding (edits take
+ * only exact UTF-8 files); one with a lone CR anywhere (CR CR LF included)
+ * is never converted.
  *
  * Commands are one-shot. Each runs with the workspace as its working
  * directory, no stdin, a timeout that ends in SIGKILL, and output capped to
@@ -61,9 +63,11 @@ const SEARCH_TIMEOUT_MS = 10000;
 const MIN_SEARCH_TIMEOUT_MS = 100;
 const MAX_SEARCH_TIMEOUT_MS = 60000;
 const SEARCH_MAX_FILES = 20000;
+const MAX_GLOB_CHARS = 1000;
 const MAX_SEARCHES = 4;                   // running at once, per workspace
 const PATH_LOOKUP_TIMEOUT_MS = 5000;
-const PATH_RETRY_MS = 60000;              // a failed lookup is tried again after this
+// After a lookup fails it is tried again after a minute, then 5, then every 30.
+const PATH_RETRY_MS = Object.freeze([60000, 300000, 1800000]);
 const PATH_START = '__NICE_PATH_START__';
 const PATH_END = '__NICE_PATH_END__';
 const SKIP_DIRS = ['.git', 'node_modules', '.hg', '.svn', 'dist', 'build', '.next', '.cache', 'coverage'];
@@ -79,11 +83,13 @@ const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
 const O_NONBLOCK = fs.constants.O_NONBLOCK || 0;
 // The data volume behind macOS's firmlinks: /Users and /System/Volumes/Data/Users are one folder.
 const MAC_DATA_VOLUME = '/System/Volumes/Data';
+const BROAD_STAT_TIMEOUT_MS = 500;        // isBroad: each folder it looks at, on its own
 
 let _nextRunId = 1;     // unique across workspaces, so ids never collide
 let _loginPath = null;  // PATH from the user's login shell, once a lookup has worked
 let _pathLookup = null; // the lookup in flight, shared by runs that start together
 let _pathFailedAt = 0;  // when the last lookup failed
+let _pathFailures = 0;  // lookups failed in a row
 
 class CodeHostError extends Error {
   constructor(code, message) {
@@ -121,19 +127,25 @@ function _count(v) {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
-function _countOf(s, sub) {
-  let n = 0;
-  for (let i = s.indexOf(sub); i !== -1; i = s.indexOf(sub, i + sub.length)) n++;
-  return n;
-}
-
-/* How a text ends its lines: 'crlf' (every line end is CRLF), 'lf' (none
-   is) or 'mixed'. mostlyCrlf when at least 90% are CRLF, a CRLF file with a
-   few stray LFs, which edits treat as CRLF. */
-function _lineEnds(text) {
-  const lf = _countOf(text, '\n');
-  const crlf = _countOf(text, '\r\n');
-  return { kind: crlf === 0 ? 'lf' : crlf === lf ? 'crlf' : 'mixed', mostlyCrlf: crlf > 0 && crlf >= 0.9 * lf };
+/* How a file's bytes end its lines, counted on the bytes so it works for
+   any ASCII-compatible encoding, UTF-8 or not: crlf, lf (an LF with no CR
+   before it) and cr (a CR with no LF after it). kind is 'crlf' when every
+   LF has a CR before it and no CR is alone, 'lf' when there is no CR at
+   all, and 'mixed' otherwise: CR CR LF and lone CRs included. mostlyCrlf
+   when at least 90% of the LFs have a CR, a CRLF file with a few stray LFs,
+   which edits treat as CRLF. */
+function _lineEnds(buf) {
+  let crlf = 0;
+  let lf = 0;
+  let cr = 0;
+  for (let i = buf.indexOf(0x0a); i !== -1; i = buf.indexOf(0x0a, i + 1)) {
+    if (i > 0 && buf[i - 1] === 0x0d) crlf++;
+    else lf++;
+  }
+  for (let i = buf.indexOf(0x0d); i !== -1; i = buf.indexOf(0x0d, i + 1)) cr++;
+  cr -= crlf;
+  const kind = cr ? 'mixed' : !crlf ? 'lf' : !lf ? 'crlf' : 'mixed';
+  return { kind, crlf, lf, cr, mostlyCrlf: crlf > 0 && crlf >= 0.9 * (crlf + lf) };
 }
 
 /* Where any of `forms` occurs in `text`, left to right, never overlapping:
@@ -190,25 +202,6 @@ function _within(promise, ms, fallback) {
     Promise.resolve(promise).catch(() => fallback),
     new Promise((r) => { timer = _unref(setTimeout(() => r(fallback), ms)); }),
   ]).finally(() => clearTimeout(timer));
-}
-
-/* A folder's identity (device and inode) as text; null when it cannot be
-   read or its file system has no inode numbers. */
-async function _folderId(p) {
-  try {
-    const st = await fsp.stat(p, { bigint: true });
-    return st.ino ? st.dev + ':' + st.ino : null;
-  } catch {
-    return null;
-  }
-}
-
-/* On a Mac whose system and data volumes have their own devices,
-   /Applications or /usr/local sits on the data volume under / on the system
-   volume: a firmlink, not a mount point. */
-async function _crossesFirmlink(st, parent) {
-  const [data, sys] = await Promise.all([MAC_DATA_VOLUME, '/'].map((q) => fsp.stat(q, { bigint: true }).catch(() => null)));
-  return !!(data && sys && st.dev === data.dev && parent.dev === sys.dev);
 }
 
 /* A folder git uses as its directory under another name than .git: a bare
@@ -338,20 +331,28 @@ function _parseLoginPath(out) {
    interactive login shell for zsh and bash so PATH additions in .zshrc and
    .bashrc count, and as a plain login shell when that prints nothing (an
    rc file that execs another shell or tmux never reaches the printf). The
-   answer is kept once a lookup works; after one fails, commands get the
-   app's PATH and the lookup is tried again a minute later. */
+   answer is kept once a lookup works. After one fails, commands get the
+   app's PATH, and the lookup, which can hold a run up to twice
+   PATH_LOOKUP_TIMEOUT_MS, is tried again after a minute, then 5 minutes,
+   then every 30. */
 function _commandPath() {
   if (_loginPath !== null) return Promise.resolve(_loginPath);
   if (process.platform === 'win32') return Promise.resolve((_loginPath = process.env.PATH || ''));
   if (_pathLookup) return _pathLookup;
-  if (_pathFailedAt && Date.now() - _pathFailedAt < PATH_RETRY_MS) return Promise.resolve(process.env.PATH || '');
+  if (_pathFailures) {
+    const wait = PATH_RETRY_MS[Math.min(_pathFailures, PATH_RETRY_MS.length) - 1];
+    if (Date.now() - _pathFailedAt < wait) return Promise.resolve(process.env.PATH || '');
+  }
   const sh = _shell();
   const interactive = INTERACTIVE_SHELLS.has(path.basename(sh.file));
   _pathLookup = (async () => {
     let found = await _askShellPath(sh.file, interactive ? ['-l', '-i', '-c'] : ['-l', '-c']);
     if (!found && interactive) found = await _askShellPath(sh.file, ['-l', '-c']);
     if (found) _loginPath = found;
-    else _pathFailedAt = Date.now();
+    else {
+      _pathFailedAt = Date.now();
+      _pathFailures++;
+    }
     _pathLookup = null;
     return found || process.env.PATH || '';
   })();
@@ -456,32 +457,45 @@ class Workspace {
     if (_isInside(p, home)) return 'above-home';
     const darwin = process.platform === 'darwin';
     if (darwin && (p === '/Volumes' || path.dirname(p) === '/Volumes')) return 'volume';
+    // Each folder gets its own time limit: a network folder that takes long
+    // to answer is left out, and the rest still count.
+    const stats = new Map();
+    const stat = (q) => {
+      if (!stats.has(q)) stats.set(q, _within(fsp.stat(q, { bigint: true }), BROAD_STAT_TIMEOUT_MS, null));
+      return stats.get(q);
+    };
+    const idOf = (st) => (st && st.ino ? st.dev + ':' + st.ino : null);
     // realpath keeps a second path to the same folder, a macOS firmlink
     // (/System/Volumes/Data/Users is /Users) or a bind mount, so compare the
-    // folder itself with home, the folders above it and the volume roots.
+    // folder itself with home, the folders above it and the Mac's data volume.
     const known = [[home, 'home']];
     for (let a = home; a !== path.dirname(a);) {
       a = path.dirname(a);
       known.push([a, a === path.parse(a).root ? 'disk' : 'above-home']);
     }
-    if (darwin) {
-      known.push([MAC_DATA_VOLUME, 'disk']);
-      const names = await _within(fsp.readdir('/Volumes'), 1000, []);
-      for (const name of names) known.push([path.join('/Volumes', name), 'volume']);
-    }
-    // A network volume can take long to answer; one that does is not judged.
-    const ids = await _within(Promise.all([p, ...known.map(([q]) => q)].map(_folderId)), 1000, []);
-    if (ids[0]) {
-      const hit = known.findIndex((_, i) => ids[i + 1] === ids[0]);
+    if (darwin) known.push([MAC_DATA_VOLUME, 'disk']);
+    const [self, ...others] = await Promise.all([p, ...known.map(([q]) => q)].map(stat));
+    const id = idOf(self);
+    if (id) {
+      const hit = others.findIndex((st) => idOf(st) === id);
       if (hit !== -1) return known[hit][1];
     }
-    if (process.platform === 'win32') return null;
-    // A volume mounted anywhere else: its root is on another device than its parent.
-    try {
-      const [a, b] = await Promise.all([fsp.stat(p, { bigint: true }), fsp.stat(path.dirname(p), { bigint: true })]);
-      if (a.dev !== b.dev && !(darwin && (await _crossesFirmlink(a, b)))) return 'volume';
-    } catch { /* not judged */ }
-    return null;
+    if (process.platform === 'win32' || !self) return null;
+    // A volume mounted anywhere else: its root is on another device than
+    // its parent. That also covers a volume under /Volumes reached by
+    // another path (/System/Volumes/Data/Volumes/Backup), so the volumes
+    // there are not each asked: one that does not answer would hold a
+    // thread of the app's file pool.
+    const parent = await stat(path.dirname(p));
+    if (!parent || self.dev === parent.dev) return null;
+    if (darwin) {
+      // On a Mac whose system and data volumes have their own devices,
+      // /Applications or /usr/local sits on the data volume under / on the
+      // system volume: a firmlink, not a mount point.
+      const [data, sys] = await Promise.all([stat(MAC_DATA_VOLUME), stat('/')]);
+      if (data && sys && self.dev === data.dev && parent.dev === sys.dev) return null;
+    }
+    return 'volume';
   }
 
   /** Absolute path for `p` (relative to the workspace, or absolute inside it). */
@@ -552,7 +566,7 @@ class Workspace {
       if (buf.length > MAX_READ_BYTES) throw tooBig(buf.length);
       if (buf.includes(0)) throw new CodeHostError('EBINARY', 'Binary file: ' + p);
       const text = buf.toString('utf8');
-      return { text, exact: Buffer.from(text, 'utf8').equals(buf), mode: st.mode };
+      return { text, exact: Buffer.from(text, 'utf8').equals(buf), ends: _lineEnds(buf), mode: st.mode };
     } finally {
       await fh.close();
     }
@@ -560,7 +574,8 @@ class Workspace {
 
   /* An existing file about to be replaced from text: why that would lose
      bytes (problem, null when it is exact UTF-8 with no NUL) and, when it
-     is text, how it ends its lines. */
+     has no NUL and is not too large to check, how its bytes end its lines,
+     valid UTF-8 or not. */
   async _inspect(abs, p) {
     const { fh, st } = await this._open(abs, p);
     try {
@@ -569,9 +584,9 @@ class Workspace {
       const buf = await _readUpTo(fh, MAX_WRITE_BYTES + 1);
       if (buf.length > MAX_WRITE_BYTES) return big;
       if (buf.includes(0)) return { problem: 'it contains NUL bytes', lineEnds: null };
-      const text = buf.toString('utf8');
-      if (!Buffer.from(text, 'utf8').equals(buf)) return { problem: 'it is not valid UTF-8', lineEnds: null };
-      return { problem: null, lineEnds: _lineEnds(text).kind };
+      const lineEnds = _lineEnds(buf).kind;
+      if (!Buffer.from(buf.toString('utf8'), 'utf8').equals(buf)) return { problem: 'it is not valid UTF-8', lineEnds };
+      return { problem: null, lineEnds };
     } finally {
       await fh.close();
     }
@@ -664,13 +679,15 @@ class Workspace {
    * file is not valid UTF-8: its bad bytes come back as U+FFFD, so writing
    * that text back needs overwrite. Past the end, the content is empty and
    * endLine is startLine - 1. lineEndings is 'crlf' when every line ends in
-   * CRLF: the content then comes back with LF, and writeFile and editFile
-   * put CRLF back. 'mixed' content comes back as it is, CRs included.
+   * CRLF and no CR stands alone, valid UTF-8 or not: the content then comes
+   * back with LF, and writeFile and editFile put CRLF back. 'mixed' (some
+   * CRLF and some LF, or any lone CR, CR CR LF included) comes back as it
+   * is, CRs included, and writeFile leaves its line ends alone.
    */
   async readFile(p, { offset = 0, limit = 0 } = {}) {
     const abs = await this.resolve(p);
-    const { text: raw, exact } = await this._readText(abs, p);
-    const lineEndings = _lineEnds(raw).kind;
+    const { text: raw, exact, ends } = await this._readText(abs, p);
+    const lineEndings = ends.kind;
     const text = lineEndings === 'crlf' ? raw.replace(/\r\n/g, '\n') : raw;
     const lines = text === '' ? [] : text.split('\n');
     const endsWithNewline = lines.length > 1 && lines[lines.length - 1] === '';
@@ -692,9 +709,11 @@ class Workspace {
 
   /**
    * Write `content` as UTF-8. An existing file that is not exact UTF-8 text
-   * (it has NUL bytes or invalid sequences) is only replaced with overwrite.
-   * Over a file whose every line ends in CRLF, LF line ends are written as
-   * CRLF (convertedToCrlf) unless lineEndings is 'keep'.
+   * (it has NUL bytes or invalid sequences) is only replaced with overwrite,
+   * as is one that cannot be read to check it (write-only). Over a file
+   * whose every line ends in CRLF (readFile's 'crlf', valid UTF-8 or not),
+   * LF line ends are written as CRLF (convertedToCrlf) unless lineEndings
+   * is 'keep'.
    */
   async writeFile(p, content, { overwrite = false, lineEndings = null } = {}) {
     if (typeof content !== 'string') throw new CodeHostError('EINVAL', 'Content must be a string.');
@@ -712,7 +731,15 @@ class Workspace {
     if (existing) {
       if (existing.isDirectory()) throw new CodeHostError('EISDIR', 'Is a folder: ' + p);
       if (!existing.isFile()) throw new CodeHostError('ENOTFILE', 'Not a regular file: ' + p);
-      const { problem, lineEnds } = await this._inspect(abs, p);
+      let checked;
+      try {
+        checked = await this._inspect(abs, p);
+      } catch (e) {
+        if (e.code !== 'EACCES' && e.code !== 'EPERM') throw e;
+        if (!_flag(overwrite)) throw new CodeHostError('EACCES', `Not replacing ${p}: it cannot be read, so it cannot be checked first. Pass overwrite to replace it anyway.`);
+        checked = { problem: null, lineEnds: null };
+      }
+      const { problem, lineEnds } = checked;
       if (problem && !_flag(overwrite)) throw new CodeHostError('EENCODING', `Not replacing ${p}: ${problem}, so text written over it would lose bytes. Pass overwrite to replace it anyway.`);
       if (lineEnds === 'crlf' && lineEndings !== 'keep') text = content.replace(/\r?\n/g, '\r\n');
     }
@@ -740,9 +767,8 @@ class Workspace {
     if (oldText === newText) throw new CodeHostError('EINVAL', 'Old and new text are the same.');
     const abs = await this.resolve(p);
     await this._refuseGit(abs, p);
-    const { text: before, exact, mode } = await this._readText(abs, p);
+    const { text: before, exact, ends, mode } = await this._readText(abs, p);
     if (!exact) throw new CodeHostError('EENCODING', 'Not a UTF-8 text file; editing it would change bytes elsewhere: ' + p);
-    const ends = _lineEnds(before);
     let forms = [oldText];
     let to = newText;
     if (ends.mostlyCrlf) {
@@ -752,7 +778,9 @@ class Workspace {
     }
     const hits = _occurrences(before, forms);
     if (!hits.length) {
-      const hint = ends.kind === 'mixed' && !ends.mostlyCrlf ? ' (its lines end in a mix of CRLF and LF, so match them as they are)' : '';
+      const names = [ends.crlf && 'CRLF', ends.lf && 'LF', ends.cr && 'lone CR'].filter(Boolean);
+      const which = names.length > 1 ? 'a mix of ' + names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+      const hint = ends.kind === 'mixed' && !ends.mostlyCrlf ? ` (its lines end in ${which}, so match them as they are)` : '';
       throw new CodeHostError('ENOMATCH', 'Old text not found in ' + p + hint);
     }
     const all = _flag(replaceAll);
@@ -802,7 +830,7 @@ class Workspace {
     const icase = _flag(ignoreCase);
     try { new RegExp(pattern, icase ? 'i' : ''); } catch (e) { throw new CodeHostError('EINVAL', 'Bad pattern: ' + e.message); }
     if (glob) {
-      try { _globToRegExp(glob); } catch { throw new CodeHostError('EINVAL', 'Bad glob: ' + glob); }
+      try { _globToRegExp(glob); } catch (e) { throw e instanceof CodeHostError ? e : new CodeHostError('EINVAL', 'Bad glob: ' + glob); }
     }
     if (this._searches.size >= MAX_SEARCHES) throw new CodeHostError('EBUSY', `${MAX_SEARCHES} searches are already running; wait for one to finish.`);
     const cap = _num(maxMatches, MAX_SEARCH_MATCHES, 1, MAX_SEARCH_MATCHES_CAP);
@@ -890,13 +918,16 @@ class Workspace {
    * stopped, or times out; stoppedBackground says it left processes
    * running in the background, which were stopped.
    */
-  async run(command, { timeoutMs, cwd = '.', onData = null } = {}) {
+  async run(command, { timeoutMs, cwd = '.', onData = null, shouldStart = null } = {}) {
     if (typeof command !== 'string' || !command.trim()) throw new CodeHostError('EINVAL', 'Command is empty.');
     const timeout = _num(timeoutMs, DEFAULT_TIMEOUT_MS, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS);
     const gen = this._gen;
     const dir = await this.resolve(cwd == null ? '.' : cwd);
     const pathVar = await _commandPath();
     if (gen !== this._gen) throw _stopped();
+    // The page can call a run off before it has an id (Stop pressed while the
+    // PATH lookup is still running): then it never spawns.
+    if (shouldStart && !shouldStart()) throw new CodeHostError('ESTOPPED', 'Stopped before it started.');
     const sh = _shell();
     const win = process.platform === 'win32';
     const emit = (d) => {
@@ -1048,82 +1079,81 @@ class Workspace {
  * `*` and `?` within one folder name, `**` across folders, `**\/` for zero
  * or more whole folders, `[ab]`, `[a-z]` and `[!a]` for one character (never
  * a slash), and `{a,b}` for alternatives, which can hold any of these,
- * braces included. search() also tests a glob against the bare file name,
- * so one with no slash (`*.js`) matches at any depth.
+ * braces included. A `[` or `{` that nothing closes is a literal character.
+ * search() also tests a glob against the bare file name, so one with no
+ * slash (`*.js`) matches at any depth. A glob over MAX_GLOB_CHARS is
+ * refused; any other is read in time linear in its length, since search()
+ * reads it on the main process before its worker starts.
  */
 function _globToRegExp(glob) {
-  return new RegExp('^' + _globSource(String(glob)) + '$');
+  const g = String(glob);
+  if (g.length > MAX_GLOB_CHARS) throw new CodeHostError('EINVAL', `Glob is ${g.length} characters; the limit is ${MAX_GLOB_CHARS}.`);
+  const marks = _globMarks(g);
+  return new RegExp('^' + _globSource(g, marks, 0, g.length) + '$');
 }
 
-function _globSource(g) {
+/* One pass over the glob, left to right: the `]` that closes each `[` that
+   opens a class (a `]` right after `[` or `[!` is part of the class, and
+   inside a class `{`, `}` and `,` are plain characters) and, with a stack,
+   the `}` that closes each `{` and the commas that split it (those of
+   braces inside it excluded). A `{` left open at the end closes nothing:
+   its commas are literal too. */
+function _globMarks(g) {
+  const n = g.length;
+  const nextBracket = new Int32Array(n + 1).fill(-1); // the first `]` at or after each index
+  for (let k = n - 1; k >= 0; k--) nextBracket[k] = g[k] === ']' ? k : nextBracket[k + 1];
+  const classEnd = new Map();
+  const braceEnd = new Map();
+  const commas = new Map();
+  const open = [];
+  for (let i = 0; i < n; i++) {
+    const c = g[i];
+    if (c === '[') {
+      let j = i + 1;
+      if (g[j] === '!' || g[j] === '^') j++;
+      if (g[j] === ']') j++;
+      const k = nextBracket[j];
+      if (k !== -1) { classEnd.set(i, k); i = k; }
+    } else if (c === '{') {
+      open.push(i);
+      commas.set(i, []);
+    } else if (c === '}') {
+      if (open.length) braceEnd.set(open.pop(), i);
+    } else if (c === ',' && open.length) commas.get(open[open.length - 1]).push(i);
+  }
+  return { classEnd, braceEnd, commas };
+}
+
+/* The pattern for g[from, to), which holds whole classes and braces only. */
+function _globSource(g, marks, from, to) {
   let re = '';
-  for (let i = 0; i < g.length; i++) {
+  for (let i = from; i < to; i++) {
     const c = g[i];
     if (c === '*') {
-      if (g[i + 1] === '*') {
+      if (i + 1 < to && g[i + 1] === '*') {
         i++;
-        if (g[i + 1] === '/') { re += '(?:.*/)?'; i++; }
+        if (i + 1 < to && g[i + 1] === '/') { re += '(?:.*/)?'; i++; }
         else re += '.*';
       } else re += '[^/]*';
     } else if (c === '?') re += '[^/]';
-    else if (c === '[') {
-      const close = _classEnd(g, i);
-      if (close === -1) { re += '\\['; continue; }
+    else if (c === '[' && marks.classEnd.has(i)) {
+      const close = marks.classEnd.get(i);
       let body = g.slice(i + 1, close);
       const negated = body[0] === '!' || body[0] === '^';
       if (negated) body = body.slice(1);
       body = body.replace(/[\\\][^]/g, '\\$&');
       re += negated ? '[^/' + body + ']' : '(?!/)[' + body + ']';
       i = close;
-    } else if (c === '{') {
-      const close = _braceEnd(g, i);
-      if (close === -1) { re += '\\{'; continue; }
-      re += '(?:' + _splitAlternatives(g.slice(i + 1, close)).map(_globSource).join('|') + ')';
+    } else if (c === '{' && marks.braceEnd.has(i)) {
+      const close = marks.braceEnd.get(i);
+      const cuts = [i, ...marks.commas.get(i), close];
+      const alts = [];
+      for (let k = 1; k < cuts.length; k++) alts.push(_globSource(g, marks, cuts[k - 1] + 1, cuts[k]));
+      re += '(?:' + alts.join('|') + ')';
       i = close;
     } else re += c.replace(/[.+^$()|[\]\\{}]/g, '\\$&');
   }
   return re;
-}
-
-/* Index of the `]` that closes the class opening at `i`, or -1. A `]` right
-   after `[` or `[!` is part of the class. */
-function _classEnd(g, i) {
-  let j = i + 1;
-  if (g[j] === '!' || g[j] === '^') j++;
-  if (g[j] === ']') j++;
-  return g.indexOf(']', j);
-}
-
-/* Index of the `}` that closes the brace opening at `i`, or -1. */
-function _braceEnd(g, i) {
-  let depth = 0;
-  for (let j = i; j < g.length; j++) {
-    if (g[j] === '[') {
-      const k = _classEnd(g, j);
-      if (k !== -1) { j = k; continue; }
-    }
-    if (g[j] === '{') depth++;
-    else if (g[j] === '}' && --depth === 0) return j;
-  }
-  return -1;
-}
-
-/* A brace's body split at its own commas, not those of braces inside it. */
-function _splitAlternatives(s) {
-  const parts = [];
-  let depth = 0;
-  let from = 0;
-  for (let j = 0; j < s.length; j++) {
-    if (s[j] === '[') {
-      const k = _classEnd(s, j);
-      if (k !== -1) { j = k; continue; }
-    }
-    if (s[j] === '{') depth++;
-    else if (s[j] === '}') depth--;
-    else if (s[j] === ',' && depth === 0) { parts.push(s.slice(from, j)); from = j + 1; }
-  }
-  parts.push(s.slice(from));
-  return parts;
 }
 
 /** Plain object safe to send over IPC. */
@@ -1135,9 +1165,10 @@ function _resetCommandPath() {
   _loginPath = null;
   _pathLookup = null;
   _pathFailedAt = 0;
+  _pathFailures = 0;
 }
 
 module.exports = {
   Workspace, CodeHostError, serializeError, runTag, _globToRegExp, _parseLoginPath, _resetCommandPath, SEARCH_COUNT,
-  limits: { MAX_READ_BYTES, MAX_WRITE_BYTES, MAX_LINE_CHARS, MAX_OUTPUT_CHARS, DEFAULT_TIMEOUT_MS, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS, KILL_GRACE_MS, MAX_SEARCH_MATCHES, MAX_SEARCH_MATCHES_CAP, SEARCH_TIMEOUT_MS, MIN_SEARCH_TIMEOUT_MS, MAX_SEARCHES, MAX_TAG_CHARS, PATH_RETRY_MS },
+  limits: { MAX_READ_BYTES, MAX_WRITE_BYTES, MAX_LINE_CHARS, MAX_OUTPUT_CHARS, DEFAULT_TIMEOUT_MS, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS, KILL_GRACE_MS, MAX_SEARCH_MATCHES, MAX_SEARCH_MATCHES_CAP, SEARCH_TIMEOUT_MS, MIN_SEARCH_TIMEOUT_MS, MAX_SEARCHES, MAX_TAG_CHARS, MAX_GLOB_CHARS, PATH_RETRY_MS },
 };

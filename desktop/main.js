@@ -214,6 +214,13 @@ handle('code:write', (event, p, content, opts) => {
 handle('code:edit', (event, p, oldText, newText, opts) => _workspace(event).editFile(p, oldText, newText, opts || {}));
 handle('code:list', (event, p) => _workspace(event).listDir(p || '.'));
 handle('code:search', (event, pattern, opts) => _workspace(event).search(pattern, opts || {}));
+// Tags the page called off before their run had an id, per page.
+const cancelledTags = new Map();
+const _cancelled = (sender) => {
+  if (!cancelledTags.has(sender.id)) cancelledTags.set(sender.id, new Set());
+  return cancelledTags.get(sender.id);
+};
+
 handle('code:run', (event, command, opts) => {
   const sender = event.sender;
   const o = opts || {};
@@ -221,11 +228,20 @@ handle('code:run', (event, command, opts) => {
   return _workspace(event).run(command, {
     timeoutMs: o.timeoutMs,
     cwd: o.cwd,
+    shouldStart: () => !(tag != null && _cancelled(sender).delete(tag)),
     // `tag` comes back on every event so the page can tell its runs apart.
     onData: (d) => { if (!sender.isDestroyed()) sender.send('code:run-data', { ...d, tag }); },
   });
 });
 handle('code:kill', (event, id) => _workspace(event).kill(id));
+handle('code:cancel', (event, tag) => {
+  const t = runTag(tag);
+  if (t == null) return false;
+  const set = _cancelled(event.sender);
+  set.add(t);
+  if (set.size > 100) set.delete(set.values().next().value);
+  return true;
+});
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)
