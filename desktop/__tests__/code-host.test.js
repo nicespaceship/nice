@@ -8,7 +8,7 @@ import path from 'path';
 const require = createRequire(import.meta.url);
 const cp = require('child_process');
 const { EventEmitter } = require('events');
-const { Workspace, _globToRegExp, _parseLoginPath, _resetCommandPath, limits } = require('../code-host.js');
+const { Workspace, runTag, _globToRegExp, _parseLoginPath, _resetCommandPath, limits } = require('../code-host.js');
 
 let tmp, root, outside, ws;
 
@@ -31,6 +31,8 @@ afterEach(() => {
 });
 
 const code = async (p) => { try { await p; return null; } catch (e) { return e.code; } };
+const codeOf = (fn) => { try { fn(); return null; } catch (e) { return e.code; } };
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 const CLOSE_GRACE = 500;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
@@ -93,6 +95,27 @@ describe('paths stay inside the workspace', () => {
     expect(await Workspace.isBroad(path.join(tmp, 'disk'))).toBe('disk');
   });
 
+  it.skipIf(process.platform !== 'darwin' || !fs.existsSync(path.join('/System/Volumes/Data', os.homedir())))('flags the macOS firmlink paths to home, the folders above it and the data volume', async () => {
+    const data = '/System/Volumes/Data';
+    expect(await Workspace.isBroad(path.join(data, os.homedir()))).toBe('home');
+    expect(await Workspace.isBroad(path.join(data, path.dirname(os.homedir())))).toBe('above-home');
+    expect(await Workspace.isBroad(data)).toBe('disk');
+    expect(await Workspace.isBroad(path.join(data, os.homedir(), 'nice-code-test-missing'))).toBe(null);
+  });
+
+  it.skipIf(process.platform === 'win32')('flags a folder on another device than its parent as a volume, wherever it is mounted', async () => {
+    const vol = path.join(tmp, 'vol');
+    fs.mkdirSync(vol);
+    const realStat = fs.promises.stat;
+    vi.spyOn(fs.promises, 'stat').mockImplementation(async (p, ...rest) => {
+      const st = await realStat.call(fs.promises, p, ...rest);
+      if (String(p) !== vol) return st;
+      return Object.assign(Object.create(Object.getPrototypeOf(st)), st, { dev: typeof st.dev === 'bigint' ? st.dev + 1n : st.dev + 1 });
+    });
+    expect(await Workspace.isBroad(vol)).toBe('volume');
+    expect(await Workspace.isBroad(root)).toBe(null);
+  });
+
   it.skipIf(process.platform !== 'darwin' || !fs.existsSync('/Volumes'))('flags every volume under /Volumes, Macintosh HD as the disk', async () => {
     for (const name of fs.readdirSync('/Volumes')) {
       const p = path.join('/Volumes', name);
@@ -111,6 +134,14 @@ describe('files', () => {
   it('reads a slice of lines, counting a trailing newline as no extra line', async () => {
     const r = await ws.readFile('src/a.js', { offset: 1, limit: 1 });
     expect(r).toMatchObject({ path: path.join('src', 'a.js'), content: 'const b = 2;', startLine: 2, endLine: 2, totalLines: 3, encoding: 'utf8', exact: true });
+  });
+
+  it('takes numeric strings for the offset and limit, and replaceAll only as true or \'true\'', async () => {
+    expect(await ws.readFile('src/a.js', { offset: '1', limit: '1' })).toMatchObject({ content: 'const b = 2;', startLine: 2, endLine: 2 });
+    expect(await ws.readFile('src/a.js', { offset: ' 2 ', limit: 'x' })).toMatchObject({ content: 'const a2 = 3;\n', startLine: 3 });
+    expect(await code(ws.editFile('src/a.js', 'const', 'let', { replaceAll: 'false' }))).toBe('EAMBIGUOUS');
+    expect(await code(ws.editFile('src/a.js', 'const', 'let', { replaceAll: 1 }))).toBe('EAMBIGUOUS');
+    expect((await ws.editFile('src/a.js', 'const', 'let', { replaceAll: 'true' })).replacements).toBe(3);
   });
 
   it('keeps line numbers consistent at the edges', async () => {
@@ -179,6 +210,32 @@ describe('files', () => {
     expect(await code(ws.writeFile('hooks/pre-push', 'x'))).toBe('EPROTECTED');
   });
 
+  it.skipIf(process.platform === 'win32')('refuses .git paths as asked for and git directories of other names, but reads there', async () => {
+    const gitdir = (d) => {
+      for (const sub of ['objects', 'refs', 'hooks']) fs.mkdirSync(path.join(d, sub), { recursive: true });
+      fs.writeFileSync(path.join(d, 'HEAD'), 'ref: refs/heads/main\n');
+      fs.writeFileSync(path.join(d, 'config'), '[core]\n');
+    };
+    // Android's repo tool: app/.git holds symlinks into .repo, lib/.git is one.
+    const app = path.join(root, '.repo', 'projects', 'app.git');
+    gitdir(app);
+    gitdir(path.join(root, '.repo', 'projects', 'lib.git'));
+    fs.mkdirSync(path.join(root, 'app', '.git'), { recursive: true });
+    fs.symlinkSync('../../.repo/projects/app.git/config', path.join(root, 'app', '.git', 'config'));
+    fs.symlinkSync('../../.repo/projects/app.git/hooks', path.join(root, 'app', '.git', 'hooks'));
+    fs.mkdirSync(path.join(root, 'lib'));
+    fs.symlinkSync('../.repo/projects/lib.git', path.join(root, 'lib', '.git'));
+    fs.symlinkSync('.repo/projects/lib.git/config', path.join(root, 'cfg'));
+    for (const p of ['app/.git/config', 'app/.git/hooks/pre-commit', 'lib/.git/config', '.repo/projects/lib.git/config', '.repo/projects/lib.git/hooks/post-checkout', 'cfg']) {
+      expect(await code(ws.writeFile(p, '[core]\n\tfsmonitor = touch /tmp/x\n')), p).toBe('EPROTECTED');
+    }
+    expect(await code(ws.editFile('app/.git/config', '[core]', '[core]\n\thooksPath = /tmp'))).toBe('EPROTECTED');
+    expect(fs.readFileSync(path.join(app, 'config'), 'utf8')).toBe('[core]\n');
+    expect(fs.existsSync(path.join(app, 'hooks', 'pre-commit'))).toBe(false);
+    expect((await ws.readFile('app/.git/config')).content).toBe('[core]\n');
+    expect(await ws.writeFile('app/main.c', 'int main;\n')).toMatchObject({ created: true });
+  });
+
   it('writes files with long names (the temporary name stays short)', async () => {
     const name = 'a'.repeat(251) + '.md';
     expect(await ws.writeFile(name, 'one\n')).toMatchObject({ created: true });
@@ -232,6 +289,61 @@ describe('files', () => {
     expect(fs.existsSync(path.join(outside, 'f.txt'))).toBe(false);
   });
 
+  it.skipIf(process.platform === 'win32')('removes a failed write\'s temporary file only by a path that still names it', async () => {
+    fs.mkdirSync(path.join(root, 'sub'));
+    const realOpen = fs.promises.open;
+    let tmpName = null;
+    vi.spyOn(fs.promises, 'open').mockImplementation(async (p, ...rest) => {
+      const fh = await realOpen.call(fs.promises, p, ...rest);
+      if (String(p).includes('.nice-')) {
+        tmpName = path.basename(String(p));
+        fs.renameSync(path.join(root, 'sub'), path.join(root, 'sub-moved'));
+        fs.symlinkSync(outside, path.join(root, 'sub'));
+        fs.writeFileSync(path.join(outside, tmpName), 'not ours');
+      }
+      return fh;
+    });
+    expect(await code(ws.writeFile('sub/f.txt', 'x'))).toBe('EOUTSIDE');
+    expect(fs.readFileSync(path.join(outside, tmpName), 'utf8')).toBe('not ours');
+    // Only Linux can say where the moved folder went; on a Mac its temporary file stays there.
+    if (process.platform === 'linux') expect(fs.readdirSync(path.join(root, 'sub-moved'))).toEqual([]);
+  });
+
+  it.skipIf(process.platform === 'win32')('makes missing folders one at a time, so a folder swapped for a link gets none made outside', async () => {
+    fs.mkdirSync(path.join(root, 'sub'));
+    const resolve = ws.resolve.bind(ws);
+    ws.resolve = async (q) => {
+      const real = await resolve(q);
+      fs.renameSync(path.join(root, 'sub'), path.join(root, 'sub-moved'));
+      fs.symlinkSync(outside, path.join(root, 'sub'));
+      return real;
+    };
+    expect(await code(ws.writeFile('sub/new/deep/f.txt', 'x'))).toBe('EOUTSIDE');
+    expect(fs.readdirSync(outside)).toEqual(['key.txt']);
+  });
+
+  it('retries a rename that Windows refuses for a moment, and only on Windows', async () => {
+    const realRename = fs.promises.rename;
+    const busy = () => Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
+    const spy = vi.spyOn(fs.promises, 'rename');
+    spy.mockRejectedValueOnce(busy()).mockRejectedValueOnce(busy()).mockImplementation((a, b) => realRename.call(fs.promises, a, b));
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform');
+    Object.defineProperty(process, 'platform', { ...platform, value: 'win32' });
+    try {
+      expect(await ws.writeFile('README.md', 'windows')).toMatchObject({ created: false });
+    } finally {
+      Object.defineProperty(process, 'platform', platform);
+    }
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(read('README.md')).toBe('windows');
+    if (process.platform === 'win32') return;
+    spy.mockReset();
+    spy.mockRejectedValueOnce(busy()).mockImplementation((a, b) => realRename.call(fs.promises, a, b));
+    expect(await code(ws.writeFile('README.md', 'posix'))).toBe('EBUSY');
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(fs.readdirSync(root).filter(n => n.includes('.nice-'))).toEqual([]);
+  });
+
   it('writes new files, making folders, and overwrites', async () => {
     expect(await ws.writeFile('new/dir/f.txt', 'hi')).toMatchObject({ created: true, bytes: 2 });
     expect(await ws.writeFile('new/dir/f.txt', 'hello')).toMatchObject({ created: false });
@@ -272,11 +384,57 @@ describe('files', () => {
     expect(fs.readFileSync(path.join(root, 'crlf.txt'), 'utf8')).toBe('uno\r\nuno bis\r\ndos\r\ntres\r\n');
   });
 
-  it('leaves a file with mixed line ends as it is', async () => {
+  it('keeps CRLF when old text ends in the CR of a line end and new text does not', async () => {
+    fs.writeFileSync(path.join(root, 'crlf.txt'), 'one\r\ntwo\r\nthree\r\n');
+    await ws.editFile('crlf.txt', 'two\r', 'TWO');
+    expect(read('crlf.txt')).toBe('one\r\nTWO\r\nthree\r\n');
+    await ws.editFile('crlf.txt', 'one\r\nTWO\r', 'ONE\nTWO');
+    expect(read('crlf.txt')).toBe('ONE\r\nTWO\r\nthree\r\n');
+    await ws.editFile('crlf.txt', 'three\r', 'THREE\n');
+    expect(read('crlf.txt')).toBe('ONE\r\nTWO\r\nTHREE\r\n\r\n');
+  });
+
+  it('treats a file with a few stray LFs as CRLF, and writes no bare LF into it', async () => {
+    const nine = Array.from({ length: 9 }, (_, i) => `l${i}\r\n`).join('');
+    fs.writeFileSync(path.join(root, 'mostly.txt'), nine + 'last\n');
+    await ws.editFile('mostly.txt', 'l0\nl1', 'L0\nL1');
+    expect(read('mostly.txt').startsWith('L0\r\nL1\r\nl2\r\n')).toBe(true);
+    await ws.editFile('mostly.txt', 'last\n', 'LAST\nmore\n');
+    expect(read('mostly.txt').endsWith('l8\r\nLAST\r\nmore\r\n')).toBe(true);
+    await ws.editFile('mostly.txt', 'l5\r', 'five');
+    expect(read('mostly.txt')).toContain('l4\r\nfive\r\nl6\r\n');
+  });
+
+  it('leaves a file with a real mix of line ends as it is, and says so when nothing matches', async () => {
     fs.writeFileSync(path.join(root, 'mixed.txt'), 'a\r\nb\nc\n');
     expect(await code(ws.editFile('mixed.txt', 'a\nb', 'x'))).toBe('ENOMATCH');
+    await expect(ws.editFile('mixed.txt', 'a\nb', 'x')).rejects.toThrow(/mix of CRLF and LF/);
     await ws.editFile('mixed.txt', 'b\nc', 'B\nC');
-    expect(fs.readFileSync(path.join(root, 'mixed.txt'), 'utf8')).toBe('a\r\nB\nC\n');
+    expect(read('mixed.txt')).toBe('a\r\nB\nC\n');
+  });
+
+  it('reads a CRLF file with LF line ends and says which line ends a file has', async () => {
+    fs.writeFileSync(path.join(root, 'crlf.txt'), 'one\r\ntwo\r\nthree\r\n');
+    expect(await ws.readFile('crlf.txt')).toMatchObject({ content: 'one\ntwo\nthree\n', lineEndings: 'crlf', totalLines: 3 });
+    expect((await ws.readFile('crlf.txt', { offset: 1, limit: 1 })).content).toBe('two');
+    expect((await ws.readFile('src/a.js')).lineEndings).toBe('lf');
+    fs.writeFileSync(path.join(root, 'mixed.txt'), 'a\r\nb\n');
+    expect(await ws.readFile('mixed.txt')).toMatchObject({ content: 'a\r\nb\n', lineEndings: 'mixed' });
+  });
+
+  it('writes CRLF over a CRLF file unless told to keep the line ends given', async () => {
+    fs.writeFileSync(path.join(root, 'crlf.txt'), 'a\r\nb\r\n');
+    const { content } = await ws.readFile('crlf.txt');
+    expect(await ws.writeFile('crlf.txt', content)).toMatchObject({ convertedToCrlf: true, bytes: 6 });
+    expect(read('crlf.txt')).toBe('a\r\nb\r\n');
+    await ws.writeFile('crlf.txt', 'x\ny\r\nz');
+    expect(read('crlf.txt')).toBe('x\r\ny\r\nz');
+    expect(await ws.writeFile('crlf.txt', 'p\nq\n', { lineEndings: 'keep' })).toMatchObject({ convertedToCrlf: false });
+    expect(read('crlf.txt')).toBe('p\nq\n');
+    expect(await ws.writeFile('fresh.txt', 'n\n')).toMatchObject({ convertedToCrlf: false });
+    expect(read('fresh.txt')).toBe('n\n');
+    await ws.writeFile('README.md', 'lf\nfile\n');
+    expect(read('README.md')).toBe('lf\nfile\n');
   });
 
   it('keeps the file mode on edit and leaves no temporary files', async () => {
@@ -345,8 +503,67 @@ describe('search', () => {
     fs.writeFileSync(path.join(root, 'ok.txt'), 'needle\n');
     const r = await ws.search('needle');
     expect(r.matches.map(m => m.path)).toEqual(['ok.txt']);
-    expect(r.skipped).toEqual({ tooBig: 1, binary: 1 });
+    expect(r.skipped).toEqual({ tooBig: 1, binary: 1, unreadable: 0, dirs: {} });
   });
+
+  it('skips node_modules and build folders unless the search starts inside one, and says which it skipped', async () => {
+    fs.mkdirSync(path.join(root, 'node_modules', 'pkg', 'node_modules'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'node_modules', 'x.js'), 'needle');
+    fs.writeFileSync(path.join(root, 'node_modules', 'pkg', 'node_modules', 'y.js'), 'needle');
+    fs.mkdirSync(path.join(root, 'src', 'build'));
+    fs.writeFileSync(path.join(root, 'src', 'build', 'z.js'), 'needle');
+    const top = await ws.search('needle');
+    expect(top.matches).toEqual([]);
+    expect(top.skipped.dirs).toEqual({ node_modules: 1, build: 1 });
+    const inside = await ws.search('needle', { dir: 'node_modules' });
+    expect(inside.matches.map(m => m.path).sort()).toEqual([path.join('node_modules', 'pkg', 'node_modules', 'y.js'), path.join('node_modules', 'x.js')].sort());
+    expect(inside.skipped.dirs).toEqual({});
+    expect((await ws.search('needle', { dir: 'src/build' })).matches.map(m => m.path)).toEqual([path.join('src', 'build', 'z.js')]);
+  });
+
+  it.skipIf(process.platform === 'win32' || (process.getuid && process.getuid() === 0))('counts unreadable folders and files, and refuses a start folder it cannot read', async () => {
+    fs.mkdirSync(path.join(root, 'locked'));
+    fs.writeFileSync(path.join(root, 'locked', 'f.txt'), 'needle');
+    fs.writeFileSync(path.join(root, 'secret.txt'), 'needle');
+    fs.chmodSync(path.join(root, 'locked'), 0);
+    fs.chmodSync(path.join(root, 'secret.txt'), 0);
+    try {
+      const r = await ws.search('needle');
+      expect(r.matches).toEqual([]);
+      expect(r.skipped.unreadable).toBe(2);
+      expect(await code(ws.search('needle', { dir: 'locked' }))).toBe('EACCES');
+    } finally {
+      fs.chmodSync(path.join(root, 'locked'), 0o755);
+      fs.chmodSync(path.join(root, 'secret.txt'), 0o644);
+    }
+  });
+
+  it('shows the part of a long line around the match', async () => {
+    fs.writeFileSync(path.join(root, 'min.js'), 'x'.repeat(1000) + 'needle' + 'y'.repeat(1000) + '\n' + 'z'.repeat(600) + '\u{1F600}'.repeat(300) + 'pin\n');
+    const [first, second] = (await ws.search('needle|pin')).matches;
+    expect(first.text).toContain('needle');
+    expect(first.text).toHaveLength(500);
+    expect(second.text.endsWith('pin')).toBe(true);
+    expect(wellFormed(second.text)).toBe(true);
+    expect(second.text.length).toBeLessThanOrEqual(500);
+  });
+
+  it('takes numeric strings for its limits, 0 as the minimum, Infinity as the cap, and ignoreCase only as true or \'true\'', async () => {
+    fs.writeFileSync(path.join(root, 'hits.txt'), 'hit\n'.repeat(300) + 'HIT\n');
+    expect((await ws.search('hit', { maxMatches: '5' })).matches).toHaveLength(5);
+    expect((await ws.search('hit', { maxMatches: Infinity })).matches).toHaveLength(300);
+    expect((await ws.search('hit', { maxMatches: 0 })).matches).toHaveLength(1);
+    expect((await ws.search('HIT', { ignoreCase: 'false' })).matches).toHaveLength(1);
+    expect((await ws.search('HIT', { ignoreCase: 1 })).matches).toHaveLength(1);
+    expect((await ws.search('HIT', { ignoreCase: 'true', maxMatches: 1000 })).matches).toHaveLength(301);
+    fs.writeFileSync(path.join(root, 'evil.txt'), 'a'.repeat(40) + '!');
+    for (const timeoutMs of [0, '200']) {
+      const t0 = Date.now();
+      const r = await ws.search('^(a+)+$', { timeoutMs });
+      expect(r.timedOut, String(timeoutMs)).toBe(true);
+      expect(Date.now() - t0).toBeLessThan(1500);
+    }
+  }, 15000);
 
   it('limits searches running at once', async () => {
     fs.writeFileSync(path.join(root, 'evil.txt'), 'a'.repeat(40) + '!');
@@ -385,6 +602,30 @@ describe('search', () => {
     expect(Date.now() - t0).toBeLessThan(3000);
   }, 10000);
 
+  it('keeps the matches before a slow line in the same file, and the counts so far', async () => {
+    for (let i = 0; i < 300; i++) fs.writeFileSync(path.join(root, `f${String(i).padStart(3, '0')}.txt`), 'nothing here\n');
+    fs.writeFileSync(path.join(root, 'zz.txt'), 'aaaa\nhitline\n' + 'a'.repeat(40) + '!');
+    const r = await ws.search('^(a+)+$', { timeoutMs: 1000 });
+    expect(r).toMatchObject({ timedOut: true, truncatedBy: 'time' });
+    expect(r.matches).toEqual([{ path: 'zz.txt', line: 1, text: 'aaaa' }]);
+    // The 300 files, README.md, src/a.js, and zz.txt itself.
+    expect(r.filesSearched).toBe(303);
+  }, 10000);
+
+  it('finds files with ** globs at any depth and nowhere else', async () => {
+    for (const f of ['a.js', 'b.js', 'banana.js', 'src/a.js', 'src/test.js', 'src/mytest.js', 'src/deep/test.js', 'src/deep/latest.js', 'lib/x.md']) {
+      fs.mkdirSync(path.dirname(path.join(root, f)), { recursive: true });
+      fs.writeFileSync(path.join(root, f), 'needle\n');
+    }
+    const paths = async (glob) => (await ws.search('needle', { glob })).matches.map(m => m.path.split(path.sep).join('/')).sort();
+    expect(await paths('**/a.js')).toEqual(['a.js', 'src/a.js']);
+    expect(await paths('src/**/test.js')).toEqual(['src/deep/test.js', 'src/test.js']);
+    expect(await paths('{src/**/test.js,lib/*}')).toEqual(['lib/x.md', 'src/deep/test.js', 'src/test.js']);
+    // A glob with no slash is also tried against the bare file name.
+    expect(await paths('[ab].js')).toEqual(['a.js', 'b.js', 'src/a.js']);
+    expect(await paths('src/[!a]*.js')).toEqual(['src/mytest.js', 'src/test.js']);
+  });
+
   it('turns globs into anchored patterns', () => {
     expect(_globToRegExp('*.js').test('a.js')).toBe(true);
     expect(_globToRegExp('*.js').test('src/a.js')).toBe(false);
@@ -396,6 +637,25 @@ describe('search', () => {
     expect(_globToRegExp('src/**').test('src/x/a.js')).toBe(true);
     expect(_globToRegExp('*.{js,ts}').test('a.ts')).toBe(true);
     expect(_globToRegExp('{*.js,*.ts}').test('a.ts')).toBe(true);
+  });
+
+  it('turns ** inside braces and character classes into patterns', () => {
+    const g = _globToRegExp('{src/**/test.js,lib/*}');
+    for (const ok of ['src/test.js', 'src/a/b/test.js', 'lib/x']) expect(g.test(ok), ok).toBe(true);
+    for (const no of ['lib/x/y', 'src/mytest.js', 'test.js']) expect(g.test(no), no).toBe(false);
+    expect(_globToRegExp('[ab].js').test('a.js')).toBe(true);
+    expect(_globToRegExp('[ab].js').test('c.js')).toBe(false);
+    expect(_globToRegExp('[!a].js').test('b.js')).toBe(true);
+    expect(_globToRegExp('[!a].js').test('a.js')).toBe(false);
+    expect(_globToRegExp('[a-c]x').test('bx')).toBe(true);
+    expect(_globToRegExp('[a-c]x').test('dx')).toBe(false);
+    expect(_globToRegExp('a[!b]c').test('a/c')).toBe(false);
+    expect(_globToRegExp('a[/]c').test('a/c')).toBe(false);
+    expect(_globToRegExp('[]x].md').test('].md')).toBe(true);
+    expect(_globToRegExp('{a,{b,c}}.md').test('c.md')).toBe(true);
+    expect(_globToRegExp('{a,[bc]}.md').test('b.md')).toBe(true);
+    expect(_globToRegExp('x[.md').test('x[.md')).toBe(true);
+    expect(_globToRegExp('{a,b.md').test('{a,b.md')).toBe(true);
   });
 });
 
@@ -432,6 +692,96 @@ describe('the login shell PATH', () => {
       _resetCommandPath();
     }
   }, 15000);
+
+  // A fake zsh: `lookup` (sh lines, with $d its folder) answers the PATH lookup; anything else runs in sh.
+  const fakeShell = (lookup) => {
+    const bin = path.join(tmp, 'shellbin');
+    fs.mkdirSync(bin, { recursive: true });
+    const fake = path.join(bin, 'zsh');
+    fs.writeFileSync(fake, ['#!/bin/sh', 'd="$(dirname "$0")"', 'case "$*" in', '  *__NICE_PATH_START__*)', ...lookup, '    ;;', '  *) exec /bin/sh "$@" ;;', 'esac', ''].join('\n'));
+    fs.chmodSync(fake, 0o755);
+    return { bin, fake };
+  };
+  const withShell = async (fake, fn) => {
+    const saved = process.env.SHELL;
+    try {
+      process.env.SHELL = fake;
+      _resetCommandPath();
+      await fn();
+    } finally {
+      process.env.SHELL = saved;
+      _resetCommandPath();
+    }
+  };
+  const pathNow = async () => (await ws.run('printf %s "$PATH"')).stdout;
+  const PRINT = (p) => `    printf "__NICE_PATH_START__%s__NICE_PATH_END__" "${p}"`;
+
+  it.skipIf(process.platform === 'win32')('asks again as a plain login shell when the interactive one prints no PATH', async () => {
+    const { bin, fake } = fakeShell([
+      '    echo "$1 $2" >> "$d/calls"',
+      '    [ "$2" = -i ] && exit 0',
+      PRINT('/login/bin:/usr/bin:/bin'),
+    ]);
+    await withShell(fake, async () => {
+      expect(await pathNow()).toBe('/login/bin:/usr/bin:/bin');
+      expect(fs.readFileSync(path.join(bin, 'calls'), 'utf8').trim().split('\n')).toEqual(['-l -i', '-l -c']);
+    });
+  }, 15000);
+
+  it.skipIf(process.platform === 'win32')('keeps only a lookup that worked, and tries a failed one again a minute later', async () => {
+    const { bin, fake } = fakeShell([
+      '    echo x >> "$d/calls"',
+      '    [ -f "$d/ok" ] || exit 1',
+      PRINT('/ok/bin:/usr/bin:/bin'),
+    ]);
+    const calls = () => fs.readFileSync(path.join(bin, 'calls'), 'utf8').trim().split('\n').length;
+    await withShell(fake, async () => {
+      expect(await pathNow()).toBe(process.env.PATH);
+      expect(calls()).toBe(2);
+      expect(await pathNow()).toBe(process.env.PATH);
+      expect(calls()).toBe(2);
+      fs.writeFileSync(path.join(bin, 'ok'), '');
+      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + limits.PATH_RETRY_MS + 1000);
+      expect(await pathNow()).toBe('/ok/bin:/usr/bin:/bin');
+      expect(calls()).toBe(3);
+      expect(await pathNow()).toBe('/ok/bin:/usr/bin:/bin');
+      expect(calls()).toBe(3);
+    });
+  }, 20000);
+
+  it.skipIf(process.platform === 'win32')('sends what the lookup shell leaves behind SIGTERM, and SIGKILL only after the grace period', async () => {
+    const { bin, fake } = fakeShell([
+      `    ( trap 'echo done > "$d/termed"; exit 0' TERM; : > "$d/trapped"; while :; do sleep 0.1; done ) >/dev/null 2>&1 &`,
+      `    sh -c 'trap "" TERM; echo $$ > "$1/stubborn"; exec sleep 30' sh "$d" >/dev/null 2>&1 &`,
+      '    while [ ! -s "$d/stubborn" ] || [ ! -f "$d/trapped" ]; do sleep 0.05; done',
+      PRINT('/fake/bin:/usr/bin:/bin'),
+    ]);
+    await withShell(fake, async () => {
+      expect(await pathNow()).toBe('/fake/bin:/usr/bin:/bin');
+      await sleep(1000);
+      expect(fs.existsSync(path.join(bin, 'termed'))).toBe(true);
+      const pid = Number(fs.readFileSync(path.join(bin, 'stubborn'), 'utf8'));
+      expect(alive(pid)).toBe(true);
+      expect(await goneWithin(pid, limits.KILL_GRACE_MS + 1500)).toBe(true);
+    });
+  }, 15000);
+});
+
+describe('run tags', () => {
+  it('takes strings and finite numbers, back as strings of at most 200 code points', () => {
+    expect(runTag(null)).toBe(null);
+    expect(runTag(undefined)).toBe(null);
+    expect(runTag('term-1')).toBe('term-1');
+    expect(runTag(123)).toBe('123');
+    const t = runTag('a'.repeat(199) + '\u{1F600}' + 'b'.repeat(10));
+    expect([...t]).toHaveLength(limits.MAX_TAG_CHARS);
+    expect(t.endsWith('\u{1F600}')).toBe(true);
+    expect(wellFormed(t)).toBe(true);
+  });
+
+  it('refuses anything else with EINVAL', () => {
+    for (const bad of [{}, [], true, NaN, Infinity, () => 1, Symbol('x')]) expect(codeOf(() => runTag(bad)), String(typeof bad)).toBe('EINVAL');
+  });
 });
 
 describe.skipIf(process.platform === 'win32')('commands', () => {
@@ -488,9 +838,11 @@ describe.skipIf(process.platform === 'win32')('commands', () => {
   }, 10000);
 
   it('kills a background process that ignores SIGTERM after the command exits', async () => {
-    const r = await ws.run("trap '' TERM; sleep 30 & echo $!");
+    // The trap is set inside the job: zsh does not pass an ignored TERM on to `&` jobs.
+    const r = await ws.run(`sh -c 'trap "" TERM; exec sleep 30' & echo $!`);
     const pid = Number(r.stdout.trim());
     expect(r.stoppedBackground).toBe(true);
+    await sleep(1000);
     expect(alive(pid)).toBe(true);
     expect(await goneWithin(pid, limits.KILL_GRACE_MS + 1500)).toBe(true);
   }, 10000);
@@ -538,6 +890,15 @@ describe.skipIf(process.platform === 'win32')('commands', () => {
       expect(r.stdout).toBe('done\n');
     }
   }, 10000);
+
+  it('takes a numeric string timeout, and 0 as the minimum', async () => {
+    for (const timeoutMs of ['1000', 0]) {
+      const t0 = Date.now();
+      const r = await ws.run('sleep 5', { timeoutMs });
+      expect(r.timedOut, String(timeoutMs)).toBe(true);
+      expect(Date.now() - t0).toBeLessThan(limits.MIN_TIMEOUT_MS + limits.KILL_GRACE_MS + 1000);
+    }
+  }, 15000);
 
   it('answers with an error when spawn throws, instead of throwing', async () => {
     vi.spyOn(cp, 'spawn').mockImplementationOnce(() => { throw Object.assign(new Error('spawn EMFILE'), { code: 'EMFILE' }); });

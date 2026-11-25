@@ -4,7 +4,8 @@ import { createRequire } from 'module';
 import path from 'path';
 
 const require = createRequire(import.meta.url);
-const { resolveAppRequest, CSP, ORIGIN, cspFor, isAppPage, replacesAppPage } = require('../app-protocol.js');
+const { EventEmitter } = require('events');
+const { resolveAppRequest, CSP, ORIGIN, cspFor, isAppPage, replacesAppPage, stopWhenPageGoes } = require('../app-protocol.js');
 
 const ROOT = path.resolve('/repo');
 
@@ -84,6 +85,32 @@ describe('which navigations stop a page\'s commands', () => {
     expect(replacesAppPage(nav(ORIGIN + '/app/#/crew', { isSameDocument: true }))).toBe(false);
     expect(replacesAppPage(nav(ORIGIN + '/app/', { isMainFrame: false }))).toBe(false);
     expect(replacesAppPage(null)).toBe(false);
+  });
+
+  const watched = () => {
+    const contents = new EventEmitter();
+    let stops = 0;
+    stopWhenPageGoes(contents, () => { stops++; });
+    return { contents, stops: () => stops };
+  };
+
+  it('stops them when a reload starts, when the new page commits, and when the renderer dies', () => {
+    const { contents, stops } = watched();
+    contents.emit('did-start-navigation', nav(ORIGIN + '/app/'));
+    expect(stops()).toBe(1);
+    // A run the old page asked for between the start and the commit is stopped here.
+    contents.emit('did-navigate', {}, ORIGIN + '/app/', 200, 'OK');
+    expect(stops()).toBe(2);
+    contents.emit('render-process-gone', {}, { reason: 'crashed', exitCode: 1 });
+    expect(stops()).toBe(3);
+  });
+
+  it('keeps them for a link will-navigate cancels and for a hash change', () => {
+    const { contents, stops } = watched();
+    contents.emit('did-start-navigation', nav('https://checkout.stripe.com/c/pay/x'));
+    contents.emit('did-start-navigation', nav(ORIGIN + '/app/#/crew', { isSameDocument: true }));
+    contents.emit('did-navigate-in-page', {}, ORIGIN + '/app/#/crew', true);
+    expect(stops()).toBe(0);
   });
 });
 

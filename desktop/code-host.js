@@ -8,21 +8,31 @@
  * Files. Every path is resolved inside one workspace folder the user picked
  * with the native folder dialog. A path that leaves it, directly or through
  * a symlink (dangling ones included), is refused. Reads and edits open the
- * file without following a symlink at the last step, and writes go to a
- * temporary file renamed into place, so they never write through one.
- * Nothing is written inside a .git folder. A file that is not exact UTF-8
- * text is not replaced from text unless the caller says overwrite.
+ * file without following a symlink at the last step. Writes make missing
+ * folders one at a time, checking where each one really is before making
+ * the next, and go to a temporary file renamed into place, so they never
+ * write through a symlink. Nothing is written inside a git directory. A
+ * file that is not exact UTF-8 text is not replaced from text unless the
+ * caller says overwrite. A file whose lines all end in CRLF reads with LF
+ * line ends, and writes and edits put CRLF back.
  *
- * Commands are one-shot. Each runs in its own process group with the
- * workspace as its working directory, no stdin, a timeout that ends in
- * SIGKILL, and output capped to its start and its end. When the command
- * ends, whatever it left running in that group (`cmd &`, nohup) is stopped
- * too: SIGTERM, then SIGKILL. A process that leaves the group (setsid, a
- * daemon that detaches itself) is out of reach.
+ * Commands are one-shot. Each runs with the workspace as its working
+ * directory, no stdin, a timeout that ends in SIGKILL, and output capped to
+ * its start and its end. On macOS and Linux each runs in its own process
+ * group: when the command ends, whatever it left running in that group
+ * (`cmd &`, nohup) is stopped too, SIGTERM then SIGKILL, and quitting the
+ * app kills every group. A process that leaves the group (setsid, a daemon
+ * that detaches itself) is out of reach. Process groups are POSIX only for
+ * now: on Windows a command's tree is stopped with taskkill /t while its
+ * shell runs, and what it started in the background (start /b) outlives
+ * the command, a kill and quitting the app.
  *
  * Searches run in a worker thread with a time limit, so a pathological
- * pattern cannot stall the app; one that runs out of time returns what it
- * found so far.
+ * pattern cannot stall the app; one that runs out of time returns every
+ * match found before it, and its counts.
+ *
+ * Options arrive as a model's tool call sends them: a number may also be a
+ * numeric string ('50'), and a flag is on only for true or 'true'.
  */
 
 'use strict';
@@ -33,7 +43,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('child_process');
-const { Worker } = require('worker_threads');
+const { Worker, MessageChannel, receiveMessageOnPort } = require('worker_threads');
 
 const MAX_READ_BYTES = 2 * 1024 * 1024;   // files larger than this are refused
 const MAX_WRITE_BYTES = 10 * 1024 * 1024; // content larger than this is refused
@@ -53,17 +63,27 @@ const MAX_SEARCH_TIMEOUT_MS = 60000;
 const SEARCH_MAX_FILES = 20000;
 const MAX_SEARCHES = 4;                   // running at once, per workspace
 const PATH_LOOKUP_TIMEOUT_MS = 5000;
+const PATH_RETRY_MS = 60000;              // a failed lookup is tried again after this
 const PATH_START = '__NICE_PATH_START__';
 const PATH_END = '__NICE_PATH_END__';
 const SKIP_DIRS = ['.git', 'node_modules', '.hg', '.svn', 'dist', 'build', '.next', '.cache', 'coverage'];
+// Where the search worker keeps its counts in the shared array: one slot
+// each, then one per SKIP_DIRS name (folders of that name skipped).
+const SEARCH_COUNT = { files: 0, tooBig: 1, binary: 2, unreadable: 3, dirs: 4 };
+const MAX_TAG_CHARS = 200;                // code points
+const RENAME_TRIES = 3;                   // on Windows, where another program can hold the file for a moment
+const RENAME_RETRY_MS = 50;
 const POSIX_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'ksh']);
 const INTERACTIVE_SHELLS = new Set(['bash', 'zsh']);
 const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
 const O_NONBLOCK = fs.constants.O_NONBLOCK || 0;
+// The data volume behind macOS's firmlinks: /Users and /System/Volumes/Data/Users are one folder.
+const MAC_DATA_VOLUME = '/System/Volumes/Data';
 
 let _nextRunId = 1;     // unique across workspaces, so ids never collide
-let _loginPath = null;  // PATH from the user's login shell, read once
+let _loginPath = null;  // PATH from the user's login shell, once a lookup has worked
 let _pathLookup = null; // the lookup in flight, shared by runs that start together
+let _pathFailedAt = 0;  // when the last lookup failed
 
 class CodeHostError extends Error {
   constructor(code, message) {
@@ -74,17 +94,129 @@ class CodeHostError extends Error {
 
 const _stopped = () => new CodeHostError('ESTOPPED', 'Stopped: the page reloaded or the folder changed.');
 const _unref = (t) => (t && t.unref ? t.unref() : t);
+const _flag = (v) => v === true || v === 'true';
 
-/* A finite positive number clamped to [min, max]; null, NaN, Infinity,
-   negatives and non-numbers get the default. */
-function _num(v, dflt, min, max) {
-  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return dflt;
-  return Math.min(Math.max(min, Math.floor(v)), max);
+/* `v` as a number: a number as it is, a decimal string ('50', ' 1.5e3 ')
+   parsed, anything else NaN. */
+function _toNum(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string' && /^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(v)) return Number(v);
+  return NaN;
 }
 
-/* A count from 0 up: anything that is not a finite positive number is 0. */
+/* A limit clamped to [min, max]: 0 is the minimum and Infinity the
+   maximum; null, NaN, negatives and anything that is not a number or a
+   numeric string get the default. */
+function _num(v, dflt, min, max) {
+  const n = _toNum(v);
+  if (Number.isNaN(n) || n < 0) return dflt;
+  if (n === Infinity) return max;
+  return Math.min(Math.max(min, Math.floor(n)), max);
+}
+
+/* A line offset or count from 0 up, from a number or a numeric string;
+   anything else, negatives and Infinity included, is 0. */
 function _count(v) {
-  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
+  const n = _toNum(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function _countOf(s, sub) {
+  let n = 0;
+  for (let i = s.indexOf(sub); i !== -1; i = s.indexOf(sub, i + sub.length)) n++;
+  return n;
+}
+
+/* How a text ends its lines: 'crlf' (every line end is CRLF), 'lf' (none
+   is) or 'mixed'. mostlyCrlf when at least 90% are CRLF, a CRLF file with a
+   few stray LFs, which edits treat as CRLF. */
+function _lineEnds(text) {
+  const lf = _countOf(text, '\n');
+  const crlf = _countOf(text, '\r\n');
+  return { kind: crlf === 0 ? 'lf' : crlf === lf ? 'crlf' : 'mixed', mostlyCrlf: crlf > 0 && crlf >= 0.9 * lf };
+}
+
+/* Where any of `forms` occurs in `text`, left to right, never overlapping:
+   [{ at, len }]. */
+function _occurrences(text, forms) {
+  const hits = [];
+  for (const f of forms) for (let i = text.indexOf(f); i !== -1; i = text.indexOf(f, i + f.length)) hits.push({ at: i, len: f.length });
+  hits.sort((a, b) => a.at - b.at || b.len - a.len);
+  const out = [];
+  let end = 0;
+  for (const h of hits) if (h.at >= end) { out.push(h); end = h.at + h.len; }
+  return out;
+}
+
+/* A run's tag as it goes back to the page with its output: a string or a
+   finite number, as a string of at most MAX_TAG_CHARS code points; null
+   when there is none. */
+function runTag(v) {
+  if (v == null) return null;
+  if (typeof v !== 'string' && !(typeof v === 'number' && Number.isFinite(v))) throw new CodeHostError('EINVAL', 'A tag must be a string or a number.');
+  const s = String(v);
+  if (s.length <= MAX_TAG_CHARS) return s;
+  let out = '';
+  let n = 0;
+  for (const ch of s) {
+    if (n++ === MAX_TAG_CHARS) break;
+    out += ch;
+  }
+  return out;
+}
+
+async function _rename(from, to) {
+  for (let i = 1; ; i++) {
+    try {
+      return await fsp.rename(from, to);
+    } catch (e) {
+      const busy = e.code === 'EPERM' || e.code === 'EACCES' || e.code === 'EBUSY';
+      if (process.platform !== 'win32' || !busy || i >= RENAME_TRIES) throw e;
+      await new Promise((r) => setTimeout(r, RENAME_RETRY_MS));
+    }
+  }
+}
+
+/* Where the open file `fh` is now, read from the handle; only Linux says. */
+async function _whereNow(fh) {
+  if (process.platform !== 'linux') return null;
+  try { return await fsp.readlink('/proc/self/fd/' + fh.fd); } catch { return null; }
+}
+
+/* `promise`'s value, or `fallback` when it fails or takes longer than `ms`. */
+function _within(promise, ms, fallback) {
+  let timer = null;
+  return Promise.race([
+    Promise.resolve(promise).catch(() => fallback),
+    new Promise((r) => { timer = _unref(setTimeout(() => r(fallback), ms)); }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+/* A folder's identity (device and inode) as text; null when it cannot be
+   read or its file system has no inode numbers. */
+async function _folderId(p) {
+  try {
+    const st = await fsp.stat(p, { bigint: true });
+    return st.ino ? st.dev + ':' + st.ino : null;
+  } catch {
+    return null;
+  }
+}
+
+/* On a Mac whose system and data volumes have their own devices,
+   /Applications or /usr/local sits on the data volume under / on the system
+   volume: a firmlink, not a mount point. */
+async function _crossesFirmlink(st, parent) {
+  const [data, sys] = await Promise.all([MAC_DATA_VOLUME, '/'].map((q) => fsp.stat(q, { bigint: true }).catch(() => null)));
+  return !!(data && sys && st.dev === data.dev && parent.dev === sys.dev);
+}
+
+/* A folder git uses as its directory under another name than .git: a bare
+   repository, or one a .git symlink points to. */
+async function _isGitDir(dir) {
+  const st = (n) => fsp.stat(path.join(dir, n)).catch(() => null);
+  const [head, objects, refs] = await Promise.all([st('HEAD'), st('objects'), st('refs')]);
+  return !!(head && head.isFile() && objects && objects.isDirectory() && refs && refs.isDirectory());
 }
 
 function _isInside(root, target) {
@@ -202,19 +334,36 @@ function _parseLoginPath(out) {
 }
 
 /* An app opened from the Finder gets a bare PATH (/usr/bin:/bin:…), so
-   Homebrew's node, npm and git are missing. Ask the user's shell once, as
-   an interactive login shell for zsh and bash so PATH additions in .zshrc
-   and .bashrc count. A profile can print anything, so the PATH comes back
-   between markers. The shell gets no stdin and its own session (no
-   terminal to grab), and anything it leaves in its group is killed. */
+   Homebrew's node, npm and git are missing. Ask the user's shell, as an
+   interactive login shell for zsh and bash so PATH additions in .zshrc and
+   .bashrc count, and as a plain login shell when that prints nothing (an
+   rc file that execs another shell or tmux never reaches the printf). The
+   answer is kept once a lookup works; after one fails, commands get the
+   app's PATH and the lookup is tried again a minute later. */
 function _commandPath() {
   if (_loginPath !== null) return Promise.resolve(_loginPath);
   if (process.platform === 'win32') return Promise.resolve((_loginPath = process.env.PATH || ''));
   if (_pathLookup) return _pathLookup;
+  if (_pathFailedAt && Date.now() - _pathFailedAt < PATH_RETRY_MS) return Promise.resolve(process.env.PATH || '');
   const sh = _shell();
-  const flags = INTERACTIVE_SHELLS.has(path.basename(sh.file)) ? ['-l', '-i', '-c'] : ['-l', '-c'];
+  const interactive = INTERACTIVE_SHELLS.has(path.basename(sh.file));
+  _pathLookup = (async () => {
+    let found = await _askShellPath(sh.file, interactive ? ['-l', '-i', '-c'] : ['-l', '-c']);
+    if (!found && interactive) found = await _askShellPath(sh.file, ['-l', '-c']);
+    if (found) _loginPath = found;
+    else _pathFailedAt = Date.now();
+    _pathLookup = null;
+    return found || process.env.PATH || '';
+  })();
+  return _pathLookup;
+}
+
+/* One lookup: the PATH the shell prints between markers (a profile can
+   print anything around them), or '' when they do not come in time. The
+   shell gets no stdin and its own session (no terminal to grab). */
+function _askShellPath(file, flags) {
   const script = `printf '${PATH_START}%s${PATH_END}' "$PATH"`;
-  _pathLookup = new Promise((resolve) => {
+  return new Promise((resolve) => {
     let out = '';
     let child = null;
     let timer = null;
@@ -223,13 +372,11 @@ function _commandPath() {
       if (done) return;
       done = true;
       clearTimeout(timer);
-      if (child && child.pid > 1) { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* gone */ } }
-      _loginPath = _parseLoginPath(out) || process.env.PATH || '';
-      _pathLookup = null;
-      resolve(_loginPath);
+      if (child && child.pid > 1) _endGroup(child.pid);
+      resolve(_parseLoginPath(out));
     };
     try {
-      child = childProcess.spawn(sh.file, [...flags, script], { env: process.env, stdio: ['ignore', 'pipe', 'ignore'], detached: true });
+      child = childProcess.spawn(file, [...flags, script], { env: process.env, stdio: ['ignore', 'pipe', 'ignore'], detached: true });
     } catch {
       finish();
       return;
@@ -246,7 +393,18 @@ function _commandPath() {
       });
     }
   });
-  return _pathLookup;
+}
+
+/* What the lookup shell left in its group, a job an rc file started in the
+   background, say: SIGTERM so it can clean up (a lock file, a half-written
+   cache), and SIGKILL only if the group is still there after the grace
+   period. */
+function _endGroup(pgid) {
+  try { process.kill(-pgid, 'SIGTERM'); } catch { return; }
+  _unref(setTimeout(() => {
+    try { process.kill(-pgid, 0); } catch { return; }
+    try { process.kill(-pgid, 'SIGKILL'); } catch { /* gone */ }
+  }, KILL_GRACE_MS));
 }
 
 /* Commands get the user's environment minus what only matters to the app
@@ -284,9 +442,10 @@ class Workspace {
 
   /**
    * Why a folder is too broad to hand to an agent without asking, judged by
-   * its real path: 'disk' (a disk root), 'home' (the home folder),
-   * 'above-home' (a folder that holds it, like /Users) or 'volume' (a
-   * mounted volume's root, like /Volumes/Backup). null when it is none.
+   * its real path and by the folder itself: 'disk' (a disk root), 'home'
+   * (the home folder), 'above-home' (a folder that holds it, like /Users)
+   * or 'volume' (a mounted volume's root, like /Volumes/Backup). null when
+   * it is none.
    */
   static async isBroad(dir) {
     const real = async (p) => { try { return await fsp.realpath(p); } catch { return path.resolve(p); } };
@@ -295,14 +454,32 @@ class Workspace {
     if (p === path.parse(p).root) return 'disk';
     if (p === home) return 'home';
     if (_isInside(p, home)) return 'above-home';
-    if (process.platform === 'darwin') {
-      // Judged by name: macOS firmlinks make /Applications or /usr/local look like mount points.
-      return p === '/Volumes' || path.dirname(p) === '/Volumes' ? 'volume' : null;
+    const darwin = process.platform === 'darwin';
+    if (darwin && (p === '/Volumes' || path.dirname(p) === '/Volumes')) return 'volume';
+    // realpath keeps a second path to the same folder, a macOS firmlink
+    // (/System/Volumes/Data/Users is /Users) or a bind mount, so compare the
+    // folder itself with home, the folders above it and the volume roots.
+    const known = [[home, 'home']];
+    for (let a = home; a !== path.dirname(a);) {
+      a = path.dirname(a);
+      known.push([a, a === path.parse(a).root ? 'disk' : 'above-home']);
+    }
+    if (darwin) {
+      known.push([MAC_DATA_VOLUME, 'disk']);
+      const names = await _within(fsp.readdir('/Volumes'), 1000, []);
+      for (const name of names) known.push([path.join('/Volumes', name), 'volume']);
+    }
+    // A network volume can take long to answer; one that does is not judged.
+    const ids = await _within(Promise.all([p, ...known.map(([q]) => q)].map(_folderId)), 1000, []);
+    if (ids[0]) {
+      const hit = known.findIndex((_, i) => ids[i + 1] === ids[0]);
+      if (hit !== -1) return known[hit][1];
     }
     if (process.platform === 'win32') return null;
+    // A volume mounted anywhere else: its root is on another device than its parent.
     try {
-      const [a, b] = await Promise.all([fsp.stat(p), fsp.stat(path.dirname(p))]);
-      if (a.dev !== b.dev) return 'volume';
+      const [a, b] = await Promise.all([fsp.stat(p, { bigint: true }), fsp.stat(path.dirname(p), { bigint: true })]);
+      if (a.dev !== b.dev && !(darwin && (await _crossesFirmlink(a, b)))) return 'volume';
     } catch { /* not judged */ }
     return null;
   }
@@ -322,16 +499,24 @@ class Workspace {
     return path.relative(this.root, abs) || '.';
   }
 
-  /* Nothing is written inside a .git folder, at any depth: a hook or a
+  /* Nothing is written inside a git directory, at any depth: a hook or a
      config entry there turns into a command the next time git runs.
-     Compared without case, as the Mac's disk does. */
-  _refuseGit(abs, p) {
+     Refused when the path as asked for or its real path (`abs`) has a .git
+     folder in it, compared without case as the Mac's disk does, and when
+     the real path lies in a git directory named otherwise (a bare
+     repository, or the one a symlinked .git points to, as Android's repo
+     tool lays out). */
+  async _refuseGit(abs, p) {
     const win = process.platform === 'win32';
-    const hit = path.relative(this.root, abs).split(path.sep).some((s) => {
+    const named = (q) => path.relative(this.root, q).split(path.sep).some((s) => {
       const n = s.toLowerCase();
       return (win ? n.replace(/[. ]+$/, '') : n) === '.git';
     });
-    if (hit) throw new CodeHostError('EPROTECTED', 'Code does not change files inside .git: ' + p);
+    let hit = named(path.resolve(this.root, p || '.')) || named(abs);
+    for (let d = path.dirname(abs); !hit && d !== this.root && _isInside(this.root, d); d = path.dirname(d)) {
+      hit = await _isGitDir(d);
+    }
+    if (hit) throw new CodeHostError('EPROTECTED', 'Code does not change files inside a git directory: ' + p);
   }
 
   /* Open `abs` for reading without following a symlink at the last step
@@ -373,20 +558,44 @@ class Workspace {
     }
   }
 
-  /* Why an existing file cannot be replaced from text without losing bytes,
-     or null when it is exact UTF-8 with no NUL. */
-  async _notPlainText(abs, p) {
+  /* An existing file about to be replaced from text: why that would lose
+     bytes (problem, null when it is exact UTF-8 with no NUL) and, when it
+     is text, how it ends its lines. */
+  async _inspect(abs, p) {
     const { fh, st } = await this._open(abs, p);
     try {
-      if (st.size > MAX_WRITE_BYTES) return `it is over ${MAX_WRITE_BYTES} bytes, too large to check`;
+      const big = { problem: `it is over ${MAX_WRITE_BYTES} bytes, too large to check`, lineEnds: null };
+      if (st.size > MAX_WRITE_BYTES) return big;
       const buf = await _readUpTo(fh, MAX_WRITE_BYTES + 1);
-      if (buf.length > MAX_WRITE_BYTES) return `it is over ${MAX_WRITE_BYTES} bytes, too large to check`;
-      if (buf.includes(0)) return 'it contains NUL bytes';
-      if (!Buffer.from(buf.toString('utf8'), 'utf8').equals(buf)) return 'it is not valid UTF-8';
-      return null;
+      if (buf.length > MAX_WRITE_BYTES) return big;
+      if (buf.includes(0)) return { problem: 'it contains NUL bytes', lineEnds: null };
+      const text = buf.toString('utf8');
+      if (!Buffer.from(text, 'utf8').equals(buf)) return { problem: 'it is not valid UTF-8', lineEnds: null };
+      return { problem: null, lineEnds: _lineEnds(text).kind };
     } finally {
       await fh.close();
     }
+  }
+
+  /* Make the missing folders of `dir` (a real path inside the workspace)
+     one at a time from the workspace down, each checked for where it
+     really is before the next is made inside it, so a folder swapped for a
+     symlink cannot have folders made outside. Returns the folder's real
+     path. */
+  async _makeFolders(dir, p) {
+    let cur = this.root;
+    for (const name of path.relative(this.root, dir).split(path.sep).filter(Boolean)) {
+      const next = path.join(cur, name);
+      try {
+        cur = await fsp.realpath(next);
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e;
+        await fsp.mkdir(next).catch((m) => { if (m.code !== 'EEXIST') throw m; });
+        cur = await fsp.realpath(next);
+      }
+      if (!_isInside(this.root, cur)) throw new CodeHostError('EOUTSIDE', 'Path leads outside the workspace: ' + p);
+    }
+    return cur;
   }
 
   /* Write via a temporary file renamed into place, so a failed write never
@@ -408,32 +617,61 @@ class Workspace {
     }
     const tmp = path.join(dir, '.nice-' + crypto.randomBytes(4).toString('hex') + '.tmp');
     const fh = await fsp.open(tmp, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | O_NOFOLLOW, 0o666);
+    let id = null;
+    let now = null;
     let placed = false;
     try {
       try {
+        id = await fh.stat({ bigint: true });
         await fh.writeFile(content, 'utf8');
         if (mode != null) await fh.chmod(mode & 0o777);
+        // The folder could have been swapped for a symlink since it was checked.
+        if (!_isInside(this.root, await fsp.realpath(dir))) throw new CodeHostError('EOUTSIDE', 'Path leads outside the workspace: ' + p);
       } finally {
+        now = await _whereNow(fh);
         await fh.close();
       }
-      // The folder could have been swapped for a symlink since it was checked.
-      if (!_isInside(this.root, await fsp.realpath(dir))) throw new CodeHostError('EOUTSIDE', 'Path leads outside the workspace: ' + p);
-      await fsp.rename(tmp, abs);
+      await _rename(tmp, abs);
       placed = true;
     } finally {
-      if (!placed) await fsp.unlink(tmp).catch(() => {});
+      if (!placed) await this._dropTemp([tmp, now], id);
+    }
+  }
+
+  /* Remove a failed write's temporary file, by a path only while it still
+     names that same file: after a folder was swapped for a symlink, the
+     path it was made at points somewhere else. Linux also says where the
+     file is now. On a Mac a temporary file whose folder was moved away
+     stays where the folder went; only a process in the workspace can move
+     it, and that process already has a shell (run()). */
+  async _dropTemp(places, id) {
+    for (const q of places) {
+      if (!q) continue;
+      try {
+        if (id) {
+          const st = await fsp.lstat(q, { bigint: true });
+          if (st.dev !== id.dev || st.ino !== id.ino) continue;
+        } else if (!_isInside(this.root, await fsp.realpath(path.dirname(q)))) continue;
+        await fsp.unlink(q);
+        return;
+      } catch { /* not there */ }
     }
   }
 
   /**
-   * Lines `offset` (0-based) to `offset + limit` of a text file. `exact` is
-   * false, and `encoding` 'lossy', when the file is not valid UTF-8: its bad
-   * bytes come back as U+FFFD, so writing that text back needs overwrite.
-   * Past the end, the content is empty and endLine is startLine - 1.
+   * Lines `offset` (0-based) to `offset + limit` of a text file; limit 0
+   * reads to the end. `exact` is false, and `encoding` 'lossy', when the
+   * file is not valid UTF-8: its bad bytes come back as U+FFFD, so writing
+   * that text back needs overwrite. Past the end, the content is empty and
+   * endLine is startLine - 1. lineEndings is 'crlf' when every line ends in
+   * CRLF: the content then comes back with LF, and writeFile and editFile
+   * put CRLF back. 'mixed' content comes back as it is, CRs included.
    */
   async readFile(p, { offset = 0, limit = 0 } = {}) {
     const abs = await this.resolve(p);
-    const { text, exact } = await this._readText(abs, p);
+    const { text: raw, exact } = await this._readText(abs, p);
+    const lineEndings = _lineEnds(raw).kind;
+    const text = lineEndings === 'crlf' ? raw.replace(/\r\n/g, '\n') : raw;
     const lines = text === '' ? [] : text.split('\n');
     const endsWithNewline = lines.length > 1 && lines[lines.length - 1] === '';
     if (endsWithNewline) lines.pop();
@@ -449,67 +687,89 @@ class Workspace {
     });
     // The content is exactly the lines asked for, with the file's final newline when they reach the end.
     const content = slice.join('\n') + (endsWithNewline && end === total && slice.length ? '\n' : '');
-    return { path: this.rel(abs), content, encoding: exact ? 'utf8' : 'lossy', exact, totalLines: total, startLine: start + 1, endLine: end, linesCut: cut };
+    return { path: this.rel(abs), content, encoding: exact ? 'utf8' : 'lossy', exact, lineEndings, totalLines: total, startLine: start + 1, endLine: end, linesCut: cut };
   }
 
   /**
    * Write `content` as UTF-8. An existing file that is not exact UTF-8 text
    * (it has NUL bytes or invalid sequences) is only replaced with overwrite.
+   * Over a file whose every line ends in CRLF, LF line ends are written as
+   * CRLF (convertedToCrlf) unless lineEndings is 'keep'.
    */
-  async writeFile(p, content, { overwrite = false } = {}) {
+  async writeFile(p, content, { overwrite = false, lineEndings = null } = {}) {
     if (typeof content !== 'string') throw new CodeHostError('EINVAL', 'Content must be a string.');
-    const bytes = Buffer.byteLength(content, 'utf8');
-    if (bytes > MAX_WRITE_BYTES) throw new CodeHostError('ETOOBIG', `Content is ${bytes} bytes; the limit is ${MAX_WRITE_BYTES}.`);
+    const tooBig = (n) => new CodeHostError('ETOOBIG', `Content is ${n} bytes; the limit is ${MAX_WRITE_BYTES}.`);
+    if (Buffer.byteLength(content, 'utf8') > MAX_WRITE_BYTES) throw tooBig(Buffer.byteLength(content, 'utf8'));
     const abs = await this.resolve(p);
-    this._refuseGit(abs, p);
+    await this._refuseGit(abs, p);
     let existing = null;
     try {
       existing = await fsp.lstat(abs);
     } catch (e) {
       if (e.code !== 'ENOENT') throw e;
     }
+    let text = content;
     if (existing) {
       if (existing.isDirectory()) throw new CodeHostError('EISDIR', 'Is a folder: ' + p);
       if (!existing.isFile()) throw new CodeHostError('ENOTFILE', 'Not a regular file: ' + p);
-      const problem = overwrite === true ? null : await this._notPlainText(abs, p);
-      if (problem) throw new CodeHostError('EENCODING', `Not replacing ${p}: ${problem}, so text written over it would lose bytes. Pass overwrite to replace it anyway.`);
+      const { problem, lineEnds } = await this._inspect(abs, p);
+      if (problem && !_flag(overwrite)) throw new CodeHostError('EENCODING', `Not replacing ${p}: ${problem}, so text written over it would lose bytes. Pass overwrite to replace it anyway.`);
+      if (lineEnds === 'crlf' && lineEndings !== 'keep') text = content.replace(/\r?\n/g, '\r\n');
     }
-    await fsp.mkdir(path.dirname(abs), { recursive: true });
-    // The folders just made could have been swapped for a link: check again.
-    if (!_isInside(this.root, await _realish(path.dirname(abs)))) throw new CodeHostError('EOUTSIDE', 'Path leads outside the workspace: ' + p);
-    await this._writeText(abs, content, existing ? existing.mode : null, p);
-    return { path: this.rel(abs), created: !existing, bytes };
+    const bytes = Buffer.byteLength(text, 'utf8');
+    if (bytes > MAX_WRITE_BYTES) throw tooBig(bytes);
+    const dir = await this._makeFolders(path.dirname(abs), p);
+    const target = path.join(dir, path.basename(abs));
+    if (target !== abs) await this._refuseGit(target, p);
+    await this._writeText(target, text, existing ? existing.mode : null, p);
+    return { path: this.rel(target), created: !existing, bytes, convertedToCrlf: text !== content };
   }
 
   /**
    * Replace `oldText` with `newText`. `oldText` must occur exactly once
    * unless replaceAll. Files that are not valid UTF-8 are refused rather
-   * than rewritten. In a file whose every line ends in CRLF, line ends in
-   * both texts become CRLF; a file with mixed line ends is matched as is.
+   * than rewritten. In a CRLF file, or one at least 90% CRLF with a few
+   * stray LFs, both texts are taken with CRLF line ends (oldText is also
+   * tried as it is), and old text that ends in the CR of a line end keeps
+   * that line end CRLF, so no bare LF goes into a CRLF line. A file with a
+   * real mix of line ends is matched as it is.
    */
   async editFile(p, oldText, newText, { replaceAll = false } = {}) {
     if (typeof oldText !== 'string' || typeof newText !== 'string') throw new CodeHostError('EINVAL', 'Old and new text must be strings.');
     if (!oldText) throw new CodeHostError('EINVAL', 'Old text is empty.');
     if (oldText === newText) throw new CodeHostError('EINVAL', 'Old and new text are the same.');
     const abs = await this.resolve(p);
-    this._refuseGit(abs, p);
+    await this._refuseGit(abs, p);
     const { text: before, exact, mode } = await this._readText(abs, p);
     if (!exact) throw new CodeHostError('EENCODING', 'Not a UTF-8 text file; editing it would change bytes elsewhere: ' + p);
-    let from = oldText;
+    const ends = _lineEnds(before);
+    let forms = [oldText];
     let to = newText;
-    const lf = before.split('\n').length - 1;
-    if (lf > 0 && lf === before.split('\r\n').length - 1) {
-      from = oldText.replace(/\r?\n/g, '\r\n');
+    if (ends.mostlyCrlf) {
+      const crlf = oldText.replace(/\r?\n/g, '\r\n');
+      forms = crlf === oldText ? [oldText] : [crlf, oldText];
       to = newText.replace(/\r?\n/g, '\r\n');
-      if (from === to) throw new CodeHostError('EINVAL', 'Old and new text are the same in this CRLF file.');
     }
-    const count = before.split(from).length - 1;
-    if (count === 0) throw new CodeHostError('ENOMATCH', 'Old text not found in ' + p);
-    if (count > 1 && !replaceAll) throw new CodeHostError('EAMBIGUOUS', `Old text occurs ${count} times in ${p}; give more context or replace all.`);
-    const after = replaceAll ? before.split(from).join(to) : before.replace(from, () => to);
+    const hits = _occurrences(before, forms);
+    if (!hits.length) {
+      const hint = ends.kind === 'mixed' && !ends.mostlyCrlf ? ' (its lines end in a mix of CRLF and LF, so match them as they are)' : '';
+      throw new CodeHostError('ENOMATCH', 'Old text not found in ' + p + hint);
+    }
+    const all = _flag(replaceAll);
+    if (hits.length > 1 && !all) throw new CodeHostError('EAMBIGUOUS', `Old text occurs ${hits.length} times in ${p}; give more context or replace all.`);
+    let after = '';
+    let at = 0;
+    for (const h of all ? hits : hits.slice(0, 1)) {
+      const end = h.at + h.len;
+      const keepCr = ends.mostlyCrlf && before[end - 1] === '\r' && before[end] === '\n' && !to.endsWith('\r');
+      after += before.slice(at, h.at) + to + (keepCr ? '\r' : '');
+      at = end;
+    }
+    after += before.slice(at);
+    if (after === before) throw new CodeHostError('EINVAL', 'The edit changes nothing.');
     if (Buffer.byteLength(after) > MAX_READ_BYTES) throw new CodeHostError('ETOOBIG', 'The edited file would pass the size limit.');
     await this._writeText(abs, after, mode, p);
-    return { path: this.rel(abs), replacements: replaceAll ? count : 1, before, after };
+    return { path: this.rel(abs), replacements: all ? hits.length : 1, before, after };
   }
 
   async listDir(p = '.') {
@@ -525,15 +785,22 @@ class Workspace {
 
   /**
    * Lines matching `pattern` (a regular expression) in files under `dir`.
-   * Runs in a worker thread; symlinks are not followed. The answer says
-   * what was skipped (files over the size limit, binary files) and which
-   * cap ended it early, if one did (truncatedBy 'matches', 'files' or
-   * 'time'). At the time limit it returns what it found, with timedOut.
+   * Runs in a worker thread (see search-worker.js for how it treats
+   * symlinks). Each match's text is its line, or the 500 characters around
+   * the first match in a longer one. Folders named in SKIP_DIRS
+   * (node_modules, .git, build, dist, …) are skipped unless the search
+   * starts inside one of that name. The answer says what was skipped
+   * (skipped: tooBig and binary files, unreadable files and folders, and
+   * dirs, the skipped folder names with how many of each) and which cap
+   * ended it early, if one did (truncatedBy 'matches', 'files' or 'time').
+   * At the time limit it returns every match found before it, with
+   * timedOut and the counts so far.
    */
   async search(pattern, { dir = '.', glob = '', ignoreCase = false, maxMatches, timeoutMs } = {}) {
     if (typeof pattern !== 'string' || !pattern) throw new CodeHostError('EINVAL', 'Search pattern is empty.');
     if (glob != null && typeof glob !== 'string') throw new CodeHostError('EINVAL', 'Glob must be a string.');
-    try { new RegExp(pattern, ignoreCase ? 'i' : ''); } catch (e) { throw new CodeHostError('EINVAL', 'Bad pattern: ' + e.message); }
+    const icase = _flag(ignoreCase);
+    try { new RegExp(pattern, icase ? 'i' : ''); } catch (e) { throw new CodeHostError('EINVAL', 'Bad pattern: ' + e.message); }
     if (glob) {
       try { _globToRegExp(glob); } catch { throw new CodeHostError('EINVAL', 'Bad glob: ' + glob); }
     }
@@ -545,17 +812,24 @@ class Workspace {
     const job = { stop: null };
     this._searches.add(job);
     try {
-      const start = await this.resolve(dir == null ? '.' : dir);
+      const shown = dir == null ? '.' : dir;
+      const start = await this.resolve(shown);
       let st;
       try {
         st = await fsp.stat(start);
       } catch (e) {
-        if (e.code === 'ENOENT') throw new CodeHostError('ENOENT', 'No such folder: ' + dir);
+        if (e.code === 'ENOENT') throw new CodeHostError('ENOENT', 'No such folder: ' + shown);
         throw e;
       }
-      if (!st.isDirectory()) throw new CodeHostError('ENOTDIR', 'Not a folder: ' + dir);
+      if (!st.isDirectory()) throw new CodeHostError('ENOTDIR', 'Not a folder: ' + shown);
+      try {
+        await (await fsp.opendir(start)).close();
+      } catch (e) {
+        if (e.code === 'EACCES' || e.code === 'EPERM') throw new CodeHostError('EACCES', 'Cannot read folder: ' + shown);
+        throw e;
+      }
       if (gen !== this._gen) throw _stopped();
-      return await this._searchIn(job, start, { pattern, ignoreCase: !!ignoreCase, glob: glob || '', cap, limit });
+      return await this._searchIn(job, start, { pattern, ignoreCase: icase, glob: glob || '', cap, limit });
     } finally {
       this._searches.delete(job);
     }
@@ -563,34 +837,51 @@ class Workspace {
 
   _searchIn(job, start, { pattern, ignoreCase, glob, cap, limit }) {
     return new Promise((resolve, reject) => {
+      // The worker keeps its counts here, current after every file, so they
+      // can be read even while it is stuck in a pattern.
+      const counts = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * (SEARCH_COUNT.dirs + SKIP_DIRS.length)));
+      const { port1, port2 } = new MessageChannel();
       const worker = new Worker(path.join(__dirname, 'search-worker.js'), {
-        workerData: { root: this.root, start, pattern, ignoreCase, glob, cap, maxBytes: MAX_READ_BYTES, maxFiles: SEARCH_MAX_FILES, skipDirs: SKIP_DIRS },
+        workerData: { root: this.root, start, pattern, ignoreCase, glob, cap, maxBytes: MAX_READ_BYTES, maxFiles: SEARCH_MAX_FILES, skipDirs: SKIP_DIRS, counts: counts.buffer, port: port2 },
+        transferList: [port2],
       });
       const matches = [];
-      let filesSearched = 0;
-      let skipped = { tooBig: 0, binary: 0 };
       let done = false;
-      const answer = (extra) => ({ matches, filesSearched, skipped, ...extra });
+      const answer = (extra) => {
+        const n = (i) => Atomics.load(counts, i);
+        const dirs = {};
+        SKIP_DIRS.forEach((name, i) => { if (n(SEARCH_COUNT.dirs + i)) dirs[name] = n(SEARCH_COUNT.dirs + i); });
+        const skipped = { tooBig: n(SEARCH_COUNT.tooBig), binary: n(SEARCH_COUNT.binary), unreadable: n(SEARCH_COUNT.unreadable), dirs };
+        return { matches, filesSearched: n(SEARCH_COUNT.files), skipped, ...extra };
+      };
       const finish = (fn) => {
         if (done) return;
         done = true;
         clearTimeout(timer);
         job.stop = null;
+        port1.close();
         worker.terminate();
         fn();
       };
-      const timer = setTimeout(() => finish(() => resolve(answer({ truncated: true, truncatedBy: 'time', timedOut: true }))), limit);
-      job.stop = (err) => finish(() => reject(err));
-      // The worker sends matches after each file that has some, then 'done'.
-      worker.on('message', (m) => {
+      // The worker posts each match as it finds it, then 'done'.
+      const onMessage = (m) => {
         if (done || !m) return;
-        if (typeof m.filesSearched === 'number') filesSearched = m.filesSearched;
-        if (m.skipped) skipped = m.skipped;
-        if (Array.isArray(m.matches)) for (const x of m.matches) if (matches.length < cap) matches.push(x);
-        if (m.type === 'done') finish(() => resolve(answer({ truncated: !!m.truncatedBy, truncatedBy: m.truncatedBy || null, timedOut: false })));
-      });
+        if (m.type === 'match') { if (matches.length < cap) matches.push(m.match); }
+        else if (m.type === 'done') finish(() => resolve(answer({ truncated: !!m.truncatedBy, truncatedBy: m.truncatedBy || null, timedOut: false })));
+      };
+      // Messages posted just before the time limit or the worker's exit can still be queued.
+      const drain = () => { for (let r; !done && (r = receiveMessageOnPort(port1));) onMessage(r.message); };
+      port1.on('message', onMessage);
+      const timer = setTimeout(() => {
+        drain();
+        finish(() => resolve(answer({ truncated: true, truncatedBy: 'time', timedOut: true })));
+      }, limit);
+      job.stop = (err) => finish(() => reject(err));
       worker.once('error', (e) => finish(() => reject(new CodeHostError('ESEARCH', e.message))));
-      worker.once('exit', (code) => finish(() => reject(new CodeHostError('ESEARCH', 'Search stopped (exit ' + code + ').'))));
+      worker.once('exit', (code) => {
+        drain();
+        finish(() => reject(new CodeHostError('ESEARCH', 'Search stopped (exit ' + code + ').')));
+      });
     });
   }
 
@@ -752,27 +1043,87 @@ class Workspace {
   }
 }
 
-// Glob over a relative path: `*.js`, `*.{js,ts}`, `**` across folders, and
-// `**/` for zero or more whole folders.
+/**
+ * A glob over a path relative to the workspace, as an anchored RegExp:
+ * `*` and `?` within one folder name, `**` across folders, `**\/` for zero
+ * or more whole folders, `[ab]`, `[a-z]` and `[!a]` for one character (never
+ * a slash), and `{a,b}` for alternatives, which can hold any of these,
+ * braces included. search() also tests a glob against the bare file name,
+ * so one with no slash (`*.js`) matches at any depth.
+ */
 function _globToRegExp(glob) {
+  return new RegExp('^' + _globSource(String(glob)) + '$');
+}
+
+function _globSource(g) {
   let re = '';
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i];
+  for (let i = 0; i < g.length; i++) {
+    const c = g[i];
     if (c === '*') {
-      if (glob[i + 1] === '*') {
+      if (g[i + 1] === '*') {
         i++;
-        if (glob[i + 1] === '/') { re += '(?:.*/)?'; i++; }
+        if (g[i + 1] === '/') { re += '(?:.*/)?'; i++; }
         else re += '.*';
       } else re += '[^/]*';
     } else if (c === '?') re += '[^/]';
-    else if (c === '{') {
-      const close = glob.indexOf('}', i);
-      if (close === -1) { re += '\\{'; continue; }
-      re += '(' + glob.slice(i + 1, close).split(',').map(s => s.replace(/[.+^$()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')).join('|') + ')';
+    else if (c === '[') {
+      const close = _classEnd(g, i);
+      if (close === -1) { re += '\\['; continue; }
+      let body = g.slice(i + 1, close);
+      const negated = body[0] === '!' || body[0] === '^';
+      if (negated) body = body.slice(1);
+      body = body.replace(/[\\\][^]/g, '\\$&');
+      re += negated ? '[^/' + body + ']' : '(?!/)[' + body + ']';
       i = close;
-    } else re += c.replace(/[.+^$()|[\]\\]/g, '\\$&');
+    } else if (c === '{') {
+      const close = _braceEnd(g, i);
+      if (close === -1) { re += '\\{'; continue; }
+      re += '(?:' + _splitAlternatives(g.slice(i + 1, close)).map(_globSource).join('|') + ')';
+      i = close;
+    } else re += c.replace(/[.+^$()|[\]\\{}]/g, '\\$&');
   }
-  return new RegExp('^' + re + '$');
+  return re;
+}
+
+/* Index of the `]` that closes the class opening at `i`, or -1. A `]` right
+   after `[` or `[!` is part of the class. */
+function _classEnd(g, i) {
+  let j = i + 1;
+  if (g[j] === '!' || g[j] === '^') j++;
+  if (g[j] === ']') j++;
+  return g.indexOf(']', j);
+}
+
+/* Index of the `}` that closes the brace opening at `i`, or -1. */
+function _braceEnd(g, i) {
+  let depth = 0;
+  for (let j = i; j < g.length; j++) {
+    if (g[j] === '[') {
+      const k = _classEnd(g, j);
+      if (k !== -1) { j = k; continue; }
+    }
+    if (g[j] === '{') depth++;
+    else if (g[j] === '}' && --depth === 0) return j;
+  }
+  return -1;
+}
+
+/* A brace's body split at its own commas, not those of braces inside it. */
+function _splitAlternatives(s) {
+  const parts = [];
+  let depth = 0;
+  let from = 0;
+  for (let j = 0; j < s.length; j++) {
+    if (s[j] === '[') {
+      const k = _classEnd(s, j);
+      if (k !== -1) { j = k; continue; }
+    }
+    if (s[j] === '{') depth++;
+    else if (s[j] === '}') depth--;
+    else if (s[j] === ',' && depth === 0) { parts.push(s.slice(from, j)); from = j + 1; }
+  }
+  parts.push(s.slice(from));
+  return parts;
 }
 
 /** Plain object safe to send over IPC. */
@@ -783,9 +1134,10 @@ function serializeError(e) {
 function _resetCommandPath() {
   _loginPath = null;
   _pathLookup = null;
+  _pathFailedAt = 0;
 }
 
 module.exports = {
-  Workspace, CodeHostError, serializeError, _globToRegExp, _parseLoginPath, _resetCommandPath,
-  limits: { MAX_READ_BYTES, MAX_WRITE_BYTES, MAX_LINE_CHARS, MAX_OUTPUT_CHARS, DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS, KILL_GRACE_MS, MAX_SEARCH_MATCHES, SEARCH_TIMEOUT_MS, MAX_SEARCHES },
+  Workspace, CodeHostError, serializeError, runTag, _globToRegExp, _parseLoginPath, _resetCommandPath, SEARCH_COUNT,
+  limits: { MAX_READ_BYTES, MAX_WRITE_BYTES, MAX_LINE_CHARS, MAX_OUTPUT_CHARS, DEFAULT_TIMEOUT_MS, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS, KILL_GRACE_MS, MAX_SEARCH_MATCHES, MAX_SEARCH_MATCHES_CAP, SEARCH_TIMEOUT_MS, MIN_SEARCH_TIMEOUT_MS, MAX_SEARCHES, MAX_TAG_CHARS, PATH_RETRY_MS },
 };

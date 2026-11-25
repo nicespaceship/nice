@@ -128,4 +128,19 @@ function replacesAppPage(details) {
   return String(details.url || '').startsWith(ORIGIN + '/');
 }
 
-module.exports = { SCHEME, HOST, ORIGIN, CSP, API_HOSTS, SERVED_DIRS, cspFor, resolveAppRequest, isAppPage, replacesAppPage };
+/**
+ * Calls stop() whenever the page in `contents` (a webContents) goes away:
+ * when a navigation that replaces it starts (replacesAppPage), when a new
+ * document commits (did-navigate, which Electron fires only for the main
+ * frame and never for a hash change), and when the renderer dies. The
+ * commit catches calls the old page sent after the navigation started,
+ * from a pagehide handler or a loop that runs again when its stopped
+ * command comes back.
+ */
+function stopWhenPageGoes(contents, stop) {
+  contents.on('did-start-navigation', (details) => { if (replacesAppPage(details)) stop(); });
+  contents.on('did-navigate', () => stop());
+  contents.on('render-process-gone', () => stop());
+}
+
+module.exports = { SCHEME, HOST, ORIGIN, CSP, API_HOSTS, SERVED_DIRS, cspFor, resolveAppRequest, isAppPage, replacesAppPage, stopWhenPageGoes };

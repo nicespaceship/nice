@@ -31,15 +31,17 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
   code: {
     openFolder: () => call('code:open-folder'),
     workspace: () => call('code:workspace'),
+    /** Resolves to { content, lineEndings: 'crlf'|'lf'|'mixed', … }; a CRLF file's content comes back with LF. */
     read: (path, opts) => call('code:read', path, opts),
-    /** opts.overwrite replaces an existing file that is not exact UTF-8 text, which is otherwise refused (EENCODING). */
+    /** opts.overwrite replaces an existing file that is not exact UTF-8 text, which is otherwise refused (EENCODING). Over a CRLF file, LF is written as CRLF unless opts.lineEndings is 'keep'. */
     write: (path, content, opts) => call('code:write', path, content, opts),
     edit: (path, oldText, newText, opts) => call('code:edit', path, oldText, newText, opts),
     list: (path) => call('code:list', path),
     search: (pattern, opts) => call('code:search', pattern, opts),
+    /** opts.tag, a string or a number (anything else is EINVAL), comes back on every event of this run. */
     run: (command, opts) => call('code:run', command, opts),
     kill: (id) => call('code:kill', id),
-    /** Live output of running commands: fn({ id, tag, stream: 'start'|'stdout'|'stderr', data, truncated? }), `tag` as passed to run(), back as a string (or null). Returns an unsubscribe. */
+    /** Live output of running commands: fn({ id, tag, stream: 'start'|'stdout'|'stderr', data, truncated? }), `tag` as passed to run() as a string of at most 200 characters (or null). Returns an unsubscribe. */
     onRunData: (fn) => {
       const listener = (_e, d) => fn(d);
       ipcRenderer.on('code:run-data', listener);

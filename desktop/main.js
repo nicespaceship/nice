@@ -7,7 +7,7 @@ const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, ses
 const fs = require('fs');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
-const { Workspace, serializeError } = require('./code-host');
+const { Workspace, serializeError, runTag } = require('./code-host');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -120,11 +120,7 @@ function createWindow() {
   // the page stays, so its commands keep running.
   const contents = mainWindow.webContents;
   const contentsId = contents.id;
-  const stopCommands = () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); };
-  contents.on('did-start-navigation', (details) => {
-    if (AppProtocol.replacesAppPage(details)) stopCommands();
-  });
-  contents.on('render-process-gone', stopCommands);
+  AppProtocol.stopWhenPageGoes(contents, () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); });
 
   // Show when ready (prevents white flash)
   mainWindow.once('ready-to-show', () => {
@@ -211,14 +207,17 @@ handle('code:open-folder', async (event) => {
 });
 handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
 handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
-handle('code:write', (event, p, content, opts) => _workspace(event).writeFile(p, content, { overwrite: !!(opts && opts.overwrite === true) }));
+handle('code:write', (event, p, content, opts) => {
+  const o = opts || {};
+  return _workspace(event).writeFile(p, content, { overwrite: o.overwrite, lineEndings: o.lineEndings });
+});
 handle('code:edit', (event, p, oldText, newText, opts) => _workspace(event).editFile(p, oldText, newText, opts || {}));
 handle('code:list', (event, p) => _workspace(event).listDir(p || '.'));
 handle('code:search', (event, pattern, opts) => _workspace(event).search(pattern, opts || {}));
 handle('code:run', (event, command, opts) => {
   const sender = event.sender;
   const o = opts || {};
-  const tag = o.tag == null ? null : String(o.tag).slice(0, 200);
+  const tag = runTag(o.tag);
   return _workspace(event).run(command, {
     timeoutMs: o.timeoutMs,
     cwd: o.cwd,
