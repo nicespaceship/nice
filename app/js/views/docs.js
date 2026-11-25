@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Documentation Hub
-   Route: #/bridge?tab=documentation  (also rendered as a Bridge tab)
+   Route: #/docs (old #/bridge?tab=documentation links forward here)
 
    The view module — handles render, search, navigation, and dynamic
    model-table substitution. Content lives in app/js/lib/docs-content.js
@@ -68,7 +68,7 @@ const DocsView = (() => {
       const btn = e.target.closest('[data-section]');
       if (!btn) return;
       _activeSection = btn.dataset.section;
-      history.replaceState(null, '', `#/bridge?tab=documentation&s=${_activeSection}`);
+      history.replaceState(null, '', `#/docs?s=${_activeSection}`);
       document.querySelectorAll('.docs-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.section === _activeSection));
       const content = document.getElementById('docs-content');
       if (content) {
@@ -85,7 +85,7 @@ const DocsView = (() => {
       _searchQuery = '';
       const searchInput = document.getElementById('docs-search');
       if (searchInput) searchInput.value = '';
-      history.replaceState(null, '', `#/bridge?tab=documentation&s=${_activeSection}`);
+      history.replaceState(null, '', `#/docs?s=${_activeSection}`);
       document.querySelectorAll('.docs-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.section === _activeSection));
       const content = document.getElementById('docs-content');
       if (content) {

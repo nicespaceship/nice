@@ -1912,8 +1912,7 @@ const NICE = (() => {
     Router.on('/workflows/:id', _bridgeRedirect('#/bridge'));
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
-    // Legacy #/docs route → redirect into Bridge's Documentation tab
-    Router.on('/docs', { render: () => { location.hash = '#/bridge?tab=documentation'; }, title: 'Documentation' });
+    Router.on('/docs', DocsView);                    // Documentation ("Get help" in the account menu)
     // Legacy #/marketplace route → unified Blueprints browse, Community-filtered.
     // Marketplace is no longer a separate surface — community blueprints live
     // alongside the seeded catalog in the Agents sub-tab, discriminated by a
