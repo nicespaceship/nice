@@ -32,6 +32,13 @@
      `marketingIcon` — Font Awesome class for the marketing site
      `description`   — SEO meta + landing-page card body
   ─────────────────────────────────────────────────────────────── */
+  /* The plain looks and the marketing build (Node, no Terminology) read the
+     first wording; the sci-fi themes keep theirs. Bodies are getters so the
+     wording follows the theme each time a section is drawn. */
+  function _say(plain, scifi) {
+    return (typeof Terminology !== 'undefined' && Terminology.pick) ? Terminology.pick(plain, scifi) : plain;
+  }
+
   const SECTIONS = [
     {
       id: 'getting-started',
@@ -55,7 +62,7 @@
       label: 'Projects',
       icon: 'rocket',
       marketingIcon: 'fa-rocket',
-      description: 'A crew of agents working toward one goal. The unit that runs every Mission.',
+      get description() { return _say('A team of agents working toward one goal. The unit that runs every Mission.', 'A crew of agents working toward one goal. The unit that runs every Mission.'); },
     },
     {
       id: 'missions',
@@ -114,17 +121,17 @@
   ─────────────────────────────────────────────────────────────── */
   const BODIES = {
 
-    'getting-started': `
+    get 'getting-started'() { return `
       <h1>Getting Started</h1>
-      <p class="docs-lead">Welcome to NICE — the Neural Intelligence Command Engine. Build, deploy, and manage AI agent fleets from a single dashboard.</p>
+      <p class="docs-lead">${_say('Welcome to NICE, the Neural Intelligence Command Engine. Build, activate, and manage teams of AI agents from a single dashboard.', 'Welcome to NICE — the Neural Intelligence Command Engine. Build, deploy, and manage AI agent fleets from a single dashboard.')}</p>
 
       <h2>Quick Start</h2>
       <ol>
         <li><strong>Sign in</strong>: create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free, with no API keys and no token meter.</li>
-        <li><strong>Browse the Bridge</strong>: explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
-        <li><strong>Activate your first agent</strong>: click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
+        <li><strong>${_say('Browse Blueprints', 'Browse the Bridge')}</strong>: explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
+        <li><strong>Activate your first agent</strong>: click any agent card and hit <kbd>Activate</kbd>. ${_say('The agent is added to your agents.', 'The agent appears in your fleet.')}</li>
         <li><strong>Run a mission</strong>: type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
-        <li><strong>Start a project</strong>: activate a project blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate through the shared crew log.</li>
+        <li><strong>Start a project</strong>: activate a project blueprint to create a multi-agent team. Assign agents to ${_say('team', 'crew')} slots and let them collaborate through the shared ${_say('team', 'crew')} log.</li>
       </ol>
 
       <h2>Core Concepts</h2>
@@ -135,7 +142,7 @@
         </div>
         <div class="docs-card">
           <h3>Projects</h3>
-          <p>A crew of agents working toward one goal. A project is the unit that runs a mission: it routes the prompt to the right crew member through the WorkflowEngine.</p>
+          <p>A ${_say('team', 'crew')} of agents working toward one goal. A project is the unit that runs a mission: it routes the prompt to the right ${_say('team', 'crew')} member through the WorkflowEngine.</p>
         </div>
         <div class="docs-card">
           <h3>Missions</h3>
@@ -150,26 +157,26 @@
       <h2>Interface Overview</h2>
       <dl>
         <dt>Sidebar</dt>
-        <dd>Bridge, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
-        <dt>Bridge</dt>
-        <dd>Your main hub: Schematic (active project), Blueprints (catalog and Workshop), Missions, Outbox, Operations, Captain's Log, and Documentation.</dd>
+        <dd>${_say('Dashboard', 'Bridge')}, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
+        <dt>${_say('Dashboard', 'Bridge')}</dt>
+        <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Outbox, Operations, ${_say('Activity log', 'Captain\'s Log')}, and Documentation.</dd>
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
         <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin and notification alerts.</dd>
       </dl>
-    `,
+    `; },
 
-    'agents': `
+    get 'agents'() { return `
       <h1>Agents</h1>
       <p class="docs-lead">Agents are AI workers with specialized skills. Each agent has a system prompt that defines its personality, knowledge, and capabilities.</p>
 
       <h2>Activating Agents</h2>
-      <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents appear in your fleet and can receive missions.</p>
-      <p>Every blueprint and every crew slot is open from day one. Free accounts run one active project at a time; <strong>NICE Pro</strong> runs as many as you need.</p>
+      <p>Browse the catalog on the ${_say('Dashboard', 'Bridge')} (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. ${_say('Activated agents are listed with your agents and can receive missions.', 'Activated agents appear in your fleet and can receive missions.')}</p>
+      <p>Every blueprint and every ${_say('team', 'crew')} slot is open from day one. Free accounts run one active project at a time; <strong>NICE Pro</strong> runs as many as you need.</p>
 
       <h2>Building Custom Agents</h2>
-      <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
+      <p>Open the ${_say('Dashboard', 'Bridge')} → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
@@ -187,23 +194,23 @@
         <div class="docs-card"><h3>Business</h3><p>Strategy, finance, marketing, operations</p></div>
         <div class="docs-card"><h3>Productivity</h3><p>Email, calendar, task management, automation</p></div>
       </div>
-    `,
+    `; },
 
-    'spaceships': `
+    get 'spaceships'() { return `
       <h1>Projects</h1>
-      <p class="docs-lead">A project is a crew of agents working toward one goal. It's the unit that runs a Mission: every Run belongs to a project, even when the crew is just one agent.</p>
+      <p class="docs-lead">A project is a ${_say('team', 'crew')} of agents working toward one goal. It's the unit that runs a Mission: every Run belongs to a project, even when the ${_say('team', 'crew')} is just one agent.</p>
 
       <h2>How projects work</h2>
       <ol>
         <li><strong>Activate a project</strong> from the catalog or build one in the Workshop</li>
-        <li><strong>Assign crew</strong>: drop agents into the project's crew slots in the Schematic view</li>
-        <li><strong>Send a mission</strong>: by default the project runs a <em>triage</em> step, where an LLM router reads your prompt + the crew manifest and dispatches to the best-fit agent</li>
-        <li><strong>Agents collaborate</strong> through the shared crew log, a conversation context every crew member can read and append to</li>
+        <li><strong>${_say('Assign the team', 'Assign crew')}</strong>: drop agents into the project's ${_say('team', 'crew')} slots in the ${_say('Diagram', 'Schematic')} view</li>
+        <li><strong>Send a mission</strong>: by default the project runs a <em>triage</em> step, where an LLM router reads your prompt + the ${_say('team', 'crew')} manifest and dispatches to the best-fit agent</li>
+        <li><strong>Agents collaborate</strong> through the shared ${_say('team', 'crew')} log, a conversation context every ${_say('team', 'crew')} member can read and append to</li>
       </ol>
 
       <h2>Project classes</h2>
       <table>
-        <thead><tr><th>Class</th><th>Crew Size</th><th>Best For</th></tr></thead>
+        <thead><tr><th>Class</th><th>${_say('Team size', 'Crew Size')}</th><th>Best For</th></tr></thead>
         <tbody>
           <tr><td>Scout</td><td>1–2 agents</td><td>Simple focused tasks</td></tr>
           <tr><td>Cruiser</td><td>3–5 agents</td><td>Multi-domain projects</td></tr>
@@ -213,19 +220,19 @@
       </table>
 
       <h2>MCPs connect at the project level</h2>
-      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) connect to the project, not to individual agents. Every crew member on the project inherits the connections, so a single OAuth grant covers the whole crew.</p>
+      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) connect to the project, not to individual agents. Every ${_say('team', 'crew')} member on the project inherits the connections, so a single OAuth grant covers the whole ${_say('team', 'crew')}.</p>
 
-      <h2>Crew Designer</h2>
-      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
-    `,
+      <h2>${_say('Team Designer', 'Crew Designer')}</h2>
+      <p>Use the ${_say('Team Designer', 'Crew Designer')} (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a project: it fills the slots with agents whose roles match what you described, and lets you adjust before you ${_say('activate it', 'deploy')}.</p>
+    `; },
 
-    'missions': `
+    get 'missions'() { return `
       <h1>Missions</h1>
       <p class="docs-lead">A Mission is a reusable template: which project runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
 
       <h2>Running Missions</h2>
       <ul>
-        <li><strong>Project chat</strong>: open a project's Schematic view and chat. The project runs your prompt as a Run with full audit, cancel, and analytics.</li>
+        <li><strong>Project chat</strong>: open a project's ${_say('Diagram', 'Schematic')} view and chat. The project runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong>: visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
         <li><strong>Top-level NICE chat</strong>: the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
         <li><strong>Scheduled Mission</strong>: save a Mission with a cron schedule and the project fires Runs automatically.</li>
@@ -248,10 +255,10 @@
       <p>Every Run executes a <em>plan</em>: a JSONB graph of nodes stored on the Mission as <code>missions.plan</code>. A single-agent project runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
 
       <h2>Default: Triage</h2>
-      <p>When you chat with a multi-agent project, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the crew manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
-    `,
+      <p>When you chat with a multi-agent project, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the ${_say('team', 'crew')} manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
+    `; },
 
-    'workflows': `
+    get 'workflows'() { return `
       <h1>Workflows</h1>
       <p class="docs-lead">A workflow is the DAG of steps a Mission executes. Workflows are not standalone primitives — they live inside a Mission as <code>missions.plan</code> JSONB. Single-agent missions are 1-node workflows; complex orchestrations chain many nodes.</p>
 
@@ -260,7 +267,7 @@
         <thead><tr><th>Node</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>agent</td><td>Run a prompt through a specific agent (full ReAct loop with tools)</td></tr>
-          <tr><td>triage</td><td>LLM router picks the single best-fit crew member from the manifest</td></tr>
+          <tr><td>triage</td><td>LLM router picks the single best-fit ${_say('team', 'crew')} member from the manifest</td></tr>
           <tr><td>pipeline</td><td>Sequential assembly line: agent 1 → 2 → 3, each refining the prior output</td></tr>
           <tr><td>parallel</td><td>Run the same prompt across multiple agents simultaneously, then merge</td></tr>
           <tr><td>quality_loop</td><td>Agent runs → reviewer scores 1–10 → if below threshold, retry with feedback (up to 3 iterations)</td></tr>
@@ -283,11 +290,11 @@
         <dt>Manual</dt><dd>Run on demand from the prompt panel, project chat, or Mission detail page</dd>
         <dt>Scheduled</dt><dd>Stored as <code>missions.schedule</code> JSONB (<code>{ cron, tz, enabled }</code>) — fired by the <code>tick_mission_schedules</code> pg_cron job every minute</dd>
       </dl>
-    `,
+    `; },
 
-    'integrations': `
+    get 'integrations'() { return `
       <h1>Integrations</h1>
-      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a project, and every crew member inherits the connection through a single OAuth grant.</p>
+      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a project, and every ${_say('team', 'crew')} member inherits the connection through a single OAuth grant.</p>
 
       <h2>Wired integrations</h2>
       <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the project's approval mode: in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
@@ -332,14 +339,14 @@
 
       <h2>Adding Custom MCPs</h2>
       <p>Any MCP-compatible server can be connected. Open <strong>Profile → Integrations</strong>, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
-    `,
+    `; },
 
     /* The 'models' section has dynamic content in-app: docs.js replaces
        the table rows below with live VaultView.MODEL_CATALOG entries
        when rendering. The static rows here serve the marketing site and
        any context where the catalog isn't available. The marker
        attribute `data-models-table` is what docs.js targets. */
-    'models': `
+    get 'models'() { return `
       <h1>AI Models</h1>
       <p class="docs-lead">NICE is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
 
@@ -372,9 +379,9 @@
 
       <h2>Premium Models</h2>
       <p>Premium models (Claude, GPT, Gemini Pro) consume tokens from your balance. The free model (Gemini Flash) is unlimited. Manage your token balance in <strong>Wallet</strong>.</p>
-    `,
+    `; },
 
-    'tokens': `
+    get 'tokens'() { return `
       <h1>Tokens</h1>
       <p class="docs-lead">Tokens pay for AI model usage.</p>
 
@@ -404,9 +411,9 @@
         </tbody>
       </table>
       <p>Each pool is independent — Claude tokens cost more per message because Claude models are more expensive. Max packs are the best value (17% discount).</p>
-    `,
+    `; },
 
-    'keyboard': `
+    get 'keyboard'() { return `
       <h1>Keyboard Shortcuts</h1>
       <p class="docs-lead">Power-user shortcuts for faster navigation. Press <kbd>?</kbd> any time to bring up the live overlay.</p>
 
@@ -426,24 +433,24 @@
       <table>
         <thead><tr><th>Chord</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td><kbd>G  H</kbd></td><td>Go Bridge</td></tr>
+          <tr><td><kbd>G  H</kbd></td><td>${_say('Go Home', 'Go Bridge')}</td></tr>
           <tr><td><kbd>G  A</kbd></td><td>Go Agents</td></tr>
           <tr><td><kbd>G  S</kbd></td><td>Go Projects</td></tr>
           <tr><td><kbd>G  M</kbd></td><td>Go Missions</td></tr>
           <tr><td><kbd>G  B</kbd></td><td>Go Blueprints</td></tr>
           <tr><td><kbd>G  N</kbd></td><td>Go Operations</td></tr>
-          <tr><td><kbd>G  C</kbd></td><td>Go Comms</td></tr>
+          <tr><td><kbd>G  C</kbd></td><td>${_say('Go Alerts', 'Go Comms')}</td></tr>
           <tr><td><kbd>G  V</kbd></td><td>Go Vault</td></tr>
           <tr><td><kbd>G  P</kbd></td><td>Go Profile</td></tr>
           <tr><td><kbd>G  T</kbd></td><td>Go Settings</td></tr>
-          <tr><td><kbd>G  L</kbd></td><td>Go Captain's Log</td></tr>
+          <tr><td><kbd>G  L</kbd></td><td>${_say('Go Activity log', 'Go Captain\'s Log')}</td></tr>
           <tr><td><kbd>N  A</kbd></td><td>New Agent</td></tr>
         </tbody>
       </table>
 
       <h2>Command Palette</h2>
       <p>Press <kbd>Cmd+K</kbd> to open the command palette. Type to fuzzy-search across agents, views, actions, and settings. Hit Enter to execute.</p>
-    `,
+    `; },
 
   };
 
