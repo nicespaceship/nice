@@ -418,10 +418,6 @@ html:not([data-theme]),
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-menu-sep { margin: 6px 10px; background: var(--border-hi); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item:hover { background: var(--tint); color: var(--text); }
 
-/* Sidebar folder */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-folder-toggle { color: var(--text-dim); border-color: var(--border); }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-folder-body { border-left-color: var(--border); }
-
 /* ── Extended polish ── */
 
 /* Greeting — gradient text */
@@ -482,8 +478,6 @@ html:not([data-theme]),
   color: var(--accent);
 }
 
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mission-item { color: var(--text-dim); transition: all .15s; }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mission-item:hover { background: var(--tint); color: var(--text); }
 
 /* ── CORE Dark — flip the few light-only literals ──────────────────────
    The :is(nice, nice-dark) selectors above share all token-based rules;
@@ -726,12 +720,6 @@ html:not([data-theme]),
 }
 [data-theme="hal-9000"] .side-popover-item { color:#8a8a90; font-size:var(--text-sm); }
 [data-theme="hal-9000"] .side-popover-item:hover { background:rgba(255,255,255,0.04); color:#f5f5f5; }
-
-/* ── Sidebar folder ── */
-[data-theme="hal-9000"] .side-folder-toggle { color:#8a8a90; border-color:#2a2a2a; }
-[data-theme="hal-9000"] .side-folder-body { border-left-color:#2a2a2a; }
-[data-theme="hal-9000"] .side-mission-item { color:#8a8a90; }
-[data-theme="hal-9000"] .side-mission-item:hover { background:rgba(255,255,255,0.04); color:#f5f5f5; }
 
 /* ── Bridge hero header ── */
 /* ── Wizard overrides ── */
@@ -1704,17 +1692,6 @@ html:not([data-theme]),
   text-shadow: 0 0 6px rgba(24,160,251,0.4);
 }
 
-/* Sidebar folder */
-[data-theme="grid"] .side-folder-toggle {
-  color: rgba(24,160,251,0.5); border-color: rgba(24,160,251,0.1);
-  font-family: var(--font-h);
-}
-[data-theme="grid"] .side-folder-body { border-left-color: rgba(24,160,251,0.1); }
-[data-theme="grid"] .side-mission-item { color: rgba(24,160,251,0.5); }
-[data-theme="grid"] .side-mission-item:hover {
-  background: rgba(24,160,251,0.06); color: #18a0fb;
-}
-
 /* ═══════════════════════════════════════════════════════════════════
    THE GRID v2 — TRON Legacy Immersion
    Identity discs, light trails, wireframe geometry, grid floor,
@@ -2114,8 +2091,6 @@ html:not([data-theme]),
 [data-theme="matrix"] .side-popover { background: rgba(0,6,0,0.98); border: 1px solid rgba(0,255,65,0.2); border-radius: 0; }
 [data-theme="matrix"] .side-popover-item { color: rgba(0,255,65,0.6); }
 [data-theme="matrix"] .side-popover-item:hover { background: rgba(0,255,65,0.08); color: #00ff41; }
-[data-theme="matrix"] .side-folder-toggle { color: rgba(0,255,65,0.5); }
-[data-theme="matrix"] .side-folder-body { border-left-color: rgba(0,255,65,0.15); }
 [data-theme="matrix"] .bp-sub-tab {
   border-radius: 0; border: 1px solid rgba(0,255,65,0.12); background: transparent; color: rgba(0,255,65,0.4);
 }
@@ -3643,15 +3618,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   font-weight: var(--fw-regular); font-size: var(--text-sm);
 }
 [data-theme="jarvis"] .side-popover-item:hover { background: rgba(0,229,255,0.08); color: #18ffff; }
-
-/* Sidebar folder */
-[data-theme="jarvis"] .side-folder-toggle {
-  color: rgba(0,229,255,0.6); border-color: rgba(0,229,255,0.12);
-  font-family: 'Exo 2', sans-serif;
-}
-[data-theme="jarvis"] .side-folder-body { border-left-color: rgba(0,229,255,0.1); }
-[data-theme="jarvis"] .side-mission-item { color: rgba(0,229,255,0.6); }
-[data-theme="jarvis"] .side-mission-item:hover { background: rgba(0,229,255,0.06); }
 
 /* ═══════════════════════════════════════════════════════════════════
    J.A.R.V.I.S. — Holographic HUD Immersion

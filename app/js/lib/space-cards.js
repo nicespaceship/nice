@@ -5,8 +5,8 @@
    card's thread inside the current conversation. ChatView draws the
    cards; PromptPanel sends to them.
 
-   A conversation stays one flat message list (Utils.KEYS.aiMessages and
-   the sidebar Chats list). Tags tie messages to cards:
+   A conversation stays one flat message list (Utils.KEYS.aiMessages, and
+   the saved conversations nice.js keeps). Tags tie messages to cards:
      prompt   { role:'user', to:['gemini-2-5-flash', 'grok-4-3'] }
      reply    { role:'assistant', modelId:'grok-4-3', model:'Grok 4.3' }
    Untagged messages are NICE's own replies (slash commands, navigation,
