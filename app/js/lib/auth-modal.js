@@ -87,7 +87,7 @@ const AuthModal = (() => {
           </button>
         </form>
 
-        <div class="auth-footer">TRANSMISSION ENCRYPTED &mdash; TLS 1.3</div>
+        <div class="auth-footer">${Terminology.pick('Encrypted connection · TLS 1.3', 'TRANSMISSION ENCRYPTED &mdash; TLS 1.3')}</div>
       </div>
     `;
 
@@ -286,7 +286,7 @@ const AuthModal = (() => {
           <div class="auth-error" id="am-rs-error"></div>
           <button type="submit" class="auth-submit" id="am-rs-btn">Update password</button>
         </form>
-        <div class="auth-footer">TRANSMISSION ENCRYPTED &mdash; TLS 1.3</div>
+        <div class="auth-footer">${Terminology.pick('Encrypted connection · TLS 1.3', 'TRANSMISSION ENCRYPTED &mdash; TLS 1.3')}</div>
       </div>
     `;
     document.body.appendChild(_overlay);
