@@ -165,15 +165,21 @@ const DocsView = (() => {
     return body;
   }
 
+  // The tier is the token pool that pays for the model (none for the free one).
+  const _POOL_LABELS = { standard: 'Standard', claude: 'Claude', premium: 'Premium' };
   function _renderLiveModelRows() {
-    return VaultView.MODEL_CATALOG.map(m => `
+    return VaultView.MODEL_CATALOG.map(m => {
+      const pool = typeof TokenConfig !== 'undefined' ? TokenConfig.poolFor(m.id) : null;
+      const tier = pool ? (_POOL_LABELS[pool] || pool) : 'Free';
+      return `
       <tr>
         <td>${_esc(m.name)}</td>
         <td>${_esc(m.provider)}</td>
-        <td><span class="docs-badge docs-badge-${m.tier === 'free' ? 'free' : 'pro'}">${m.tier === 'free' ? 'Free' : 'Premium'}</span></td>
-        <td>${_esc(m.description || '')}</td>
+        <td><span class="docs-badge docs-badge-${pool ? 'pro' : 'free'}">${_esc(tier)}</span></td>
+        <td>${_esc(m.desc || '')}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function _getSectionText(id) {

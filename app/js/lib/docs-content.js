@@ -180,7 +180,7 @@
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). NICE Auto picks the best available if unset.</li>
+        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, Kimi, Nemotron). NICE Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>
@@ -355,14 +355,14 @@
         <thead><tr><th>Model</th><th>Provider</th><th>Tier</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Gemini 2.5 Flash</td><td>Google</td><td><span class="docs-badge docs-badge-free">Free</span></td><td>Unlimited default model for all users</td></tr>
-          <tr><td>GPT-5 mini</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Low-cost reliable workhorse</td></tr>
-          <tr><td>GPT-OSS 120B</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Open-weights frontier reasoning on Groq silicon</td></tr>
-          <tr><td>Grok 4.3</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context, always-on reasoning, real-time research</td></tr>
-          <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
-          <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Agentic open-source model for long-horizon work</td></tr>
-          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
-          <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
-          <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Expert writing and nuanced synthesis</td></tr>
+          <tr><td>GPT-5 mini</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Low-cost reliable workhorse</td></tr>
+          <tr><td>GPT-OSS 120B</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Open-weights frontier reasoning on Groq silicon</td></tr>
+          <tr><td>Grok 4.3</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>1M context, always-on reasoning, real-time research</td></tr>
+          <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
+          <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Agentic open-source model for long-horizon work</td></tr>
+          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
+          <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
+          <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Expert writing and nuanced synthesis</td></tr>
           <tr><td>GPT-5.4 Pro</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context multimodal flagship</td></tr>
           <tr><td>OpenAI o3</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier reasoning and STEM</td></tr>
           <tr><td>Gemini 2.5 Pro</td><td>Google</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Native multimodal, 1M+ context</td></tr>
@@ -391,7 +391,7 @@
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
           <tr><td>Free</td><td>$0</td><td>One active project, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>Run as many projects as you need, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Run as many projects as you need, 1,000 Standard tokens/month covering GPT-5 mini, GPT-OSS 120B, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
