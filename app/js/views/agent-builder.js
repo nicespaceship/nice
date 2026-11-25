@@ -66,6 +66,11 @@ const AgentBuilderView = (() => {
     if (!slug) return '';
     return (typeof Roles !== 'undefined' && Roles.get && Roles.get(slug)?.label) || slug;
   }
+  // Screen-only: never written to config.role or category.
+  function _roleDisplay(slug) {
+    if (!slug) return '';
+    return (typeof Roles !== 'undefined' && Roles.displayLabel) ? Roles.displayLabel(slug) : _roleLabel(slug);
+  }
   function _resolveRoleSlug(val) {
     if (!val) return null;
     if (typeof Roles === 'undefined' || !Roles.list) return null;
@@ -361,7 +366,7 @@ const AgentBuilderView = (() => {
               <label class="builder-template-label">Load Template</label>
               <select id="b-template" class="filter-select builder-select">
                 <option value="">Start from scratch</option>
-                ${tmpls.map(t => '<option value="' + t.id + '">' + _esc(t.name) + ' (' + _esc(_roleLabel(t.role) || 'Agent') + ')</option>').join('')}
+                ${tmpls.map(t => '<option value="' + t.id + '">' + _esc(t.name) + ' (' + _esc(_roleDisplay(t.role) || 'Agent') + ')</option>').join('')}
               </select>
               <button class="btn btn-sm" id="btn-delete-template" type="button">Delete</button>
             </div>
@@ -380,7 +385,7 @@ const AgentBuilderView = (() => {
               <div class="auth-field">
                 <label for="b-role">Role</label>
                 <select id="b-role" class="filter-select builder-select">
-                  ${allRoles.map(r => `<option value="${_esc(r.slug)}" ${selectedRole === r.slug ? 'selected' : ''}>${_esc(r.label || r.slug)}</option>`).join('')}
+                  ${allRoles.map(r => `<option value="${_esc(r.slug)}" ${selectedRole === r.slug ? 'selected' : ''}>${_esc(_roleDisplay(r.slug) || r.label)}</option>`).join('')}
                 </select>
               </div>
               <div class="auth-field">

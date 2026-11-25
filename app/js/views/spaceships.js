@@ -994,7 +994,7 @@ const SpaceshipDetailView = (() => {
       ? source.steps.map(toStep) : [{ step: '', agent_slot: 0 }];
 
     const slotDefs = (spaceshipClass && Array.isArray(spaceshipClass.slots)) ? spaceshipClass.slots : [];
-    const slotOptions = [{ value: '0', label: 'Auto · Captain' }].concat(
+    const slotOptions = [{ value: '0', label: 'Auto · ' + Terminology.label('captain') }].concat(
       slotDefs.map(s => {
         const aid = (fleet.slot_assignments || {})[s.id];
         const agent = aid && agentMap ? agentMap[aid] : null;

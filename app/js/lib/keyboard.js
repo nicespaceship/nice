@@ -16,6 +16,7 @@ const Keyboard = (() => {
   const _goShips = () => `Go ${Terminology.label('spaceship', { plural: true })}`;
   // The chord opens Alerts; only the sci-fi themes call that Comms.
   const _goAlerts = () => Terminology.pick('Go Alerts', 'Go Comms');
+  const _goLog = () => Terminology.pick('Go Activity log', 'Go Captain\'s Log');
   const SHORTCUTS = [
     // Navigation chords: G + letter
     { chord: ['g', 'h'], label: 'Go Home', action: () => Router.navigate('#/') },
@@ -29,7 +30,7 @@ const Keyboard = (() => {
     { chord: ['g', 'p'], label: 'Go Profile',      action: () => Router.navigate('#/profile') },
     { chord: ['g', 't'], label: 'Go Settings',     action: () => Router.navigate('#/settings') },
     { chord: ['g', 'r'], label: _goMissions,       action: () => Router.navigate('#/missions') },
-    { chord: ['g', 'l'], label: 'Go Captain\'s Log', action: () => Router.navigate('#/bridge?tab=operations&sub=log') },
+    { chord: ['g', 'l'], label: _goLog, action: () => Router.navigate('#/bridge?tab=operations&sub=log') },
     // Creation chords: N + letter
     { chord: ['n', 'a'], label: 'New Agent',        action: () => Router.navigate('#/bridge/agents/new') },
     // Single key

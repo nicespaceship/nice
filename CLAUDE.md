@@ -432,7 +432,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `CrewMatcher` | `crew-matcher.js` | Resolves a spaceship's `crew_roles` + `crew_overrides` spec into a `slot_assignments` map at activation |
 | `ShipSlots` | `ship-slots.js` | SSOT for slot assignments via `public.user_ship_slots` after Phase C.1 (`fetchForShips` / `setForShip` replace-all / `setSlot` upsert / `clearSlot` / `deleteForShip`) |
 | `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, provider colors (`providerColor`, frames crew cards), speed/quality bars, marketing copy |
-| `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain`. Default `spaceship` noun is **Project**; the sci-fi themes (hal-9000, grid, matrix, lcars, jarvis, cyberpunk, rx-78-2, 16bit) override it back to Spaceship; Office says Assignment for `mission` |
+| `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain`. Default `spaceship` noun is **Project** and `captain` is **Lead**; the sci-fi themes (hal-9000, grid, matrix, lcars, jarvis, cyberpunk, rx-78-2, 16bit) override them back to Spaceship and Captain; Office says Assignment for `mission` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 | `SpaceCards` | `space-cards.js` | SSOT for Space's model cards: which models get a card (`available`: switched on ∩ the plan can run, never NICE Auto), the selection the prompt goes to (`selected`/`toggle`, persisted in `Utils.KEYS.spaceCards`, defaults to the free model), live per-card state, approvals a card is waiting on (`requestApproval` / `answer`), each card's thread inside the flat conversation (`threads`, `historyFor`; `tagLegacy` puts pre-card conversations on the card of the model that answered, or the default card), and NICE's own replies that sit on no card (`offCard`) |
@@ -456,7 +456,7 @@ Main nav (sidebar + phone tab bar) is the product name read as a workflow: **Spa
 | `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
 | `MissionComposerView` | `mission-composer.js` | `#/missions/new` | Mission Composer (prompt-driven authoring; emits to `missions` table + enqueues a `mission_runs` row) |
 | `AnalyticsView` | `analytics.js` | (embedded in BlueprintsView) | Operations |
-| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView; serves Bridge "Log" tab) | Captain's Log |
+| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView; serves Bridge "Log" tab) | Activity log (Captain's Log in sci-fi themes) |
 | `ShipLogView` | `ship-log-view.js` | (embedded in SchematicView) | Ship's Log |
 | `SecurityView` | `security.js` | `#/security` | Security |
 | `IntegrationsView` | `integrations.js` | (tab in SecurityView) | Integrations |

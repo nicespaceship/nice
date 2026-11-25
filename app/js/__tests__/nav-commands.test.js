@@ -54,6 +54,25 @@ describe('NavCommands', () => {
     });
   });
 
+  describe('the log command', () => {
+    const logCmd = () => NavCommands.list().find(c => c.id === 'open-log');
+    const withTheme = (id, fn) => {
+      const prev = globalThis.Theme;
+      globalThis.Theme = { current: () => id };
+      try { fn(); } finally { if (prev === undefined) delete globalThis.Theme; else globalThis.Theme = prev; }
+    };
+
+    it('answers to "captain" only in a sci-fi theme', () => {
+      withTheme('nice', () => {
+        expect(logCmd().keywords).toBe('log audit history events missions operations');
+        expect(logCmd().search).toBe('activity');
+      });
+      withTheme('lcars', () => {
+        expect(logCmd().keywords).toBe('log audit captain history events missions operations');
+      });
+    });
+  });
+
   describe('execute via the bus', () => {
     it('a nav command navigates to its route hash', async () => {
       const spy = vi.spyOn(globalThis.Router, 'navigate').mockImplementation(() => {});
