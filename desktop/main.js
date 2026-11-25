@@ -3,10 +3,12 @@
  * Lightweight wrapper loading the NICE web app locally.
  */
 
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog } = require('electron');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
+const { Workspace, serializeError } = require('./code-host');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -113,15 +115,99 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // Commands started by a page stop when that page goes away: a reload, a
+  // crash or the window closing. The open folder stays open.
+  const contents = mainWindow.webContents;
+  const contentsId = contents.id;
+  const stopCommands = () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); };
+  contents.on('did-start-navigation', (details) => {
+    if (details && details.isMainFrame && !details.isSameDocument) stopCommands();
+  });
+  contents.on('render-process-gone', stopCommands);
+
   // Show when ready (prevents white flash)
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
   mainWindow.on('closed', () => {
+    stopCommands();
+    workspaces.delete(contentsId);
     mainWindow = null;
   });
 }
+
+/* ── Code bridge ──
+   One workspace per window, opened only through the native folder dialog.
+   Each call answers { ok, value } or { ok:false, error:{ code, message } },
+   and only NICE's own page (the main frame on nice://app/app/) may call. */
+const workspaces = new Map();
+const APP_PAGE_PREFIX = AppProtocol.ORIGIN + '/app/';
+
+function _fromApp(event) {
+  const frame = event.senderFrame;
+  return !!frame && frame === event.sender.mainFrame && String(frame.url).startsWith(APP_PAGE_PREFIX);
+}
+
+function handle(channel, fn) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    if (!_fromApp(event)) return { ok: false, error: { code: 'EFORBIDDEN', message: 'Not allowed from this page.' } };
+    try {
+      return { ok: true, value: await fn(event, ...args) };
+    } catch (e) {
+      return { ok: false, error: serializeError(e) };
+    }
+  });
+}
+
+function _workspace(event) {
+  const ws = workspaces.get(event.sender.id);
+  if (!ws) throw Object.assign(new Error('No folder is open. Open one first.'), { code: 'ENOWORKSPACE' });
+  return ws;
+}
+
+const _describe = (ws) => ws ? { root: ws.root, name: path.basename(ws.root) || ws.root } : null;
+
+handle('code:open-folder', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const pick = await dialog.showOpenDialog(win, { title: 'Open a folder for Code', properties: ['openDirectory', 'createDirectory'] });
+  if (pick.canceled || !pick.filePaths[0]) return null;
+  const dir = pick.filePaths[0];
+  if (Workspace.isBroad(dir)) {
+    const ok = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Choose another folder', 'Open anyway'],
+      defaultId: 0,
+      cancelId: 0,
+      message: 'Give Code your whole ' + (dir === os.homedir() ? 'home folder' : 'disk') + '?',
+      detail: 'Code can read and change every file inside the folder you open, and run commands there. A project folder is safer.',
+    });
+    if (ok.response !== 1) return null;
+  }
+  const ws = await Workspace.open(dir);
+  const old = workspaces.get(event.sender.id);
+  if (old) old.killAll();
+  workspaces.set(event.sender.id, ws);
+  return _describe(ws);
+});
+handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
+handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
+handle('code:write', (event, p, content) => _workspace(event).writeFile(p, content));
+handle('code:edit', (event, p, oldText, newText, opts) => _workspace(event).editFile(p, oldText, newText, opts || {}));
+handle('code:list', (event, p) => _workspace(event).listDir(p || '.'));
+handle('code:search', (event, pattern, opts) => _workspace(event).search(pattern, opts || {}));
+handle('code:run', (event, command, opts) => {
+  const sender = event.sender;
+  const o = opts || {};
+  const tag = o.tag == null ? null : String(o.tag).slice(0, 200);
+  return _workspace(event).run(command, {
+    timeoutMs: o.timeoutMs,
+    cwd: o.cwd,
+    // `tag` comes back on every event so the page can tell its runs apart.
+    onData: (d) => { if (!sender.isDestroyed()) sender.send('code:run-data', { ...d, tag }); },
+  });
+});
+handle('code:kill', (event, id) => _workspace(event).kill(id));
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)

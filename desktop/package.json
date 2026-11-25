@@ -20,6 +20,8 @@
       "main.js",
       "preload.js",
       "app-protocol.js",
+      "code-host.js",
+      "search-worker.js",
       "../app/**/*",
       "../public/**/*"
     ],
