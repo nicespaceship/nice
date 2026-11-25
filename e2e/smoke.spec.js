@@ -71,8 +71,8 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('.side-primary')).toHaveCount(0);
     await expect(page.locator('#side-ships')).toBeAttached();
     await expect(page.locator('#side-chats-folder')).toHaveCount(0);
-    for (const gone of ['Space', 'Ship']) {
-      await expect(sidebar.locator('.side-link', { hasText: gone })).toHaveCount(0);
+    for (const gone of ['#/space', '#/ship']) {
+      await expect(sidebar.locator(`a[href="${gone}"]`)).toHaveCount(0);
     }
     // Blueprints is a row in the account menu, above Integrations.
     await page.locator('#side-more-btn').click();

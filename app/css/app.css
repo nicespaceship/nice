@@ -1287,15 +1287,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-theme-btn .icon { width:20px; height:20px; }
 .side-header-actions { display:flex; align-items:center; gap:2px; }
 
-/* Primary destinations (Space, Ship, Blueprints) and the user's
-   spaceships. Both stay on the collapsed rail as icons; labels, section
-   titles and the chats list need the open width. */
-.side-primary,
-.side-ships { display:flex; flex-direction:column; gap:2px; padding:0 8px; flex-shrink:0; }
-/* The project list is the part of the sidebar that stretches and scrolls,
-   so a long list never pushes the account footer off screen. */
-.side-ships { flex:1 1 auto; min-height:0; overflow-y:auto; }
-.side-primary { padding-top:4px; }
+/* The user's projects. They stay on the collapsed rail as marks; labels
+   and the section title need the open width. The list is the part of the
+   sidebar that stretches and scrolls, so a long one never pushes the
+   account footer off screen. */
+.side-ships { display:flex; flex-direction:column; gap:2px; padding:4px 8px 0; flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
 .side-link > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sidebar-section-label {
   display:flex; align-items:center; gap:6px; padding:16px 12px 4px;
@@ -1323,8 +1319,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   letter-spacing:var(--tracking-caps); text-transform:uppercase;
 }
 #side-chats-toggle > svg { display:none; }
-
-/* Collapsed: hide the open-state nav — the rail replaces it. */
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }

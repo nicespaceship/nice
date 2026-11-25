@@ -2291,6 +2291,9 @@ html:not([data-theme]),
 [data-theme="lcars"] .side-link svg { display:none; }
 [data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
 
+/* The project list is first under the header now: clear the elbow. */
+[data-theme="lcars"] .app-sidebar.open .side-ships { padding-top:28px; }
+
 /* Fill empty sidebar space with colored bar — only when open */
 [data-theme="lcars"] .app-sidebar.open .side-ships::after {
   content:'';
