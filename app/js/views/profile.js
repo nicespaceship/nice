@@ -524,14 +524,12 @@ const ProfileView = (() => {
   function _updateSidebarAvatar(url) {
     const userCard = document.getElementById('hdr-user');
     if (!userCard) return;
-    const iconEl = userCard.querySelector('.icon');
-    if (iconEl && url) {
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = 'Avatar';
-      img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;';
-      iconEl.replaceWith(img);
-    }
+    if (!url || !State.get('user')) return;
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+    userCard.textContent = '';
+    userCard.appendChild(img);
   }
 
   // On load, update sidebar if avatar exists

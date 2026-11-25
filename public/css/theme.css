@@ -406,12 +406,16 @@ html:not([data-theme]),
 :is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
 
 /* Popover */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { background: var(--bg); border: 1px solid var(--border); }
+/* --border is transparent in NICE, so the menu takes the stronger hairline. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { background: var(--bg); border: 1px solid var(--border-hi); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { border-radius: 12px; padding: 6px; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item {
-  color: var(--text-muted); font-family: var(--font-b);
-  text-transform: uppercase; letter-spacing: var(--tracking-caps); font-size: .58rem;
-  transition: all .15s;
+  color: var(--text); font-family: var(--font-b); font-size: var(--text-sm);
+  padding: 8px 10px; border-radius: 8px;
+  transition: background .15s;
 }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-menu-id { padding: 6px 10px; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-menu-sep { margin: 6px 10px; background: var(--border-hi); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item:hover { background: var(--tint); color: var(--text); }
 
 /* Sidebar folder */
@@ -2332,10 +2336,10 @@ html:not([data-theme]),
 [data-theme="lcars"] .side-popover-item svg { display:none; }
 
 /* User card in footer */
-[data-theme="lcars"] .side-user-card { color:#000; }
-[data-theme="lcars"] .side-user-card svg { stroke:#000; }
-[data-theme="lcars"] .side-more-btn { color:#000; }
-[data-theme="lcars"] .side-more-btn svg { stroke:#000; }
+[data-theme="lcars"] .side-account,
+[data-theme="lcars"] .side-account .hdr-username { color:#000; }
+[data-theme="lcars"] .side-account svg { stroke:#000; }
+[data-theme="lcars"] .side-popover-item .side-menu-end { display:block; }
 
 /* Sidebar favorites */
 [data-theme="lcars"] .sidebar-favorites { padding-top:4px; }

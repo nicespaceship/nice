@@ -58,6 +58,14 @@ const Keyboard = (() => {
       return;
     }
 
+    // Cmd/Ctrl+, → Settings; Cmd/Ctrl+/ → this shortcut list (the account menu shows both)
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === ',' || e.key === '/')) {
+      e.preventDefault();
+      if (e.key === ',') window.location.hash = '#/settings';
+      else showHelp();
+      return;
+    }
+
     // Ignore when typing in inputs
     const tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
