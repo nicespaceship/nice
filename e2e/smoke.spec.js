@@ -267,7 +267,7 @@ test.describe('Dashboard', () => {
     await expect(menu.locator('#side-menu-id')).toHaveText('Sign in');
     await expect(menu.locator('#btn-logout')).toBeHidden();
     await expect(menu.locator('.admin-only')).toBeHidden();
-    for (const label of ['Settings', 'Keyboard shortcuts', 'Usage', 'Get help', 'View all plans', 'Integrations', 'Security']) {
+    for (const label of ['Settings', 'Usage', 'Language', 'Get help', 'Integrations', 'Security', 'Get apps and extensions']) {
       await expect(menu.locator('.side-popover-item', { hasText: label }).first()).toBeVisible();
     }
     await page.keyboard.press('Escape');
@@ -275,7 +275,10 @@ test.describe('Dashboard', () => {
     await expect(button).toBeFocused();
     // A row NICE does not have yet says so and closes the menu.
     await button.click();
-    await menu.locator('.side-popover-item', { hasText: 'Send feedback' }).click();
+    for (const gone of ['Keyboard shortcuts', 'Send feedback', 'Learn more', 'View all plans', 'Share guest passes', 'View changelog', 'Get API keys']) {
+      await expect(menu.locator('.side-popover-item', { hasText: gone })).toHaveCount(0);
+    }
+    await menu.locator('.side-popover-item', { hasText: 'Language' }).click();
     await expect(menu).toBeHidden();
     await expect(page.locator('#notify-container')).toContainText('not available yet');
     // A real row navigates.
