@@ -28,9 +28,9 @@
   "dir": "ltr",
   "shortcuts": [
     {
-      "name": "Bridge",
-      "short_name": "Bridge",
-      "description": "Browse blueprints and manage your fleet",
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Browse blueprints and manage your agents",
       "url": "/app/#/bridge",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
     },

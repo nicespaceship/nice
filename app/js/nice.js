@@ -1803,6 +1803,8 @@ const NICE = (() => {
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
     Router.on('/space', ChatView);
     Router.on('/ship', OutboxView);                  // Results waiting for review, and approved work
+    // Old routes that now live on the hub page: titled like it, then forwarded.
+    const _bridgeRedirect = (hash) => ({ get title() { return Terminology.label('bridge'); }, render: () => { location.hash = hash; } });
     Router.on('/blueprints', { ...BlueprintsView, title: 'Blueprints' });  // the Bridge's Blueprints tab, titled for the nav
     // Their old names, so bookmarks and links in old notifications still land.
     const renamed = (from, to, title) => Router.on(from, { title, render: () => {
@@ -1815,7 +1817,7 @@ const NICE = (() => {
     renamed('/library', '/blueprints', 'Blueprints');
     Router.on('/crew', CrewView);                    // One spaceship's crew as cards
     Router.on('/bridge', BlueprintsView);            // Bridge
-    Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=schematic'; } });
+    Router.on('/dock', _bridgeRedirect('#/bridge?tab=schematic'));
 
     // Bridge sub-routes
     Router.on('/bridge/agents', BlueprintsView);
@@ -1829,27 +1831,27 @@ const NICE = (() => {
     Router.on('/blueprints/agents', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=agent'); } });
     Router.on('/blueprints/agents/new', AgentBuilderView);
     Router.on('/blueprints/spaceships', { title: 'Blueprints', render: () => { location.replace('#/blueprints?tab=spaceship'); } });
-    Router.on('/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
+    Router.on('/agents', _bridgeRedirect('#/bridge?tab=agent'));
     Router.on('/agents/new', AgentBuilderView);
     Router.on('/agents/:id', AgentDetailView);
-    Router.on('/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
+    Router.on('/spaceships', _bridgeRedirect('#/bridge?tab=spaceship'));
     Router.on('/spaceships/new', SpaceshipBuilderView);
     Router.on('/spaceships/:id', SpaceshipDetailView);
-    Router.on('/log', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations&sub=log'; } });
-    Router.on('/missions', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
+    Router.on('/log', _bridgeRedirect('#/bridge?tab=operations&sub=log'));
+    Router.on('/missions', _bridgeRedirect('#/bridge?tab=missions'));
     // `/missions/new` must register BEFORE `/missions/:id` — Router iterates
     // in order and the :id pattern would otherwise swallow the literal.
     if (typeof MissionComposerView !== 'undefined') Router.on('/missions/new', MissionComposerView);
     if (typeof MissionDetailView !== 'undefined') Router.on('/missions/:id', MissionDetailView);
-    Router.on('/analytics', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
-    Router.on('/cost', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
-    Router.on('/board', { title: 'Bridge', render: () => { location.hash = '#/'; } });
+    Router.on('/analytics', _bridgeRedirect('#/bridge?tab=operations'));
+    Router.on('/cost', _bridgeRedirect('#/bridge?tab=operations'));
+    Router.on('/board', _bridgeRedirect('#/'));
     // Workflows are no longer a first-class primitive — DAGs live inside
     // missions.plan. Redirect any bookmarked /workflows URL to the Bridge.
-    Router.on('/workflows', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
+    Router.on('/workflows', _bridgeRedirect('#/bridge'));
 
     // Ecosystem routes (kept)
-    Router.on('/connectors', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
+    Router.on('/connectors', _bridgeRedirect('#/bridge'));
     Router.on('/integrations', { title: 'Integrations', render: () => { location.hash = '#/security?tab=integrations'; } });
     Router.on('/vault', { title: 'Vault', render: () => { location.hash = '#/security?tab=vault'; } });
     Router.on('/security', SecurityView);
@@ -1860,7 +1862,7 @@ const NICE = (() => {
     Router.on('/wallet', WalletView);
     Router.on('/theme-editor', ThemeCreatorView);
     Router.on('/theme-creator', ThemeCreatorView);
-    Router.on('/workflows/:id', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
+    Router.on('/workflows/:id', _bridgeRedirect('#/bridge'));
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
     // Legacy #/docs route → redirect into Bridge's Documentation tab

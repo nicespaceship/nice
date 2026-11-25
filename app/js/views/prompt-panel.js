@@ -839,7 +839,7 @@ const PromptPanel = (() => {
     } else {
       _messages.push({
         role: 'assistant',
-        text: 'Mission queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]',
+        text: `Mission queued. Assign an agent or visit ${Terminology.pick('the dashboard', 'Bridge')} to run it.\n[ACTION: ${Terminology.label('bridge')} | #/missions]`,
         agent: 'NICE', ts: Date.now(),
       });
     }
@@ -878,7 +878,7 @@ const PromptPanel = (() => {
       const need = _needShip();
       _messages.push({
         role: 'assistant',
-        text: `**${need.lead}** Chat runs always belong to ${need.a} ${need.ship}.\n[ACTION: Bridge | #/bridge]`,
+        text: `**${need.lead}** Chat runs always belong to ${need.a} ${need.ship}.\n[ACTION: ${Terminology.label('bridge')} | #/bridge]`,
         agent: 'NICE', ts: Date.now(),
       });
       _saveMessages();

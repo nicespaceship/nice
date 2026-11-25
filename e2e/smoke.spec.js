@@ -10,7 +10,7 @@ import AxeBuilder from '@axe-core/playwright';
  *   #/crew       → CrewView ('Team') — one project's crew as cards, recent runs, approvals
  *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
  *   #/blueprints → BlueprintsView on its Blueprints tab
- *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
+ *   #/bridge     → BlueprintsView ('Dashboard') — Schematic | Blueprints | Missions | Operations | Log
  *   #/security   → SecurityView ('Security') — Security | Integrations | Wallet
  *   #/settings   → SettingsView ('Settings')
  *   #/theme-editor → ThemeCreatorView ('Theme Editor')
@@ -222,7 +222,7 @@ test.describe('Auth Flow', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    await navigateTo(page, '#/bridge', 'Bridge');
+    await navigateTo(page, '#/bridge', 'Dashboard');
     await navigateTo(page, '#/security', 'Security');
     await navigateTo(page, '#/settings', 'Settings');
 
@@ -432,7 +432,7 @@ test.describe('Agentic Features', () => {
 test.describe('Blueprint Filters', () => {
   test('category filter dropdown exists on bridge view', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/bridge', 'Bridge');
+    await navigateTo(page, '#/bridge', 'Dashboard');
     await page.waitForTimeout(1500);
     // The tier filter was removed in #565 — it filtered by default
     // llm_engine, but every catalog ship defaults to the same free
