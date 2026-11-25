@@ -157,7 +157,7 @@
       <h2>Interface Overview</h2>
       <dl>
         <dt>Sidebar</dt>
-        <dd>Your projects. The NICE mark at the top opens Home. The account card at the bottom opens a menu with Settings, Usage, Get help, Themes, Blueprints, Integrations, and Security.</dd>
+        <dd>Your projects. At the top, the left button opens or closes the sidebar, and NICE opens Home (Code is not available yet). The account card at the bottom opens a menu with Settings, Usage, Get help, Themes, Blueprints, Integrations, and Security.</dd>
         <dt>${_say('Dashboard', 'Bridge')}</dt>
         <dd>Your main hub: ${_say('Diagram', 'Schematic')} (active project), Blueprints (catalog and Workshop), Missions, Operations, and ${_say('Activity log', 'Captain\'s Log')}. Finished work waiting for your review is on the Ship page, counted on Home.</dd>
         <dt>Prompt Panel</dt>

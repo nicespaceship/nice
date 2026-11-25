@@ -490,9 +490,9 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
 /* Sidebar utility icons — boost contrast against Federation blue background */
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight,
-[data-theme="rx-78-2"] .app-sidebar .side-rail-btn { color: #d4a017; }
-[data-theme="rx-78-2"] .app-sidebar #btn-darklight svg,
-[data-theme="rx-78-2"] .app-sidebar .side-rail-btn svg { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar #app-sidebar-toggle { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar .app-mode-btn:not(.is-on) { color: rgba(255,255,255,0.85); }
+[data-theme="rx-78-2"] .app-sidebar #btn-darklight svg { color: #d4a017; }
 /* Active state for header buttons + font-picker — Gundam gold for contrast */
 [data-theme="rx-78-2"] .app-hdr-btn.active { color: #d4a017; border-color: #d4a017; background: rgba(212,160,23,0.1); }
 [data-theme="rx-78-2"] .fb.active { color: #d4a017; border-color: #d4a017; }
@@ -1209,56 +1209,36 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar top — two states share the top of the sidebar:
-   - Collapsed: the .side-rail icon stack (NICE mark for Home + expand).
-   - Open: the .side-header — NICE wordmark (Home) + collapse.
-   Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
-   light strip — see theme.css) anchor on .side-header. */
-
-/* Collapsed rail — vertical icon stack, shown only when the sidebar is
-   closed. The NICE mark goes Home; the button under it opens the menu
-   (the collapse icon, mirrored to point outward). */
-.side-rail { display:none; }
-.app-sidebar:not(.open) .side-rail {
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  flex-shrink:0; padding:14px 0 8px;
-  background:var(--nav-bg-dk, transparent);
-}
-.side-rail-btn {
-  display:flex; align-items:center; justify-content:center;
-  width:48px; height:48px; padding:0;
-  background:transparent; border:0; border-radius:8px;
-  color:var(--nav-text, var(--text));
-  cursor:pointer; transition:background .15s, color .15s;
-}
-.side-rail-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
-.side-rail-btn .icon { width:24px; height:24px; }
-/* The NICE mark is a 79:64 tile, so its logos size by height. */
-.side-rail-nice-logo { height:24px; width:auto; aspect-ratio:79/64; display:block; }
-.side-rail-expand .icon { transform:scaleX(-1); }
-
-/* Open header — NICE wordmark (Bridge CTA) on the left, theme toggle on
-   the right. Hidden on the collapsed rail. The wordmark stays monochrome
-   via currentColor so it matches across themes. */
+/* Sidebar header — the open / close toggle on the left, the NICE / Code
+   switch on the right. Collapsed to the rail, only the toggle shows.
+   Per-theme decorations (LCARS elbow, JARVIS reactor pulse, Cyberpunk
+   light strip — see theme.css) anchor on it. */
 .side-header {
-  flex-shrink:0; padding:14px 12px 8px;
+  flex-shrink:0; height:52px; padding:0 12px 0 8px;
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   background:var(--nav-bg-dk, transparent);
 }
-.app-sidebar:not(.open) .side-header { display:none; }
-.app-sidebar.open .side-header { padding:12px; }
-.side-header .app-hdr-menu { display:none; }
-.side-brand {
-  display:inline-flex; align-items:center; gap:9px; height:40px;
-  color:var(--nav-text, var(--text)); text-decoration:none;
-  transition:color .15s;
+/* Collapsed to the rail (tablet and desktop): only the toggle, its arrow
+   turned to point out. */
+@media (min-width:769px) {
+  .app-sidebar:not(.open) .side-header { justify-content:center; padding:0; }
+  .app-sidebar:not(.open) .app-mode { display:none; }
+  .app-sidebar:not(.open) #app-sidebar-toggle .icon { transform:scaleX(-1); }
 }
-.side-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
-.side-brand-logo { height:21px; width:auto; aspect-ratio:79/64; display:block; flex-shrink:0; }
-.side-brand-text {
-  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-bold);
-  letter-spacing:var(--tracking-caps); text-transform:uppercase; line-height:1;
+/* NICE / Code switch */
+.app-mode {
+  display:inline-flex; align-items:center; gap:2px; padding:3px;
+  border-radius:10px; background:var(--surface2, var(--surface));
 }
+.app-mode-btn {
+  display:inline-flex; align-items:center; height:30px; padding:0 14px;
+  border:0; border-radius:8px; background:transparent;
+  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm);
+  font-weight:var(--fw-medium); line-height:1; text-decoration:none; cursor:pointer;
+  transition:background .15s, color .15s;
+}
+.app-mode-btn:hover { color:var(--text); }
+.app-mode-btn.is-on { background:var(--bg); color:var(--text); }
 .side-theme-btn {
   display:flex; align-items:center; justify-content:center;
   width:36px; height:36px; padding:0; flex-shrink:0;
@@ -1268,7 +1248,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-theme-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-theme-btn .icon { width:20px; height:20px; }
-.side-header-actions { display:flex; align-items:center; gap:2px; }
 
 /* The user's projects. They stay on the collapsed rail as marks; labels
    and the section title need the open width. The list is the part of the
@@ -1646,8 +1625,8 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider { display:none; }
 
-/* Collapsed sidebar: the rail (.side-rail) replaces the open-state header
-   + nav; only icon-level controls (favorites, footer) center on the rail. */
+/* Collapsed sidebar: a narrow rail; only icon-level controls (projects,
+   favorites, footer) center on it. */
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
@@ -1719,7 +1698,6 @@ html:not([data-theme]) .app-main,
   .app-sidebar:not(.open) .side-link span,
   .app-sidebar:not(.open) .app-brand-text,
   .app-sidebar:not(.open) .side-footer { display:initial; }
-  .app-sidebar:not(.open) .side-header { justify-content:space-between; padding:16px 16px 12px; }
   .app-sidebar:not(.open) .side-link { justify-content:initial; padding:10px 16px; }
   .app-main { padding:0; }
   /* padding-bottom clears the bottom tab bar (64px) and the floating prompt
@@ -6301,7 +6279,7 @@ html:has(.space-reactor) .jv-pp-reactor {
 .nav-alert-dot { margin-left:auto; }
 .nav-alert-dot[hidden], .bp-tab-alert[hidden] { display:none; }
 /* Corner variant — pinned to the top-right of a square control (rail icon, tab, gear). */
-.side-rail-btn, .bp-type-tab, .bp-tab-picker { position:relative; }
+.bp-type-tab, .bp-tab-picker { position:relative; }
 .nav-alert-dot--corner { position:absolute; top:7px; right:7px; margin-left:0; }
 .bp-tab-alert { position:absolute; top:5px; right:6px; }
 

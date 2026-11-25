@@ -65,9 +65,13 @@ test.describe('Smoke Tests', () => {
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
     // Desktop opens with the sidebar docked: the projects, and nothing else.
-    // The NICE mark is Home; Blueprints lives in the account menu.
+    // The sidebar has no logo; NICE in its header is Home, and Blueprints
+    // lives in the account menu.
     await expect(sidebar).toHaveClass(/\bopen\b/);
-    await expect(page.locator('.side-brand')).toHaveAttribute('href', '#/');
+    await expect(sidebar.locator('use[href="#icon-nice"]')).toHaveCount(0);
+    const nice = page.locator('.side-header .app-mode-btn', { hasText: 'NICE' });
+    await expect(nice).toHaveAttribute('href', '#/');
+    await expect(page.locator('#app-mode-code')).toBeVisible();
     await expect(page.locator('.side-primary')).toHaveCount(0);
     await expect(page.locator('#side-ships')).toBeAttached();
     await expect(page.locator('#side-chats-folder')).toHaveCount(0);
@@ -103,14 +107,21 @@ test.describe('Smoke Tests', () => {
     await page.locator('#side-more-btn').click();
     await page.locator('#side-popover .side-popover-item', { hasText: 'Blueprints' }).click();
     await page.waitForFunction(() => location.hash === '#/blueprints');
-    // Collapsing keeps the destinations on the rail as icons. There the NICE
-    // mark still goes Home, and the button under it expands the menu.
-    await page.locator('#side-collapse').click();
+    // The header's toggle collapses the sidebar to the rail, where only the
+    // toggle stays, and opens it again. NICE goes Home; Code is not ready.
+    const toggle = page.locator('#app-sidebar-toggle');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await toggle.click();
     await expect(sidebar).not.toHaveClass(/\bopen\b/);
-    await page.locator('#side-rail-nice').click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle).toHaveAttribute('aria-label', 'Open sidebar');
+    await expect(nice).toBeHidden();
+    await toggle.click();
+    await nice.click();
     await page.waitForFunction(() => location.hash === '#/');
-    await expect(sidebar).not.toHaveClass(/\bopen\b/);
-    await page.locator('#side-rail-expand').click();
+    await page.locator('#app-mode-code').click();
+    await expect(page.locator('.notify-toast', { hasText: 'not available yet' }).first()).toBeVisible();
+    expect(await page.evaluate(() => location.hash)).toBe('#/');
     await expect(sidebar).toHaveClass(/\bopen\b/);
   });
 
@@ -206,6 +217,17 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('#app-mobile-bar .mobile-bar-btn-nice')).toHaveAttribute('href', '#/');
     await page.locator('#mobile-sidebar-toggle').click();
     await expect(page.locator('#app-sidebar')).toHaveClass(/\bopen\b/);
+    // In the drawer, NICE goes Home and closes the drawer; the header's
+    // toggle closes it too.
+    await page.evaluate(() => { location.hash = '#/blueprints'; });
+    await page.waitForFunction(() => location.hash === '#/blueprints');
+    await page.locator('#app-sidebar .app-mode-btn', { hasText: 'NICE' }).click();
+    await page.waitForFunction(() => location.hash === '#/');
+    await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
+    await page.locator('#mobile-sidebar-toggle').click();
+    await expect(page.locator('#app-sidebar')).toHaveClass(/\bopen\b/);
+    await page.locator('#app-sidebar-toggle').click();
+    await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
   });
 });
 
@@ -250,9 +272,9 @@ test.describe('Accessibility', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
-    // The sidebar opens docked on desktop, so the NICE brand (Home) is focusable.
-    const brand = page.locator('.side-brand').first();
-    await brand.focus();
+    // The sidebar header's toggle is the first control; Tab moves on.
+    const toggle = page.locator('#app-sidebar-toggle');
+    await toggle.focus();
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(focused).toBeTruthy();

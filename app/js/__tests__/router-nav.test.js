@@ -20,7 +20,7 @@ const RealRouter = (() => {
 beforeEach(() => {
   document.body.innerHTML = `
     <nav>
-      <a class="side-brand" data-home-link href="#/">NICE</a>
+      <a class="app-mode-btn is-on" data-home-link href="#/">NICE</a>
       <a class="side-link" data-nav="space" href="#/space">Space</a>
       <a class="side-link" data-nav="ship" href="#/ship">Ship</a>
       <a class="side-link side-ship" data-ship="s1" href="#/crew?ship=s1">Bakery</a>
