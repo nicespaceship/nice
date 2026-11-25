@@ -21,7 +21,6 @@ const ShipSetupWizard = (() => {
   };
 
   const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
-  const STEP_LABELS = ['Name', 'Agents', 'Deploy'];
   const STEP_COUNT = 3;
 
   const _esc = Utils.esc;

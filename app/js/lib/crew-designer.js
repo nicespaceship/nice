@@ -398,7 +398,7 @@ Rules:
           <button class="btn cd-btn-secondary cd-regenerate" id="cd-regenerate">↻ Regenerate</button>
         </div>
 
-        ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
+        ${overLimit ? `<div class="cd-warning">⚠ ${Terminology.article('spaceship') === 'an' ? 'An' : 'A'} ${_esc(Terminology.label('spaceship', { lowercase: true }))} holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to ${_say('activate', 'deploy')}.</div>` : ''}
 
         <!-- Crew Grid -->
         <div class="cd-section-label">${_crewWord(true)} <span class="cd-count">${_data.editedAgents.length} agents</span></div>
