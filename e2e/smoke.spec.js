@@ -305,6 +305,14 @@ test.describe('Dashboard', () => {
     await navigateTo(page, '#/', 'Home');
     await page.keyboard.press('Control+,');
     await expect(page).toHaveTitle(/Settings/);
+    // On layouts where that physical key types "-", Ctrl+minus stays the browser's zoom-out.
+    const taken = await page.evaluate(() => {
+      const e = new KeyboardEvent('keydown', { key: '-', code: 'Slash', ctrlKey: true, bubbles: true, cancelable: true });
+      document.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+    expect(taken).toBe(false);
+    await expect(page.locator('#shortcut-help')).toBeHidden();
     await page.keyboard.press('Control+/');
     await expect(page.locator('#shortcut-help')).toBeVisible();
   });
