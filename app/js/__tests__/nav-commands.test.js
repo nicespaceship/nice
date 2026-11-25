@@ -19,7 +19,7 @@ describe('NavCommands', () => {
   describe('init() — registration on the bus', () => {
     it('registers every command id on ToolRegistry', () => {
       const ids = ToolRegistry.list().map(t => t.id);
-      ['open-bridge', 'open-agents', 'open-agent-builder', 'open-shipyard',
+      ['open-bridge', 'open-dashboard', 'open-agents', 'open-agent-builder', 'open-shipyard',
        'open-missions', 'open-blueprint-catalog', 'open-operations', 'open-cost',
        'open-wallet', 'open-vault', 'open-security', 'open-log', 'open-profile', 'open-settings',
        'open-theme-editor', 'open-workflows',
@@ -162,6 +162,26 @@ describe('NavCommands', () => {
       // "project" is everyday business language, so it is not a nav keyword:
       // a request about a project plan must reach the model.
       expect(NavCommands.resolve('show me a sample project charter')).toBeNull();
+    });
+
+    it('sends "dashboard" to the Dashboard in the plain looks, Home in the sci-fi ones', () => {
+      const theme = globalThis.Theme;
+      try {
+        globalThis.Theme = { ...theme, current: () => 'nice' };
+        expect(NavCommands.resolve('dashboard').id).toBe('open-dashboard');
+        expect(NavCommands.resolve('open the bridge').id).toBe('open-dashboard');
+        expect(NavCommands.resolve('home').id).toBe('open-bridge');
+        const dash = NavCommands.list().find(c => c.id === 'open-dashboard');
+        expect(dash.label).toBe('Dashboard');
+        expect(dash.route).toBe('/bridge');
+        globalThis.Theme = { ...theme, current: () => 'lcars' };
+        expect(NavCommands.resolve('dashboard').id).toBe('open-bridge');
+        expect(NavCommands.resolve('bridge').id).toBe('open-bridge');
+        expect(NavCommands.list().find(c => c.id === 'open-dashboard')).toBeUndefined();
+        expect(NavCommands.list().find(c => c.id === 'open-bridge').keywords).toBe('home dashboard bridge');
+      } finally {
+        globalThis.Theme = theme;
+      }
     });
 
     it('opens Space and Ship by their own names and older ones', () => {

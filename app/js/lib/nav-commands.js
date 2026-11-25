@@ -52,6 +52,7 @@ const NavCommands = (() => {
   const COMMANDS = [
     // ── Navigation ──
     { id: 'open-bridge',            name: 'Bridge',            kind: 'nav', route: '/',                      icon: '#icon-home',      skinKey: 'titles.home',       keywords: 'home dashboard bridge',                                  desc: 'Open the Bridge dashboard.' },
+    { id: 'open-dashboard',         name: 'Dashboard',         kind: 'nav', route: '/bridge',                icon: '#icon-dashboard', skinKey: null,                keywords: 'dashboard bridge',                                       desc: 'Open the Dashboard: diagram, blueprints, missions, operations and log.' },
     { id: 'open-space',             name: 'Space',             kind: 'nav', route: '/space',                 icon: '#icon-space',     skinKey: null,                keywords: 'space', search: 'chat workspace models cards', desc: 'Open Space, where the model cards work.' },
     { id: 'open-ship',              name: 'Ship',              kind: 'nav', route: '/ship',                  icon: '#icon-ship',      skinKey: null,                keywords: 'ship outbox', search: 'approvals review deliver', desc: 'Open Ship, where finished work goes out.' },
     { id: 'open-agents',            name: 'Agents',            kind: 'nav', route: '/blueprints/agents',     icon: '#icon-agent',     skinKey: 'nav.agents',        keywords: 'agents agent list manage',                                     desc: 'Open the Agents roster.' },
@@ -136,15 +137,22 @@ const NavCommands = (() => {
     const m = _missionNoun();
     const sh = _shipNoun();
     const skinOn = typeof Skin !== 'undefined' && Skin.isActive();
-    return COMMANDS.map(c => {
+    const scifi = typeof Terminology !== 'undefined' && Terminology.pick(false, true);
+    // The sci-fi themes keep their palette as it was: there Home is the Bridge.
+    return COMMANDS.filter(c => !(scifi && c.id === 'open-dashboard')).map(c => {
       let label = c.name;
       let keywords = c.keywords;
       if (c.id === 'open-missions') { label = m.plural; keywords = `missions tasks assignments queue jobs ${m.pluralLower}`; }
       else if (c.id === 'open-log') { keywords = `log audit ${_captainWord()}history events ${m.pluralLower} operations`; }
       else if (c.id === 'open-shipyard') { label = `${sh.singular} blueprints`; }
       else if (c.id === 'new-spaceship') { label = `New ${sh.lower}`; }
-      // This command opens Home; only the sci-fi themes call that the Bridge.
-      else if (c.id === 'open-bridge') { label = typeof Terminology !== 'undefined' ? Terminology.pick('Home', 'Bridge') : 'Home'; }
+      // This command opens Home; only the sci-fi themes call that the Bridge,
+      // and there "dashboard" still lands on it. The plain looks send
+      // "dashboard" and "bridge" to the page titled Dashboard instead.
+      else if (c.id === 'open-bridge') {
+        label = scifi ? 'Bridge' : 'Home';
+        if (!scifi) keywords = 'home';
+      }
       else if (c.id === 'open-crew-designer') { label = `${typeof Terminology !== 'undefined' ? Terminology.label('crew') : 'Team'} Designer`; }
       if (skinOn && c.skinKey) label = Skin.text(c.skinKey, label);
       return { id: c.id, label, keywords, search: c.search || '', icon: c.icon, kind: c.kind, route: c.route };
