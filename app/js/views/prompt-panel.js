@@ -7,6 +7,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const PromptPanel = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
 
@@ -1478,7 +1480,7 @@ const PromptPanel = (() => {
       });
     }
     if (/^(setup|guided setup|wizard)/i.test(lower))
-      return _cmd('open-setup-wizard', { reply: 'Launching the Guided Setup Wizard.' });
+      return _cmd('open-setup-wizard', { reply: _say('Opening the guided setup wizard.', 'Launching the Guided Setup Wizard.') });
     if (/^(export|download)\s+(data|backup)/i.test(lower))
       return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
@@ -1487,7 +1489,7 @@ const PromptPanel = (() => {
     if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
       return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
-      return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
+      return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to ' + _say('activate', 'deploy') + '.', isNav: true, navLabel: 'Agents', delay: 300 });
 
     // "Open projects" (a suggestion chip) opens the project blueprints.
     // "project" is not a nav keyword, so this one phrasing is matched whole.
@@ -1600,8 +1602,8 @@ const PromptPanel = (() => {
     '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
     get '#/bridge/agents/new'() { return ['Show blueprints', 'What roles are available?', `Open ${_ship({ plural: true, lowercase: true })}`]; },
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
-    get '#/bridge/spaceships'() { return ['Guided setup', `Deploy ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, `How many ${_ship({ plural: true, lowercase: true })}?`, 'Browse blueprints']; },
-    get '#/bridge'() { return ['Search blueprints for', 'Find agent named', `Deploy ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, 'What\'s popular?']; },
+    get '#/bridge/spaceships'() { return ['Guided setup', `${_say('Activate', 'Deploy')} ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, `How many ${_ship({ plural: true, lowercase: true })}?`, 'Browse blueprints']; },
+    get '#/bridge'() { return ['Search blueprints for', 'Find agent named', `${_say('Activate', 'Deploy')} ${Terminology.article('spaceship')} ${_ship({ lowercase: true })}`, 'What\'s popular?']; },
     '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
     '#/vault':      ['Open blueprints', 'Show security', 'Export data'],

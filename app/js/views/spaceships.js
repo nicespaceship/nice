@@ -7,6 +7,11 @@
 
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
+  // A project's stored status (standby / deployed / docked) in everyday words.
+  const _STATUS_PLAIN = { deployed: 'Active', docked: 'Paused' };
+  const _statusLabel = (status) => _say(_STATUS_PLAIN[status] || Utils.titleCase(status), Utils.titleCase(status));
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const _esc = Utils.esc;
@@ -463,7 +468,7 @@ const SpaceshipDetailView = (() => {
               <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
-                <span class="detail-status">${_esc(Utils.titleCase(fleet.status))}</span>
+                <span class="detail-status">${_esc(_statusLabel(fleet.status))}</span>
                 <span class="agent-tag">${members.length} agent${members.length !== 1 ? 's' : ''}</span>
                 <span class="agent-tag">${spaceshipClass.slots.length} slots</span>
               </div>
@@ -901,7 +906,7 @@ const SpaceshipDetailView = (() => {
             spaceshipId: fleet.id,
             plan,
           });
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Workflow launched', message: workflow.title, type: 'success' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: _say('Workflow started', 'Workflow launched'), message: workflow.title, type: 'success' });
           if (runId) MissionRunner.run(runId);
           location.hash = runId ? `#/missions/${runId}` : '#/missions';
         } catch (err) {
@@ -1491,7 +1496,7 @@ const SpaceshipDetailView = (() => {
       Blueprints.saveShipState(id, fleet);
       try { await SB.db('user_spaceships').update(id, { status: 'deployed' }); } catch(e) {}
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: `${_ship()} launched`, message: `${fleet.name || _ship()} is fully staffed and deployed!`, type: 'fleet_deployed' });
+        Notify.send({ title: `${_ship()} ${_say('active', 'launched')}`, message: `${fleet.name || _ship()} ${_say('has a full team and is active.', 'is fully staffed and deployed!')}`, type: 'fleet_deployed' });
       }
     }
 
@@ -1530,7 +1535,7 @@ const SpaceshipDetailView = (() => {
     } catch(e) { /* local state already updated */ }
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: `${_ship()} docked`, message: `A ${_crewWord()} slot is empty, so ${fleet.name || _ship({ lowercase: true })} is docked.`, type: 'system' });
+      Notify.send({ title: `${_ship()} ${_say('paused', 'docked')}`, message: `A ${_crewWord()} slot is empty, so ${fleet.name || _ship({ lowercase: true })} is ${_say('paused', 'docked')}.`, type: 'system' });
     }
     _loadSpaceship(el, id);
   }

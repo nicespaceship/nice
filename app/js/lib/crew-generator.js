@@ -319,7 +319,7 @@ Rules:
 
       return { shipId: shipCreated.id, agents: savedAgents };
     } catch (e) {
-      return { error: e.message || ('Failed to deploy ' + Terminology.label('spaceship', { lowercase: true })) };
+      return { error: e.message || ('Failed to ' + Terminology.pick('activate', 'deploy') + ' ' + Terminology.label('spaceship', { lowercase: true })) };
     }
   }
 

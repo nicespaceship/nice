@@ -816,7 +816,7 @@ const AnalyticsView = (() => {
     report += 'Total Agents: ' + agents.length + '\n';
     report += 'Active: ' + agents.filter(a => a.status === 'active').length + '\n';
     report += Terminology.label('spaceship', { plural: true }) + ': ' + spaceships.length + '\n';
-    report += 'Deployed: ' + spaceships.filter(s => s.status === 'deployed').length + '\n\n';
+    report += Terminology.pick('Running: ', 'Deployed: ') + spaceships.filter(s => s.status === 'deployed').length + '\n\n';
     report += 'Missions\n--------\n';
     report += 'Total: ' + total + '\n';
     report += 'Completed: ' + completed + '\n';

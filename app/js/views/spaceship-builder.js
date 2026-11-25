@@ -4,6 +4,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SpaceshipBuilderView = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   // The spaceship noun follows the theme: "Project" in the default look.
@@ -699,7 +701,7 @@ const SpaceshipBuilderView = (() => {
           return;
         }
 
-        msgEl.textContent = saved.savedAgents.length + ' agents deployed!';
+        msgEl.textContent = saved.savedAgents.length + _say(' agents added.', ' agents deployed!');
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: saved.savedAgents.length + ' agents created for ' + shipData.name, type: 'success' });
         }

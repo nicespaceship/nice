@@ -4,6 +4,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const BlueprintsView = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const title = 'Bridge';
@@ -547,7 +549,7 @@ const BlueprintsView = (() => {
       const isShipActivated = bp._forceActive || Blueprints.isShipActivated(bp.id);
       const deployBtn = isShipActivated
         ? `<button class="c-btn bp-deploy-ship-btn bp-activated" data-id="${bp.id}" aria-label="Remove"><span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span></button>`
-        : `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
+        : `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">${_say('Activate', 'Deploy')}</button>`;
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'blueprint-clickable' });
       const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">Community</span>' : '';
       return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}<div class="blueprint-card-buttons">${deployBtn}</div></div>`;
@@ -615,7 +617,7 @@ const BlueprintsView = (() => {
     // assistive tech regardless of the visible state label.
     const actInner = isActivated
       ? '<span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span>'
-      : 'Deploy';
+      : _say('Activate', 'Deploy');
     const actClass = isActivated ? ' bpl-activated' : '';
     const actAria = isActivated ? ' aria-label="Remove"' : '';
     const showAction = type !== 'agent';
@@ -668,7 +670,7 @@ const BlueprintsView = (() => {
 
     if (_viewMode === 'list') {
       let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-      if (_subTab === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+      if (_subTab === 'spaceship') { sh1 = 'Slots'; sh2 = _say('Uses', 'Deploys'); sh3 = ''; }
       const _si = (key) => _colSort.key === key ? (_colSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
       const header = `<div class="bpl-row bpl-header">
         <span class="bpl-rarity"></span>
@@ -1050,7 +1052,7 @@ const BlueprintsView = (() => {
       let cardsHTML;
       if (_viewMode === 'list') {
         let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = _say('Uses', 'Deploys'); sh3 = ''; }
         const header = `<div class="bpl-row bpl-header">
           <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
           <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
@@ -1128,7 +1130,7 @@ const BlueprintsView = (() => {
 
     if (!ships.length && !agents.length) {
       const empty = totalRaw === 0
-        ? `<p class="bp-activated-empty">Nothing deployed yet. Browse the <strong>${_esc(_ship({ plural: true }))}</strong> or <strong>Agents</strong> tab to deploy your first blueprint.</p>`
+        ? `<p class="bp-activated-empty">Nothing ${_say('active', 'deployed')} yet. Browse the <strong>${_esc(_ship({ plural: true }))}</strong> or <strong>Agents</strong> tab to ${_say('activate', 'deploy')} your first blueprint.</p>`
         : `<p class="bp-activated-empty">No active blueprints match the current filter.</p>`;
       wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
       return;
@@ -1139,7 +1141,7 @@ const BlueprintsView = (() => {
       let cardsHTML;
       if (_viewMode === 'list') {
         let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = _say('Uses', 'Deploys'); sh3 = ''; }
         const header = `<div class="bpl-row bpl-header">
           <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
           <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
@@ -2198,7 +2200,7 @@ const BlueprintsView = (() => {
       const s = bp.stats || {};
       rows.push(['Rarity', bp.rarity || 'Common']);
       rows.push(['Agents', s.crew || '—']);
-      rows.push(['Deploys', String(bp.activation_count || 0)]);
+      rows.push([_say('Uses', 'Deploys'), String(bp.activation_count || 0)]);
       rows.push(['Category', bp.category || '—']);
     } else if (type === 'skin') {
       const td = bp.theme_data || {};
@@ -2684,8 +2686,8 @@ const BlueprintsView = (() => {
 
     bar.innerHTML = `
       <div class="bp-hangar-items">${thumbs}</div>
-      <span style="font-size:.8rem;opacity:.7">${_hangarItems.length} in hangar</span>
-      <button class="btn btn-primary btn-sm" id="bp-hangar-activate-all">Deploy All</button>
+      <span style="font-size:.8rem;opacity:.7">${_hangarItems.length} ${_say('selected', 'in hangar')}</span>
+      <button class="btn btn-primary btn-sm" id="bp-hangar-activate-all">${_say('Activate all', 'Deploy All')}</button>
       <button class="btn btn-sm" id="bp-hangar-clear">Clear</button>`;
     bar.classList.add('visible');
 
@@ -2709,7 +2711,7 @@ const BlueprintsView = (() => {
     _hangarItems = [];
     _renderHangarBar();
     _applyFilters();
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'Hangar Deployed', message: count + ' blueprints deployed.', type: 'task_complete' });
+    if (typeof Notify !== 'undefined') Notify.send({ title: _say('Blueprints activated', 'Hangar Deployed'), message: count + _say(' blueprints activated.', ' blueprints deployed.'), type: 'task_complete' });
   }
 
   /* ═══════════════════════════════════════════════

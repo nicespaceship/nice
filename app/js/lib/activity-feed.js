@@ -66,7 +66,7 @@ const ActivityFeed = (() => {
     } else if (type === 'spaceship') {
       icon = 'rocket';
       const ship = Terminology.label('spaceship');
-      if (eventType === 'INSERT') description = `New ${ship.toLowerCase()} launched: ${record.name || 'Unnamed'}`;
+      if (eventType === 'INSERT') description = `New ${ship.toLowerCase()} ${Terminology.pick('added', 'launched')}: ${record.name || 'Unnamed'}`;
       else if (eventType === 'UPDATE') description = `${ship} updated: ${record.name || 'Unnamed'}`;
       else if (eventType === 'DELETE') description = `${ship} removed: ${record.name || 'Unnamed'}`;
     }

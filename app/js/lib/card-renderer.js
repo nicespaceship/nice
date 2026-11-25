@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CardRenderer = (() => {
+  // Plain wording in the default look; the sci-fi themes keep theirs.
+  const _say = (plain, scifi) => Terminology.pick(plain, scifi);
   // The crew noun follows the theme: "team" in the default look.
   const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const _esc = Utils.esc;
@@ -631,7 +633,7 @@ const CardRenderer = (() => {
       const slotCount = _bu ? _bu.getSlotCount(bp) : (cls.slots.length);
       const crewCount = _bu ? _bu.getFilledCount(bp) || slotCount : (bp.stats?.crew || memberCount);
       const deployCount = bp.activation_count || bp.stats?.deployments || 0;
-      statLbls = ['Agents','Slots','Deploys'];
+      statLbls = ['Agents','Slots',_say('Uses', 'Deploys')];
       statVals = [crewCount.toString(), slotCount.toString(), deployCount.toLocaleString()];
     } else {
       const statKeys = ['spd','acc','cap','pwr'];
@@ -825,7 +827,7 @@ const CardRenderer = (() => {
       if (data.stats) {
         const isAct = !!data.class_id;
         const deployCount = data.activation_count || data.stats?.deployments || 0;
-        const lbls = isAct ? ['Agents','Slots','Deploys'] : ['Agents'];
+        const lbls = isAct ? ['Agents','Slots',_say('Uses', 'Deploys')] : ['Agents'];
         const vals = isAct
           ? [data.stats.crew || '—', data.stats.slots || '—', deployCount.toLocaleString()]
           : [data.stats.crew || '—'];
