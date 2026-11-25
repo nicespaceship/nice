@@ -57,7 +57,7 @@ const ProfileView = (() => {
           <form class="auth-form" id="form-signin" onsubmit="ProfileView._handleSignIn(event)">
             <div class="auth-field">
               <label for="si-email">Email</label>
-              <input type="email" id="si-email" required autocomplete="email" placeholder="pilot@nicespaceship.com" />
+              <input type="email" id="si-email" required autocomplete="email" placeholder="you@example.com" />
             </div>
             <div class="auth-field">
               <label for="si-pass">Password</label>
@@ -89,11 +89,11 @@ const ProfileView = (() => {
           <form class="auth-form" id="form-signup" style="display:none" onsubmit="ProfileView._handleSignUp(event)">
             <div class="auth-field">
               <label for="su-name">Display Name</label>
-              <input type="text" id="su-name" required placeholder="Pilot_007" />
+              <input type="text" id="su-name" required placeholder="Your name" />
             </div>
             <div class="auth-field">
               <label for="su-email">Email</label>
-              <input type="email" id="su-email" required autocomplete="email" placeholder="pilot@nicespaceship.com" />
+              <input type="email" id="su-email" required autocomplete="email" placeholder="you@example.com" />
             </div>
             <div class="auth-field">
               <label for="su-pass">Password</label>
@@ -130,7 +130,7 @@ const ProfileView = (() => {
 
   function _renderProfile(el, user) {
     const meta = user.user_metadata || {};
-    const name = meta.display_name || user.email?.split('@')[0] || 'Pilot';
+    const name = meta.display_name || user.email?.split('@')[0] || Terminology.label('guest');
     const initials = name.slice(0, 2).toUpperCase();
     const avatarUrl = meta.avatar_url || localStorage.getItem(Utils.KEYS.avatarUrl) || '';
 
@@ -149,7 +149,7 @@ const ProfileView = (() => {
           </div>
           <h2 class="profile-name">${_esc(name)}</h2>
           <p class="profile-email">${_esc(user.email || '')}</p>
-          <div class="profile-badge">Pilot</div>
+          <div class="profile-badge">${_esc(Terminology.label('member'))}</div>
         </div>
 
         <div class="profile-section">

@@ -17,6 +17,9 @@ const Terminology = (() => {
    * the sci-fi themes opt back into "Spaceship" so their fiction holds.
    */
   const SPACESHIP = { singular: 'Spaceship', plural: 'Spaceships' };
+  const PILOT = { singular: 'Pilot', plural: 'Pilots' };
+  // What the sci-fi themes say where the plain looks use everyday words.
+  const SCIFI = { spaceship: SPACESHIP, guest: PILOT, account: PILOT, member: PILOT };
   const NOUNS = {
     default: {
       mission:   { singular: 'Mission',   plural: 'Missions' },
@@ -24,6 +27,10 @@ const Terminology = (() => {
       spaceship: { singular: 'Project',   plural: 'Projects' },
       crew:      { singular: 'Crew',      plural: 'Crew' },
       captain:   { singular: 'Captain',   plural: 'Captains' },
+      // Someone with no name on file, the account chip, and the profile badge.
+      guest:     { singular: 'Guest',     plural: 'Guests' },
+      account:   { singular: 'Profile',   plural: 'Profiles' },
+      member:    { singular: 'Member',    plural: 'Members' },
     },
     office: {
       mission:   { singular: 'Assignment', plural: 'Assignments' },
@@ -31,14 +38,14 @@ const Terminology = (() => {
     'office-dark': {
       mission:   { singular: 'Assignment', plural: 'Assignments' },
     },
-    'hal-9000':  { spaceship: SPACESHIP },
-    grid:        { spaceship: SPACESHIP },
-    matrix:      { spaceship: SPACESHIP },
-    lcars:       { spaceship: SPACESHIP },
-    jarvis:      { spaceship: SPACESHIP },
-    cyberpunk:   { spaceship: SPACESHIP },
-    'rx-78-2':   { spaceship: SPACESHIP },
-    '16bit':     { spaceship: SPACESHIP },
+    'hal-9000':  SCIFI,
+    grid:        SCIFI,
+    matrix:      SCIFI,
+    lcars:       SCIFI,
+    jarvis:      SCIFI,
+    cyberpunk:   SCIFI,
+    'rx-78-2':   SCIFI,
+    '16bit':     SCIFI,
   };
 
   function _activeTheme() {

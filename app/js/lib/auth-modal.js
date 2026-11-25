@@ -32,7 +32,7 @@ const AuthModal = (() => {
         <form class="auth-form" id="am-form-signin">
           <div class="auth-field">
             <label for="am-si-email">Email</label>
-            <input type="email" id="am-si-email" required autocomplete="email" placeholder="pilot@nicespaceship.com" />
+            <input type="email" id="am-si-email" required autocomplete="email" placeholder="you@example.com" />
           </div>
           <div class="auth-field">
             <label for="am-si-pass">Password</label>
@@ -60,11 +60,11 @@ const AuthModal = (() => {
         <form class="auth-form" id="am-form-signup" style="display:none">
           <div class="auth-field">
             <label for="am-su-name">Display Name</label>
-            <input type="text" id="am-su-name" required placeholder="Pilot_007" />
+            <input type="text" id="am-su-name" required placeholder="Your name" />
           </div>
           <div class="auth-field">
             <label for="am-su-email">Email</label>
-            <input type="email" id="am-su-email" required autocomplete="email" placeholder="pilot@nicespaceship.com" />
+            <input type="email" id="am-su-email" required autocomplete="email" placeholder="you@example.com" />
           </div>
           <div class="auth-field">
             <label for="am-su-pass">Password</label>
