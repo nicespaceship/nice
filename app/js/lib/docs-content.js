@@ -178,11 +178,11 @@
       <h2>Building Custom Agents</h2>
       <p>Open the ${_say('Dashboard', 'Bridge')} → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
-        <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
-        <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
+        <li><strong>Name &amp; description</strong>: how the agent appears in the catalog</li>
+        <li><strong>System prompt</strong>: instructions that shape the agent's behavior</li>
         <li><strong>Model</strong>: preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, Kimi, Nemotron). NICE Auto picks the best available if unset.</li>
-        <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
-        <li><strong>Category &amp; tags</strong> — for organization and search</li>
+        <li><strong>Tools</strong>: capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
+        <li><strong>Category &amp; tags</strong>: for organization and search</li>
       </ul>
 
       <h2>Agent Categories</h2>
