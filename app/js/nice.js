@@ -901,9 +901,6 @@ const NICE = (() => {
         // The button's dot stands in for the rows' dots only while the menu is closed.
         _updateAlertIndicators();
       };
-      // Shortcut hints follow the platform's modifier key.
-      const mod = /Mac|iPhone|iPad/.test(navigator.userAgent || '') ? '⌘' : 'Ctrl+';
-      popover.querySelectorAll('[data-kbd]').forEach(k => { k.textContent = mod + k.getAttribute('data-kbd'); });
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         // The collapsed rail has no room for the menu, so the button goes to Settings.

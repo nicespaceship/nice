@@ -1436,10 +1436,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-menu-id:hover { color:var(--text); }
 .side-menu-sep { height:1px; margin:6px 14px; background:var(--border); }
-.side-menu-kbd {
-  margin-left:auto; flex-shrink:0;
-  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
-}
 .side-menu-end { margin-left:auto; flex-shrink:0; width:14px; height:14px; opacity:.7; }
 
 .side-link {
