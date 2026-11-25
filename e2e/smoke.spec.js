@@ -113,6 +113,15 @@ test.describe('Smoke Tests', () => {
     }
   });
 
+  test('documentation has its own page and old bridge links land on it', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { window.location.hash = '#/bridge?tab=documentation&s=missions'; });
+    await page.waitForFunction(() => location.hash === '#/docs?s=missions');
+    await expect(page.locator('.docs-nav-btn.active[data-section="missions"]')).toBeVisible();
+    await page.locator('.docs-nav-btn[data-section="agents"]').click();
+    await page.waitForFunction(() => location.hash === '#/docs?s=agents');
+  });
+
   test('ship has its own page and old bridge links land on it', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=outbox'; });
