@@ -1321,18 +1321,24 @@ const PromptPanel = (() => {
       };
     }
 
-    if (lower.startsWith('/callsign')) {
-      const val = text.replace(/^\/callsign\s*/i, '').trim();
+    // /name is the command; /callsign is its older spelling and still works.
+    if (/^\/(name|callsign)(\s|$)/.test(lower)) {
+      const val = text.replace(/^\/(name|callsign)\s*/i, '').trim();
       if (!val) {
         // Re-sanitize on display too, in case a legacy stored value predates
         // the regex (users upgrading from before this landed).
         const stored = localStorage.getItem(Utils.KEYS.callsign);
-        const current = Utils.sanitizeCallsign(stored) || 'Commander';
-        return { text: `You're currently addressed as "${current}". Use /callsign [name] to change it.`, handled: true };
+        const current = Utils.sanitizeCallsign(stored);
+        return {
+          text: current
+            ? `You're currently addressed as "${current}". Use /name [name] to change it.`
+            : 'No name set yet. Use /name [name] to choose how NICE addresses you.',
+          handled: true,
+        };
       }
       const clean = Utils.sanitizeCallsign(val);
       if (!clean) {
-        return { text: "That callsign isn't allowed. Use 1-32 characters — letters, digits, spaces, periods, apostrophes, or hyphens.", handled: true };
+        return { text: "That name isn't allowed. Use 1-32 characters: letters, digits, spaces, periods, apostrophes, or hyphens.", handled: true };
       }
       localStorage.setItem(Utils.KEYS.callsign, clean);
       return { text: `Got it — I'll call you "${clean}" from now on.`, handled: true };
@@ -1340,7 +1346,7 @@ const PromptPanel = (() => {
 
     if (lower === '/help' || lower === '/commands') {
       return {
-        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
+        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /tokens — Check token balance\n• /name [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
         handled: true,
       };
     }
@@ -1534,7 +1540,9 @@ const PromptPanel = (() => {
       else { document.documentElement.setAttribute('data-theme', intent.theme); localStorage.setItem(Utils.KEYS.theme, intent.theme); }
       // Find display name from the map
       const displayName = Object.entries(_THEME_MAP).find(([, v]) => v === intent.theme)?.[0] || intent.theme;
-      return { text: `Theme switched to ${displayName}. Looking good, Commander.`, agent: null };
+      // Address the user the way the new theme does; the plain looks use no title.
+      const callsign = (typeof Theme !== 'undefined' && Theme.getTheme) ? Theme.getTheme(intent.theme)?.persona?.callsign : '';
+      return { text: `Theme switched to ${displayName}. Looking good${callsign ? ', ' + callsign : ''}.`, agent: null };
     }
     if (intent.type === 'agent-op') return { text: intent.text, agent: null };
     if (intent.type === 'auto-mission') {
@@ -1596,7 +1604,7 @@ const PromptPanel = (() => {
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
     '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
     '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
-    '#/profile':    ['/callsign', '/theme', 'Open settings'],
+    '#/profile':    ['/name', '/theme', 'Open settings'],
     '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
     '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
   };
@@ -4373,5 +4381,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The current conversation, for Space's cards. Same auth gate as the store.
   function messages() { return _messages; }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent, _handleSlashCommand };
 })();

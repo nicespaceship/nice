@@ -26,7 +26,13 @@ const HomeView = (() => {
     if (user?.user_metadata?.display_name) return user.user_metadata.display_name;
     if (user?.email) return user.email.split('@')[0];
     const theme = (typeof Theme !== 'undefined' && Theme.getTheme) ? Theme.getTheme(Theme.current()) : null;
-    return theme?.persona?.callsign || 'Commander';
+    return theme?.persona?.callsign || '';
+  }
+
+  // Themes with a persona address a guest by its callsign; the plain look just greets.
+  function _title() {
+    const name = _name();
+    return name ? `${_greeting()}, ${name}.` : `${_greeting()}.`;
   }
 
   function _count(key) {
@@ -104,7 +110,7 @@ const HomeView = (() => {
       <div class="home-wrap">
         <header class="home-head">
           <p class="home-eyebrow">${_esc(today)}</p>
-          <h1 class="home-title">${_esc(_greeting())}, ${_esc(_name())}.</h1>
+          <h1 class="home-title">${_esc(_title())}</h1>
           <p class="home-sub">${_esc(_status(needs, ships))}</p>
         </header>
         ${needsHTML}

@@ -95,3 +95,28 @@ describe('PromptPanel._detectIntent', () => {
     expect(PromptPanel._detectIntent('Set up a project for my bakery').params.prompt).toBe('bakery');
   });
 });
+
+describe('PromptPanel /name', () => {
+  const run = (text) => PromptPanel._handleSlashCommand(text);
+
+  it('says no name is set instead of inventing a title', () => {
+    localStorage.removeItem(Utils.KEYS.callsign);
+    const r = run('/name');
+    expect(r.handled).toBe(true);
+    expect(r.text).toMatch(/No name set yet/);
+    expect(r.text).not.toMatch(/Commander/);
+  });
+
+  it('stores a name, and /callsign still works as the older spelling', () => {
+    expect(run('/name Ben').text).toContain('"Ben"');
+    expect(localStorage.getItem(Utils.KEYS.callsign)).toBe('Ben');
+    expect(run('/callsign').text).toContain('"Ben"');
+    expect(run('/callsign Sam').text).toContain('"Sam"');
+    expect(localStorage.getItem(Utils.KEYS.callsign)).toBe('Sam');
+    localStorage.removeItem(Utils.KEYS.callsign);
+  });
+
+  it('does not treat a longer command as /name', () => {
+    expect(run('/names')?.text || '').not.toMatch(/No name set|addressed as/);
+  });
+});

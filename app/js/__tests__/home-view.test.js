@@ -83,6 +83,17 @@ describe('HomeView', () => {
     expect(el.querySelector('.home-title').textContent).toMatch(/, Ben\.$/);
   });
 
+  it('greets a guest without a title when the theme has no callsign', () => {
+    const theme = globalThis.Theme;
+    globalThis.Theme = { current: () => 'nice', getTheme: () => ({ persona: { name: 'NICE' } }) };
+    try {
+      HomeView.render(el);
+      expect(el.querySelector('.home-title').textContent).toMatch(/^Good (morning|afternoon|evening)\.$/);
+    } finally {
+      globalThis.Theme = theme;
+    }
+  });
+
   it('lists what needs the user, each linking to where they act on it', () => {
     counts = { outbox: 3, missions: 1, schematic: 2 };
     HomeView.render(el);

@@ -24,7 +24,7 @@ const Theme = (() => {
     // is ink, so CTAs, active nav and selection read black on white.
     // `reactor:false` keeps the centerpiece reactor off (CoreReactor never
     // shows it while a reactor-less theme is active).
-    { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#0a0a0a', preview:['#ffffff','#0a0a0a','#a3a3a3'],
+    { id:'nice', name:'NICE', persona:{ name:'NICE' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#0a0a0a', preview:['#ffffff','#0a0a0a','#a3a3a3'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#0a0a0a','--accent2':'#262626','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:false,
       // Voice — default voice every new user hears. Refined mid-baritone,
@@ -37,7 +37,7 @@ const Theme = (() => {
     // moon/sun toggle in the HUD dock — `Theme.toggleDarkLight` swaps
     // nice ↔ nice-dark, same pattern as office ↔ office-dark. builtin:false
     // keeps it out of the main dock row.
-    { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#fafafa', preview:['#0a0a0a','#fafafa','#737373'],
+    { id:'nice-dark', name:'NICE', persona:{ name:'NICE' }, chatsLabel:'Chats', chips:['Set up a project for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#fafafa', preview:['#0a0a0a','#fafafa','#737373'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#fafafa','--accent2':'#e5e5e5','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'none','--glow-hi':'none','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:false,
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
@@ -1459,7 +1459,7 @@ const NICE = (() => {
     const nameEl = document.getElementById('hdr-username');
     if (!nameEl) return;
     const meta = user?.user_metadata || {};
-    nameEl.textContent = meta.display_name || user?.email?.split('@')[0] || 'Pilot';
+    nameEl.textContent = meta.display_name || user?.email?.split('@')[0] || Terminology.label('account');
   }
 
   /* ── Scroll to top on navigation ── */
@@ -2012,7 +2012,7 @@ const NICE = (() => {
     if (!user?.id || typeof SB === 'undefined' || !SB.client) return;
 
     try {
-      const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'Pilot';
+      const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || Terminology.label('guest');
       _presenceChannel = SB.client.channel('nice-presence', {
         config: { presence: { key: user.id } },
       });
@@ -2584,6 +2584,7 @@ const NICE = (() => {
     // Header user info
     _updateHeaderUser();
     State.on('user', _updateHeaderUser);
+    document.addEventListener('nice:theme-change', _updateHeaderUser);
 
     // Role vocabulary (SSOT for role → required capability tags).
     // Boots from `public.roles`; SEED fallback already populated

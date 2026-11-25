@@ -38,6 +38,25 @@ describe('Terminology', () => {
       expect(Terminology.label('mission', { plural: true, lowercase: true })).toBe('missions');
     });
 
+    it('uses everyday words for a guest, the account chip and the profile badge', () => {
+      for (const theme of ['nice', 'nice-dark', 'office', 'office-dark']) {
+        stubTheme(theme);
+        expect(Terminology.label('guest')).toBe('Guest');
+        expect(Terminology.label('account')).toBe('Profile');
+        expect(Terminology.label('member')).toBe('Member');
+      }
+    });
+
+    it('keeps Pilot in every sci-fi theme', () => {
+      for (const theme of ['hal-9000', 'grid', 'matrix', 'lcars', 'jarvis', 'cyberpunk', 'rx-78-2', '16bit']) {
+        stubTheme(theme);
+        expect(Terminology.label('guest')).toBe('Pilot');
+        expect(Terminology.label('account')).toBe('Pilot');
+        expect(Terminology.label('member')).toBe('Pilot');
+        expect(Terminology.label('spaceship')).toBe('Spaceship');
+      }
+    });
+
     it('overrides the singular for Office theme', () => {
       stubTheme('office');
       expect(Terminology.label('mission')).toBe('Assignment');

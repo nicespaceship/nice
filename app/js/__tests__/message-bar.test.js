@@ -77,10 +77,21 @@ describe('MessageBar._collectMessages (via rendered ticker)', () => {
     expect(track().innerHTML).toContain('Welcome back, trillian.');
   });
 
-  it("falls back to 'Pilot' when there is no user", () => {
+  it("falls back to 'Guest' when there is no user", () => {
     mountBar();
     MessageBar.init();
-    expect(track().innerHTML).toContain('Welcome back, Pilot.');
+    expect(track().innerHTML).toContain('Welcome back, Guest.');
+  });
+
+  it("keeps 'Pilot' for a guest in a sci-fi theme", () => {
+    globalThis.Theme = { current: () => 'matrix' };
+    try {
+      mountBar();
+      MessageBar.init();
+      expect(track().innerHTML).toContain('Welcome back, Pilot.');
+    } finally {
+      delete globalThis.Theme;
+    }
   });
 
   it('always appends the two system-status lines', () => {

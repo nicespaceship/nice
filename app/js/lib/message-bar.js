@@ -33,7 +33,7 @@ const MessageBar = (() => {
   function _collectMessages() {
     const msgs = [];
     const user = typeof State !== 'undefined' ? State.get('user') : null;
-    const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Pilot';
+    const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || Terminology.label('guest');
 
     // Welcome
     msgs.push({
