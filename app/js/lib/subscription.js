@@ -26,7 +26,7 @@ const Subscription = (() => {
       label: 'Free',
       icon: '',
       color: '#94a3b8',
-      get desc() { return `Gemini 2.5 Flash. One active ${_shipWord()} with every crew slot.`; },
+      get desc() { return `Gemini 2.5 Flash. One active ${_shipWord()} with every ${Terminology.label('crew', { lowercase: true })} slot.`; },
     },
     pro: {
       id: 'pro',

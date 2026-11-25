@@ -9,6 +9,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const HomeView = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const title = 'Home';
   const _esc = Utils.esc;
   const _WATCH = ['spaceships', 'missions', 'agents', 'content-queue', 'user'];
@@ -54,7 +56,7 @@ const HomeView = (() => {
     const failed = _count('missions');
     if (failed) items.push({ text: `${_plural(failed, missionWord + ' run', missionWord + ' runs')} failed`, cta: 'See why', href: '#/bridge?tab=missions' });
     const crew = _count('schematic');
-    if (crew) items.push({ text: `${_plural(crew, 'crew problem', 'crew problems')} to check`, cta: 'Check crew', href: '#/crew' });
+    if (crew) items.push({ text: `${_plural(crew, _crewWord() + ' problem', _crewWord() + ' problems')} to check`, cta: 'Check ' + _crewWord(), href: '#/crew' });
     return items;
   }
 
@@ -97,12 +99,12 @@ const HomeView = (() => {
               <span class="home-ship-name">${_esc(name)}</span>
               <span class="home-ship-meta">${_esc(meta)}</span>
             </span>
-            <span class="home-ship-cta">Open crew</span>
+            <span class="home-ship-cta">Open ${_esc(_crewWord())}</span>
           </a>`;
         }).join('')}
       </div>` : `
       <div class="widget-card home-empty">
-        <p>${_esc(_a() === 'an' ? 'An' : 'A')} ${_esc(_ship({ lowercase: true }))} gives you a crew of AI agents built for one kind of business. Pick one, and its crew gets to work on your ${_esc(Terminology.label('mission', { plural: true, lowercase: true }))}.</p>
+        <p>${_esc(_a() === 'an' ? 'An' : 'A')} ${_esc(_ship({ lowercase: true }))} gives you a ${_esc(_crewWord())} of AI agents built for one kind of business. Pick one, and its ${_esc(_crewWord())} gets to work on your ${_esc(Terminology.label('mission', { plural: true, lowercase: true }))}.</p>
         <a class="btn btn-primary btn-sm" href="#/blueprints?tab=spaceship">Choose ${_esc(_a())} ${_esc(_ship({ lowercase: true }))}</a>
       </div>`;
 
@@ -124,7 +126,7 @@ const HomeView = (() => {
         <section class="home-starts" aria-label="Start something">
           <a class="widget-card home-start" href="#/space">
             <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-space"/></svg></span>
-            <span class="home-start-text"><b>Ask anything</b><span>Chat with any model. No crew needed.</span></span>
+            <span class="home-start-text"><b>Ask anything</b><span>Chat with any model. No ${_esc(_crewWord())} needed.</span></span>
           </a>
           <a class="widget-card home-start" href="#/blueprints">
             <span class="home-start-ico" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-blueprint"/></svg></span>

@@ -4,6 +4,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SpaceshipBuilderView = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   // The spaceship noun follows the theme: "Project" in the default look.
   const _ship = (opts = {}) => Terminology.label('spaceship', opts);
   const _esc = Utils.esc;
@@ -164,7 +166,7 @@ const SpaceshipBuilderView = (() => {
     const labels = BlueprintUtils.SLOT_LABELS;
     return {
       name: 'Spaceship',
-      slots: Array.from({ length: BlueprintUtils.MAX_SHIP_SLOTS }, (_, i) => ({ label: labels[i] || 'Crew ' + (i + 1) })),
+      slots: Array.from({ length: BlueprintUtils.MAX_SHIP_SLOTS }, (_, i) => ({ label: labels[i] || 'Slot ' + (i + 1) })),
     };
   }
 
@@ -253,7 +255,7 @@ const SpaceshipBuilderView = (() => {
           <svg class="builder-header-icon" fill="currentColor" stroke="none" style="width:28px;height:28px"><use href="#icon-spaceship"/></svg>
           <div>
             <h2 class="builder-title">${isEdit ? 'Edit' : 'Create new'} ${_esc(_ship({ lowercase: true }))}</h2>
-            <p class="builder-sub">Configure your ${_esc(_ship({ lowercase: true }))}'s identity and crew assignments (${slotConfig.slots.length} slots).</p>
+            <p class="builder-sub">Configure your ${_esc(_ship({ lowercase: true }))}'s identity and ${_esc(_crewWord())} assignments (${slotConfig.slots.length} slots).</p>
           </div>
           <div class="builder-header-actions">
             <button type="button" class="btn btn-sm" id="btn-view-md" title="View as text">View as Text</button>
@@ -634,7 +636,7 @@ const SpaceshipBuilderView = (() => {
     modal.innerHTML = `
       <div class="crew-setup-content">
         <h2 class="crew-setup-title">${Utils.esc(shipData.name)} Created</h2>
-        <p class="crew-setup-sub">How would you like to set up your crew?</p>
+        <p class="crew-setup-sub">How would you like to set up your ${_esc(_crewWord())}?</p>
 
         <div class="crew-setup-options">
           <button class="crew-setup-option crew-setup-recommended" id="btn-ai-setup">
@@ -650,13 +652,13 @@ const SpaceshipBuilderView = (() => {
           <button class="crew-setup-option" id="btn-skip-setup">
             <span class="crew-setup-icon">&#8594;</span>
             <span class="crew-setup-label">Skip for Now</span>
-            <span class="crew-setup-desc">Set up crew later from the Schematic view</span>
+            <span class="crew-setup-desc">${Terminology.pick('Set up your team later from the Schematic view', 'Set up crew later from the Schematic view')}</span>
           </button>
         </div>
 
         <div id="crew-setup-status" class="crew-setup-status" style="display:none">
           <div class="crew-setup-spinner"></div>
-          <p id="crew-setup-msg">Generating your crew...</p>
+          <p id="crew-setup-msg">Generating your ${_esc(_crewWord())}...</p>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -675,7 +677,7 @@ const SpaceshipBuilderView = (() => {
         const result = await CrewGenerator.generate(shipData);
         if (result.error || !result.agents.length) {
           console.warn('[CrewSetup] generation failed:', result.error);
-          msgEl.textContent = `Crew generation failed. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
+          msgEl.textContent = `${_crewWord(true)} generation failed. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
           setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
@@ -692,7 +694,7 @@ const SpaceshipBuilderView = (() => {
         });
         if (!saved.savedAgents.length) {
           console.warn('[CrewSetup] save failed:', saved.error);
-          msgEl.textContent = `Saving the crew failed. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
+          msgEl.textContent = `Saving the ${_crewWord()} failed. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
           setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
@@ -708,7 +710,7 @@ const SpaceshipBuilderView = (() => {
         }, 1200);
       } catch (e) {
         console.warn('[CrewSetup] error:', e);
-        msgEl.textContent = `Crew setup hit an error. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
+        msgEl.textContent = `${_crewWord(true)} setup hit an error. Your ${_ship({ lowercase: true })} is saved, so use Manual Setup or Skip.`;
         setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
       }
     });
@@ -754,7 +756,7 @@ const SpaceshipBuilderView = (() => {
         caps: ship?.metadata?.caps || [category + ' operations'],
         crew: Object.keys(slots).map(s => ({
           slot: parseInt(s, 10),
-          role: cls.slots[parseInt(s, 10)]?.label || 'Crew ' + s,
+          role: cls.slots[parseInt(s, 10)]?.label || 'Slot ' + s,
           agent: slots[s],
         })),
       },

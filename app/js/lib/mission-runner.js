@@ -147,7 +147,7 @@ const MissionRunner = (() => {
         ', agent_name=' + (mission.agent_name || 'none');
       const msg =
         'Could not resolve an agent for this mission (' + detail + '). ' +
-        'Reassign the mission to an agent on the ' + Terminology.label('spaceship', { lowercase: true }) + '\'s crew, or rebuild ' +
+        'Reassign the mission to an agent on the ' + Terminology.label('spaceship', { lowercase: true }) + '\'s ' + Terminology.label('crew', { lowercase: true }) + ', or rebuild ' +
         'the mission template in Mission Composer.';
       const now = new Date().toISOString();
       await SB.db('mission_runs').update(missionId, {
@@ -1252,7 +1252,7 @@ const MissionRunner = (() => {
       if (cleaned !== lastResult.finalAnswer) {
         lastResult = {
           ...lastResult,
-          finalAnswer: cleaned || 'The crew completed their tasks, but the captain did not return a final summary.',
+          finalAnswer: cleaned || 'The ' + Terminology.label('crew', { lowercase: true }) + ' completed their tasks, but the captain did not return a final summary.',
         };
       }
     }

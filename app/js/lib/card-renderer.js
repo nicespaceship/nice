@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CardRenderer = (() => {
+  // The crew noun follows the theme: "team" in the default look.
+  const _crewWord = (cap) => Terminology.label('crew', { lowercase: !cap });
   const _esc = Utils.esc;
   const _escAttr = Utils.escAttr;
 
@@ -42,7 +44,7 @@ const CardRenderer = (() => {
      (specialties, workflows, protocols). Hovering an icon surfaces
      its title as an overlay in the art zone above. */
   const SHIP_FRONT_TABS = [
-    { id: 'crew',         title: 'Crew',        icon: TAB_ICONS.crew        },
+    { id: 'crew',         get title() { return _crewWord(true); }, icon: TAB_ICONS.crew        },
     { id: 'specialties',  title: 'Specialties', icon: TAB_ICONS.specialties },
     { id: 'workflows',    title: 'Workflows',   icon: TAB_ICONS.workflows   },
     { id: 'protocols',    title: 'Protocols',   icon: TAB_ICONS.protocols   },
@@ -374,7 +376,7 @@ const CardRenderer = (() => {
   function _renderFrontTabPanel(tabId, bp) {
     if (tabId === 'crew') {
       const crewHTML = _renderCrewList(bp);
-      return crewHTML || `<p class="blueprint-card-front-empty">No crew defined.</p>`;
+      return crewHTML || `<p class="blueprint-card-front-empty">No ${_crewWord()} defined.</p>`;
     }
     if (tabId === 'protocols') {
       const prompt = bp.config?.ship_system_prompt || bp.ship_system_prompt || '';
