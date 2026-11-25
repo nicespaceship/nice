@@ -2192,7 +2192,7 @@ html:not([data-theme]),
 [data-theme="lcars"] .app-sidebar.open .side-header {
   padding:18px 16px;
 }
-/* Closed-state hamburger: #ff9966 orange on #cc99ff violet is
+/* Header controls: #ff9966 orange on #cc99ff violet is
    same-luminance pastel mush. Force black for clear contrast against
    the violet elbow: the sidebar toggle and the NICE / Code switch sit on
    it, open or collapsed. The active segment keeps its black pill. */
