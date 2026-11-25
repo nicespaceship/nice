@@ -64,7 +64,7 @@ const NavCommands = (() => {
     { id: 'open-wallet',            name: 'Wallet',            kind: 'nav', route: '/wallet',                icon: '#icon-dollar',    skinKey: null,                keywords: 'wallet balance credits payment billing purchase',        desc: 'Open your Wallet.' },
     { id: 'open-vault',             name: 'Vault',             kind: 'nav', route: '/vault',                 icon: '#icon-key',       skinKey: 'nav.vault',         keywords: 'vault secrets keys api tokens',                          desc: 'Open the Vault.' },
     { id: 'open-security',          name: 'Security',          kind: 'nav', route: '/security',              icon: '#icon-lock',      skinKey: null,                keywords: 'security agent permissions threat audit compliance access policies', desc: 'Open Security.' },
-    { id: 'open-log',               name: 'Log',               kind: 'nav', route: '/log',                   icon: '#icon-monitor',   skinKey: 'nav.log',           keywords: 'log audit captain history events operations',            desc: "Open the Captain's Log." },
+    { id: 'open-log',               name: 'Log',               kind: 'nav', route: '/log',                   icon: '#icon-monitor',   skinKey: 'nav.log',           keywords: 'log audit captain history events operations', search: 'activity', desc: "Open the Captain's Log." },
     { id: 'open-profile',           name: 'Profile',           kind: 'nav', route: '/profile',               icon: '#icon-profile',   skinKey: 'nav.profile',       keywords: 'profile account user avatar',                            desc: 'Open your Profile.' },
     { id: 'open-settings',          name: 'Settings',          kind: 'nav', route: '/settings',              icon: '#icon-settings',  skinKey: 'nav.settings',      keywords: 'settings preferences config',                            desc: 'Open Settings.' },
     { id: 'open-theme-editor',      name: 'Theme Editor',      kind: 'nav', route: '/theme-editor',          icon: '#icon-settings',  skinKey: 'nav.theme-creator', keywords: 'theme editor creator custom colors builder',             desc: 'Open the Theme Editor.' },
@@ -111,6 +111,12 @@ const NavCommands = (() => {
     };
   }
 
+  // Only the sci-fi themes call the log the Captain's Log, so only they
+  // navigate there on the word.
+  function _captainWord() {
+    return typeof Terminology !== 'undefined' ? Terminology.pick('', 'captain ') : '';
+  }
+
   // Active spaceship noun (themed): "Project" in the default look.
   function _shipNoun() {
     const has = typeof Terminology !== 'undefined';
@@ -134,7 +140,7 @@ const NavCommands = (() => {
       let label = c.name;
       let keywords = c.keywords;
       if (c.id === 'open-missions') { label = m.plural; keywords = `missions tasks assignments queue jobs ${m.pluralLower}`; }
-      else if (c.id === 'open-log') { keywords = `log audit captain history events ${m.pluralLower} operations`; }
+      else if (c.id === 'open-log') { keywords = `log audit ${_captainWord()}history events ${m.pluralLower} operations`; }
       else if (c.id === 'open-shipyard') { label = `${sh.singular} blueprints`; }
       else if (c.id === 'new-spaceship') { label = `New ${sh.lower}`; }
       // This command opens Home; only the sci-fi themes call that the Bridge.
