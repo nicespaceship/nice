@@ -126,10 +126,12 @@ test.describe('Smoke Tests', () => {
       .withTags(['wcag2a', 'wcag2aa'])
       .disableRules(['color-contrast'])
       .analyze();
-    const ids = results.violations.map(v => v.id);
     expect(results.violations.filter(v => v.impact === 'critical')).toHaveLength(0);
-    expect(ids).not.toContain('landmark-no-duplicate-main');
-    expect(ids).not.toContain('landmark-main-is-top-level');
+    // axe files these under best-practice, so they run by name.
+    const landmarks = await new AxeBuilder({ page })
+      .withRules(['landmark-no-duplicate-main', 'landmark-main-is-top-level'])
+      .analyze();
+    expect(landmarks.violations.map(v => v.id)).toEqual([]);
   });
 
   test('ship has its own page and old bridge links land on it', async ({ page }) => {
