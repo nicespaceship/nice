@@ -19,6 +19,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "app-protocol.js",
       "../app/**/*",
       "../public/**/*"
     ],

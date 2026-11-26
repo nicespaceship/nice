@@ -15,8 +15,8 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
     ipcRenderer.send('desktop-notify', { title, body });
   },
 
-  // App version
-  version: require('./package.json').version,
+  // App version (passed in by main.js: a sandboxed preload cannot require files)
+  version: (process.argv.find(a => a.startsWith('--nice-version=')) || '').split('=')[1] || '',
 
   // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),

@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       'app/js/__tests__/**/*.test.js',
       'tools/**/*.test.js',
+      'desktop/**/*.test.js',
     ],
     setupFiles: ['app/js/__tests__/setup.js'],
     coverage: {
