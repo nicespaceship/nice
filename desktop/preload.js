@@ -91,6 +91,8 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
     key: (keys, opts) => call('browser:key', keys, opts),
     /** 'up' or 'down'; resolves to { y, height, view }. */
     scroll: (direction) => call('browser:scroll', direction),
+    /** The visible page: { url, title, width, height, dataUrl } (a JPEG data URL). */
+    screenshot: () => call('browser:screenshot'),
     /** [{ level, message, source, line }], the page's console since it loaded. */
     console: () => call('browser:console'),
     /** fn(state) on every change. Returns an unsubscribe. */

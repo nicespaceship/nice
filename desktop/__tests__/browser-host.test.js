@@ -351,6 +351,21 @@ describe('createBrowser', () => {
     expect(cb).toHaveBeenCalledWith('');
   });
 
+  it('takes screenshots as JPEG data URLs, scaled down past 1280 wide, without showing a hidden browser', async () => {
+    await b.open('example.com');
+    b.place({ x: 0, y: 0, width: 100, height: 100 });
+    const c = f.views[0].webContents;
+    const img = { isEmpty: () => false, getSize: () => ({ width: 2560, height: 1600 }), resize: vi.fn(() => small), toJPEG: () => Buffer.from('big') };
+    const small = { isEmpty: () => false, getSize: () => ({ width: 1280, height: 800 }), toJPEG: vi.fn(() => Buffer.from('jpg')) };
+    c.capturePage = vi.fn(async () => img);
+    const r = await b.screenshot();
+    expect(c.capturePage).toHaveBeenCalledWith(undefined, { stayHidden: true });
+    expect(img.resize).toHaveBeenCalledWith({ width: 1280, quality: 'good' });
+    expect(r).toMatchObject({ width: 1280, height: 800, dataUrl: 'data:image/jpeg;base64,' + Buffer.from('jpg').toString('base64') });
+    c.capturePage = vi.fn(async () => ({ isEmpty: () => true }));
+    await expect(b.screenshot()).rejects.toMatchObject({ code: 'ESHOT' });
+  });
+
   it('runs its scripts in an isolated world', async () => {
     await b.open('example.com');
     await b.read();
