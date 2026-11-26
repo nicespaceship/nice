@@ -5,8 +5,10 @@
  * calls with them from the main process, so a key never reaches the page:
  * the page sees only which providers have one. Keys are encrypted with
  * Electron's safeStorage (the macOS Keychain, Windows DPAPI, or the Linux
- * secret store) and written to a file only the user can read; without
- * safeStorage nothing is stored.
+ * secret store) and written to a file only the user can read. Without a
+ * real store nothing is saved: on Linux with no keyring, safeStorage
+ * reports itself available but uses a password built into Chromium
+ * ('basic_text'), which is refused here.
  *
  * Requests and replies use nice-ai's shape, so AgentExecutor treats a call
  * on the user's key like one through NICE:
@@ -30,13 +32,16 @@ const PROVIDERS = {
   anthropic: { label: 'Anthropic', kind: 'anthropic', base: 'https://api.anthropic.com/v1' },
   openai: {
     label: 'OpenAI', kind: 'openai', base: 'https://api.openai.com/v1',
-    chatModel: (id) => /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|search|instruct|embedding)/.test(id),
+    // Pro, Codex and deep-research models answer only on the Responses API.
+    chatModel: (id) => /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|search|instruct|embedding|codex|deep-research|-pro\b)/.test(id),
     newParams: true,
   },
   google: { label: 'Google Gemini', kind: 'gemini', base: 'https://generativelanguage.googleapis.com/v1beta' },
   xai: { label: 'xAI', kind: 'openai', base: 'https://api.x.ai/v1', chatModel: (id) => !/(image|imagine|embed)/.test(id) },
   groq: { label: 'Groq', kind: 'openai', base: 'https://api.groq.com/openai/v1', chatModel: (id) => !/(whisper|tts|guard|playai)/.test(id) },
-  deepseek: { label: 'DeepSeek', kind: 'openai', base: 'https://api.deepseek.com' },
+  // The reasoner's thinking has its own rules for tool calls across steps,
+  // which this does not handle yet.
+  deepseek: { label: 'DeepSeek', kind: 'openai', base: 'https://api.deepseek.com', chatModel: (id) => !/reasoner/.test(id) },
 };
 
 class LlmHostError extends Error {
@@ -56,13 +61,22 @@ function _provider(id) {
 
 /* ── Key store ─────────────────────────────────────────────────────── */
 
+function secureStoreAvailable(safe, platform = process.platform) {
+  if (!safe || !safe.isEncryptionAvailable()) return false;
+  if (platform === 'linux' && typeof safe.getSelectedStorageBackend === 'function') {
+    const backend = safe.getSelectedStorageBackend();
+    if (backend === 'basic_text' || backend === 'unknown') return false;
+  }
+  return true;
+}
+
 class KeyStore {
   constructor(file, safeStorage) {
     this.file = file;
     this.safe = safeStorage;
   }
 
-  _available() { return !!(this.safe && this.safe.isEncryptionAvailable()); }
+  _available() { return secureStoreAvailable(this.safe); }
 
   _load() {
     try {
@@ -122,7 +136,8 @@ function _errorFor(status, body, key, label) {
     msg = typeof e === 'string' ? e : (e && (e.message || e.msg)) || '';
   } catch { msg = String(body || '').slice(0, 300); }
   msg = _redact(msg, key).slice(0, 500);
-  if (status === 401 || status === 403) return new LlmHostError('EKEY', label + ' refused the key' + (msg ? ': ' + msg : '.'), status);
+  // Google answers a bad key with 400.
+  if (status === 401 || status === 403 || (status === 400 && /api.?key/i.test(msg))) return new LlmHostError('EKEY', label + ' refused the key' + (msg ? ': ' + msg : '.'), status);
   if (status === 429) return new LlmHostError('ERATELIMIT', label + ' is rate limiting this key' + (msg ? ': ' + msg : '.'), status);
   if (status === 404) return new LlmHostError('ENOMODEL', label + ' does not have that model' + (msg ? ': ' + msg : '.'), status);
   return new LlmHostError('EPROVIDER', label + ' answered ' + status + (msg ? ': ' + msg : '.'), status);
@@ -165,7 +180,8 @@ async function listModels(fetchFn, providerId, key) {
   } else if (p.kind === 'gemini') {
     const r = await _request(fetchFn, p.base + '/models?pageSize=1000', auth);
     models = (r.models || [])
-      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && /^models\/gemini/.test(m.name || ''))
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && /^models\/gemini/.test(m.name || '')
+        && !/(tts|image|embedding|live|native-audio)/.test(m.name))
       .map(m => ({ id: m.name.slice('models/'.length), label: m.displayName || m.name.slice('models/'.length) }));
   } else {
     const r = await _request(fetchFn, p.base + '/models', auth);
@@ -208,7 +224,8 @@ function _anthropicBody(model, body) {
   const { system, messages } = _splitSystem(body.messages);
   const out = {
     model,
-    max_tokens: body.max_tokens || 4096,
+    // Claude 3 models stop at 4096 output tokens; later ones take more.
+    max_tokens: body.max_tokens || (/^claude-3-(haiku|opus|sonnet)/.test(model) ? 4096 : 8192),
     messages: messages.map(m => ({
       role: m.role,
       content: _parts(m.content).map(p => {
@@ -273,7 +290,9 @@ function _openaiBody(p, model, body) {
   // OpenAI's reasoning models take max_completion_tokens and only the
   // default temperature.
   const reasoning = p.newParams && /^(o\d|gpt-5)/.test(model);
-  if (body.max_tokens) req[p.newParams ? 'max_completion_tokens' : 'max_tokens'] = body.max_tokens;
+  // Reasoning spends from the same budget as the answer.
+  const maxOut = body.max_tokens || (reasoning ? 32000 : 8192);
+  req[p.newParams ? 'max_completion_tokens' : 'max_tokens'] = maxOut;
   if (typeof body.temperature === 'number' && !reasoning) req.temperature = body.temperature;
   if (Array.isArray(body.tools) && body.tools.length) {
     req.tools = body.tools.map(t => ({ type: 'function', function: { name: t.name, description: t.description || '', parameters: t.parameters || { type: 'object', properties: {} } } }));
@@ -298,7 +317,7 @@ function _openaiReply(r) {
   return { content, stop_reason: stop, usage: { input_tokens: u.prompt_tokens || 0, output_tokens: u.completion_tokens || 0 }, model: r.model };
 }
 
-function _geminiBody(body) {
+function _geminiBody(body, model) {
   const { system, messages } = _splitSystem(body.messages);
   // Gemini answers a function call by its name, not an id.
   const names = new Map();
@@ -322,8 +341,9 @@ function _geminiBody(body) {
   })).filter(c => c.parts.length);
   const out = { contents, generationConfig: {} };
   if (system) out.systemInstruction = { parts: [{ text: system }] };
-  if (typeof body.temperature === 'number') out.generationConfig.temperature = body.temperature;
-  if (body.max_tokens) out.generationConfig.maxOutputTokens = body.max_tokens;
+  // Gemini 3 is meant to run at its default temperature.
+  if (typeof body.temperature === 'number' && !/^gemini-3/.test(String(model || ''))) out.generationConfig.temperature = body.temperature;
+  out.generationConfig.maxOutputTokens = body.max_tokens || 8192;
   if (Array.isArray(body.tools) && body.tools.length) {
     out.tools = [{ functionDeclarations: body.tools.map(t => ({ name: t.name, description: t.description || '', ...(t.parameters ? { parameters: t.parameters } : {}) })) }];
   }
@@ -331,6 +351,9 @@ function _geminiBody(body) {
 }
 
 function _geminiReply(r, model) {
+  if (!(r.candidates || []).length && r.promptFeedback && r.promptFeedback.blockReason) {
+    fail('EPROVIDER', 'Google Gemini declined the request (' + r.promptFeedback.blockReason + ').');
+  }
   const cand = (r.candidates || [])[0] || {};
   const content = [];
   ((cand.content && cand.content.parts) || []).forEach((p, i) => {
@@ -372,7 +395,7 @@ async function chat(fetchFn, store, body) {
   }
   if (p.kind === 'gemini') {
     const url = p.base + '/models/' + encodeURIComponent(model) + ':generateContent';
-    return _geminiReply(await _request(fetchFn, url, { ...auth, body: _geminiBody(body) }), model);
+    return _geminiReply(await _request(fetchFn, url, { ...auth, body: _geminiBody(body, model) }), model);
   }
   return _openaiReply(await _request(fetchFn, p.base + '/chat/completions', { ...auth, body: _openaiBody(p, model, body) }));
 }
@@ -389,7 +412,7 @@ function createLlmHost({ file, safeStorage, fetch: fetchFn = globalThis.fetch })
       _provider(providerId);
       const k = typeof key === 'string' ? key.trim() : '';
       if (k.length < 8 || k.length > 1024 || /\s/.test(k)) fail('EINVAL', 'That does not look like an API key.');
-      if (!(safeStorage && safeStorage.isEncryptionAvailable())) fail('ENOSTORE', 'This computer has no secure key store available, so NICE will not save the key.');
+      if (!secureStoreAvailable(safeStorage)) fail('ENOSTORE', 'This computer has no secure key store available, so NICE will not save the key.');
       const models = await listModels(fetchFn, providerId, k);
       store.set(providerId, k);
       return models;
@@ -405,4 +428,4 @@ function createLlmHost({ file, safeStorage, fetch: fetchFn = globalThis.fetch })
   };
 }
 
-module.exports = { createLlmHost, KeyStore, LlmHostError, PROVIDERS, parseModel, _redact, _anthropicBody, _openaiBody, _geminiBody, _anthropicReply, _openaiReply, _geminiReply };
+module.exports = { createLlmHost, KeyStore, secureStoreAvailable, LlmHostError, PROVIDERS, parseModel, _redact, _anthropicBody, _openaiBody, _geminiBody, _anthropicReply, _openaiReply, _geminiReply };

@@ -6,7 +6,7 @@ import os from 'os';
 import path from 'path';
 
 const require = createRequire(import.meta.url);
-const { createLlmHost, parseModel, _redact } = require('../llm-host.js');
+const { createLlmHost, parseModel, _redact, secureStoreAvailable, _anthropicBody, _openaiBody, _geminiBody, PROVIDERS } = require('../llm-host.js');
 
 // Stands in for Electron's safeStorage: reversible, but never the plain key.
 const safe = (available = true) => ({
@@ -176,6 +176,43 @@ describe('chat', () => {
     await expect(host.chat({ model: 'byo:openai:gpt-9', messages })).rejects.toMatchObject({ code: 'ENOMODEL', status: 404 });
     fetch.mockImplementationOnce(async () => { throw Object.assign(new Error('timed out'), { name: 'TimeoutError' }); });
     await expect(host.chat({ model: 'byo:openai:gpt-5', messages })).rejects.toMatchObject({ code: 'ETIMEDOUT' });
+  });
+});
+
+describe('provider rules', () => {
+  it('refuses Linux\'s built-in-password store', () => {
+    const s = { ...safe(), getSelectedStorageBackend: () => 'basic_text' };
+    expect(secureStoreAvailable(s, 'linux')).toBe(false);
+    expect(secureStoreAvailable({ ...safe(), getSelectedStorageBackend: () => 'gnome_libsecret' }, 'linux')).toBe(true);
+    expect(secureStoreAvailable(s, 'darwin')).toBe(true);
+    expect(secureStoreAvailable(safe(false), 'darwin')).toBe(false);
+  });
+
+  it('leaves out models the chat API cannot run', () => {
+    const openai = PROVIDERS.openai.chatModel;
+    expect(['gpt-5', 'gpt-5-mini', 'o3'].every(openai)).toBe(true);
+    expect(['gpt-5-pro', 'o3-pro', 'gpt-5-codex', 'o3-deep-research'].some(openai)).toBe(false);
+    expect(PROVIDERS.deepseek.chatModel('deepseek-reasoner')).toBe(false);
+    expect(PROVIDERS.deepseek.chatModel('deepseek-chat')).toBe(true);
+  });
+
+  it('sets output limits each provider takes', () => {
+    const msgs = [{ role: 'user', content: 'hi' }];
+    expect(_anthropicBody('claude-3-haiku-20240307', { messages: msgs }).max_tokens).toBe(4096);
+    expect(_anthropicBody('claude-sonnet-4-5', { messages: msgs }).max_tokens).toBe(8192);
+    expect(_openaiBody(PROVIDERS.openai, 'o3', { messages: msgs }).max_completion_tokens).toBe(32000);
+    expect(_openaiBody(PROVIDERS.groq, 'llama', { messages: msgs, temperature: 0.3 })).toMatchObject({ max_tokens: 8192, temperature: 0.3 });
+    expect(_geminiBody({ messages: msgs, temperature: 0.3 }, 'gemini-3-pro').generationConfig).toEqual({ maxOutputTokens: 8192 });
+    expect(_geminiBody({ messages: msgs, temperature: 0.3 }, 'gemini-2.5-flash').generationConfig.temperature).toBe(0.3);
+  });
+
+  it('reads Google\'s 400 for a bad key as a refused key, and a blocked prompt as an error', async () => {
+    const { fetch, host } = hostWith(() => json(400, { error: { message: 'API key not valid. Please pass a valid API key.' } }));
+    await expect(host.setKey('google', 'AIzaabcdefgh12345')).rejects.toMatchObject({ code: 'EKEY' });
+    fetch.mockImplementation(async () => json(200, { models: [] }));
+    await host.setKey('google', 'AIzaabcdefgh12345');
+    fetch.mockImplementation(async () => json(200, { promptFeedback: { blockReason: 'SAFETY' } }));
+    await expect(host.chat({ model: 'byo:google:gemini-2.5-flash', messages: [{ role: 'user', content: 'x' }] })).rejects.toThrow(/declined the request \(SAFETY\)/);
   });
 });
 

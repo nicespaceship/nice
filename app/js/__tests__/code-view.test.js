@@ -800,10 +800,11 @@ describe('CodeView in the desktop app', () => {
     const select = el.querySelector('#code-model');
     select.value = 'm2';
     select.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(bp.config.llm_engine).toBe('m2');
     expect(localStorage.getItem(Utils.KEYS.codeModel)).toBe('m2');
     submitPrompt(el, 'two');
     await flush();
+    // Taken when the next message goes, never in the middle of a turn.
+    expect(bp.config.llm_engine).toBe('m2');
     expect(AgentExecutor.converse).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenLastCalledWith('two');
   });

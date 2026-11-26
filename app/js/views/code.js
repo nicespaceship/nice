@@ -268,7 +268,6 @@ const CodeView = (() => {
     });
     el.querySelector('#code-model').addEventListener('change', (e) => {
       try { localStorage.setItem(MODEL_KEY, e.target.value); } catch {}
-      if (_convoBlueprint) _convoBlueprint.config.llm_engine = e.target.value;
     });
   }
 
@@ -330,11 +329,14 @@ const CodeView = (() => {
         : '').join('');
   }
 
+  // A repaint never changes the model of a conversation: the pick is read
+  // when the next message goes (_send), never in the middle of a turn.
   function _paintModels() {
     const select = _el && _el.querySelector('#code-model');
     if (!select) return;
+    const was = select.value;
     select.innerHTML = _modelOptions();
-    if (_convoBlueprint) _convoBlueprint.config.llm_engine = select.value;
+    if (_busyNow() && [...select.options].some(o => o.value === was)) select.value = was;
   }
 
   // The models of every provider the user has a key for. A provider whose
@@ -346,7 +348,8 @@ const CodeView = (() => {
     if (_ownLoad && !force) return _ownLoad;
     const load = (async () => {
       let providers = [];
-      try { providers = await llm.providers(); } catch { providers = []; }
+      try { providers = await llm.providers(); }
+      catch { if (_ownLoad === load) _ownLoad = null; return; }   // tried again on the next paint
       const next = new Map();
       await Promise.all(providers.filter(p => p.hasKey).map(async (p) => {
         try { next.set(p.id, { label: p.label, models: await llm.models(p.id), error: null }); }
@@ -371,7 +374,7 @@ const CodeView = (() => {
     // overlay would not cover the page.
     document.body.insertAdjacentHTML('beforeend', `
       <div class="modal-overlay open code-keys-overlay" id="code-keys-dialog">
-        <div class="modal-box code-keys-box" role="dialog" aria-modal="true" aria-labelledby="code-keys-title">
+        <div class="modal-box code-keys-box" role="dialog" aria-modal="true" aria-labelledby="code-keys-title" tabindex="-1">
           <div class="modal-hdr">
             <h2 class="modal-title" id="code-keys-title">API keys</h2>
             <button type="button" class="modal-close" id="code-keys-close" aria-label="Close"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-x"/></svg></button>
@@ -438,6 +441,13 @@ const CodeView = (() => {
     if (focusFirst) { const first = list.querySelector('input, button'); if (first) first.focus(); }
   }
 
+  // While the list repaints, focus waits on the dialog itself, so Escape
+  // and Tab still work there.
+  function _holdFocus() {
+    const box = document.querySelector('#code-keys-dialog .code-keys-box');
+    if (box) box.focus();
+  }
+
   async function _onKeySubmit(e) {
     e.preventDefault();
     const form = e.target.closest('.code-key-row');
@@ -449,6 +459,7 @@ const CodeView = (() => {
     const key = input.value.trim();
     if (!key) { err.textContent = 'Paste a key first.'; input.focus(); return; }
     input.disabled = true; btn.disabled = true; btn.textContent = 'Checking…'; err.textContent = '';
+    _holdFocus();
     try {
       await llm.setKey(form.dataset.provider, key);
       input.value = '';
@@ -467,6 +478,7 @@ const CodeView = (() => {
     const b = e.target.closest('[data-remove]');
     const llm = _llm();
     if (!b || !llm) return;
+    _holdFocus();
     b.disabled = true;
     try { await llm.clearKey(b.dataset.remove); } catch { /* the repaint shows what is saved */ }
     await _loadOwnModels(true);
@@ -521,6 +533,7 @@ const CodeView = (() => {
       });
     }
 
+    _convoBlueprint.config.llm_engine = model;
     const turnState = { gen: _gen, stopAsked: false };
     _turn = turnState;
     _lastThought = '';

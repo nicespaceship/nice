@@ -895,7 +895,8 @@ const AgentExecutor = (() => {
     let llmConfig = {};
     if (ownKey) {
       const cfg = blueprint.config;
-      llmConfig = { model: engine, temperature: cfg.temperature, max_tokens: cfg.max_tokens || 8192, fallbackChain: [] };
+      // max_tokens is left to the desktop host, which knows each provider's limits.
+      llmConfig = { model: engine, temperature: cfg.temperature, max_tokens: cfg.max_tokens || null, fallbackChain: [] };
     } else if (typeof LLMConfig !== 'undefined' && blueprint) {
       llmConfig = LLMConfig.forBlueprint(blueprint);
     }
@@ -905,7 +906,7 @@ const AgentExecutor = (() => {
       model:          llmConfig.model || 'gemini-2-5-flash',
       messages:       apiMessages,
       temperature:    llmConfig.temperature || 0.3,
-      max_tokens:     llmConfig.max_tokens || 2048,
+      max_tokens:     llmConfig.max_tokens || (ownKey ? undefined : 2048),
       // Blueprint-assigned model: if the user can't pay for it, fall back to
       // Gemini Flash inside nice-ai and surface a toast. Without this, the
       // catalog's llm_engine would 402 every dispatch for non-subscribers.
