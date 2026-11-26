@@ -25,6 +25,7 @@ const SCRIPTS = [
   'app/js/lib/blueprint-utils.js',
   'app/js/lib/card-renderer.js',
   'app/js/views/home.js',
+  'app/js/lib/own-keys.js',
   'app/js/lib/space-cards.js',
   'app/js/views/chat.js',
   'app/js/views/code.js',

@@ -91,6 +91,7 @@ function slowModel() {
 
 beforeEach(() => {
   CodeView._test.reset();
+  OwnKeys._test.reset();
   delete window.NiceDesktop;
 });
 afterEach(() => { delete window.NiceDesktop; delete globalThis.AgentExecutor; delete globalThis.LLM_MODELS; });
@@ -1156,9 +1157,9 @@ describe('CodeView on your own API keys', () => {
     const el = await openWithKeys(llm);
     el.querySelector('#code-keys').click();
     await flush();
-    const dlg = document.getElementById('code-keys-dialog');
+    const dlg = document.getElementById('own-keys-dialog');
     expect(dlg.querySelector('[role="dialog"]').getAttribute('aria-modal')).toBe('true');
-    const row = () => document.querySelector('.code-key-row[data-provider="anthropic"]');
+    const row = () => document.querySelector('.own-key-row[data-provider="anthropic"]');
     const input = row().querySelector('input');
     expect(input.type).toBe('password');
     expect(document.activeElement).toBe(input);
@@ -1166,7 +1167,7 @@ describe('CodeView on your own API keys', () => {
     row().dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await flush();
     expect(llm.setKey).toHaveBeenCalledWith('anthropic', 'sk-ant-secret-999');
-    expect(row().querySelector('.code-key-status').textContent).toContain('Key saved, 1 models');
+    expect(row().querySelector('.own-key-status').textContent).toContain('Key saved, 1 models');
     expect(document.body.innerHTML).not.toContain('sk-ant-secret-999');
     expect(options(el).map(g => g[0])).toContain('Anthropic (your key)');
   });
@@ -1176,11 +1177,11 @@ describe('CodeView on your own API keys', () => {
     const el = await openWithKeys(llm);
     el.querySelector('#code-keys').click();
     await flush();
-    const row = document.querySelector('.code-key-row[data-provider="anthropic"]');
+    const row = document.querySelector('.own-key-row[data-provider="anthropic"]');
     row.querySelector('input').value = 'bad-key-123';
     row.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await flush();
-    expect(row.querySelector('.code-keys-err').textContent).toBe('Anthropic refused the key.');
+    expect(row.querySelector('.own-keys-err').textContent).toBe('Anthropic refused the key.');
     expect(row.querySelector('input').disabled).toBe(false);
     expect(llm.saved.anthropic).toBeUndefined();
   });
@@ -1194,7 +1195,7 @@ describe('CodeView on your own API keys', () => {
     await flush();
     expect(llm.clearKey).toHaveBeenCalledWith('anthropic');
     expect(options(el)).toEqual([['NICE', ['gemini-2-5-flash']]]);
-    expect(document.querySelector('.code-key-row[data-provider="anthropic"] input')).not.toBeNull();
+    expect(document.querySelector('.own-key-row[data-provider="anthropic"] input')).not.toBeNull();
   });
 
   it('closes on Escape and gives focus back to the key button', async () => {
@@ -1203,8 +1204,8 @@ describe('CodeView on your own API keys', () => {
     btn.focus();
     btn.click();
     await flush();
-    document.getElementById('code-keys-dialog').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(document.getElementById('code-keys-dialog')).toBeNull();
+    document.getElementById('own-keys-dialog').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(document.getElementById('own-keys-dialog')).toBeNull();
     expect(document.activeElement).toBe(btn);
   });
 });

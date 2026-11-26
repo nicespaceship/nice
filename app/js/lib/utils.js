@@ -162,6 +162,7 @@ const Utils = (() => {
     spaceCards: 'nice-space-cards',
     codePanel: 'nice-code-panel',
     codeModel: 'nice-code-model',
+    ownModels: 'nice-own-models',
     customAgents: 'nice-custom-agents',
     customShips: 'nice-custom-ships',
     contentQueue: 'nice-content-queue',
