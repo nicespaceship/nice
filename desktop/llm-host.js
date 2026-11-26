@@ -29,19 +29,22 @@ const MAX_MODELS = 300;
 // OpenAI-compatible providers differ in base URL and in which listed
 // models can chat.
 const PROVIDERS = {
-  anthropic: { label: 'Anthropic', kind: 'anthropic', base: 'https://api.anthropic.com/v1' },
+  // sees(model): whether the model takes images. A model that doesn't gets
+  // a line of text in place of each image (a screenshot, an attachment).
+  anthropic: { label: 'Anthropic', kind: 'anthropic', base: 'https://api.anthropic.com/v1', sees: (id) => !/^claude-(2|instant)/.test(id) },
   openai: {
     label: 'OpenAI', kind: 'openai', base: 'https://api.openai.com/v1',
     // Pro, Codex and deep-research models answer only on the Responses API.
     chatModel: (id) => /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|search|instruct|embedding|codex|deep-research|-pro\b)/.test(id),
     newParams: true,
+    sees: (id) => !/^(gpt-3\.5|o1-mini|o3-mini)/.test(id),
   },
-  google: { label: 'Google Gemini', kind: 'gemini', base: 'https://generativelanguage.googleapis.com/v1beta' },
-  xai: { label: 'xAI', kind: 'openai', base: 'https://api.x.ai/v1', chatModel: (id) => !/(image|imagine|embed)/.test(id) },
-  groq: { label: 'Groq', kind: 'openai', base: 'https://api.groq.com/openai/v1', chatModel: (id) => !/(whisper|tts|guard|playai)/.test(id) },
+  google: { label: 'Google Gemini', kind: 'gemini', base: 'https://generativelanguage.googleapis.com/v1beta', sees: () => true },
+  xai: { label: 'xAI', kind: 'openai', base: 'https://api.x.ai/v1', chatModel: (id) => !/(image|imagine|embed)/.test(id), sees: (id) => /(vision|grok-4)/.test(id) },
+  groq: { label: 'Groq', kind: 'openai', base: 'https://api.groq.com/openai/v1', chatModel: (id) => !/(whisper|tts|guard|playai)/.test(id), sees: (id) => /(llama-4|vision)/.test(id) },
   // The reasoner's thinking has its own rules for tool calls across steps,
   // which this does not handle yet.
-  deepseek: { label: 'DeepSeek', kind: 'openai', base: 'https://api.deepseek.com', chatModel: (id) => !/reasoner/.test(id) },
+  deepseek: { label: 'DeepSeek', kind: 'openai', base: 'https://api.deepseek.com', chatModel: (id) => !/reasoner/.test(id), sees: () => false },
 };
 
 class LlmHostError extends Error {
@@ -384,6 +387,17 @@ function parseModel(id) {
   return { provider: m[1], model: m[2] };
 }
 
+/** The request with each image part replaced by a line saying the model can't see it. */
+function _withoutImages(body, model) {
+  const note = { type: 'text', text: '[An image was left out: ' + model + ' cannot see images.]' };
+  return {
+    ...body,
+    messages: body.messages.map(m => (m && Array.isArray(m.content) && m.content.some(p => p && p.type === 'image_url'))
+      ? { ...m, content: m.content.map(p => (p && p.type === 'image_url' ? note : p)) }
+      : m),
+  };
+}
+
 async function chat(fetchFn, store, body) {
   if (!body || typeof body !== 'object' || !Array.isArray(body.messages)) fail('EINVAL', 'A chat request needs messages.');
   if (Buffer.byteLength(JSON.stringify(body)) > MAX_BODY_BYTES) fail('ETOOBIG', 'This conversation is too large to send.');
@@ -391,6 +405,7 @@ async function chat(fetchFn, store, body) {
   const p = PROVIDERS[provider];
   const key = store.get(provider);
   if (!key) fail('ENOKEY', 'There is no ' + p.label + ' key. Add one in API keys.');
+  if (p.sees && !p.sees(model)) body = _withoutImages(body, model);
   const auth = { method: 'POST', headers: _authHeaders(p, key), key, label: p.label };
   if (p.kind === 'anthropic') {
     return _anthropicReply(await _request(fetchFn, p.base + '/messages', { ...auth, body: _anthropicBody(model, body) }));

@@ -130,6 +130,42 @@ describe('chat', () => {
     expect(out.usage).toEqual({ input_tokens: 7, output_tokens: 3 });
   });
 
+  describe('a screenshot after a tool result', () => {
+    const IMG = 'data:image/jpeg;base64,QUJD';
+    const withShot = [...messages.slice(0, -1), { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', name: 'read_file', content: '{"content":"x"}' }, { type: 'image_url', image_url: { url: IMG } }] }];
+    const ok = { anthropic: { content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn' }, openai: { choices: [{ message: { content: 'ok' } }] }, google: { candidates: [{ content: { parts: [{ text: 'ok' }] } }] } };
+
+    it('goes to Claude after the tool result, in the same turn', async () => {
+      const { sent } = await chatWith('anthropic', ok.anthropic, { model: 'byo:anthropic:claude-x', messages: withShot });
+      expect(sent.messages.at(-1).content.map(p => p.type)).toEqual(['tool_result', 'image']);
+      expect(sent.messages.at(-1).content[1].source).toEqual({ type: 'base64', media_type: 'image/jpeg', data: 'QUJD' });
+    });
+
+    it('goes to OpenAI as a user message after the tool message', async () => {
+      const { sent } = await chatWith('openai', ok.openai, { model: 'byo:openai:gpt-5', messages: withShot });
+      expect(sent.messages.map(m => m.role)).toEqual(['system', 'user', 'assistant', 'tool', 'user']);
+      expect(sent.messages.at(-1).content).toEqual([{ type: 'image_url', image_url: { url: IMG } }]);
+    });
+
+    it('goes to Gemini beside the function response', async () => {
+      const { sent } = await chatWith('google', ok.google, { model: 'byo:google:gemini-2.5-flash', messages: withShot });
+      const parts = sent.contents.at(-1).parts;
+      expect(parts[0].functionResponse).toBeTruthy();
+      expect(parts[1]).toEqual({ inlineData: { mimeType: 'image/jpeg', data: 'QUJD' } });
+    });
+
+    it('becomes a line of text for a model that cannot see images', async () => {
+      const { sent } = await chatWith('deepseek', ok.openai, { model: 'byo:deepseek:deepseek-chat', messages: withShot });
+      expect(JSON.stringify(sent)).not.toContain('base64');
+      expect(sent.messages.at(-1).content).toBe('[An image was left out: deepseek-chat cannot see images.]');
+      for (const [id, sees] of [['gpt-3.5-turbo', false], ['o3-mini', false], ['gpt-4o', true]]) expect(PROVIDERS.openai.sees(id)).toBe(sees);
+      expect(PROVIDERS.groq.sees('llama-3.3-70b-versatile')).toBe(false);
+      expect(PROVIDERS.groq.sees('meta-llama/llama-4-scout-17b-16e-instruct')).toBe(true);
+      expect(PROVIDERS.xai.sees('grok-3')).toBe(false);
+      expect(PROVIDERS.xai.sees('grok-4')).toBe(true);
+    });
+  });
+
   it('speaks Gemini and carries the thought signature of a call back', async () => {
     const { out, url, sent, headers } = await chatWith('google', {
       modelVersion: 'gemini-2.5-flash', usageMetadata: { promptTokenCount: 4, candidatesTokenCount: 1 },
