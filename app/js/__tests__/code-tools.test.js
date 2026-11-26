@@ -21,7 +21,7 @@ describe('CodeTools', () => {
   it('registers its tools once, with edits, writes, commands and acting on web pages as side effects', () => {
     expect(CodeTools.register()).toBe(true);
     expect(CodeTools.IDS).toEqual(['code-read', 'code-list', 'code-search', 'code-edit', 'code-write', 'code-run',
-      'code-browser-open', 'code-browser-read', 'code-browser-click', 'code-browser-type', 'code-browser-key',
+      'code-browser-open', 'code-browser-read', 'code-browser-click', 'code-browser-type', 'code-browser-key', 'code-browser-shot',
       'code-browser-scroll', 'code-browser-back', 'code-browser-console']);
     const side = CodeTools.IDS.filter(id => ToolRegistry.resolve(id).sideEffect);
     expect(side).toEqual(['code-edit', 'code-write', 'code-run', 'code-browser-open', 'code-browser-click', 'code-browser-type', 'code-browser-key']);
@@ -185,6 +185,14 @@ describe('CodeTools browser', () => {
     expect(b.key).toHaveBeenCalledWith('Enter', { expectHost: 'example.com' });
     await ToolRegistry.execute('code-browser-key', { keys: 'Tab' }, gate(''));
     expect(b.key).toHaveBeenLastCalledWith('Tab', { expectHost: '' });
+  });
+
+  it('hands a screenshot to the agent as an image, not text', async () => {
+    window.NiceDesktop = { browser: browser({ screenshot: vi.fn(async () => ({ url: page.url, title: 'App', width: 800, height: 600, dataUrl: 'data:image/jpeg;base64,QUJD' })) }) };
+    const r = await ToolRegistry.execute('code-browser-shot', {});
+    expect(r).toEqual({ url: page.url, title: 'App', width: 800, height: 600, __images: ['data:image/jpeg;base64,QUJD'] });
+    expect(CodeTools.describe('browser_screenshot', {})).toEqual({ kind: 'look', title: 'Took a screenshot' });
+    expect(ToolRegistry.resolve('code-browser-shot').sideEffect).toBe(false);
   });
 
   it('reports a page that failed or answered with an error status', async () => {

@@ -1343,6 +1343,18 @@ describe('CodeView browser', () => {
     expect(br.place).toHaveBeenLastCalledWith(null);
   });
 
+  it('shows a screenshot in its step line, and only an image the browser made', async () => {
+    const { el, opts } = await withBrowser({ agent: true });
+    opts.onStep({ action: 'browser_screenshot', actionInput: {}, observation: JSON.stringify({ url: 'http://localhost:3000/', title: 'App' }), images: ['data:image/jpeg;base64,QUJD'] });
+    opts.onStep({ action: 'browser_screenshot', actionInput: {}, observation: '{}', images: ['javascript:alert(1)', 'data:image/svg+xml;base64,PHN2Zz4='] });
+    const steps = el.querySelectorAll('.code-step');
+    const img = steps[0].querySelector('img.code-step-shot');
+    expect(img.getAttribute('src')).toBe('data:image/jpeg;base64,QUJD');
+    expect(img.getAttribute('alt')).toBe('Screenshot: App');
+    expect(steps[0].open).toBe(true);
+    expect(steps[1].querySelector('img')).toBeNull();
+  });
+
   it('hides the browser under any modal dialog that shows, and under anything over its viewport', async () => {
     const { br, el } = await withBrowser();
     await showTab(el);
