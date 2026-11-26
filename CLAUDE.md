@@ -385,7 +385,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `McpBridge` | `mcp-bridge.js` | Bridges MCP connections to ToolRegistry |
 | `ToolRegistry` | `tool-registry.js` | Central registry for agent tools |
 | `SafeExpr` | `safe-expr.js` | Parser for the calculator tool's arithmetic and workflow `condition` / `branch` expressions; never eval / `new Function` (the site's CSP and the desktop app's forbid them) |
-| `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
+| `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations. Runs only the tools the agent was given (`opts.tools`, else its capability's, else connected MCPs): a call for any other tool gets an error result and never runs, and with no tools a reply is never parsed for actions |
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |
 | `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management; review decisions (`approveRun`, `rejectRun`, `isResumableGate`) shared by the mission detail page and the crew view |

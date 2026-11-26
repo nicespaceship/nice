@@ -12,7 +12,7 @@ const AgentExecutor = (() => {
    * @param {Object} agentBlueprint - Blueprint with id, name, config, flavor
    * @param {string} prompt - User prompt
    * @param {Object} opts
-   *   - tools: string[] of tool IDs to make available
+   *   - tools: string[] of tool IDs to make available; nothing else runs
    *   - maxSteps: number (default 5)
    *   - spaceshipId: string
    *   - onStep: function(step) callback per step
@@ -60,6 +60,7 @@ const AgentExecutor = (() => {
       agentBlueprint,
       systemPrompt: ctx.systemPrompt,
       toolsSchema: ctx.toolsSchema,
+      allowedTools: ctx.allowedTools,
       conversationMessages,
       spaceshipId,
       agentId,
@@ -264,7 +265,30 @@ const AgentExecutor = (() => {
     // tool-using turn for any agent with accumulated memory.
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
-    return { availableTools, toolsSchema, systemPrompt };
+    // The only tools _runReactLoop will run: the ones this agent was given,
+    // reachable by id or by the name toolsSchema showed the model.
+    const allowedTools = {
+      ids: new Set(availableTools.map(t => t.id)),
+      byName: new Map(dedupedTools.map(t => [t.name, t.id])),
+    };
+
+    return { availableTools, toolsSchema, systemPrompt, allowedTools };
+  }
+
+  /* The id of the tool a reply asks for, or null when this agent was not
+     given it. ToolRegistry.resolve also matches aliases and fuzzy names
+     across every registered tool, so its answer counts only inside the set,
+     and a name the model was shown wins over a registry alias for it (the
+     built-in "search" alias points at web-search, not a connected tool
+     called "search"). */
+  function _allowedToolId(requested, allowedTools) {
+    if (!requested || typeof requested !== 'string' || !allowedTools) return null;
+    if (allowedTools.ids.has(requested)) return requested;
+    if (allowedTools.byName.has(requested)) return allowedTools.byName.get(requested);
+    const tool = typeof ToolRegistry !== 'undefined' && typeof ToolRegistry.resolve === 'function'
+      ? ToolRegistry.resolve(requested)
+      : null;
+    return tool && allowedTools.ids.has(tool.id) ? tool.id : null;
   }
 
   /* ── Shared ReAct loop body ──
@@ -286,7 +310,7 @@ const AgentExecutor = (() => {
 
   async function _runReactLoop(params) {
     const {
-      agentBlueprint, systemPrompt, toolsSchema, conversationMessages,
+      agentBlueprint, systemPrompt, toolsSchema, allowedTools, conversationMessages,
       spaceshipId, agentId, maxSteps, steps, tokensRef, opts, onStep,
     } = params;
 
@@ -337,27 +361,34 @@ const AgentExecutor = (() => {
           let observation;
           let isError = false;
           let wasStopped = false;
-          try {
-            const result = await ToolRegistry.execute(block.name, block.input || {}, {
-              approvalMode:     opts && opts.approvalMode,
-              onApprovalNeeded: opts && opts.onApprovalNeeded,
-              toolLabel:        block.name,
-              thought:          combinedText,
-              stepIndex:        stepIdx + 1,
-            });
-            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-          } catch (err) {
-            if (err && err.declined && stopped()) {
-              // Turned down because the run was called off, not by the user.
-              wasStopped = true;
-              observation = _STOP_TOOL_NOTE;
-            } else if (err && err.declined) {
-              declined.add(block.id);
-              observation = 'Action blocked — user declined approval.';
-            } else {
-              observation = 'Error: ' + (err.message || 'Tool execution failed');
-            }
+          const toolId = _allowedToolId(block.name, allowedTools);
+          if (!toolId) {
+            // Never run, but answered, so the model can carry on without it.
+            observation = 'Error: tool "' + block.name + '" is not available to this agent';
             isError = true;
+          } else {
+            try {
+              const result = await ToolRegistry.execute(toolId, block.input || {}, {
+                approvalMode:     opts && opts.approvalMode,
+                onApprovalNeeded: opts && opts.onApprovalNeeded,
+                toolLabel:        block.name,
+                thought:          combinedText,
+                stepIndex:        stepIdx + 1,
+              });
+              observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+            } catch (err) {
+              if (err && err.declined && stopped()) {
+                // Turned down because the run was called off, not by the user.
+                wasStopped = true;
+                observation = _STOP_TOOL_NOTE;
+              } else if (err && err.declined) {
+                declined.add(block.id);
+                observation = 'Action blocked — user declined approval.';
+              } else {
+                observation = 'Error: ' + (err.message || 'Tool execution failed');
+              }
+              isError = true;
+            }
           }
 
           toolResultParts.push({
@@ -424,9 +455,21 @@ const AgentExecutor = (() => {
       // ── No native tool_use — plain text response ─────────────────────
       // Model either gave a final answer or (on providers without native
       // tool-use) responded in legacy ReAct text format. Parse once, act.
-      const parsed = _parseReActResponse(combinedText || '');
+      // With no tools nothing in the reply can be a call, so it stands as
+      // written.
+      const parsed = allowedTools && allowedTools.ids.size
+        ? _parseReActResponse(combinedText || '')
+        : { thought: null, action: null, actionInput: null, finalAnswer: null };
+      const isCall = !!parsed.action && !parsed.finalAnswer;
+      const textToolId = isCall ? _allowedToolId(parsed.action, allowedTools) : null;
+      // A call for a tool outside the set is answered like the native path,
+      // so the model can carry on without it (the system prompt can still
+      // name a tool whose integration is not connected). It counts as a call
+      // only with an Action Input: "Action: Bob sends the deck" in meeting
+      // notes is part of the answer.
+      const refused = isCall && !textToolId && parsed.actionInput != null;
 
-      if (parsed.action && !parsed.finalAnswer) {
+      if (textToolId || refused) {
         // Same shared gate as the native path: route through ToolRegistry.execute
         // with review-mode context. A declined action throws `declined`, which we
         // surface with the dedicated "try a different approach" nudge so the model
@@ -436,27 +479,32 @@ const AgentExecutor = (() => {
         let wasDeclined = false;
         let wasStopped = false;
         if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
-        try {
-          const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {}, {
-            approvalMode:     opts && opts.approvalMode,
-            onApprovalNeeded: opts && opts.onApprovalNeeded,
-            toolLabel:        parsed.action,
-            thought:          parsed.thought,
-            stepIndex:        stepIdx + 1,
-          });
-          observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-        } catch (err) {
-          if (err && err.declined && stopped()) {
-            // Turned down because the run was called off, not by the user.
-            wasStopped = true;
-            observation = _STOP_TOOL_NOTE;
-          } else if (err && err.declined) {
-            wasDeclined = true;
-            observation = 'Action blocked — user declined approval.';
-          } else {
-            observation = 'Error: ' + (err.message || 'Tool execution failed');
-          }
+        if (refused) {
+          observation = 'Error: tool "' + parsed.action + '" is not available to this agent';
           toolFailed = true;
+        } else {
+          try {
+            const result = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
+              approvalMode:     opts && opts.approvalMode,
+              onApprovalNeeded: opts && opts.onApprovalNeeded,
+              toolLabel:        parsed.action,
+              thought:          parsed.thought,
+              stepIndex:        stepIdx + 1,
+            });
+            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+          } catch (err) {
+            if (err && err.declined && stopped()) {
+              // Turned down because the run was called off, not by the user.
+              wasStopped = true;
+              observation = _STOP_TOOL_NOTE;
+            } else if (err && err.declined) {
+              wasDeclined = true;
+              observation = 'Action blocked — user declined approval.';
+            } else {
+              observation = 'Error: ' + (err.message || 'Tool execution failed');
+            }
+            toolFailed = true;
+          }
         }
         stepIdx++;
         const step = {
@@ -674,7 +722,7 @@ const AgentExecutor = (() => {
     // Fall back to text-based ReAct parsing
 
     // Extract Thought
-    const thoughtMatch = text.match(/Thought:\s*([\s\S]*?)(?=\n(?:Action:|Final Answer:)|$)/i);
+    const thoughtMatch = text.match(/Thought\**[ \t]*:\**\s*([\s\S]*?)(?=\n[ \t>*_#+\-\d.)]*\**[ \t]*(?:Action|Final Answer)\b|$)/i);
     if (thoughtMatch) result.thought = thoughtMatch[1].trim();
 
     // Check for Final Answer first
@@ -684,14 +732,19 @@ const AgentExecutor = (() => {
       return result;
     }
 
-    // Extract Action
-    const actionMatch = text.match(/Action:\s*(.+)/i);
+    // Action and Action Input count at the start of a line, with the
+    // Markdown models wrap them in (**Action:**, "- Action:", "1. Action:",
+    // "> Action:"), and never inside a word, so prose like "one transaction:
+    // BEGIN …" never reads as a call.
+    const LEAD = '^[ \\t>*_#+\\-\\d.)]*\\**[ \\t]*';
+    const TAIL = '[ \\t]*\\**[ \\t]*:[ \\t]*\\**[ \\t]*';
+    const actionMatch = text.match(new RegExp(LEAD + 'Action(?![ \\t]*Input)' + TAIL + '(\\S[^\\n]*)$', 'im'));
     if (actionMatch) {
-      result.action = actionMatch[1].trim();
+      result.action = actionMatch[1].replace(/[*`]+/g, ' ').trim();
     }
 
-    // Extract Action Input
-    const inputMatch = text.match(/Action Input:\s*([\s\S]*?)(?=\n(?:Thought:|Action:|Final Answer:)|$)/i);
+    const NEXT = '(?=\\n' + LEAD.slice(1) + '(?:Thought|Action|Final Answer)\\b|(?![\\s\\S]))';
+    const inputMatch = text.match(new RegExp(LEAD + 'Action[ \\t]+Input' + TAIL + '([\\s\\S]*?)' + NEXT, 'im'));
     if (inputMatch) {
       const raw = inputMatch[1].trim();
       try {
@@ -714,43 +767,47 @@ const AgentExecutor = (() => {
     return result;
   }
 
-  /* ── Try to parse structured JSON tool calls from LLM output ── */
+  /* ── Try to parse structured JSON tool calls from LLM output ──
+     Only a reply that IS the object, bare or as one fenced block, counts:
+     an object quoted inside an answer (a Redux action, an API example) is
+     part of the answer. */
   function _tryParseStructuredCall(text) {
     if (!text || typeof text !== 'string') return null;
-    // Look for a JSON object in the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    try {
-      const obj = JSON.parse(jsonMatch[0]);
+    const asCall = (obj, whole) => {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
       // Format 1: { tool_call: { name, arguments }, thought }
-      if (obj.tool_call && obj.tool_call.name) {
-        return {
-          thought: obj.thought || null,
-          action: obj.tool_call.name,
-          actionInput: obj.tool_call.arguments || {},
-          finalAnswer: null,
-        };
+      if (obj.tool_call && typeof obj.tool_call.name === 'string') {
+        return { thought: obj.thought || null, action: obj.tool_call.name, actionInput: obj.tool_call.arguments || {}, finalAnswer: null };
       }
-      // Format 2: { action, action_input, thought }
-      if (obj.action && typeof obj.action === 'string' && !obj.final_answer) {
-        return {
-          thought: obj.thought || null,
-          action: obj.action,
-          actionInput: obj.action_input || obj.actionInput || {},
-          finalAnswer: null,
-        };
+      // Format 2: { action, action_input, thought }. The input key is what
+      // makes it a call: { "action": "Send the deck", "owner": "Bob" } is data.
+      const hasInput = Object.prototype.hasOwnProperty.call(obj, 'action_input') || Object.prototype.hasOwnProperty.call(obj, 'actionInput');
+      if (typeof obj.action === 'string' && hasInput && !obj.final_answer) {
+        return { thought: obj.thought || null, action: obj.action, actionInput: obj.action_input || obj.actionInput || {}, finalAnswer: null };
       }
-      // Format 3: { final_answer, thought }
-      if (obj.final_answer) {
+      // Format 3: { final_answer, thought }, only as the whole reply
+      if (whole && obj.final_answer) {
         const fa = obj.final_answer;
-        return {
-          thought: obj.thought || null,
-          action: null,
-          actionInput: null,
-          finalAnswer: typeof fa === 'string' ? fa : JSON.stringify(fa, null, 2),
-        };
+        return { thought: obj.thought || null, action: null, actionInput: null, finalAnswer: typeof fa === 'string' ? fa : JSON.stringify(fa, null, 2) };
       }
-    } catch { /* not valid JSON — fall through to text parsing */ }
+      return null;
+    };
+    const parse = (body) => { try { return JSON.parse(body); } catch { return null; } };
+    // The whole reply as one object, bare or fenced.
+    let body = text.trim();
+    const fenced = body.match(/^```[\w-]*[ \t]*\n([\s\S]*?)\n[ \t]*```$/);
+    if (fenced) body = fenced[1].trim();
+    if (body.startsWith('{') && body.endsWith('}')) {
+      const call = asCall(parse(body), true);
+      if (call) return call;
+    }
+    // Or a fenced call after some prose ("Let me check. ```json {…}```").
+    for (const m of text.matchAll(/```[\w-]*[ \t]*\n([\s\S]*?)\n[ \t]*```/g)) {
+      const inner = m[1].trim();
+      if (!inner.startsWith('{') || !inner.endsWith('}')) continue;
+      const call = asCall(parse(inner), false);
+      if (call) return call;
+    }
     return null;
   }
 
@@ -1101,6 +1158,7 @@ const AgentExecutor = (() => {
         agentBlueprint,
         systemPrompt: ctx.systemPrompt,
         toolsSchema: ctx.toolsSchema,
+        allowedTools: ctx.allowedTools,
         conversationMessages,
         spaceshipId,
         agentId,
