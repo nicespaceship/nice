@@ -90,11 +90,13 @@ describe('keys', () => {
 
 describe('chat', () => {
   async function chatWith(provider, reply, body) {
-    const { fetch, host } = hostWith(() => json(200, { data: [], models: [] }));
+    // A listed chat model, for providers that check a key with a reply (NVIDIA).
+    const { fetch, host } = hostWith((url) => json(200, url.endsWith('/chat/completions') ? { choices: [] } : { data: [{ id: 'acme/x-instruct' }], models: [] }));
     await host.setKey(provider, provider === 'google' ? 'AIzaabcdefgh12345' : 'sk-abcdefgh12345');
     fetch.mockImplementation(async () => json(200, reply));
     const out = await host.chat({ messages, tools, temperature: 0.3, max_tokens: 1000, ...body });
-    return { out, url: fetch.mock.calls[1][0], sent: JSON.parse(fetch.mock.calls[1][1].body), headers: fetch.mock.calls[1][1].headers };
+    const [url, init] = fetch.mock.calls.at(-1);
+    return { out, url, sent: JSON.parse(init.body), headers: init.headers };
   }
 
   it('speaks Anthropic', async () => {
@@ -166,6 +168,70 @@ describe('chat', () => {
     });
   });
 
+  it('checks an NVIDIA key with a one-token reply, since its model list needs no key', async () => {
+    const list = { data: [{ id: 'bigcode/starcoder2-15b' }, { id: 'acme/old-model' }, { id: 'google/gemma-3-4b-it' }, { id: 'nvidia/embed-qa-4' }] };
+    const run = async (answer) => {
+      const tried = [];
+      const { host } = hostWith((url, init) => {
+        if (url.endsWith('/models')) return json(200, list);
+        const m = JSON.parse(init.body).model;
+        tried.push(m);
+        return answer(m);
+      });
+      host.clearKey('nvidia');
+      const r = await host.setKey('nvidia', 'nvapi-abcdefgh12345').then(() => 'saved', e => e.code);
+      return { r, tried, has: host.providers().find(p => p.id === 'nvidia').hasKey };
+    };
+    // Instruct and chat models first; the embedding model is not offered.
+    const bad = await run(() => json(401, { detail: 'Invalid JWT' }));
+    expect(bad).toMatchObject({ r: 'EKEY', has: false, tried: ['google/gemma-3-4b-it'] });
+    expect(await run(() => json(200, { choices: [{ message: { content: 'H' } }] }))).toMatchObject({ r: 'saved', has: true });
+    // Gone or not a chat model: the next one is tried.
+    const gone = await run((m) => (m === 'google/gemma-3-4b-it' ? json(410, { detail: 'end of life' }) : m === 'acme/old-model' ? json(200, { choices: [] }) : json(404, {})));
+    expect(gone).toMatchObject({ r: 'saved', has: true, tried: ['google/gemma-3-4b-it', 'acme/old-model'] });
+    // None could tell: not saved.
+    expect(await run(() => json(404, {}))).toMatchObject({ r: 'EPROVIDER', has: false });
+    // A 400 that names the key is still a refused key.
+    expect(await run(() => json(400, { error: { message: 'Invalid API key' } }))).toMatchObject({ r: 'EKEY', has: false });
+    expect(await run(() => json(500, { error: 'down' }))).toMatchObject({ r: 'EPROVIDER', has: false });
+    // One model closed to the account, busy or failing: the next one tells.
+    for (const status of [403, 429, 503]) {
+      const r = await run((m) => (m === 'google/gemma-3-4b-it' ? json(status, { detail: 'x' }) : json(200, { choices: [] })));
+      expect(r).toMatchObject({ r: 'saved', has: true, tried: ['google/gemma-3-4b-it', 'acme/old-model'] });
+    }
+    // Every model said 403: refused.
+    expect(await run(() => json(403, { detail: 'Authorization failed' }))).toMatchObject({ r: 'EKEY', has: false });
+  });
+
+  it('tries at most five NVIDIA models, and checks other providers by their list alone', async () => {
+    const many = { data: Array.from({ length: 9 }, (_, i) => ({ id: 'acme/m' + i + '-instruct' })) };
+    let chats = 0;
+    const { host } = hostWith((url) => (url.endsWith('/models') ? json(200, many) : (chats++, json(404, {}))));
+    await expect(host.setKey('nvidia', 'nvapi-abcdefgh12345')).rejects.toMatchObject({ code: 'EPROVIDER' });
+    expect(chats).toBe(5);
+    const other = hostWith(() => json(200, { data: [{ id: 'kimi-k2.6' }] }));
+    await other.host.setKey('moonshot', 'sk-abcdefgh12345');
+    expect(other.fetch.mock.calls.map(c => c[0])).toEqual(['https://api.moonshot.ai/v1/models']);
+  });
+
+  it('speaks to Moonshot and NVIDIA at the addresses nice-ai uses, and never sends Kimi a temperature', async () => {
+    const reply = { choices: [{ message: { content: 'ok' } }] };
+    const kimi = await chatWith('moonshot', reply, { model: 'byo:moonshot:kimi-k2.6' });
+    expect(kimi.url).toBe('https://api.moonshot.ai/v1/chat/completions');
+    expect(kimi.headers.authorization).toBe('Bearer sk-abcdefgh12345');
+    expect(kimi.sent.model).toBe('kimi-k2.6');
+    expect(kimi.sent.temperature).toBeUndefined();
+    expect(kimi.sent.max_tokens).toBe(1000);
+    const nim = await chatWith('nvidia', reply, { model: 'byo:nvidia:nvidia/nemotron-3-super-120b-a12b' });
+    expect(nim.url).toBe('https://integrate.api.nvidia.com/v1/chat/completions');
+    expect(nim.sent.model).toBe('nvidia/nemotron-3-super-120b-a12b');
+    expect(nim.sent.temperature).toBe(0.3);
+    expect(nim.out.content).toEqual([{ type: 'text', text: 'ok' }]);
+    expect(PROVIDERS.nvidia.sees('nvidia/nemotron-3-super-120b-a12b')).toBe(false);
+    expect(PROVIDERS.nvidia.sees('meta/llama-3.2-90b-vision-instruct')).toBe(true);
+    expect(PROVIDERS.moonshot.sees('kimi-k2.6')).toBe(false);
+  });
+
   it('speaks Gemini and carries the thought signature of a call back', async () => {
     const { out, url, sent, headers } = await chatWith('google', {
       modelVersion: 'gemini-2.5-flash', usageMetadata: { promptTokenCount: 4, candidatesTokenCount: 1 },
@@ -230,7 +296,13 @@ describe('provider rules', () => {
     expect(['gpt-5-pro', 'o3-pro', 'gpt-5-codex', 'o3-deep-research'].some(openai)).toBe(false);
     expect(PROVIDERS.deepseek.chatModel('deepseek-reasoner')).toBe(false);
     expect(PROVIDERS.deepseek.chatModel('deepseek-chat')).toBe(true);
+    expect(PROVIDERS.moonshot.chatModel('kimi-k2.6')).toBe(true);
+    expect(PROVIDERS.moonshot.chatModel('kimi-k2-thinking')).toBe(false);
+    const nv = PROVIDERS.nvidia.chatModel;
+    expect(['nvidia/nemotron-3-super-120b-a12b', 'meta/llama-3.3-70b-instruct', 'qwen/qwen3-coder-480b-a35b-instruct'].every(nv)).toBe(true);
+    expect(['nvidia/nv-embedqa-e5-v5', 'nvidia/llama-3.2-nv-rerankqa-1b-v2', 'meta/llama-guard-4-12b', 'nvidia/parakeet-ctc-1.1b-asr', 'black-forest-labs/flux.1-dev', 'baai/bge-m3'].some(nv)).toBe(false);
   });
+
 
   it('sets output limits each provider takes', () => {
     const msgs = [{ role: 'user', content: 'hi' }];

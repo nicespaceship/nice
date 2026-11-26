@@ -45,6 +45,22 @@ const PROVIDERS = {
   // The reasoner's thinking has its own rules for tool calls across steps,
   // which this does not handle yet.
   deepseek: { label: 'DeepSeek', kind: 'openai', base: 'https://api.deepseek.com', chatModel: (id) => !/reasoner/.test(id), sees: () => false },
+  // The addresses nice-ai and model-watch call. Kimi K2.6 takes only its
+  // default temperature, so none is sent. The thinking models keep their
+  // reasoning across tool calls, which this does not carry yet.
+  moonshot: {
+    label: 'Moonshot (Kimi)', kind: 'openai', base: 'https://api.moonshot.ai/v1', noTemperature: true,
+    chatModel: (id) => !/thinking/.test(id), sees: (id) => /vision/.test(id),
+  },
+  // NVIDIA's catalog lists embedding, reranking, safety, speech, code
+  // completion and image models beside the chat ones, and keeps retired
+  // models listed; only chat models are offered. Its model list needs no
+  // key, so a key is checked with a one-token reply instead (checkByChat).
+  nvidia: {
+    label: 'NVIDIA', kind: 'openai', base: 'https://integrate.api.nvidia.com/v1', checkByChat: true,
+    chatModel: (id) => !/(embed|rerank|retriev|guard|safety|reward|clip|parakeet|whisper|canary|tts|asr|riva|ocr|deplot|kosmos|fuyu|neva|paligemma|grounding|bge|e5-|nv-ingest|flux|stable-diffusion|sdxl|audio|starcoder|gliner|detector|calibration)/i.test(id),
+    sees: (id) => /(vision|-vl\b|-vl-)/i.test(id),
+  },
 };
 
 class LlmHostError extends Error {
@@ -128,7 +144,7 @@ class KeyStore {
 function _redact(text, key) {
   let s = String(text || '');
   if (key) s = s.split(key).join('[key]');
-  return s.replace(/\b(sk-[A-Za-z0-9_*-]{4,}|sk_[A-Za-z0-9_*-]{4,}|xai-[A-Za-z0-9_*-]{4,}|gsk_[A-Za-z0-9_*-]{4,}|AIza[A-Za-z0-9_*-]{4,})/g, '[key]');
+  return s.replace(/\b(sk-[A-Za-z0-9_*-]{4,}|sk_[A-Za-z0-9_*-]{4,}|xai-[A-Za-z0-9_*-]{4,}|gsk_[A-Za-z0-9_*-]{4,}|AIza[A-Za-z0-9_*-]{4,}|nvapi-[A-Za-z0-9_*-]{4,})/g, '[key]');
 }
 
 function _errorFor(status, body, key, label) {
@@ -146,14 +162,14 @@ function _errorFor(status, body, key, label) {
   return new LlmHostError('EPROVIDER', label + ' answered ' + status + (msg ? ': ' + msg : '.'), status);
 }
 
-async function _request(fetchFn, url, { method = 'GET', headers = {}, body, key, label }) {
+async function _request(fetchFn, url, { method = 'GET', headers = {}, body, key, label, timeoutMs = TIMEOUT_MS }) {
   let res;
   try {
     res = await fetchFn(url, {
       method,
       headers: body ? { 'content-type': 'application/json', ...headers } : headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {
     const timeout = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
@@ -169,6 +185,40 @@ function _authHeaders(p, key) {
   if (p.kind === 'anthropic') return { 'x-api-key': key, 'anthropic-version': ANTHROPIC_VERSION };
   if (p.kind === 'gemini') return { 'x-goog-api-key': key };
   return { authorization: 'Bearer ' + key };
+}
+
+/* For a provider whose model list answers without a key (NVIDIA): a
+   one-token reply from one of its chat models, the likeliest first, each
+   with a short time limit. A 401 (or a 400 that names the key) refuses the
+   key at once. Anything else from one model, whether gone, not a chat
+   model, closed to this account (403), busy (429), failing (5xx) or slow,
+   can't tell the key either way, so the next is tried. A key every model
+   answered 403 is refused; when no model could tell, the key is not saved. */
+const CHECK_TRIES = 5;
+const CHECK_TIMEOUT_MS = 20000;
+async function _checkKey(fetchFn, providerId, key, models) {
+  const p = _provider(providerId);
+  if (!p.checkByChat) return;
+  const ids = (models || []).map(m => m.id);
+  const likely = (id) => /(instruct|chat|-it$|-it-)/i.test(id);
+  const order = [...ids.filter(likely), ...ids.filter(id => !likely(id))].slice(0, CHECK_TRIES);
+  let forbidden = 0;
+  let last = null;
+  for (const model of order) {
+    try {
+      await _request(fetchFn, p.base + '/chat/completions', {
+        method: 'POST', headers: _authHeaders(p, key), key, label: p.label, timeoutMs: CHECK_TIMEOUT_MS,
+        body: { model, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 1 },
+      });
+      return;
+    } catch (e) {
+      last = e;
+      if (e && e.code === 'EKEY' && e.status !== 403) throw e;
+      if (e && e.status === 403) forbidden++;
+    }
+  }
+  if (order.length && forbidden === order.length) throw last;
+  fail('EPROVIDER', p.label + ' could not check the key: none of its models answered. Try again later.');
 }
 
 /* ── Models ────────────────────────────────────────────────────────── */
@@ -297,7 +347,7 @@ function _openaiBody(p, model, body) {
   // Older GPT-4 and 3.5 models stop at 4096.
   const maxOut = body.max_tokens || (reasoning ? 32000 : /^gpt-(3\.5|4)(-turbo|-\d|$)/.test(model) ? 4096 : 8192);
   req[p.newParams ? 'max_completion_tokens' : 'max_tokens'] = maxOut;
-  if (typeof body.temperature === 'number' && !reasoning) req.temperature = body.temperature;
+  if (typeof body.temperature === 'number' && !reasoning && !p.noTemperature) req.temperature = body.temperature;
   if (Array.isArray(body.tools) && body.tools.length) {
     req.tools = body.tools.map(t => ({ type: 'function', function: { name: t.name, description: t.description || '', parameters: t.parameters || { type: 'object', properties: {} } } }));
   }
@@ -431,6 +481,7 @@ function createLlmHost({ file, safeStorage, fetch: fetchFn = globalThis.fetch })
       if (k.length < 8 || k.length > 1024 || /\s/.test(k)) fail('EINVAL', 'That does not look like an API key.');
       if (!secureStoreAvailable(safeStorage)) fail('ENOSTORE', 'This computer has no secure key store available, so NICE will not save the key.');
       const models = await listModels(fetchFn, providerId, k);
+      await _checkKey(fetchFn, providerId, k, models);
       store.set(providerId, k);
       return models;
     },
