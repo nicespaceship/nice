@@ -1208,3 +1208,262 @@ describe('CodeView on your own API keys', () => {
     expect(document.activeElement).toBe(btn);
   });
 });
+
+describe('CodeView browser', () => {
+  /* A fake window.NiceDesktop.browser shaped like desktop/preload.js. */
+  function fakeBrowser() {
+    let st = null;
+    const listeners = new Set();
+    const b = {
+      state: vi.fn(async () => st),
+      place: vi.fn(async () => true),
+      open: vi.fn(async (u) => {
+        const url = u.startsWith('http') ? u : 'http://' + u + '/';
+        st = { url, title: 'Page', host: new URL(url).host, loading: false, canGoBack: !!st, canGoForward: false, status: 200, error: null };
+        b.emit(st);
+        return st;
+      }),
+      back: vi.fn(async () => st), forward: vi.fn(async () => st), reload: vi.fn(async () => st), stop: vi.fn(async () => st),
+      onState: vi.fn((fn) => { listeners.add(fn); return () => listeners.delete(fn); }),
+      emit: (s) => { st = s; listeners.forEach(fn => fn(s)); },
+    };
+    return b;
+  }
+  const ask = (el) => el.querySelector('.code-ask');
+  const click = (el, answer) => ask(el).querySelector(`[data-answer="${answer}"]`).click();
+  let raf;
+  beforeEach(() => {
+    raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+    globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+  });
+  afterEach(() => {
+    CodeView._test.reset();
+    globalThis.requestAnimationFrame = raf;
+    delete globalThis.cancelAnimationFrame;
+  });
+
+  async function withBrowser({ agent } = {}) {
+    const br = fakeBrowser();
+    const code = fakeHost({ 'a.js': 'x' });
+    window.NiceDesktop = { code, browser: br };
+    await code.openFolder();
+    const model = agent ? slowModel() : null;
+    const { el } = await mountView(CodeView, agent ? { state: { user: { id: 'u1' } } } : undefined);
+    await flush();
+    if (agent) { submitPrompt(el, 'go'); await flush(); }
+    return { br, el, opts: model && model.opts() };
+  }
+  const showTab = async (el) => { el.querySelector('#code-tab-browser').click(); await flush(); };
+  const viewport = (el) => el.querySelector('#code-browser-view');
+
+  it('has no Browser tab on a desktop app without one', async () => {
+    const { el } = await openWorkspace({ 'a.js': 'x' });
+    expect(el.querySelector('#code-tab-browser')).toBeNull();
+    expect(el.querySelector('[data-panel="browser"]')).toBeNull();
+  });
+
+  it('opens what the user types in the address bar and follows the page', async () => {
+    const { br, el } = await withBrowser();
+    await showTab(el);
+    expect(el.querySelector('#code-browser-empty').textContent).toContain('Nothing is open');
+    const input = el.querySelector('#code-browser-url');
+    input.value = 'localhost:3000';
+    input.dispatchEvent(new Event('input'));
+    el.querySelector('#code-browser-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    await flush();
+    expect(br.open).toHaveBeenCalledWith('localhost:3000');
+    expect(input.value).toBe('http://localhost:3000/');
+    expect(el.querySelector('#code-browser-empty').textContent).toBe('');
+    br.emit({ url: 'http://localhost:3000/next', title: 'Next', host: 'localhost:3000', canGoBack: true, canGoForward: false });
+    expect(input.value).toBe('http://localhost:3000/next');
+    expect(el.querySelector('[data-nav="back"]').getAttribute('aria-disabled')).toBe('false');
+    expect(el.querySelector('[data-nav="forward"]').getAttribute('aria-disabled')).toBe('true');
+    el.querySelector('[data-nav="back"]').click();
+    expect(br.back).toHaveBeenCalled();
+  });
+
+  it('keeps what the user is typing when the page changes', async () => {
+    const { br, el } = await withBrowser();
+    await showTab(el);
+    await br.open('localhost:3000');
+    const input = el.querySelector('#code-browser-url');
+    input.value = 'exam';
+    input.dispatchEvent(new Event('input'));
+    br.emit({ url: 'http://localhost:3000/b', title: 'B', host: 'localhost:3000' });
+    expect(input.value).toBe('exam');
+  });
+
+  it('says when a page did not open', async () => {
+    const { br, el } = await withBrowser();
+    br.open.mockRejectedValueOnce({ code: 'EINVAL', message: 'Code\'s browser opens http and https addresses only.' });
+    await showTab(el);
+    el.querySelector('#code-browser-url').value = 'file:///x';
+    el.querySelector('#code-browser-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    await flush();
+    expect(el.querySelector('#code-browser-empty').textContent).toContain('http and https addresses only');
+  });
+
+  it('places the browser over the viewport while the tab shows a page, and hides it otherwise', async () => {
+    const { br, el } = await withBrowser();
+    await showTab(el);
+    await br.open('localhost:3000');
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
+    // Clipped to the window (jsdom's is 1024 wide).
+    viewport(el).getBoundingClientRect = () => ({ left: 800, top: 120, width: 400, height: 600 });
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith({ x: 800, y: 120, width: 224, height: 600 });
+    const calls = br.place.mock.calls.length;
+    await flush();
+    expect(br.place.mock.calls.length).toBe(calls);
+    // Moved without resizing.
+    viewport(el).getBoundingClientRect = () => ({ left: 600, top: 120, width: 400, height: 600 });
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith({ x: 600, y: 120, width: 400, height: 600 });
+    // A dialog over the page hides it, and it comes back after.
+    const dlg = document.createElement('div');
+    dlg.className = 'modal-overlay open';
+    document.body.appendChild(dlg);
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(null);
+    dlg.remove();
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith({ x: 600, y: 120, width: 400, height: 600 });
+    el.querySelector('#code-tab-files').click();
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(null);
+    el.querySelector('#code-tab-browser').click();
+    await flush();
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
+    viewport(el).getBoundingClientRect = () => ({ left: 600, top: 120, width: 400, height: 600 });
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith({ x: 600, y: 120, width: 400, height: 600 });
+    CodeView.destroy();
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(null);
+  });
+
+  it('hides the browser under any modal dialog that shows, and under anything over its viewport', async () => {
+    const { br, el } = await withBrowser();
+    await showTab(el);
+    await br.open('localhost:3000');
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
+    viewport(el).getBoundingClientRect = () => ({ left: 600, top: 120, width: 400, height: 600 });
+    await flush();
+    const shown = { x: 600, y: 120, width: 400, height: 600 };
+    expect(br.place).toHaveBeenLastCalledWith(shown);
+    const modal = document.createElement('div');
+    modal.setAttribute('aria-modal', 'true');
+    modal.getClientRects = () => [{}];
+    document.body.appendChild(modal);
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(null);
+    modal.remove();
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(shown);
+    for (const cls of ['auth-modal-overlay open', 'upgrade-modal-overlay open']) {
+      const o = document.createElement('div');
+      o.className = cls;
+      document.body.appendChild(o);
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(null);
+      o.remove();
+      await flush();
+    }
+    const cover = document.createElement('div');
+    document.body.appendChild(cover);
+    document.elementFromPoint = () => cover;
+    try {
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(null);
+      document.elementFromPoint = () => viewport(el);
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(shown);
+    } finally { delete document.elementFromPoint; cover.remove(); }
+  });
+
+  it('binds each approval to the site the page is on, under Always allow and Bypass too', async () => {
+    const { br, el, opts } = await withBrowser({ agent: true });
+    await br.open('example.com');
+    const input = { ref: '2' };
+    const waiting = opts.onApprovalNeeded({ tool: 'browser_click', input });
+    await flush();
+    click(el, 'always');
+    await expect(waiting).resolves.toBe(true);
+    window.NiceDesktop.browser = { ...br, click: vi.fn(async () => ({})) };
+    await ToolRegistry.execute('code-browser-click', input, { approvalMode: 'review', onApprovalNeeded: async () => true });
+    expect(window.NiceDesktop.browser.click).toHaveBeenCalledWith('2', { expectHost: 'example.com' });
+    window.NiceDesktop.browser = br;
+    const mode = el.querySelector('#code-mode');
+    mode.value = 'bypass'; mode.dispatchEvent(new Event('change', { bubbles: true }));
+    const open = { url: 'localhost:3000' };
+    await expect(opts.onApprovalNeeded({ tool: 'browser_open', input: open })).resolves.toBe(true);
+    const spy = vi.spyOn(br, 'open');
+    await ToolRegistry.execute('code-browser-open', open, {});
+    expect(spy).toHaveBeenLastCalledWith('localhost:3000', { expectHost: 'localhost:3000' });
+  });
+
+  it('asks before opening a page, brings the Browser tab up, and remembers a site', async () => {
+    const { br, el, opts } = await withBrowser({ agent: true });
+    const first = opts.onApprovalNeeded({ tool: 'browser_open', input: { url: 'localhost:3000/login' } });
+    await flush();
+    expect(el.querySelector('#code-tab-browser').getAttribute('aria-selected')).toBe('true');
+    expect(ask(el).textContent).toContain('Allow Code to open this page?');
+    expect(ask(el).querySelector('code').textContent).toBe('localhost:3000/login');
+    expect(ask(el).querySelector('[data-answer="always"]').textContent).toBe('Always allow localhost:3000');
+    click(el, 'always');
+    await expect(first).resolves.toBe(true);
+    await br.open('localhost:3000');
+    await expect(opts.onApprovalNeeded({ tool: 'browser_open', input: { url: 'http://localhost:3000/other' } })).resolves.toBe(true);
+    await expect(opts.onApprovalNeeded({ tool: 'browser_click', input: { ref: '2' } })).resolves.toBe(true);
+    // Another site asks.
+    const other = opts.onApprovalNeeded({ tool: 'browser_open', input: { url: 'example.com' } });
+    await flush();
+    expect(ask(el).querySelector('[data-answer="always"]').textContent).toBe('Always allow example.com');
+    click(el, 'deny');
+    await expect(other).resolves.toBe(false);
+  });
+
+  it('asks before typing on a page, naming the site, the field and the text', async () => {
+    const { br, el, opts } = await withBrowser({ agent: true });
+    await br.open('example.com');
+    const waiting = opts.onApprovalNeeded({ tool: 'browser_type', input: { ref: '3', text: 'hello <b>', clear: true, submit: true } });
+    await flush();
+    expect(ask(el).querySelector('.code-ask-q').textContent).toBe('Allow Code to type on example.com?');
+    expect(ask(el).textContent).toContain('Into [3]');
+    expect(ask(el).querySelector('pre code').textContent).toBe('hello <b>');
+    expect(ask(el).textContent).toContain('Replaces what the field holds. Then presses Enter.');
+    click(el, 'once');
+    await expect(waiting).resolves.toBe(true);
+  });
+
+  it('leaves websites out of Edit automatically, and lets Bypass cover them', async () => {
+    const { el, opts } = await withBrowser({ agent: true });
+    const mode = el.querySelector('#code-mode');
+    mode.value = 'edits'; mode.dispatchEvent(new Event('change', { bubbles: true }));
+    const waiting = opts.onApprovalNeeded({ tool: 'browser_open', input: { url: 'example.com' } });
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    mode.value = 'bypass'; mode.dispatchEvent(new Event('change', { bubbles: true }));
+    await expect(waiting).resolves.toBe(true);
+  });
+
+  it('forgets allowed sites when the folder changes', async () => {
+    const { el, opts } = await withBrowser({ agent: true });
+    const first = opts.onApprovalNeeded({ tool: 'browser_open', input: { url: 'example.com' } });
+    await flush();
+    click(el, 'always');
+    await first;
+    window.NiceDesktop.code.openFolder.mockResolvedValueOnce({ root: '/Users/me/other', name: 'other' });
+    el.querySelector('#code-change-folder').click();
+    await flush();
+    const model = slowModel();
+    submitPrompt(el, 'again');
+    await flush();
+    const again = model.opts().onApprovalNeeded({ tool: 'browser_open', input: { url: 'example.com' } });
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    click(el, 'deny');
+    await again;
+  });
+});

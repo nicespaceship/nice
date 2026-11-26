@@ -3,12 +3,13 @@
  * Lightweight wrapper loading the NICE web app locally.
  */
 
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, WebContentsView, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
 const { Workspace, serializeError, runTag } = require('./code-host');
 const { createLlmHost } = require('./llm-host');
+const { createBrowser } = require('./browser-host');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -18,6 +19,11 @@ const ROOT = path.join(__dirname, '..');
 protocol.registerSchemesAsPrivileged([
   { scheme: AppProtocol.SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
+
+// Chromium stops drawing a window that other windows cover, and a page it
+// isn't drawing can't take clicks. Code's agent works in its browser while
+// the user is in other apps, so NICE's window keeps drawing when covered.
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 const SITE_ORIGIN = 'https://nicespaceship.ai';
 const APP_PAGE = AppProtocol.ORIGIN + '/app/';
@@ -121,7 +127,12 @@ function createWindow() {
   // the page stays, so its commands keep running.
   const contents = mainWindow.webContents;
   const contentsId = contents.id;
-  AppProtocol.stopWhenPageGoes(contents, () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); });
+  // Code's browser goes with the page too: a new page starts with none.
+  AppProtocol.stopWhenPageGoes(contents, () => {
+    const ws = workspaces.get(contentsId);
+    if (ws) ws.killAll();
+    _closeBrowser(contentsId);
+  });
 
   // Show when ready (prevents white flash)
   mainWindow.once('ready-to-show', () => {
@@ -132,6 +143,7 @@ function createWindow() {
     const ws = workspaces.get(contentsId);
     if (ws) _retire(ws);
     workspaces.delete(contentsId);
+    _closeBrowser(contentsId);
     mainWindow = null;
   });
 }
@@ -252,6 +264,49 @@ handle('llm:set-key', (event, provider, key) => llm().setKey(provider, key));
 handle('llm:clear-key', (event, provider) => llm().clearKey(provider));
 handle('llm:models', (event, provider) => llm().models(provider));
 handle('llm:chat', (event, body) => llm().chat(body));
+
+/* ── Code's browser (browser-host.js) ──
+   One per window, made on first use and closed when NICE's page goes. */
+const browsers = new Map();
+
+function _closeBrowser(contentsId) {
+  const b = browsers.get(contentsId);
+  if (b) b.destroy();
+  browsers.delete(contentsId);
+}
+
+function _browser(event) {
+  const sender = event.sender;
+  let b = browsers.get(sender.id);
+  if (!b) {
+    const win = BrowserWindow.fromWebContents(sender);
+    if (!win) throw Object.assign(new Error('No window.'), { code: 'EGONE' });
+    b = createBrowser({
+      win, WebContentsView, session,
+      zoom: () => (sender.isDestroyed() ? 1 : sender.getZoomFactor()),
+      notify: (state) => { if (!sender.isDestroyed()) sender.send('browser:state', state); },
+    });
+    browsers.set(sender.id, b);
+  }
+  return b;
+}
+
+handle('browser:state', (event) => { const b = browsers.get(event.sender.id); return b ? b.state() : null; });
+handle('browser:place', (event, bounds) => {
+  if (!bounds && !browsers.has(event.sender.id)) return false;
+  return _browser(event).place(bounds);
+});
+handle('browser:open', (event, url, opts) => _browser(event).open(url, opts || {}));
+handle('browser:back', (event) => _browser(event).back());
+handle('browser:forward', (event) => _browser(event).forward());
+handle('browser:reload', (event) => _browser(event).reload());
+handle('browser:stop', (event) => _browser(event).stop());
+handle('browser:read', (event) => _browser(event).read());
+handle('browser:click', (event, ref, opts) => _browser(event).click(ref, opts || {}));
+handle('browser:type', (event, ref, text, opts) => _browser(event).type(ref, text, opts || {}));
+handle('browser:key', (event, keys, opts) => _browser(event).key(keys, opts || {}));
+handle('browser:scroll', (event, direction) => _browser(event).scroll(direction));
+handle('browser:console', (event) => _browser(event).console());
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)

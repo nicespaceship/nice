@@ -65,6 +65,42 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
     chat: (body) => call('llm:chat', body),
   },
 
+  // Code's browser: one web page per window, shared by the user and the
+  // agent, drawn by the desktop app over the spot place() names. The page in
+  // it can't reach NICE. Calls resolve to the browser's state,
+  // { url, title, host, loading, canGoBack, canGoForward, status, error },
+  // unless they say otherwise.
+  browser: {
+    /** The state, or null before the browser is first used. */
+    state: () => call('browser:state'),
+    /** Bounds in CSS pixels of NICE's page ({ x, y, width, height }), or null to hide it. */
+    place: (bounds) => call('browser:place', bounds),
+    /** opts.expectHost: refuse unless the address is on this host:port. */
+    open: (url, opts) => call('browser:open', url, opts),
+    back: () => call('browser:back'),
+    forward: () => call('browser:forward'),
+    reload: () => call('browser:reload'),
+    stop: () => call('browser:stop'),
+    /** { url, title, text, textCut, elements: [{ ref, role, name, href?, value?, placeholder?, checked? }], moreElements, scroll, status } */
+    read: () => call('browser:read'),
+    /** opts.expectHost here, in type() and in key(): refuse unless the page is on this host:port when the input goes in. */
+    click: (ref, opts) => call('browser:click', ref, opts),
+    /** Types into the element with this ref (or wherever focus is, for null). opts: { clear, submit, expectHost }. */
+    type: (ref, text, opts) => call('browser:type', ref, text, opts),
+    /** Space-separated keys: "Enter", "Tab Tab", "ctrl+a". */
+    key: (keys, opts) => call('browser:key', keys, opts),
+    /** 'up' or 'down'; resolves to { y, height, view }. */
+    scroll: (direction) => call('browser:scroll', direction),
+    /** [{ level, message, source, line }], the page's console since it loaded. */
+    console: () => call('browser:console'),
+    /** fn(state) on every change. Returns an unsubscribe. */
+    onState: (fn) => {
+      const listener = (_e, s) => fn(s);
+      ipcRenderer.on('browser:state', listener);
+      return () => ipcRenderer.removeListener('browser:state', listener);
+    },
+  },
+
   // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
