@@ -194,6 +194,24 @@ describe('chat', () => {
     // A 400 that names the key is still a refused key.
     expect(await run(() => json(400, { error: { message: 'Invalid API key' } }))).toMatchObject({ r: 'EKEY', has: false });
     expect(await run(() => json(500, { error: 'down' }))).toMatchObject({ r: 'EPROVIDER', has: false });
+    // One model closed to the account, busy or failing: the next one tells.
+    for (const status of [403, 429, 503]) {
+      const r = await run((m) => (m === 'google/gemma-3-4b-it' ? json(status, { detail: 'x' }) : json(200, { choices: [] })));
+      expect(r).toMatchObject({ r: 'saved', has: true, tried: ['google/gemma-3-4b-it', 'acme/old-model'] });
+    }
+    // Every model said 403: refused.
+    expect(await run(() => json(403, { detail: 'Authorization failed' }))).toMatchObject({ r: 'EKEY', has: false });
+  });
+
+  it('tries at most five NVIDIA models, and checks other providers by their list alone', async () => {
+    const many = { data: Array.from({ length: 9 }, (_, i) => ({ id: 'acme/m' + i + '-instruct' })) };
+    let chats = 0;
+    const { host } = hostWith((url) => (url.endsWith('/models') ? json(200, many) : (chats++, json(404, {}))));
+    await expect(host.setKey('nvidia', 'nvapi-abcdefgh12345')).rejects.toMatchObject({ code: 'EPROVIDER' });
+    expect(chats).toBe(5);
+    const other = hostWith(() => json(200, { data: [{ id: 'kimi-k2.6' }] }));
+    await other.host.setKey('moonshot', 'sk-abcdefgh12345');
+    expect(other.fetch.mock.calls.map(c => c[0])).toEqual(['https://api.moonshot.ai/v1/models']);
   });
 
   it('speaks to Moonshot and NVIDIA at the addresses nice-ai uses, and never sends Kimi a temperature', async () => {

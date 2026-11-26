@@ -58,7 +58,7 @@ const PROVIDERS = {
   // key, so a key is checked with a one-token reply instead (checkByChat).
   nvidia: {
     label: 'NVIDIA', kind: 'openai', base: 'https://integrate.api.nvidia.com/v1', checkByChat: true,
-    chatModel: (id) => !/(embed|rerank|retriev|guard|safety|reward|clip|parakeet|whisper|canary|tts|asr|riva|ocr|deplot|kosmos|fuyu|neva|paligemma|grounding|cosmos|bge|e5-|nv-ingest|flux|stable-diffusion|sdxl|audio|translate|starcoder|gliner|detector|calibration)/i.test(id),
+    chatModel: (id) => !/(embed|rerank|retriev|guard|safety|reward|clip|parakeet|whisper|canary|tts|asr|riva|ocr|deplot|kosmos|fuyu|neva|paligemma|grounding|bge|e5-|nv-ingest|flux|stable-diffusion|sdxl|audio|starcoder|gliner|detector|calibration)/i.test(id),
     sees: (id) => /(vision|-vl\b|-vl-)/i.test(id),
   },
 };
@@ -144,7 +144,7 @@ class KeyStore {
 function _redact(text, key) {
   let s = String(text || '');
   if (key) s = s.split(key).join('[key]');
-  return s.replace(/\b(sk-[A-Za-z0-9_*-]{4,}|sk_[A-Za-z0-9_*-]{4,}|xai-[A-Za-z0-9_*-]{4,}|gsk_[A-Za-z0-9_*-]{4,}|AIza[A-Za-z0-9_*-]{4,})/g, '[key]');
+  return s.replace(/\b(sk-[A-Za-z0-9_*-]{4,}|sk_[A-Za-z0-9_*-]{4,}|xai-[A-Za-z0-9_*-]{4,}|gsk_[A-Za-z0-9_*-]{4,}|AIza[A-Za-z0-9_*-]{4,}|nvapi-[A-Za-z0-9_*-]{4,})/g, '[key]');
 }
 
 function _errorFor(status, body, key, label) {
@@ -162,14 +162,14 @@ function _errorFor(status, body, key, label) {
   return new LlmHostError('EPROVIDER', label + ' answered ' + status + (msg ? ': ' + msg : '.'), status);
 }
 
-async function _request(fetchFn, url, { method = 'GET', headers = {}, body, key, label }) {
+async function _request(fetchFn, url, { method = 'GET', headers = {}, body, key, label, timeoutMs = TIMEOUT_MS }) {
   let res;
   try {
     res = await fetchFn(url, {
       method,
       headers: body ? { 'content-type': 'application/json', ...headers } : headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {
     const timeout = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
@@ -188,29 +188,36 @@ function _authHeaders(p, key) {
 }
 
 /* For a provider whose model list answers without a key (NVIDIA): a
-   one-token reply from one of its chat models, the likeliest first. A
-   refused key fails as EKEY. A model that is gone or won't chat (404, 410,
-   400, 422) can't tell the key either way, so the next one is tried; when
-   none can, the key is not saved. */
+   one-token reply from one of its chat models, the likeliest first, each
+   with a short time limit. A 401 (or a 400 that names the key) refuses the
+   key at once. Anything else from one model, whether gone, not a chat
+   model, closed to this account (403), busy (429), failing (5xx) or slow,
+   can't tell the key either way, so the next is tried. A key every model
+   answered 403 is refused; when no model could tell, the key is not saved. */
 const CHECK_TRIES = 5;
+const CHECK_TIMEOUT_MS = 20000;
 async function _checkKey(fetchFn, providerId, key, models) {
   const p = _provider(providerId);
   if (!p.checkByChat) return;
   const ids = (models || []).map(m => m.id);
   const likely = (id) => /(instruct|chat|-it$|-it-)/i.test(id);
   const order = [...ids.filter(likely), ...ids.filter(id => !likely(id))].slice(0, CHECK_TRIES);
+  let forbidden = 0;
+  let last = null;
   for (const model of order) {
     try {
       await _request(fetchFn, p.base + '/chat/completions', {
-        method: 'POST', headers: _authHeaders(p, key), key, label: p.label,
+        method: 'POST', headers: _authHeaders(p, key), key, label: p.label, timeoutMs: CHECK_TIMEOUT_MS,
         body: { model, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 1 },
       });
       return;
     } catch (e) {
-      if (e && e.code !== 'EKEY' && [400, 404, 410, 422].includes(e.status)) continue;
-      throw e;
+      last = e;
+      if (e && e.code === 'EKEY' && e.status !== 403) throw e;
+      if (e && e.status === 403) forbidden++;
     }
   }
+  if (order.length && forbidden === order.length) throw last;
   fail('EPROVIDER', p.label + ' could not check the key: none of its models answered. Try again later.');
 }
 
