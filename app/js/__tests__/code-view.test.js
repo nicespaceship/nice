@@ -672,7 +672,7 @@ describe('CodeView in the desktop app', () => {
     const note = el.querySelector('.code-msg-note').textContent;
     expect(note).toContain('Sign in');
     expect(note).toContain("NICE's hosted models");
-    expect(note).not.toMatch(/later version|API keys/);
+    expect(note).toContain('your own API key');
   });
 
   it('sends a signed-in prompt to the chosen model and shows the reply', async () => {
@@ -1099,5 +1099,111 @@ describe('CodeView agent tools', () => {
     // One that starts after Stop is stopped at once.
     host.emit({ id: 42, tag: CodeTools.AGENT_TAG + '10', stream: 'start', data: '' });
     expect(host.kill).toHaveBeenCalledWith(42);
+  });
+});
+
+describe('CodeView on your own API keys', () => {
+  function fakeLlm({ keys = {}, models = { anthropic: [{ id: 'claude-x', label: 'Claude X' }] } } = {}) {
+    const saved = { ...keys };
+    return {
+      saved,
+      providers: vi.fn(async () => [
+        { id: 'anthropic', label: 'Anthropic', hasKey: !!saved.anthropic },
+        { id: 'openai', label: 'OpenAI', hasKey: !!saved.openai },
+      ]),
+      models: vi.fn(async (p) => models[p] || []),
+      setKey: vi.fn(async (p, k) => {
+        if (k === 'bad-key-123') throw { code: 'EKEY', message: 'Anthropic refused the key.' };
+        saved[p] = true;
+        return models[p] || [];
+      }),
+      clearKey: vi.fn(async (p) => { delete saved[p]; return true; }),
+    };
+  }
+  async function openWithKeys(llm, mountOpts) {
+    const host = fakeHost({ a: '' });
+    window.NiceDesktop = { code: host, llm };
+    await host.openFolder();
+    const { el } = await mountView(CodeView, mountOpts);
+    await flush();
+    return el;
+  }
+  const options = (el) => [...el.querySelectorAll('#code-model optgroup')].map(g => [g.label, [...g.querySelectorAll('option')].map(o => o.value)]);
+
+  it('lists the models of each provider with a key under NICE\'s', async () => {
+    const el = await openWithKeys(fakeLlm({ keys: { anthropic: true } }));
+    expect(options(el)).toEqual([['NICE', ['gemini-2-5-flash']], ['Anthropic (your key)', ['byo:anthropic:claude-x']]]);
+  });
+
+  it('chats on an own-key model without a NICE account', async () => {
+    const send = vi.fn(async () => ({ text: 'hi', done: true }));
+    globalThis.AgentExecutor = { converse: vi.fn(() => ({ send })) };
+    const el = await openWithKeys(fakeLlm({ keys: { anthropic: true } }));
+    const select = el.querySelector('#code-model');
+    select.value = 'byo:anthropic:claude-x';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    submitPrompt(el, 'hello');
+    await flush();
+    expect(AgentExecutor.converse.mock.calls[0][0].config.llm_engine).toBe('byo:anthropic:claude-x');
+    expect(el.querySelector('.code-msg-assistant').textContent).toBe('hi');
+    // The pick is kept for next time.
+    expect(localStorage.getItem(Utils.KEYS.codeModel)).toBe('byo:anthropic:claude-x');
+  });
+
+  it('adds a key, then offers its models, and never shows the key again', async () => {
+    const llm = fakeLlm();
+    const el = await openWithKeys(llm);
+    el.querySelector('#code-keys').click();
+    await flush();
+    const dlg = document.getElementById('code-keys-dialog');
+    expect(dlg.querySelector('[role="dialog"]').getAttribute('aria-modal')).toBe('true');
+    const row = () => document.querySelector('.code-key-row[data-provider="anthropic"]');
+    const input = row().querySelector('input');
+    expect(input.type).toBe('password');
+    expect(document.activeElement).toBe(input);
+    input.value = 'sk-ant-secret-999';
+    row().dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    expect(llm.setKey).toHaveBeenCalledWith('anthropic', 'sk-ant-secret-999');
+    expect(row().querySelector('.code-key-status').textContent).toContain('Key saved, 1 models');
+    expect(document.body.innerHTML).not.toContain('sk-ant-secret-999');
+    expect(options(el).map(g => g[0])).toContain('Anthropic (your key)');
+  });
+
+  it('says why a key was not saved', async () => {
+    const llm = fakeLlm();
+    const el = await openWithKeys(llm);
+    el.querySelector('#code-keys').click();
+    await flush();
+    const row = document.querySelector('.code-key-row[data-provider="anthropic"]');
+    row.querySelector('input').value = 'bad-key-123';
+    row.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    expect(row.querySelector('.code-keys-err').textContent).toBe('Anthropic refused the key.');
+    expect(row.querySelector('input').disabled).toBe(false);
+    expect(llm.saved.anthropic).toBeUndefined();
+  });
+
+  it('removes a key and its models', async () => {
+    const llm = fakeLlm({ keys: { anthropic: true } });
+    const el = await openWithKeys(llm);
+    el.querySelector('#code-keys').click();
+    await flush();
+    document.querySelector('[data-remove="anthropic"]').click();
+    await flush();
+    expect(llm.clearKey).toHaveBeenCalledWith('anthropic');
+    expect(options(el)).toEqual([['NICE', ['gemini-2-5-flash']]]);
+    expect(document.querySelector('.code-key-row[data-provider="anthropic"] input')).not.toBeNull();
+  });
+
+  it('closes on Escape and gives focus back to the key button', async () => {
+    const el = await openWithKeys(fakeLlm());
+    const btn = el.querySelector('#code-keys');
+    btn.focus();
+    btn.click();
+    await flush();
+    document.getElementById('code-keys-dialog').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(document.getElementById('code-keys-dialog')).toBeNull();
+    expect(document.activeElement).toBe(btn);
   });
 });
