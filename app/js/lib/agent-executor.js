@@ -907,8 +907,10 @@ const AgentExecutor = (() => {
     let llmConfig = {};
     if (ownKey) {
       const cfg = blueprint.config;
-      // max_tokens is left to the desktop host, which knows each provider's limits.
-      llmConfig = { model: engine, temperature: cfg.temperature, max_tokens: cfg.max_tokens || null, fallbackChain: [] };
+      // max_tokens is left to the desktop host, which knows each provider's
+      // limits, unless the agent sets one (as LLMConfig.forBlueprint reads it).
+      const cap = cfg.model_profile && cfg.model_profile.max_output_tokens;
+      llmConfig = { model: engine, temperature: cfg.temperature, max_tokens: (typeof cap === 'number' && cap > 0) ? Math.round(cap) : (cfg.max_tokens || null), fallbackChain: [] };
     } else if (typeof LLMConfig !== 'undefined' && blueprint) {
       llmConfig = LLMConfig.forBlueprint(blueprint);
     }

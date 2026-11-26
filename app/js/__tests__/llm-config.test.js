@@ -597,4 +597,29 @@ describe('LLMConfig', () => {
     });
   });
 
+  describe('forBlueprint with a model on the user\'s own key', () => {
+    const withState = (enabledModels, fn) => {
+      const prev = globalThis.State;
+      globalThis.State = { get: () => enabledModels };
+      try { fn(); } finally {
+        if (prev === undefined) delete globalThis.State; else globalThis.State = prev;
+      }
+    };
+
+    it('keeps the own-key model, with no plan check and no NICE fallbacks', () => {
+      withState({ 'gemini-2-5-flash': true, 'gpt-5-mini': true }, () => {
+        const cfg = LLMConfig.forBlueprint({ config: { llm_engine: 'byo:openai:gpt-5', temperature: 0.3 } });
+        expect(cfg.model).toBe('byo:openai:gpt-5');
+        expect(cfg.fallbackChain).toEqual([]);
+        expect(cfg.temperature).toBe(0.3);
+        expect(cfg.max_tokens).toBeNull();
+      });
+    });
+
+    it('wins over model_profile.preferred, and takes its output limit', () => {
+      const cfg = LLMConfig.forBlueprint({ config: { llm_engine: 'byo:anthropic:claude-x', model_profile: { preferred: 'gpt-5-mini', max_output_tokens: 900 } } });
+      expect(cfg.model).toBe('byo:anthropic:claude-x');
+      expect(cfg.max_tokens).toBe(900);
+    });
+  });
 });

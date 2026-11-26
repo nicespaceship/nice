@@ -980,4 +980,52 @@ describe('ShipLog', () => {
       expect(entries.length).toBeGreaterThanOrEqual(4);
     });
   });
+  describe('execute with a model on the user\'s own key', () => {
+    let invoke, prevLLM;
+    beforeEach(() => {
+      invoke = vi.fn(async () => ({ data: { content: 'from nice-ai' }, error: null }));
+      SB.functions.invoke = invoke;
+      SB.functions.invokeStream = () => {};
+      prevLLM = globalThis.LLMConfig;
+      globalThis.LLMConfig = { forBlueprint: () => ({ model: 'byo:openai:gpt-5', temperature: 0.4, max_tokens: null, fallbackChain: [] }) };
+    });
+    afterEach(() => {
+      globalThis.LLMConfig = prevLLM;
+      delete globalThis.OwnKeys;
+      delete SB.functions.invokeStream;
+    });
+
+    it('asks the desktop app, never nice-ai, and hands onChunk the whole reply', async () => {
+      const chat = vi.fn(async () => ({ content: [{ type: 'text', text: 'from my key' }], model: 'byo:openai:gpt-5', usage: { input_tokens: 3, output_tokens: 4 } }));
+      globalThis.OwnKeys = { chat };
+      const chunks = [];
+      const r = await ShipLog.execute('ship-own', { id: 'a1', name: 'Ada', config: { role: 'Research' } }, 'hello', { onChunk: (t) => chunks.push(t) });
+      expect(invoke).not.toHaveBeenCalled();
+      expect(chat).toHaveBeenCalledTimes(1);
+      const body = chat.mock.calls[0][0];
+      expect(body.model).toBe('byo:openai:gpt-5');
+      expect(body.max_tokens).toBeNull();
+      expect('auto_downgrade' in body).toBe(false);
+      expect('stream' in body).toBe(false);
+      // The desktop host reads the system prompt from a 'system' message only.
+      expect('system' in body).toBe(false);
+      expect(body.messages[0].role).toBe('system');
+      expect(body.messages[0].content).toContain('Ada');
+      expect(body.messages[body.messages.length - 1]).toEqual({ role: 'user', content: 'hello' });
+      expect(r.content).toBe('from my key');
+      expect(chunks).toEqual(['from my key']);
+    });
+
+    it('says the model runs in the desktop app when there is none', async () => {
+      await expect(ShipLog.execute('ship-own', { id: 'a1', name: 'Ada', config: {} }, 'hello'))
+        .rejects.toThrow(/desktop app/);
+      expect(invoke).not.toHaveBeenCalled();
+    });
+
+    it('passes the desktop app\'s failure on', async () => {
+      globalThis.OwnKeys = { chat: vi.fn(async () => { throw { code: 'EAUTH', message: 'OpenAI refused the key.', status: 401 }; }) };
+      await expect(ShipLog.execute('ship-own', { id: 'a1', name: 'Ada', config: {} }, 'hello'))
+        .rejects.toThrow(/OpenAI refused the key/);
+    });
+  });
 });
