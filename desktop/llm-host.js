@@ -291,7 +291,8 @@ function _openaiBody(p, model, body) {
   // default temperature.
   const reasoning = p.newParams && /^(o\d|gpt-5)/.test(model);
   // Reasoning spends from the same budget as the answer.
-  const maxOut = body.max_tokens || (reasoning ? 32000 : 8192);
+  // Older GPT-4 and 3.5 models stop at 4096.
+  const maxOut = body.max_tokens || (reasoning ? 32000 : /^gpt-(3\.5|4)(-turbo|-\d|$)/.test(model) ? 4096 : 8192);
   req[p.newParams ? 'max_completion_tokens' : 'max_tokens'] = maxOut;
   if (typeof body.temperature === 'number' && !reasoning) req.temperature = body.temperature;
   if (Array.isArray(body.tools) && body.tools.length) {
@@ -343,7 +344,8 @@ function _geminiBody(body, model) {
   if (system) out.systemInstruction = { parts: [{ text: system }] };
   // Gemini 3 is meant to run at its default temperature.
   if (typeof body.temperature === 'number' && !/^gemini-3/.test(String(model || ''))) out.generationConfig.temperature = body.temperature;
-  out.generationConfig.maxOutputTokens = body.max_tokens || 8192;
+  // Thinking models (2.5 and later) spend from the same budget as the answer.
+  out.generationConfig.maxOutputTokens = body.max_tokens || (/^gemini-(2\.5|[3-9])/.test(String(model || '')) ? 32768 : 8192);
   if (Array.isArray(body.tools) && body.tools.length) {
     out.tools = [{ functionDeclarations: body.tools.map(t => ({ name: t.name, description: t.description || '', ...(t.parameters ? { parameters: t.parameters } : {}) })) }];
   }

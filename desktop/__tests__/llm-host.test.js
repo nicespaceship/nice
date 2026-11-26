@@ -202,7 +202,10 @@ describe('provider rules', () => {
     expect(_anthropicBody('claude-sonnet-4-5', { messages: msgs }).max_tokens).toBe(8192);
     expect(_openaiBody(PROVIDERS.openai, 'o3', { messages: msgs }).max_completion_tokens).toBe(32000);
     expect(_openaiBody(PROVIDERS.groq, 'llama', { messages: msgs, temperature: 0.3 })).toMatchObject({ max_tokens: 8192, temperature: 0.3 });
-    expect(_geminiBody({ messages: msgs, temperature: 0.3 }, 'gemini-3-pro').generationConfig).toEqual({ maxOutputTokens: 8192 });
+    expect(_openaiBody(PROVIDERS.openai, 'gpt-4-turbo', { messages: msgs }).max_completion_tokens).toBe(4096);
+    expect(_openaiBody(PROVIDERS.openai, 'gpt-4o', { messages: msgs }).max_completion_tokens).toBe(8192);
+    expect(_geminiBody({ messages: msgs, temperature: 0.3 }, 'gemini-3-pro').generationConfig).toEqual({ maxOutputTokens: 32768 });
+    expect(_geminiBody({ messages: msgs }, 'gemini-2.0-flash').generationConfig).toEqual({ maxOutputTokens: 8192 });
     expect(_geminiBody({ messages: msgs, temperature: 0.3 }, 'gemini-2.5-flash').generationConfig.temperature).toBe(0.3);
   });
 
