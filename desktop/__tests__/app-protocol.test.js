@@ -4,7 +4,8 @@ import { createRequire } from 'module';
 import path from 'path';
 
 const require = createRequire(import.meta.url);
-const { resolveAppRequest, CSP, ORIGIN, cspFor } = require('../app-protocol.js');
+const { EventEmitter } = require('events');
+const { resolveAppRequest, CSP, ORIGIN, cspFor, isAppPage, replacesAppPage, stopWhenPageGoes } = require('../app-protocol.js');
 
 const ROOT = path.resolve('/repo');
 
@@ -25,6 +26,9 @@ describe('nice:// maps to the served folders only', () => {
       ORIGIN + '/app/%2e%2e/desktop/main.js',
       ORIGIN + '/app/..%2fdesktop/main.js',
       ORIGIN + '/app/..%5cdesktop/main.js',
+      ORIGIN + '/app/..%2fassets/nice-mark.svg',
+      ORIGIN + '/public/..%2fapp/index.html',
+      ORIGIN + '/assets/x/..%2f..%2fapp/index.html',
       ORIGIN + '/app/x%00.js',
       ORIGIN + '/app/%E0%A4%A',
       'nice://other/app/index.html',
@@ -33,6 +37,80 @@ describe('nice:// maps to the served folders only', () => {
     ]) {
       expect(resolveAppRequest(bad, ROOT), bad).toBeNull();
     }
+  });
+});
+
+describe('the Code bridge answers NICE\'s own page only', () => {
+  it('accepts the app page, with any query or hash', () => {
+    for (const ok of [
+      ORIGIN + '/app/',
+      ORIGIN + '/app/index.html',
+      ORIGIN + '/app/#/space',
+      ORIGIN + '/app/index.html?v=3#/crew?ship=1',
+    ]) expect(isAppPage(ok), ok).toBe(true);
+  });
+
+  it('refuses other pages under /app/, other hosts and schemes', () => {
+    for (const bad of [
+      ORIGIN + '/app/preview.html',
+      ORIGIN + '/app/app/index.html',
+      ORIGIN + '/app/js/nice.js',
+      ORIGIN + '/app',
+      ORIGIN + '/',
+      ORIGIN + '/public/index.html',
+      ORIGIN + '/app/%69ndex.html',
+      'nice://other/app/',
+      'nice://x@app/app/',
+      'https://nicespaceship.ai/app/',
+      'file:///repo/app/index.html',
+      'about:blank',
+      '',
+      null,
+    ]) expect(isAppPage(bad), String(bad)).toBe(false);
+  });
+});
+
+describe('which navigations stop a page\'s commands', () => {
+  const nav = (url, extra = {}) => ({ url, isMainFrame: true, isSameDocument: false, ...extra });
+
+  it('a reload or another nice://app/ document in the main frame', () => {
+    expect(replacesAppPage(nav(ORIGIN + '/app/'))).toBe(true);
+    expect(replacesAppPage(nav(ORIGIN + '/'))).toBe(true);
+  });
+
+  it('not links will-navigate cancels, hash changes or frames', () => {
+    for (const url of ['https://checkout.stripe.com/c/pay/x', 'https://accounts.google.com/o/oauth2', 'mailto:hello@example.com', 'tel:+15550100', 'https://nicespaceship.ai/']) {
+      expect(replacesAppPage(nav(url)), url).toBe(false);
+    }
+    expect(replacesAppPage(nav(ORIGIN + '/app/#/crew', { isSameDocument: true }))).toBe(false);
+    expect(replacesAppPage(nav(ORIGIN + '/app/', { isMainFrame: false }))).toBe(false);
+    expect(replacesAppPage(null)).toBe(false);
+  });
+
+  const watched = () => {
+    const contents = new EventEmitter();
+    let stops = 0;
+    stopWhenPageGoes(contents, () => { stops++; });
+    return { contents, stops: () => stops };
+  };
+
+  it('stops them when a reload starts, when the new page commits, and when the renderer dies', () => {
+    const { contents, stops } = watched();
+    contents.emit('did-start-navigation', nav(ORIGIN + '/app/'));
+    expect(stops()).toBe(1);
+    // A run the old page asked for between the start and the commit is stopped here.
+    contents.emit('did-navigate', {}, ORIGIN + '/app/', 200, 'OK');
+    expect(stops()).toBe(2);
+    contents.emit('render-process-gone', {}, { reason: 'crashed', exitCode: 1 });
+    expect(stops()).toBe(3);
+  });
+
+  it('keeps them for a link will-navigate cancels and for a hash change', () => {
+    const { contents, stops } = watched();
+    contents.emit('did-start-navigation', nav('https://checkout.stripe.com/c/pay/x'));
+    contents.emit('did-start-navigation', nav(ORIGIN + '/app/#/crew', { isSameDocument: true }));
+    contents.emit('did-navigate-in-page', {}, ORIGIN + '/app/#/crew', true);
+    expect(stops()).toBe(0);
   });
 });
 

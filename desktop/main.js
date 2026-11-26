@@ -3,10 +3,11 @@
  * Lightweight wrapper loading the NICE web app locally.
  */
 
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
+const { Workspace, serializeError, runTag } = require('./code-host');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -113,15 +114,134 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // Commands started by a page stop when that page goes away: a reload, a
+  // crash or the window closing. The open folder stays open. A link to
+  // another site also starts a navigation, but will-navigate cancels it and
+  // the page stays, so its commands keep running.
+  const contents = mainWindow.webContents;
+  const contentsId = contents.id;
+  AppProtocol.stopWhenPageGoes(contents, () => { const ws = workspaces.get(contentsId); if (ws) ws.killAll(); });
+
   // Show when ready (prevents white flash)
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
   mainWindow.on('closed', () => {
+    const ws = workspaces.get(contentsId);
+    if (ws) _retire(ws);
+    workspaces.delete(contentsId);
     mainWindow = null;
   });
 }
+
+/* ── Code bridge ──
+   One workspace per window, opened only through the native folder dialog.
+   Each call answers { ok, value } or { ok:false, error:{ code, message } },
+   and only NICE's own page (the main frame on nice://app/app/) may call. */
+const workspaces = new Map();
+// Workspaces no window holds any more whose processes are still being
+// stopped, so quitting can still kill them.
+const retired = new Set();
+
+function _retire(ws) {
+  ws.killAll();
+  for (const r of retired) if (!r.busy) retired.delete(r);
+  if (ws.busy) retired.add(ws);
+}
+
+// The SIGKILL that follows a SIGTERM runs on a timer, which dies with the
+// app: on quit every process group gets SIGKILL at once instead.
+function _killEverything() {
+  for (const ws of [...workspaces.values(), ...retired]) ws.killAll({ hard: true });
+}
+
+function _fromApp(event) {
+  const frame = event.senderFrame;
+  return !!frame && frame === event.sender.mainFrame && AppProtocol.isAppPage(frame.url);
+}
+
+function handle(channel, fn) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    if (!_fromApp(event)) return { ok: false, error: { code: 'EFORBIDDEN', message: 'Not allowed from this page.' } };
+    try {
+      return { ok: true, value: await fn(event, ...args) };
+    } catch (e) {
+      return { ok: false, error: serializeError(e) };
+    }
+  });
+}
+
+function _workspace(event) {
+  const ws = workspaces.get(event.sender.id);
+  if (!ws) throw Object.assign(new Error('No folder is open. Open one first.'), { code: 'ENOWORKSPACE' });
+  return ws;
+}
+
+const _describe = (ws) => ws ? { root: ws.root, name: path.basename(ws.root) || ws.root } : null;
+
+handle('code:open-folder', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const pick = await dialog.showOpenDialog(win, { title: 'Open a folder for Code', properties: ['openDirectory', 'createDirectory'] });
+  if (pick.canceled || !pick.filePaths[0]) return null;
+  const dir = pick.filePaths[0];
+  // Judged by the real path: /Volumes/Macintosh HD is the whole disk.
+  const broad = await Workspace.isBroad(dir);
+  if (broad) {
+    const what = { disk: 'your whole disk', home: 'your whole home folder', 'above-home': 'the folder that holds your home folder', volume: 'a whole drive' }[broad] || 'a folder this broad';
+    const ok = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Choose another folder', 'Open anyway'],
+      defaultId: 0,
+      cancelId: 0,
+      message: 'Give Code ' + what + '?',
+      detail: 'Code can read and change every file inside the folder you open, and run commands there. A project folder is safer.',
+    });
+    if (ok.response !== 1) return null;
+  }
+  const ws = await Workspace.open(dir);
+  const old = workspaces.get(event.sender.id);
+  if (old) _retire(old);
+  workspaces.set(event.sender.id, ws);
+  return _describe(ws);
+});
+handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
+handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
+handle('code:write', (event, p, content, opts) => {
+  const o = opts || {};
+  return _workspace(event).writeFile(p, content, { overwrite: o.overwrite, lineEndings: o.lineEndings });
+});
+handle('code:edit', (event, p, oldText, newText, opts) => _workspace(event).editFile(p, oldText, newText, opts || {}));
+handle('code:list', (event, p) => _workspace(event).listDir(p || '.'));
+handle('code:search', (event, pattern, opts) => _workspace(event).search(pattern, opts || {}));
+// Tags the page called off before their run had an id, per page.
+const cancelledTags = new Map();
+const _cancelled = (sender) => {
+  if (!cancelledTags.has(sender.id)) cancelledTags.set(sender.id, new Set());
+  return cancelledTags.get(sender.id);
+};
+
+handle('code:run', (event, command, opts) => {
+  const sender = event.sender;
+  const o = opts || {};
+  const tag = runTag(o.tag);
+  return _workspace(event).run(command, {
+    timeoutMs: o.timeoutMs,
+    cwd: o.cwd,
+    shouldStart: () => !(tag != null && _cancelled(sender).delete(tag)),
+    // `tag` comes back on every event so the page can tell its runs apart.
+    onData: (d) => { if (!sender.isDestroyed()) sender.send('code:run-data', { ...d, tag }); },
+  });
+});
+handle('code:kill', (event, id) => _workspace(event).kill(id));
+handle('code:cancel', (event, tag) => {
+  const t = runTag(tag);
+  if (t == null) return false;
+  const set = _cancelled(event.sender);
+  set.add(t);
+  if (set.size > 100) set.delete(set.values().next().value);
+  return true;
+});
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)
@@ -182,6 +302,9 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('before-quit', _killEverything);
+app.on('will-quit', _killEverything);
 
 app.on('window-all-closed', () => {
   // Keep running in tray on macOS

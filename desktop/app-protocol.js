@@ -92,6 +92,8 @@ function resolveAppRequest(url, root) {
   let pathname;
   try { pathname = decodeURIComponent(u.pathname); } catch { return null; }
   if (pathname.includes('\0') || pathname.includes('\\')) return null;
+  // Judged before normalizing: /app/..%2fassets/x.svg would otherwise land in another served folder.
+  if (pathname.split('/').includes('..')) return null;
   const norm = path.posix.normalize(pathname);
   const parts = norm.split('/').filter(Boolean);
   if (!parts.length || !SERVED_DIRS.includes(parts[0]) || parts.includes('..')) return null;
@@ -103,4 +105,42 @@ function resolveAppRequest(url, root) {
   return { file, mime: MIME[ext] || 'application/octet-stream', isDocument: ext === '.html' };
 }
 
-module.exports = { SCHEME, HOST, ORIGIN, CSP, API_HOSTS, SERVED_DIRS, cspFor, resolveAppRequest };
+/**
+ * True for NICE's own page and nothing else: nice://app/app/ or
+ * nice://app/app/index.html, with any query or hash. main.js lets only
+ * this page, in the main frame, call the Code bridge.
+ */
+function isAppPage(url) {
+  let u;
+  try { u = new URL(String(url)); } catch { return false; }
+  if (u.protocol !== SCHEME + ':' || u.host !== HOST || u.username || u.password) return false;
+  return u.pathname === '/app/' || u.pathname === '/app/index.html';
+}
+
+/**
+ * True when a did-start-navigation (Electron's details object) replaces
+ * NICE's page: a main-frame, cross-document navigation to nice://app/, as a
+ * reload is. External links fire it too, though will-navigate cancels them
+ * and the page stays, so they are not counted.
+ */
+function replacesAppPage(details) {
+  if (!details || details.isMainFrame !== true || details.isSameDocument) return false;
+  return String(details.url || '').startsWith(ORIGIN + '/');
+}
+
+/**
+ * Calls stop() whenever the page in `contents` (a webContents) goes away:
+ * when a navigation that replaces it starts (replacesAppPage), when a new
+ * document commits (did-navigate, which Electron fires only for the main
+ * frame and never for a hash change), and when the renderer dies. The
+ * commit catches calls the old page sent after the navigation started,
+ * from a pagehide handler or a loop that runs again when its stopped
+ * command comes back.
+ */
+function stopWhenPageGoes(contents, stop) {
+  contents.on('did-start-navigation', (details) => { if (replacesAppPage(details)) stop(); });
+  contents.on('did-navigate', () => stop());
+  contents.on('render-process-gone', () => stop());
+}
+
+module.exports = { SCHEME, HOST, ORIGIN, CSP, API_HOSTS, SERVED_DIRS, cspFor, resolveAppRequest, isAppPage, replacesAppPage, stopWhenPageGoes };
