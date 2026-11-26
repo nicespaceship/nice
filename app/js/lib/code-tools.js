@@ -205,7 +205,9 @@ const CodeTools = (() => {
     return String(command || '').trim().split(/\s+/).slice(0, 2).join(' ');
   }
 
-  /* First words whose allowance would run anything: shells, interpreters
+  /* Keep these two lists and the canRemember cases in code-tools.test.js
+     together when adding a command.
+     First words whose allowance would run anything: shells, interpreters
      and wrappers that take a whole command as an argument. */
   const OPEN_ENDED = new Set(['sh', 'bash', 'zsh', 'fish', 'dash', 'ksh', 'csh', 'tcsh', 'env', 'sudo', 'doas', 'su',
     'xargs', 'eval', 'exec', 'command', 'builtin', 'nohup', 'time', 'timeout', 'nice', 'watch', 'ssh', 'osascript',
@@ -233,7 +235,7 @@ const CodeTools = (() => {
     if (!isSimpleCommand(command)) return false;
     const words = String(command).trim().split(/\s+/);
     if (words.length < 2) return false;
-    const prog = words[0].split('/').pop().toLowerCase();
+    const prog = words[0].split(/[\\/]/).pop().toLowerCase().replace(/\.(exe|cmd|bat|com)$/, '');
     if (OPEN_ENDED.has(prog) || /^python\d/.test(prog) || /[=*?\[\]~'"]/.test(words[0] + words[1])) return false;
     if (OPEN_ENDED_PAIRS.has(prog + ' ' + words[1].toLowerCase())) return false;
     // A flag, in its Unix or Windows form (cmd /c), is asked about each time.
