@@ -48,6 +48,16 @@ describe('parseKey', () => {
   });
 });
 
+describe('cdpKey', () => {
+  it('gives the DevTools protocol the key, code, virtual key and modifier bits', () => {
+    expect(B.cdpKey(parseKey('Enter'))).toMatchObject({ key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, modifiers: 0, text: '\r' });
+    expect(B.cdpKey(parseKey('ArrowDown'))).toMatchObject({ key: 'ArrowDown', windowsVirtualKeyCode: 40, text: undefined });
+    expect(B.cdpKey(parseKey('ctrl+shift+a'))).toMatchObject({ key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 10, text: undefined });
+    expect(B.cdpKey(parseKey('7'))).toMatchObject({ code: 'Digit7', windowsVirtualKeyCode: 55, text: '7' });
+    expect(B.cdpKey(parseKey('F5'))).toMatchObject({ windowsVirtualKeyCode: 116 });
+  });
+});
+
 describe('cleanBounds', () => {
   it('rounds, scales by the page zoom and refuses empty or bad bounds', () => {
     expect(cleanBounds({ x: 10.4, y: 20.6, width: 300.2, height: 400 }, 1)).toEqual({ x: 10, y: 21, width: 300, height: 400 });
@@ -173,6 +183,33 @@ function fakes() {
   return { views, WebContentsView, session, ses, win, notify };
 }
 
+describe('pageLocate hit test', () => {
+  beforeEach(() => {
+    delete window.__niceRefs;
+    document.body.innerHTML = '<button id="go">Next</button><div id="banner">Accept cookies</div><label id="l">Name <input id="name"></label><iframe id="f"></iframe>';
+    Element.prototype.getBoundingClientRect = function () { return { left: 10, top: 20, width: 100, height: 30 }; };
+    Element.prototype.getClientRects = function () { return [this.getBoundingClientRect()]; };
+    Element.prototype.scrollIntoView = function () {};
+  });
+  const refOf = (id) => pageSnapshot({}).elements.find(e => window.__niceRefs.get(e.ref).id === id).ref;
+
+  it('refuses a click that would land on something covering the element', () => {
+    const ref = refOf('go');
+    document.elementFromPoint = () => document.getElementById('banner');
+    expect(pageLocate({ ref, hitTest: true })).toEqual({ error: 'EOBSCURED', by: 'Accept cookies' });
+    document.elementFromPoint = () => document.getElementById('f');
+    expect(pageLocate({ ref, hitTest: true })).toEqual({ error: 'EOBSCURED', by: 'a frame from another page' });
+    document.elementFromPoint = () => document.getElementById('go');
+    expect(pageLocate({ ref, hitTest: true }).x).toBe(60);
+  });
+
+  it('lets a click on a field\'s label through', () => {
+    const ref = refOf('name');
+    document.elementFromPoint = () => document.getElementById('l');
+    expect(pageLocate({ ref, hitTest: true }).error).toBeUndefined();
+  });
+});
+
 describe('createBrowser', () => {
   let f, b;
   beforeEach(() => {
@@ -257,6 +294,59 @@ describe('createBrowser', () => {
       const c = f.views[0].webContents;
       expect(c.inputs.map(i => i.type)).toEqual(['mouseMove', 'mouseDown', 'mouseUp']);
     } finally { vi.useRealTimers(); }
+  });
+
+  it('refuses to act once the page is on another site than the one allowed', async () => {
+    await b.open('example.com');
+    b.place({ x: 0, y: 0, width: 100, height: 100 });
+    const c = f.views[0].webContents;
+    c.url = 'https://evil.test/';
+    await expect(b.click('1', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+    await expect(b.type(null, 'secret', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+    await expect(b.key('Enter', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+    expect(c.inputs).toEqual([]);
+    expect(c.typed).toEqual([]);
+    // The page moves between finding the element and the click.
+    c.url = 'https://example.com/';
+    const answer = c.answer;
+    c.answer = (code) => { if (code.includes('pageLocate')) c.url = 'https://evil.test/'; return answer(code); };
+    await expect(b.click('1', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+    expect(c.inputs).toEqual([]);
+    await expect(b.open('evil.test', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+  });
+
+  it('sends input through the DevTools protocol when it can attach', async () => {
+    await b.open('example.com');
+    b.place({ x: 0, y: 0, width: 100, height: 100 });
+    const c = f.views[0].webContents;
+    const sent = [];
+    let attached = false;
+    c.debugger = { isAttached: () => attached, attach: vi.fn(() => { attached = true; }), sendCommand: vi.fn(async (m, p) => { sent.push([m, p]); }) };
+    await b.click('1');
+    expect(c.debugger.attach).toHaveBeenCalledWith('1.3');
+    expect(sent.map(([m, p]) => m + ':' + p.type)).toEqual(['Input.dispatchMouseEvent:mouseMoved', 'Input.dispatchMouseEvent:mousePressed', 'Input.dispatchMouseEvent:mouseReleased']);
+    expect(c.inputs).toEqual([]);
+    sent.length = 0;
+    await b.type(null, 'hi', { submit: true });
+    expect(sent[0]).toEqual(['Input.insertText', { text: 'hi' }]);
+    expect(sent.slice(1).map(([, p]) => p.type + ':' + p.key)).toEqual(['keyDown:Enter', 'keyUp:Enter']);
+    expect(sent[1][1]).toMatchObject({ windowsVirtualKeyCode: 13, text: '\r' });
+    expect(c.debugger.attach).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns down device choosers and Bluetooth', async () => {
+    await b.open('example.com');
+    const pick = (ev, ...args) => { const e = { preventDefault: vi.fn() }; const cb = vi.fn(); f.ses.emit(ev, e, ...args, cb); return { e, cb }; };
+    let r = pick('select-hid-device', {});
+    expect(r.e.preventDefault).toHaveBeenCalled(); expect(r.cb).toHaveBeenCalledWith(null);
+    r = pick('select-usb-device', {});
+    expect(r.cb).toHaveBeenCalledWith();
+    r = pick('select-serial-port', [], {});
+    expect(r.cb).toHaveBeenCalledWith('');
+    const e = { preventDefault: vi.fn() }; const cb = vi.fn();
+    f.views[0].webContents.emit('select-bluetooth-device', e, [{ deviceId: 'x' }], cb);
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(cb).toHaveBeenCalledWith('');
   });
 
   it('runs its scripts in an isolated world', async () => {

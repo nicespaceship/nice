@@ -10,14 +10,22 @@
  *  - its own session (cookies, storage, cache), never NICE's;
  *  - no preload, sandboxed, no Node, so it cannot reach NiceDesktop;
  *  - http and https only: it cannot open nice://, file:, or anything else;
- *  - no permissions (camera, location, notifications, ...) and no downloads;
+ *  - no permissions (camera, location, notifications, ...), no Bluetooth,
+ *    USB, HID or serial device choosers, and no downloads;
  *  - new windows open in the same view instead.
  * The scripts that read and point at the page run in an isolated world, so
  * the site's own scripts cannot see or change them.
+ *
+ * Opening, clicking, typing and keys can carry the site (host:port) the user
+ * approved them for, and are refused when the page is on another one by the
+ * time they run. A click lands only when the element it is for is what sits
+ * at that point, never an overlay or a frame on top of it.
+ *
+ * Its session persists, so sites stay signed in between runs of the app.
  */
 
 const PARTITION = 'persist:nice-code-browser';
-const WORLD_ID = 1717;                 // the isolated world NICE's page scripts run in
+const WORLD_ID = 1717;                 // the isolated world NICE's reading scripts run in, inside the web page
 const LOAD_TIMEOUT_MS = 30000;
 const SCRIPT_TIMEOUT_MS = 10000;
 const SETTLE_MS = 400;                 // after a click or key, how long to look for a navigation
@@ -27,6 +35,9 @@ const CONSOLE_MAX = 200;
 const DEFAULT_SIZE = { width: 1024, height: 768 };
 const SHOW_WAIT_MS = 3000;             // how long input waits for the browser's first showing
 
+// Addresses typed without a scheme that load over http: this machine.
+// CodeTools.siteOf keeps the same rule, so a site is approved by the host
+// it loads as.
 const LOCAL_HOST = /^(localhost|127(?:\.\d{1,3}){3}|\[::1\]|[a-z0-9-]+\.localhost)(:\d+)?$/i;
 
 const _err = (code, message) => Object.assign(new Error(message), { code });
@@ -69,6 +80,26 @@ const KEY_NAMES = {
   arrowup: 'Up', arrowdown: 'Down', arrowleft: 'Left', arrowright: 'Right',
   home: 'Home', end: 'End', pageup: 'PageUp', pagedown: 'PageDown',
 };
+// For the DevTools protocol's key events: the DOM key name, the Windows
+// virtual key code Chromium matches on, and the modifier bits.
+const CDP_KEYS = {
+  Enter: ['Enter', 13], Tab: ['Tab', 9], Escape: ['Escape', 27], Backspace: ['Backspace', 8], Delete: ['Delete', 46],
+  Space: [' ', 32], Up: ['ArrowUp', 38], Down: ['ArrowDown', 40], Left: ['ArrowLeft', 37], Right: ['ArrowRight', 39],
+  Home: ['Home', 36], End: ['End', 35], PageUp: ['PageUp', 33], PageDown: ['PageDown', 34],
+};
+const CDP_MODIFIER_BITS = { alt: 1, control: 2, meta: 4, shift: 8 };
+
+/** A parseKey result as { key, code, windowsVirtualKeyCode, modifiers, text } for Input.dispatchKeyEvent. */
+function cdpKey(k) {
+  let key, vk;
+  if (CDP_KEYS[k.keyCode]) [key, vk] = CDP_KEYS[k.keyCode];
+  else if (/^F\d+$/.test(k.keyCode)) { key = k.keyCode; vk = 111 + Number(k.keyCode.slice(1)); }
+  else { key = k.keyCode; vk = k.keyCode.toUpperCase().charCodeAt(0); }
+  const mods = k.modifiers.reduce((n, m) => n | (CDP_MODIFIER_BITS[m] || 0), 0);
+  const code = /^[a-z]$/i.test(key) ? 'Key' + key.toUpperCase() : /^\d$/.test(key) ? 'Digit' + key : key === ' ' ? 'Space' : key;
+  return { key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers: mods, text: k.char || undefined };
+}
+
 const MODIFIERS = { ctrl: 'control', control: 'control', shift: 'shift', alt: 'alt', option: 'alt', cmd: 'meta', command: 'meta', meta: 'meta', super: 'meta' };
 
 /**
@@ -183,6 +214,17 @@ function pageLocate(args) {
   if (!el.isConnected) return { error: 'EGONE' };
   el.scrollIntoView({ block: 'center', inline: 'center' });
   const r = el.getBoundingClientRect();
+  if (args.hitTest) {
+    // What a click at the middle would land on. It counts when that is the
+    // element, something inside it, or a label for it.
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    const ok = hit && (hit === el || el.contains(hit) || (hit.closest && hit.closest('label') && hit.closest('label').control === el));
+    if (!ok) {
+      const what = !hit ? 'nothing' : hit.tagName === 'IFRAME' ? 'a frame from another page' : (hit.getAttribute('aria-label') || (hit.textContent || '').trim() || hit.tagName.toLowerCase()).replace(/\s+/g, ' ').slice(0, 60);
+      return { error: 'EOBSCURED', by: what };
+    }
+  }
   if (args.focus && typeof el.focus === 'function') el.focus();
   if (args.select) {
     if (typeof el.select === 'function') el.select();
@@ -228,6 +270,10 @@ function _guestSession(session) {
   ses.setPermissionCheckHandler(() => false);
   if (typeof ses.setDevicePermissionHandler === 'function') ses.setDevicePermissionHandler(() => false);
   ses.on('will-download', (e, item) => { e.preventDefault(); try { item.cancel(); } catch {} });
+  // Device choosers answer "none chosen".
+  ses.on('select-hid-device', (e, details, callback) => { e.preventDefault(); callback(null); });
+  ses.on('select-usb-device', (e, details, callback) => { e.preventDefault(); callback(); });
+  ses.on('select-serial-port', (e, ports, wc, callback) => { e.preventDefault(); callback(''); });
   _sessionReady = ses;
   return ses;
 }
@@ -271,6 +317,9 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
   function ensure() {
     if (destroyed) throw _err('EGONE', 'The browser closed.');
     if (view && !view.webContents.isDestroyed()) return view;
+    // A view whose page crashed for good is replaced, not stacked under the new one.
+    if (view) { try { win.contentView.removeChildView(view); } catch {} }
+    everShown = false;
     view = new WebContentsView({
       webPreferences: {
         session: _guestSession(session),
@@ -284,6 +333,9 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
         safeDialogs: true,
         spellcheck: false,
         webviewTag: false,
+        // No device APIs at all: on macOS a page starting a Bluetooth scan
+        // aborts the whole app when the build has no Bluetooth usage string.
+        disableBlinkFeatures: 'WebBluetooth,WebUSB,WebHID,Serial',
       },
     });
     const c = view.webContents;
@@ -311,6 +363,9 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
       consoleLines.push({ level: lv, message: String(m).slice(0, 2000), source: String((e && e.sourceId) || sourceId || '').slice(0, 300), line: (e && e.lineNumber) || line || 0 });
       if (consoleLines.length > CONSOLE_MAX) consoleLines.shift();
     });
+    // Without a listener Electron picks the first Bluetooth device on its
+    // own; with one that answers '', the page's request fails.
+    c.on('select-bluetooth-device', (e, devices, callback) => { e.preventDefault(); callback(''); });
     win.contentView.addChildView(view);
     view.setBounds({ x: 0, y: 0, ...DEFAULT_SIZE });
     view.setVisible(false);
@@ -355,9 +410,13 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     while (c && !c.isDestroyed() && c.isLoading() && Date.now() - start < ms) await _sleep(50);
   }
 
-  async function open(raw) {
+  async function open(raw, opts) {
     const url = normalizeUrl(raw);
     if (!url) throw _err('EINVAL', 'Code\'s browser opens http and https addresses only.');
+    const expectHost = opts && opts.expectHost;
+    if (expectHost != null && hostOf(url).toLowerCase() !== String(expectHost).toLowerCase()) {
+      throw _err('ESITE', url + ' is not on ' + expectHost + ', which this was allowed for.');
+    }
     ensure();
     const c = wc();
     lastError = null;
@@ -393,6 +452,15 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     return c;
   }
 
+  // An action approved for one site runs only while the page is still on it.
+  function _onSite(c, expectHost) {
+    if (expectHost == null) return;
+    const now = hostOf(c.getURL()).toLowerCase();
+    if (now !== String(expectHost).toLowerCase()) {
+      throw _err('ESITE', 'The page is on ' + (now || 'no website') + ' now, not ' + expectHost + ', which this was allowed for. Nothing was done; read the page and try again.');
+    }
+  }
+
   function _run(fn, arg, what) {
     const c = _page();
     return _withTimeout(c.executeJavaScriptInIsolatedWorld(WORLD_ID, [{ code: _script(fn, arg) }]), SCRIPT_TIMEOUT_MS, what);
@@ -409,6 +477,7 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     const r = await _run(pageLocate, { ref: String(ref), ...extra }, 'Finding the element');
     if (!r || r.error === 'ENOREF') throw _err('ENOREF', 'There is no element ' + ref + ' on this page. Read the page again for fresh refs.');
     if (r.error === 'EGONE') throw _err('EGONE', 'Element ' + ref + ' is no longer on the page. Read the page again.');
+    if (r.error === 'EOBSCURED') throw _err('EOBSCURED', 'Element ' + ref + ' is covered by ' + r.by + ', so a click would land on that instead. Nothing was clicked; deal with what covers it first (a banner or dialog), then read the page again.');
     return r;
   }
 
@@ -419,24 +488,57 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     return state();
   }
 
-  function _mouse(c, x, y) {
+  // Input goes in through the DevTools protocol where it can: unlike
+  // sendInputEvent, it reaches the page while NICE's window is not the
+  // focused one (the user working in another app while the agent clicks).
+  function _cdp(c) {
+    const d = c.debugger;
+    if (!d) return null;
+    try { if (!d.isAttached()) d.attach('1.3'); return d; } catch { return null; }
+  }
+
+  async function _mouse(c, x, y) {
+    const d = _cdp(c);
+    if (d) {
+      await d.sendCommand('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none', buttons: 0 });
+      await d.sendCommand('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
+      await d.sendCommand('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 });
+      return;
+    }
     c.sendInputEvent({ type: 'mouseMove', x, y });
     c.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 });
     c.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 });
   }
 
-  async function click(ref) {
+  async function _insert(c, text) {
+    const d = _cdp(c);
+    if (d) return d.sendCommand('Input.insertText', { text });
+    return c.insertText(text);
+  }
+
+  async function click(ref, opts) {
+    const expectHost = opts && opts.expectHost;
     const c = _page();
+    _onSite(c, expectHost);
     await _whenShownOnce();
-    const at = await _locate(ref, {});
+    const at = await _locate(ref, { hitTest: true });
     if (at.x < 0 || at.y < 0 || at.x >= at.vw || at.y >= at.vh) throw _err('EOFFSCREEN', 'Element ' + ref + ' is outside the visible page and could not be scrolled into view.');
-    _mouse(c, at.x, at.y);
+    _onSite(c, expectHost);
+    await _mouse(c, at.x, at.y);
     return _settle();
   }
 
-  async function _key(c, spec) {
+  async function _key(c, spec, expectHost) {
+    _onSite(c, expectHost);
     const k = parseKey(spec);
     if (!k) throw _err('EINVAL', 'Unknown key: ' + spec + '. Use names like Enter, Tab, Escape, ArrowDown or ctrl+a.');
+    const d = _cdp(c);
+    if (d) {
+      const e = cdpKey(k);
+      await d.sendCommand('Input.dispatchKeyEvent', { ...e, type: e.text ? 'keyDown' : 'rawKeyDown' });
+      await d.sendCommand('Input.dispatchKeyEvent', { ...e, type: 'keyUp', text: undefined });
+      return;
+    }
     c.sendInputEvent({ type: 'keyDown', keyCode: k.keyCode, modifiers: k.modifiers });
     if (k.char) c.sendInputEvent({ type: 'char', keyCode: k.char, modifiers: k.modifiers });
     c.sendInputEvent({ type: 'keyUp', keyCode: k.keyCode, modifiers: k.modifiers });
@@ -446,28 +548,32 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     const o = opts || {};
     const c = _page();
     if (typeof text !== 'string') throw _err('EINVAL', 'Text to type must be a string.');
+    _onSite(c, o.expectHost);
     await _whenShownOnce();
     if (ref != null && ref !== '') {
-      const at = await _locate(ref, { focus: true, select: !!o.clear });
+      const at = await _locate(ref, { focus: true, select: !!o.clear, hitTest: !o.clear });
       if (!o.clear && at.x >= 0 && at.y >= 0 && at.x < at.vw && at.y < at.vh) {
-        _mouse(c, at.x, at.y);
+        _onSite(c, o.expectHost);
+        await _mouse(c, at.x, at.y);
         await _sleep(50);
         // A click puts the caret where it landed; typing goes at the end.
         await _run(function (a) { const el = window.__niceRefs.get(a.ref); if (el && typeof el.setSelectionRange === 'function' && typeof el.value === 'string') { try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } return true; }, { ref: String(ref) }, 'Placing the caret');
       }
     }
-    if (text) await c.insertText(text);
-    if (o.submit) await _key(c, 'Enter');
+    _onSite(c, o.expectHost);
+    if (text) await _insert(c, text);
+    if (o.submit) await _key(c, 'Enter', o.expectHost);
     return _settle();
   }
 
-  async function key(spec) {
+  async function key(spec, opts) {
+    const expectHost = opts && opts.expectHost;
     const c = _page();
     const specs = String(spec || '').trim().split(/\s+/).filter(Boolean);
     if (!specs.length || specs.length > 20) throw _err('EINVAL', 'Give one to twenty keys, separated by spaces.');
     for (const s of specs) if (!parseKey(s)) throw _err('EINVAL', 'Unknown key: ' + s + '. Use names like Enter, Tab, Escape, ArrowDown or ctrl+a.');
     await _whenShownOnce();
-    for (const s of specs) await _key(c, s);
+    for (const s of specs) await _key(c, s, expectHost);
     return _settle();
   }
 
@@ -499,7 +605,7 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
 }
 
 module.exports = {
-  PARTITION, WORLD_ID, createBrowser, normalizeUrl, isWebUrl, hostOf, parseKey, cleanBounds,
+  PARTITION, WORLD_ID, createBrowser, normalizeUrl, isWebUrl, hostOf, parseKey, cdpKey, cleanBounds,
   pageSnapshot, pageLocate, pageScroll,
   _resetSession: () => { _sessionReady = null; },
 };

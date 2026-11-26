@@ -75,18 +75,20 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
     state: () => call('browser:state'),
     /** Bounds in CSS pixels of NICE's page ({ x, y, width, height }), or null to hide it. */
     place: (bounds) => call('browser:place', bounds),
-    open: (url) => call('browser:open', url),
+    /** opts.expectHost: refuse unless the address is on this host:port. */
+    open: (url, opts) => call('browser:open', url, opts),
     back: () => call('browser:back'),
     forward: () => call('browser:forward'),
     reload: () => call('browser:reload'),
     stop: () => call('browser:stop'),
     /** { url, title, text, textCut, elements: [{ ref, role, name, href?, value?, placeholder?, checked? }], moreElements, scroll, status } */
     read: () => call('browser:read'),
-    click: (ref) => call('browser:click', ref),
-    /** Types into the element with this ref (or wherever focus is, for null). opts: { clear, submit }. */
+    /** opts.expectHost here, in type() and in key(): refuse unless the page is on this host:port when the input goes in. */
+    click: (ref, opts) => call('browser:click', ref, opts),
+    /** Types into the element with this ref (or wherever focus is, for null). opts: { clear, submit, expectHost }. */
     type: (ref, text, opts) => call('browser:type', ref, text, opts),
     /** Space-separated keys: "Enter", "Tab Tab", "ctrl+a". */
-    key: (keys) => call('browser:key', keys),
+    key: (keys, opts) => call('browser:key', keys, opts),
     /** 'up' or 'down'; resolves to { y, height, view }. */
     scroll: (direction) => call('browser:scroll', direction),
     /** [{ level, message, source, line }], the page's console since it loaded. */

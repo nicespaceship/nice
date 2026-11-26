@@ -20,6 +20,11 @@ protocol.registerSchemesAsPrivileged([
   { scheme: AppProtocol.SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
 
+// Chromium stops drawing a window that other windows cover, and a page it
+// isn't drawing can't take clicks. Code's agent works in its browser while
+// the user is in other apps, so NICE's window keeps drawing when covered.
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+
 const SITE_ORIGIN = 'https://nicespaceship.ai';
 const APP_PAGE = AppProtocol.ORIGIN + '/app/';
 // Links NICE opens in the user's own apps: the web, mail and phone.
@@ -291,15 +296,15 @@ handle('browser:place', (event, bounds) => {
   if (!bounds && !browsers.has(event.sender.id)) return false;
   return _browser(event).place(bounds);
 });
-handle('browser:open', (event, url) => _browser(event).open(url));
+handle('browser:open', (event, url, opts) => _browser(event).open(url, opts || {}));
 handle('browser:back', (event) => _browser(event).back());
 handle('browser:forward', (event) => _browser(event).forward());
 handle('browser:reload', (event) => _browser(event).reload());
 handle('browser:stop', (event) => _browser(event).stop());
 handle('browser:read', (event) => _browser(event).read());
-handle('browser:click', (event, ref) => _browser(event).click(ref));
+handle('browser:click', (event, ref, opts) => _browser(event).click(ref, opts || {}));
 handle('browser:type', (event, ref, text, opts) => _browser(event).type(ref, text, opts || {}));
-handle('browser:key', (event, keys) => _browser(event).key(keys));
+handle('browser:key', (event, keys, opts) => _browser(event).key(keys, opts || {}));
 handle('browser:scroll', (event, direction) => _browser(event).scroll(direction));
 handle('browser:console', (event) => _browser(event).console());
 
