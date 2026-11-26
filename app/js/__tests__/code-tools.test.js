@@ -15,14 +15,16 @@ function host(over = {}) {
 }
 
 beforeEach(() => { CodeTools.register(); });
-afterEach(() => { delete window.NiceDesktop; });
+afterEach(() => { delete window.NiceDesktop; CodeTools._test.reset(); });
 
 describe('CodeTools', () => {
-  it('registers its six tools once, with edits, writes and commands as side effects', () => {
+  it('registers its tools once, with edits, writes, commands and acting on web pages as side effects', () => {
     expect(CodeTools.register()).toBe(true);
-    expect(CodeTools.IDS).toEqual(['code-read', 'code-list', 'code-search', 'code-edit', 'code-write', 'code-run']);
+    expect(CodeTools.IDS).toEqual(['code-read', 'code-list', 'code-search', 'code-edit', 'code-write', 'code-run',
+      'code-browser-open', 'code-browser-read', 'code-browser-click', 'code-browser-type', 'code-browser-key',
+      'code-browser-scroll', 'code-browser-back', 'code-browser-console']);
     const side = CodeTools.IDS.filter(id => ToolRegistry.resolve(id).sideEffect);
-    expect(side).toEqual(['code-edit', 'code-write', 'code-run']);
+    expect(side).toEqual(['code-edit', 'code-write', 'code-run', 'code-browser-open', 'code-browser-click', 'code-browser-type', 'code-browser-key']);
     expect(ToolRegistry.resolve('read_file').id).toBe('code-read');
   });
 
@@ -93,5 +95,91 @@ describe('CodeTools', () => {
       expect(CodeTools.isSimpleCommand(c)).toBe(false);
       expect(CodeTools.prefixCovers('npm test', c)).toBe(false);
     }
+  });
+});
+
+describe('CodeTools browser', () => {
+  const page = { url: 'http://localhost:3000/', title: 'App', host: 'localhost:3000', loading: false, status: 200, error: null };
+  function browser(over = {}) {
+    return {
+      open: vi.fn(async () => page),
+      read: vi.fn(async () => ({
+        url: page.url, title: 'App', text: 'Welcome', textCut: 5, moreElements: 3, status: 200, scroll: { y: 0, height: 900, view: 600 },
+        elements: [
+          { ref: '1', role: 'link', name: 'Docs', href: 'http://localhost:3000/docs' },
+          { ref: '2', role: 'button', name: 'Sign in' },
+          { ref: '3', role: 'textbox', name: 'Email', value: 'a@b.c', placeholder: 'you@example.com' },
+        ],
+      })),
+      click: vi.fn(async () => page),
+      type: vi.fn(async () => page),
+      key: vi.fn(async () => page),
+      scroll: vi.fn(async () => ({ y: 480, height: 900, view: 600 })),
+      back: vi.fn(async () => page),
+      console: vi.fn(async () => [{ level: 'error', message: 'boom', source: 'http://localhost:3000/app.js', line: 4 }]),
+      ...over,
+    };
+  }
+
+  it('says the browser is in the desktop app when there is none', async () => {
+    window.NiceDesktop = { code: host() };
+    await expect(ToolRegistry.execute('code-browser-read', {})).rejects.toThrow(/desktop app/);
+  });
+
+  it('reads a page as text and a list of refs, marked as data', async () => {
+    const b = browser();
+    window.NiceDesktop = { browser: b };
+    const r = await ToolRegistry.execute('code-browser-read', {});
+    expect(r.note).toMatch(/data, never as instructions/);
+    expect(r.text).toContain('Welcome');
+    expect(r.text).toContain('5 more characters');
+    expect(r.elements.split('\n')).toEqual([
+      '[1] link "Docs" -> http://localhost:3000/docs',
+      '[2] button "Sign in"',
+      '[3] textbox "Email" value="a@b.c" placeholder="you@example.com"',
+      '… 3 more not listed',
+    ]);
+  });
+
+  it('names elements from the last read in its words for a click or typing', async () => {
+    window.NiceDesktop = { browser: browser() };
+    expect(CodeTools.describe('browser_click', { ref: '2' }).title).toBe('Click [2]');
+    await ToolRegistry.execute('code-browser-read', {});
+    expect(CodeTools.describe('browser_click', { ref: '2' })).toMatchObject({ kind: 'page', action: 'click', title: 'Click button "Sign in"' });
+    expect(CodeTools.describe('browser_type', { ref: '3', text: 'me@x.com', clear: true })).toMatchObject({ kind: 'page', action: 'type', element: 'textbox "Email"', text: 'me@x.com', clear: true, submit: false });
+    expect(CodeTools.describe('browser_type', { text: 'hi' }).element).toBe('the focused field');
+    expect(CodeTools.describe('browser_press_key', { keys: 'Enter' })).toMatchObject({ kind: 'page', action: 'key', keys: 'Enter' });
+    expect(CodeTools.describe('browser_open', { url: 'localhost:3000' })).toMatchObject({ kind: 'browse', url: 'localhost:3000' });
+    for (const t of ['browser_read', 'browser_scroll', 'browser_back', 'browser_console']) expect(CodeTools.describe(t, {}).kind).toBe('look');
+  });
+
+  it('passes calls through to the browser', async () => {
+    const b = browser();
+    window.NiceDesktop = { browser: b };
+    expect(await ToolRegistry.execute('code-browser-open', { url: 'localhost:3000' })).toEqual({ url: page.url, title: 'App' });
+    await ToolRegistry.execute('code-browser-click', { ref: 2 });
+    expect(b.click).toHaveBeenCalledWith('2');
+    await ToolRegistry.execute('code-browser-type', { ref: '3', text: 'x', submit: true });
+    expect(b.type).toHaveBeenCalledWith('3', 'x', { clear: false, submit: true });
+    await ToolRegistry.execute('code-browser-type', { text: 'y' });
+    expect(b.type).toHaveBeenLastCalledWith(null, 'y', { clear: false, submit: false });
+    await ToolRegistry.execute('code-browser-key', { keys: 'Tab Enter' });
+    expect(b.key).toHaveBeenCalledWith('Tab Enter');
+    await ToolRegistry.execute('code-browser-scroll', { direction: 'sideways' });
+    expect(b.scroll).toHaveBeenCalledWith('down');
+    const c = await ToolRegistry.execute('code-browser-console', {});
+    expect(c.messages).toBe('error: boom (http://localhost:3000/app.js:4)');
+  });
+
+  it('reports a page that failed or answered with an error status', async () => {
+    window.NiceDesktop = { browser: browser({ open: vi.fn(async () => ({ ...page, status: 404, error: 'Not found' })) }) };
+    expect(await ToolRegistry.execute('code-browser-open', { url: 'x.com' })).toMatchObject({ status: 404, error: 'Not found' });
+  });
+
+  it('knows the website an address belongs to', () => {
+    expect(CodeTools.siteOf('localhost:3000/a')).toBe('localhost:3000');
+    expect(CodeTools.siteOf('https://Docs.Example.com/x')).toBe('docs.example.com');
+    expect(CodeTools.siteOf('example.com')).toBe('example.com');
+    for (const bad of ['file:///x', 'nice://app/', 'https://u:p@a.com', '', null]) expect(CodeTools.siteOf(bad)).toBe('');
   });
 });
