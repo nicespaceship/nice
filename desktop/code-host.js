@@ -1158,7 +1158,7 @@ function _globSource(g, marks, from, to) {
 
 /** Plain object safe to send over IPC. */
 function serializeError(e) {
-  return { code: (e && e.code) || 'EUNKNOWN', message: (e && e.message) || String(e) };
+  return { code: (e && e.code) || 'EUNKNOWN', message: (e && e.message) || String(e), ...(e && Number.isInteger(e.status) ? { status: e.status } : {}) };
 }
 
 function _resetCommandPath() {
