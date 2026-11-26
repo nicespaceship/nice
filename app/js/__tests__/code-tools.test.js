@@ -81,6 +81,12 @@ describe('CodeTools', () => {
     expect(CodeTools.prefixCovers('npm test', 'npm test -- --watch')).toBe(true);
     expect(CodeTools.prefixCovers('npm test', 'npm testing')).toBe(false);
     expect(CodeTools.prefixCovers('git status', 'git push')).toBe(false);
+    expect(CodeTools.canRemember('npm test')).toBe(true);
+    expect(CodeTools.canRemember('git status')).toBe(true);
+    for (const c of ['make', 'sh -c ls', 'bash script.sh', "node -e 'x'", 'python3 x.py', '/usr/bin/env X=1', 'npx vitest', 'sudo ls',
+      'xargs rm', 'find . -delete', 'git -c core.pager=x log', 'npm --prefix /tmp test', 'npm test && rm -rf ~']) {
+      expect(CodeTools.canRemember(c)).toBe(false);
+    }
     for (const c of ['npm test && rm -rf ~', 'npm test; ls', 'npm test | sh', 'npm test $(rm x)', 'npm test `rm x`', 'npm test > out', 'npm test\nrm x', 'npm test \\\nrm']) {
       expect(CodeTools.isSimpleCommand(c)).toBe(false);
       expect(CodeTools.prefixCovers('npm test', c)).toBe(false);

@@ -152,6 +152,7 @@ const CodeView = (() => {
     _convoBlueprint = null;
     _lastThought = '';
     _answer(false);
+    _mode = 'ask';
     _allowEdits = false;
     _allowCmds.clear();
     _agentRun = null;
@@ -417,8 +418,8 @@ const CodeView = (() => {
     if (!p) return;
     _pending = null;
     if (ok && always) {
-      if (p.d.kind === 'run') _allowCmds.add(CodeTools.commandPrefix(p.d.command));
-      else _allowEdits = true;
+      if (p.d.kind !== 'run') _allowEdits = true;
+      else if (CodeTools.canRemember(p.d.command)) _allowCmds.add(CodeTools.commandPrefix(p.d.command));
     }
     p.resolve(!!ok);
     _paintAsk();
@@ -426,7 +427,7 @@ const CodeView = (() => {
 
   function _alwaysLabel(d) {
     if (d.kind === 'run') {
-      return CodeTools.isSimpleCommand(d.command) ? 'Always allow ' + CodeTools.commandPrefix(d.command) : null;
+      return CodeTools.canRemember(d.command) ? 'Always allow ' + CodeTools.commandPrefix(d.command) : null;
     }
     return 'Allow all edits this session';
   }
@@ -501,7 +502,7 @@ const CodeView = (() => {
     _lastThought = thought;
     const d = typeof CodeTools !== 'undefined' ? CodeTools.describe(step.action, step.actionInput) : { kind: 'other', title: String(step.action) };
     const obs = String(step.observation == null ? '' : step.observation);
-    let status = /^Action blocked/.test(obs) ? 'denied' : /^Error:/.test(obs) ? 'error' : 'ok';
+    let status = /^Action blocked/.test(obs) ? 'denied' : /^Stopped:/.test(obs) ? 'stopped' : /^Error:/.test(obs) ? 'error' : 'ok';
     let detail = obs;
     try {
       const r = JSON.parse(obs);
@@ -551,8 +552,8 @@ const CodeView = (() => {
     if (m.role === 'user') return `<div class="code-msg code-msg-user">${_esc(m.text)}</div>`;
     if (m.role === 'note') return `<div class="code-msg code-msg-note">${_esc(m.text)}</div>`;
     if (m.role === 'tool') {
-      const dot = { ok: 'dot-g', error: 'dot-r', denied: 'dot-r' }[m.status] || 'dot-i';
-      const label = m.status === 'denied' ? 'Denied: ' + m.title : m.title;
+      const dot = { ok: 'dot-g', error: 'dot-r', denied: 'dot-r', stopped: 'dot-r' }[m.status] || 'dot-i';
+      const label = m.status === 'denied' ? 'Denied: ' + m.title : m.status === 'stopped' ? 'Not run: ' + m.title : m.title;
       const sr = m.status === 'error' ? '<span class="sr-only"> (failed)</span>' : '';
       return `<details class="code-msg code-step"><summary><span class="status-dot ${dot}" aria-hidden="true"></span><span class="code-step-title">${_esc(label)}</span>${sr}</summary>${m.detail ? `<pre class="code-step-out">${_esc(m.detail)}</pre>` : ''}</details>`;
     }

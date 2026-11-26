@@ -1005,6 +1005,37 @@ describe('CodeView agent tools', () => {
     await expect(waiting).resolves.toBe(true);
   });
 
+  it('offers no Always allow for a shell or interpreter', async () => {
+    const { el, opts } = await started();
+    const waiting = opts.onApprovalNeeded(run("sh -c 'ls'"));
+    await flush();
+    expect(ask(el).querySelector('[data-answer="always"]')).toBeNull();
+    click(el, 'once');
+    await expect(waiting).resolves.toBe(true);
+    const again = opts.onApprovalNeeded(run("sh -c 'rm -rf ~'"));
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    click(el, 'deny');
+    await expect(again).resolves.toBe(false);
+  });
+
+  it('goes back to Ask before edits when the folder changes', async () => {
+    const { host, el } = await started();
+    const mode = el.querySelector('#code-mode');
+    mode.value = 'bypass';
+    mode.dispatchEvent(new Event('change', { bubbles: true }));
+    host.openFolder.mockResolvedValueOnce({ root: '/Users/me/other', name: 'other' });
+    el.querySelector('#code-change-folder').click();
+    await flush();
+    expect(el.querySelector('#code-mode').value).toBe('ask');
+    globalThis.AgentExecutor.converse.mockClear();
+    submitPrompt(el, 'again');
+    await flush();
+    AgentExecutor.converse.mock.calls[0][1].onApprovalNeeded(edit);
+    await flush();
+    expect(ask(el)).not.toBeNull();
+  });
+
   it('clears allowances and answers no when the folder changes', async () => {
     const { host, el, opts } = await started();
     const first = opts.onApprovalNeeded(edit);
@@ -1034,8 +1065,9 @@ describe('CodeView agent tools', () => {
     opts.onStep({ action: 'read_file', actionInput: { path: 'a.js' }, thought: 'Reading it first.', observation: JSON.stringify({ path: 'a.js', content: 'x' }) });
     opts.onStep({ action: 'run_command', actionInput: { command: 'npm test' }, thought: 'Reading it first.', observation: JSON.stringify({ exitCode: 1, stdout: 'FAIL', stderr: '' }) });
     opts.onStep({ action: 'edit_file', actionInput: { path: 'a.js' }, thought: '', observation: 'Action blocked — user declined approval.' });
+    opts.onStep({ action: 'run_command', actionInput: { command: 'ls' }, thought: '', observation: 'Stopped: the chat moved on before this ran.' });
     const steps = [...el.querySelectorAll('.code-step')];
-    expect(steps.map(s => s.querySelector('.code-step-title').textContent)).toEqual(['Read a.js', 'Run npm test', 'Denied: Edit a.js']);
+    expect(steps.map(s => s.querySelector('.code-step-title').textContent)).toEqual(['Read a.js', 'Run npm test', 'Denied: Edit a.js', 'Not run: Run ls']);
     expect(steps[0].querySelector('.code-step-out').textContent).toBe('x');
     expect(steps[1].querySelector('.code-step-out').textContent).toBe('FAIL\nExit code 1');
     expect(steps[2].querySelector('.dot-r')).not.toBeNull();

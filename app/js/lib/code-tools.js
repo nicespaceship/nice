@@ -205,12 +205,32 @@ const CodeTools = (() => {
     return String(command || '').trim().split(/\s+/).slice(0, 2).join(' ');
   }
 
+  /* First words whose allowance would run anything: shells, interpreters
+     and wrappers that take a whole command as an argument. */
+  const OPEN_ENDED = new Set(['sh', 'bash', 'zsh', 'fish', 'dash', 'ksh', 'csh', 'tcsh', 'env', 'sudo', 'doas', 'su',
+    'xargs', 'eval', 'exec', 'command', 'builtin', 'nohup', 'time', 'timeout', 'nice', 'watch', 'ssh', 'osascript',
+    'node', 'deno', 'bun', 'python', 'python2', 'python3', 'ruby', 'perl', 'php', 'lua', 'npx', 'pnpx', 'bunx', 'uvx',
+    'find', 'awk', 'sed', 'open']);
+
   /* A command "always allow" may cover: one program and its arguments, with
      no shell operators, so "npm test && rm -rf ~" is never covered by an
      allowance for "npm test". */
   function isSimpleCommand(command) {
     const c = String(command || '').trim();
     return !!c && !/[;&|`$<>\n\r(){}\\]/.test(c);
+  }
+
+  /* Whether "always allow" may be offered for this command: simple, two
+     words at least, a program that does not run other code given to it,
+     and a second word that is not a flag (so "git -c ..." or "npm --prefix"
+     are asked about each time). */
+  function canRemember(command) {
+    if (!isSimpleCommand(command)) return false;
+    const words = String(command).trim().split(/\s+/);
+    if (words.length < 2) return false;
+    const prog = words[0].split('/').pop().toLowerCase();
+    if (OPEN_ENDED.has(prog) || /^python\d/.test(prog) || /[=*?\[\]~'"]/.test(words[0] + words[1])) return false;
+    return !words[1].startsWith('-');
   }
 
   /** Whether an allowance for `prefix` covers `command`. */
@@ -221,7 +241,7 @@ const CodeTools = (() => {
     return want.every((w, i) => words[i] === w);
   }
 
-  return { IDS, TOOLS, AGENT_TAG, register, get, describe, commandPrefix, isSimpleCommand, prefixCovers, READ_LIMIT };
+  return { IDS, TOOLS, AGENT_TAG, register, get, describe, commandPrefix, isSimpleCommand, canRemember, prefixCovers, READ_LIMIT };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = CodeTools;

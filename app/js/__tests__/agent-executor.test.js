@@ -561,6 +561,24 @@ describe('AgentExecutor', () => {
       expect(msgs[4].content).toBe('second');
     });
 
+    it('keeps a stopped turn\'s finished tool calls with keepToolTurns', async () => {
+      _scriptedResponses.push(toolTurn('tu-s'), answer('two'));
+      let stop = false;
+      const controller = AgentExecutor.converse(agent, {
+        tools: ['outlook_search_messages'], keepToolTurns: true,
+        shouldStop: () => stop,
+        onStep: () => { stop = true; },
+      });
+      const first = await controller.send('first');
+      expect(first.stopped).toBe(true);
+      stop = false;
+      await controller.send('second');
+      const msgs = _capturedRequests[1].messages.filter(m => m.role !== 'system');
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
+      expect(callIds(msgs)).toEqual(['tu-s-0']);
+      expect(msgs[3].content).toMatch(/^Stopped/);
+    });
+
     it('keeps only the answer without keepToolTurns', async () => {
       _scriptedResponses.push(toolTurn('tu-b'), answer('one'), answer('two'));
       const controller = AgentExecutor.converse(agent, { tools: ['outlook_search_messages'] });

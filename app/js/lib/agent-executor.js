@@ -1174,23 +1174,6 @@ const AgentExecutor = (() => {
 
       totalTokens += tokensRef.value;
 
-      if (loop.stopped) {
-        // The turn never finished: take its prompt back out so the history
-        // still alternates user / assistant if the conversation goes on.
-        const at = history.lastIndexOf(userTurn);
-        if (at !== -1) history.splice(at, 1);
-        _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, {
-          event: 'turn_stopped',
-          stopped: true,
-          duration_ms: Date.now() - startMs,
-          steps_used: loop.stepsUsed,
-          total_tokens: tokensRef.value,
-        });
-        const turnResult = { text: '', steps, done: false, stopped: true, totalTokens, duration: Date.now() - startMs };
-        if (opts.onTurn) opts.onTurn(turnResult);
-        return turnResult;
-      }
-
       // keepToolTurns: the tool calls and results of this turn stay in the
       // history, so a later turn still knows what it read and changed
       // (Code). Otherwise only the answer is kept. A turn cut off at
@@ -1216,6 +1199,31 @@ const AgentExecutor = (() => {
         }
         history.splice(at + 1, 0, ...turn.slice(0, Math.min(keep, turn.length)));
       };
+
+      if (loop.stopped) {
+        // The turn never finished. Its finished tool calls may have changed
+        // things, so with keepToolTurns they stay, closed by a note;
+        // otherwise its prompt comes back out so the history still
+        // alternates user / assistant if the conversation goes on.
+        const before = history.length;
+        keepTurn();
+        if (history.length > before) {
+          history.push({ role: 'assistant', content: _STOP_TURN_NOTE });
+        } else {
+          const at = history.lastIndexOf(userTurn);
+          if (at !== -1) history.splice(at, 1);
+        }
+        _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, {
+          event: 'turn_stopped',
+          stopped: true,
+          duration_ms: Date.now() - startMs,
+          steps_used: loop.stepsUsed,
+          total_tokens: tokensRef.value,
+        });
+        const turnResult = { text: '', steps, done: false, stopped: true, totalTokens, duration: Date.now() - startMs };
+        if (opts.onTurn) opts.onTurn(turnResult);
+        return turnResult;
+      }
 
       if (loop.error) {
         const errorMsg = 'Error: ' + loop.error;
