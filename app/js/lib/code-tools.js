@@ -210,7 +210,12 @@ const CodeTools = (() => {
   const OPEN_ENDED = new Set(['sh', 'bash', 'zsh', 'fish', 'dash', 'ksh', 'csh', 'tcsh', 'env', 'sudo', 'doas', 'su',
     'xargs', 'eval', 'exec', 'command', 'builtin', 'nohup', 'time', 'timeout', 'nice', 'watch', 'ssh', 'osascript',
     'node', 'deno', 'bun', 'python', 'python2', 'python3', 'ruby', 'perl', 'php', 'lua', 'npx', 'pnpx', 'bunx', 'uvx',
-    'find', 'awk', 'sed', 'open']);
+    'find', 'awk', 'sed', 'open', 'cmd', 'powershell', 'pwsh', 'wsl', 'start', 'caffeinate', 'stdbuf', 'script',
+    'arch', 'chroot', 'unbuffer', 'nsenter', 'flock', 'parallel', 'make']);
+  // Subcommands that run other code or set what later runs: npm exec,
+  // pnpm dlx, git config (a pager or "!" alias is a shell command).
+  const OPEN_ENDED_PAIRS = new Set(['npm exec', 'npm x', 'pnpm exec', 'pnpm dlx', 'yarn exec', 'yarn dlx', 'bun x', 'bun exec',
+    'git config', 'git -c', 'docker run', 'docker exec', 'kubectl exec']);
 
   /* A command "always allow" may cover: one program and its arguments, with
      no shell operators, so "npm test && rm -rf ~" is never covered by an
@@ -230,7 +235,9 @@ const CodeTools = (() => {
     if (words.length < 2) return false;
     const prog = words[0].split('/').pop().toLowerCase();
     if (OPEN_ENDED.has(prog) || /^python\d/.test(prog) || /[=*?\[\]~'"]/.test(words[0] + words[1])) return false;
-    return !words[1].startsWith('-');
+    if (OPEN_ENDED_PAIRS.has(prog + ' ' + words[1].toLowerCase())) return false;
+    // A flag, in its Unix or Windows form (cmd /c), is asked about each time.
+    return !/^[-/]/.test(words[1]);
   }
 
   /** Whether an allowance for `prefix` covers `command`. */

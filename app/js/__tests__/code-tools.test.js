@@ -84,7 +84,8 @@ describe('CodeTools', () => {
     expect(CodeTools.canRemember('npm test')).toBe(true);
     expect(CodeTools.canRemember('git status')).toBe(true);
     for (const c of ['make', 'sh -c ls', 'bash script.sh', "node -e 'x'", 'python3 x.py', '/usr/bin/env X=1', 'npx vitest', 'sudo ls',
-      'xargs rm', 'find . -delete', 'git -c core.pager=x log', 'npm --prefix /tmp test', 'npm test && rm -rf ~']) {
+      'xargs rm', 'find . -delete', 'git -c core.pager=x log', 'npm --prefix /tmp test', 'npm test && rm -rf ~',
+      'cmd /c del x', 'pwsh Remove-Item', 'npm exec rm', 'npm x foo', 'pnpm dlx foo', 'yarn dlx x', 'git config alias.x', 'caffeinate sh', 'make all']) {
       expect(CodeTools.canRemember(c)).toBe(false);
     }
     for (const c of ['npm test && rm -rf ~', 'npm test; ls', 'npm test | sh', 'npm test $(rm x)', 'npm test `rm x`', 'npm test > out', 'npm test\nrm x', 'npm test \\\nrm']) {

@@ -356,8 +356,19 @@ const AgentExecutor = (() => {
         // which blocks were rejected so the all-declined nudge below still fires.
         const declined = new Set();
         const toolResultParts = [];
+        // Stopped partway through this response: the calls that already ran
+        // stay on record (converse keepToolTurns), as the reply with just
+        // those calls and their results. `skip` is a call that did not run.
+        const stopMid = (skip) => {
+          const ran = toolResultParts.map(p => p.tool_use_id).filter(id => id !== skip);
+          if (ran.length) {
+            conversationMessages.push({ role: 'assistant', content: contentParts.filter(p => p.type !== 'tool_use' || ran.includes(p.id)) });
+            conversationMessages.push({ role: 'user', content: toolResultParts.filter(p => ran.includes(p.tool_use_id)) });
+          }
+          return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
+        };
         for (const block of toolUseBlocks) {
-          if (stopped()) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
+          if (stopped()) return stopMid();
           let observation;
           let isError = false;
           let wasStopped = false;
@@ -432,7 +443,7 @@ const AgentExecutor = (() => {
             ...(wasStopped ? { stopped: true } : {}),
           });
 
-          if (wasStopped) return { finalAnswer: null, stepsUsed: stepIdx, stopped: true };
+          if (wasStopped) return stopMid(block.id);
           if (stepIdx >= maxSteps) break;
         }
 
