@@ -1308,9 +1308,11 @@ describe('CodeView browser', () => {
     const { br, el } = await withBrowser();
     await showTab(el);
     await br.open('localhost:3000');
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
+    // Clipped to the window (jsdom's is 1024 wide).
     viewport(el).getBoundingClientRect = () => ({ left: 800, top: 120, width: 400, height: 600 });
     await flush();
-    expect(br.place).toHaveBeenLastCalledWith({ x: 800, y: 120, width: 400, height: 600 });
+    expect(br.place).toHaveBeenLastCalledWith({ x: 800, y: 120, width: 224, height: 600 });
     const calls = br.place.mock.calls.length;
     await flush();
     expect(br.place.mock.calls.length).toBe(calls);
@@ -1332,11 +1334,73 @@ describe('CodeView browser', () => {
     expect(br.place).toHaveBeenLastCalledWith(null);
     el.querySelector('#code-tab-browser').click();
     await flush();
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
     viewport(el).getBoundingClientRect = () => ({ left: 600, top: 120, width: 400, height: 600 });
     await flush();
+    expect(br.place).toHaveBeenLastCalledWith({ x: 600, y: 120, width: 400, height: 600 });
     CodeView.destroy();
     await flush();
     expect(br.place).toHaveBeenLastCalledWith(null);
+  });
+
+  it('hides the browser under any modal dialog that shows, and under anything over its viewport', async () => {
+    const { br, el } = await withBrowser();
+    await showTab(el);
+    await br.open('localhost:3000');
+    el.querySelector('.code-panel').getBoundingClientRect = () => ({ left: 400, top: 60, right: 1024, bottom: 768 });
+    viewport(el).getBoundingClientRect = () => ({ left: 600, top: 120, width: 400, height: 600 });
+    await flush();
+    const shown = { x: 600, y: 120, width: 400, height: 600 };
+    expect(br.place).toHaveBeenLastCalledWith(shown);
+    const modal = document.createElement('div');
+    modal.setAttribute('aria-modal', 'true');
+    modal.getClientRects = () => [{}];
+    document.body.appendChild(modal);
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(null);
+    modal.remove();
+    await flush();
+    expect(br.place).toHaveBeenLastCalledWith(shown);
+    for (const cls of ['auth-modal-overlay open', 'upgrade-modal-overlay open']) {
+      const o = document.createElement('div');
+      o.className = cls;
+      document.body.appendChild(o);
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(null);
+      o.remove();
+      await flush();
+    }
+    const cover = document.createElement('div');
+    document.body.appendChild(cover);
+    document.elementFromPoint = () => cover;
+    try {
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(null);
+      document.elementFromPoint = () => viewport(el);
+      await flush();
+      expect(br.place).toHaveBeenLastCalledWith(shown);
+    } finally { delete document.elementFromPoint; cover.remove(); }
+  });
+
+  it('binds each approval to the site the page is on, under Always allow and Bypass too', async () => {
+    const { br, el, opts } = await withBrowser({ agent: true });
+    await br.open('example.com');
+    const input = { ref: '2' };
+    const waiting = opts.onApprovalNeeded({ tool: 'browser_click', input });
+    await flush();
+    click(el, 'always');
+    await expect(waiting).resolves.toBe(true);
+    window.NiceDesktop.browser = { ...br, click: vi.fn(async () => ({})) };
+    await ToolRegistry.execute('code-browser-click', input, { approvalMode: 'review', onApprovalNeeded: async () => true });
+    expect(window.NiceDesktop.browser.click).toHaveBeenCalledWith('2', { expectHost: 'example.com' });
+    window.NiceDesktop.browser = br;
+    const mode = el.querySelector('#code-mode');
+    mode.value = 'bypass'; mode.dispatchEvent(new Event('change', { bubbles: true }));
+    const open = { url: 'localhost:3000' };
+    await expect(opts.onApprovalNeeded({ tool: 'browser_open', input: open })).resolves.toBe(true);
+    const spy = vi.spyOn(br, 'open');
+    await ToolRegistry.execute('code-browser-open', open, {});
+    expect(spy).toHaveBeenLastCalledWith('localhost:3000', { expectHost: 'localhost:3000' });
   });
 
   it('asks before opening a page, brings the Browser tab up, and remembers a site', async () => {

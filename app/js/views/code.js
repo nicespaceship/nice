@@ -32,9 +32,10 @@ const CodeView = (() => {
   const TABS = ['files', 'terminal', 'browser'];
   const TERM_MAX_CHARS = 200000;
   // The browser is drawn by the desktop app above the whole page, so it is
-  // hidden while any of these could be under it: an open dialog, the
-  // command palette, the API keys dialog, a toast.
-  const COVERS = '.modal-overlay.open, .cmd-palette.open, #code-keys-dialog, #notify-container > *';
+  // hidden while anything could be under it: a modal dialog that shows (any
+  // aria-modal), the command palette, a toast, or anything else that sits
+  // over the viewport where the browser goes (checked at a few points).
+  const COVERS = '.modal-overlay.open, .auth-modal-overlay.open, .upgrade-modal-overlay.open, .cmd-palette.open, #notify-container > *';
   const SEND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   const STOP_ICON = '<span class="code-stop-square" aria-hidden="true"></span>';
   const STOPPING_TEXT = 'Stopping. Code drops the reply when it arrives, and then you can send a new message.';
@@ -114,13 +115,20 @@ const CodeView = (() => {
   const _isOwnKey = (id) => typeof id === 'string' && id.startsWith('byo:');
   const _busyNow = () => !!_turn && _turn.gen === _gen;
 
+  // Read once and kept in memory: the browser's placement checks it every frame.
+  let _panel = null;
   function _panelState() {
+    if (_panel) return _panel;
     let s = {};
     try { s = JSON.parse(localStorage.getItem(PANEL_KEY) || '{}') || {}; } catch { s = {}; }
     const ok = TABS.includes(s.tab) && (s.tab !== 'browser' || !!_browser());
-    return { open: s.open !== false, tab: ok ? s.tab : 'files' };
+    _panel = { open: s.open !== false, tab: ok ? s.tab : 'files' };
+    return _panel;
   }
-  function _savePanel(s) { try { localStorage.setItem(PANEL_KEY, JSON.stringify(s)); } catch {} }
+  function _savePanel(s) {
+    _panel = { open: s.open !== false, tab: s.tab };
+    try { localStorage.setItem(PANEL_KEY, JSON.stringify(s)); } catch {}
+  }
 
   /* ── Render ─────────────────────────────────────────────────────── */
 
@@ -621,13 +629,20 @@ const CodeView = (() => {
       d.url = (st && st.url) || '';
       d.site = CodeTools.siteOf(d.url);
     }
-    if (d.kind === 'browse' || d.kind === 'page') _revealBrowser();
-    if (_preapproved(d)) return true;
-    _answer(false);
-    return new Promise(resolve => {
-      _pending = { gen, d, input: req.input || {}, resolve };
-      _paintAsk(true);
-    });
+    const web = d.kind === 'browse' || d.kind === 'page';
+    if (web) _revealBrowser();
+    let ok = _preapproved(d);
+    if (!ok) {
+      _answer(false);
+      ok = await new Promise(resolve => {
+        _pending = { gen, d, input: req.input || {}, resolve };
+        _paintAsk(true);
+      });
+    }
+    // What was allowed is this site: the browser refuses the call if the
+    // page has moved to another one by the time it runs.
+    if (ok && web) CodeTools.approveSite(req.input, d.site);
+    return ok;
   }
 
   function _answer(ok, always) {
@@ -936,9 +951,23 @@ const CodeView = (() => {
     const vp = _el.querySelector('#code-browser-view');
     if (!vp || !vp.isConnected) return null;
     if (document.querySelector(COVERS)) return null;
-    const r = vp.getBoundingClientRect();
-    if (r.width < 2 || r.height < 2) return null;
-    return { x: r.left, y: r.top, width: r.width, height: r.height };
+    for (const m of document.querySelectorAll('[aria-modal="true"]')) if (m.getClientRects().length) return null;
+    // Only the part of the viewport inside the window and the panel.
+    const v = vp.getBoundingClientRect();
+    const panel = vp.closest('.code-panel');
+    const p = panel ? panel.getBoundingClientRect() : { left: 0, top: 0, right: Infinity, bottom: Infinity };
+    const left = Math.max(v.left, p.left, 0), top = Math.max(v.top, p.top, 0);
+    const right = Math.min(v.left + v.width, p.right, window.innerWidth || Infinity);
+    const bottom = Math.min(v.top + v.height, p.bottom, window.innerHeight || Infinity);
+    if (right - left < 2 || bottom - top < 2) return null;
+    if (typeof document.elementFromPoint === 'function') {
+      const xs = [left + 4, (left + right) / 2, right - 4], ys = [top + 4, (top + bottom) / 2, bottom - 4];
+      for (const x of xs) for (const y of ys) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit && !vp.contains(hit)) return null;
+      }
+    }
+    return { x: left, y: top, width: right - left, height: bottom - top };
   }
 
   function _placeBrowser() {
@@ -1281,6 +1310,7 @@ const CodeView = (() => {
     _termHistoryAt = -1;
     _treeSeq = 0;
     _readSeq = 0;
+    _panel = null;
     try { localStorage.removeItem(PANEL_KEY); localStorage.removeItem(MODEL_KEY); } catch {}
     if (_offRunData) { _offRunData(); _offRunData = null; }
   }
