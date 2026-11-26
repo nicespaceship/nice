@@ -1155,6 +1155,50 @@ describe('Models on the user\'s own keys', () => {
     expect(PromptPanel._modelHasCapability(OWN, 'pdf')).toBe(false);
   });
 
+  async function ownCard(chat) {
+    desktop(chat);
+    await OwnKeys.load(true);
+    OwnKeys.setOn(OWN, true);
+    SpaceCards.toggle(OWN);
+    SpaceCards.toggle('gemini-2-5-flash');
+  }
+
+  it('asks nice-ai again when the theme changes', async () => {
+    await ownCard();
+    localStorage.setItem(Utils.KEYS.theme, 'nice');
+    PromptPanel._sendToCards('One');
+    await settled();
+    localStorage.setItem(Utils.KEYS.theme, 'matrix');
+    PromptPanel._sendToCards('Two');
+    await settled();
+    expect(calls.filter(c => c.prompt_only).map(c => c.theme_id)).toEqual(['nice', 'matrix']);
+  });
+
+  it('says to sign in, on the card, when there is no NICE session', async () => {
+    await ownCard();
+    const getSession = SB.client.auth.getSession;
+    SB.client.auth.getSession = async () => ({ data: { session: null } });
+    try {
+      PromptPanel._sendToCards('Hi');
+      await settled();
+    } finally { SB.client.auth.getSession = getSession; }
+    const reply = PromptPanel.messages().find(m => m.role === 'assistant');
+    expect(reply).toMatchObject({ modelId: OWN, error: true });
+    expect(reply.text).toMatch(/^Sign in to NICE to use your own keys here/);
+    expect(window.NiceDesktop.llm.chat).not.toHaveBeenCalled();
+  });
+
+  it('drops a reply that comes back after the card was stopped', async () => {
+    let answer;
+    await ownCard(vi.fn(() => new Promise(r => { answer = r; })));
+    PromptPanel._sendToCards('Slow one');
+    await vi.waitFor(() => { if (!answer) throw new Error('not called yet'); });
+    PromptPanel.destroy();
+    answer({ content: [{ type: 'text', text: 'Too late' }] });
+    await new Promise(r => setTimeout(r, 20));
+    expect(PromptPanel.messages().some(m => m.text === 'Too late')).toBe(false);
+  });
+
   it('says on the card when the provider turns the call down', async () => {
     desktop(vi.fn(async () => { throw { code: 'EKEY', message: 'OpenAI refused the key.' }; }));
     await OwnKeys.load(true);

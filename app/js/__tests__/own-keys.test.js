@@ -109,6 +109,26 @@ describe('OwnKeys', () => {
     expect(document.querySelector('.own-key-row[data-provider="openai"] summary').textContent).toBe('In Space and chat: 0 of 2 models');
   });
 
+  it('keeps focus on the same switch when the list repaints', async () => {
+    window.NiceDesktop = { llm: fakeLlm() };
+    await OwnKeys.load();
+    await OwnKeys.openKeys();
+    await flush();
+    const box = () => document.querySelector('input[data-model="byo:openai:gpt-4o"]');
+    document.querySelector('.own-key-row[data-provider="openai"] details').open = true;
+    box().focus();
+    await OwnKeys.load(true);
+    await flush();
+    expect(document.activeElement).toBe(box());
+  });
+
+  it('closes when the route changes', async () => {
+    window.NiceDesktop = { llm: fakeLlm() };
+    await OwnKeys.openKeys();
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(document.getElementById('own-keys-dialog')).toBeNull();
+  });
+
   it('keys names and model names out of the markup', async () => {
     window.NiceDesktop = { llm: fakeLlm({ models: { openai: [{ id: 'x"><img src=x onerror=alert(1)>', label: '<b>bold</b>' }] } }) };
     await OwnKeys.load();

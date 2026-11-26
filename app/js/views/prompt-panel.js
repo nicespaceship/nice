@@ -2030,9 +2030,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   }
 
   async function _callEdgeLLM(userText, opts = {}) {
-    if (typeof SB === 'undefined' || !SB.client) return null;
-    const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
-    if (!supabaseUrl) return null;
+    // A model on the user's own key goes on without nice-ai's URL here, so a
+    // missing sign-in says so on its card (_ownKeySystem) instead of failing quietly.
+    const ownKeyTarget = typeof OwnKeys !== 'undefined' && OwnKeys.isOwnKey(opts.modelOverride || _getSelectedModel().id);
+    if (!ownKeyTarget && (typeof SB === 'undefined' || !SB.client)) return null;
+    const supabaseUrl = (typeof SB !== 'undefined' && SB.client && (SB.client.supabaseUrl || SB.client._supabaseUrl)) || '';
+    if (!supabaseUrl && !ownKeyTarget) return null;
 
     // Use caller-supplied signal (e.g. an external cancel) or the shared
     // in-flight abort controller for the default send path.
@@ -2206,10 +2209,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      The desktop app calls the provider with the user's key (OwnKeys.chat).
      The system prompt is the theme's, from nice-ai's prompt-only mode, so
      the reply sounds like the theme; nothing is billed. That needs a NICE
-     sign-in, as Space does. One prompt is kept per theme, callsign,
-     provider and app context, the last one asked for. */
+     sign-in, as Space does. The last prompt is kept per provider, for the
+     theme, callsign and app context it was made for, and cards asking at
+     once share one request. */
   const _OWN_PROMPT_PROVIDER = { anthropic: 'anthropic', google: 'gemini', openai: 'openai', xai: 'xai', groq: 'groq', deepseek: 'deepseek' };
-  let _ownPrompt = null;   // { key, system }
+  let _ownPrompt = new Map();   // provider → { key, promise }
 
   async function _ownKeySystem(provider) {
     if (typeof SB === 'undefined' || !SB.client) throw new Error('Sign in to NICE to use your own keys here: NICE gives the reply your theme\'s voice.');
@@ -2226,16 +2230,22 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const callsign = Utils.sanitizeCallsign(localStorage.getItem(Utils.KEYS.callsign));
     if (callsign) req.callsign = callsign;
     const key = JSON.stringify(req);
-    if (_ownPrompt && _ownPrompt.key === key) return _ownPrompt.system;
-    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SB._key, 'Authorization': 'Bearer ' + token },
-      body: key,
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data || typeof data.system !== 'string') throw new Error((data && data.error) || 'NICE could not get your theme\'s voice for this reply. Try again.');
-    _ownPrompt = { key, system: data.system };
-    return data.system;
+    const cached = _ownPrompt.get(req.provider);
+    if (cached && cached.key === key) return cached.promise;
+    const promise = (async () => {
+      const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SB._key, 'Authorization': 'Bearer ' + token },
+        body: key,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || typeof data.system !== 'string') throw new Error((data && data.error) || 'NICE could not get your theme\'s voice for this reply. Try again.');
+      return data.system;
+    })();
+    _ownPrompt.set(req.provider, { key, promise });
+    // A failed request is not kept: the next message asks again.
+    promise.catch(() => { const c = _ownPrompt.get(req.provider); if (c && c.promise === promise) _ownPrompt.delete(req.provider); });
+    return promise;
   }
 
   async function _callOwnKey(model, modelLabel, history, signal, opts) {
@@ -2247,7 +2257,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (typeof LLMActivity !== 'undefined') _activity = LLMActivity.start(model);
       let data;
       try {
-        data = await OwnKeys.chat({ model, messages: [{ role: 'system', content: system }, ...history], temperature: 0.4 });
+        // The same reply length as NICE's own chat: the user pays for it.
+        data = await OwnKeys.chat({ model, messages: [{ role: 'system', content: system }, ...history], temperature: 0.4, max_tokens: 2048 });
       } catch (e) {
         const err = new Error((e && e.message) || 'Your key\'s provider did not answer.');
         if (e && e.code) err.code = e.code;
@@ -4156,7 +4167,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
     _abortSends();
-    _ownPrompt = null;
+    _ownPrompt = new Map();
     _userPickedModel = false;
     _lastModelValue = null;
     // Stop speech recognition & mic

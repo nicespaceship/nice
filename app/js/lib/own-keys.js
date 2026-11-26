@@ -168,6 +168,8 @@ const OwnKeys = (() => {
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
     dlg.querySelector('#own-keys-close').addEventListener('click', closeKeys);
+    // It belongs to the page it opened on: a route change closes it.
+    window.addEventListener('hashchange', closeKeys);
     const list = dlg.querySelector('#own-keys-list');
     list.addEventListener('submit', _onSubmit);
     list.addEventListener('click', _onRemove);
@@ -176,6 +178,7 @@ const OwnKeys = (() => {
   }
 
   function closeKeys() {
+    window.removeEventListener('hashchange', closeKeys);
     const dlg = document.getElementById('own-keys-dialog');
     if (!dlg) return;
     dlg.remove();
@@ -205,8 +208,12 @@ const OwnKeys = (() => {
     try { providers = await llm.providers(); }
     catch (e) { list.innerHTML = `<p class="own-keys-err">${_esc((e && e.message) || 'Could not read the saved keys.')}</p>`; return; }
     if (seq !== _paintSeq || !list.isConnected) return;
-    // Open model lists stay open through a repaint.
+    // Open model lists stay open through a repaint, and focus stays where it
+    // was (the same switch, or the same row's control), so Escape and Tab
+    // keep working when a load lands while the dialog is open.
     const open = new Set([...list.querySelectorAll('.own-key-row')].filter(r => r.querySelector('details[open]')).map(r => r.dataset.provider));
+    const active = list.contains(document.activeElement) ? document.activeElement : null;
+    const was = active && { model: active.dataset.model || null, row: (active.closest('.own-key-row') || {}).dataset?.provider || null, summary: active.tagName === 'SUMMARY' };
     list.innerHTML = providers.map(p => {
       const g = _groups.get(p.id);
       const status = p.hasKey
@@ -223,8 +230,15 @@ const OwnKeys = (() => {
           <p class="own-keys-err" role="alert"></p>
         </form>`;
     }).join('');
-    open.forEach(pid => { const d = list.querySelector(`.own-key-row[data-provider="${CSS.escape(pid)}"] details`); if (d) d.open = true; });
+    open.forEach(pid => { const r = _row(pid); const d = r && r.querySelector('details'); if (d) d.open = true; });
     if (focusFirst) { const first = list.querySelector('input, button'); if (first) first.focus(); }
+    else if (was) {
+      const r = was.row ? _row(was.row) : null;
+      const back = (was.model && [...list.querySelectorAll('input[data-model]')].find(x => x.dataset.model === was.model))
+        || (r && was.summary && r.querySelector('summary'))
+        || (r && r.querySelector('input, button'));
+      if (back) back.focus(); else _holdFocus();
+    }
   }
 
   // While the list repaints, focus waits on the dialog itself, so Escape
@@ -234,7 +248,8 @@ const OwnKeys = (() => {
     if (box) box.focus();
   }
 
-  const _row = (pid) => document.querySelector(`.own-key-row[data-provider="${CSS.escape(pid)}"]`);
+  // By dataset, not a selector: a provider id never goes into one.
+  const _row = (pid) => [...document.querySelectorAll('.own-key-row')].find(r => r.dataset.provider === pid) || null;
 
   async function _onSubmit(e) {
     e.preventDefault();

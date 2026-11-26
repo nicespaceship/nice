@@ -104,3 +104,21 @@ describe('VaultView model toggle', () => {
     expect(mocks.State.get('enabled_models')[id]).toBeUndefined();
   });
 });
+
+describe('VaultView own API keys', () => {
+  afterEach(() => { delete window.NiceDesktop; OwnKeys._test.reset(); });
+
+  it('has no own-keys section on the website', async () => {
+    const { el } = await mountView(VaultView);
+    expect(el.querySelector('#vault-own-keys')).toBeNull();
+  });
+
+  it('opens API keys from the desktop app', async () => {
+    window.NiceDesktop = { llm: { providers: async () => [{ id: 'openai', label: 'OpenAI', hasKey: false }], models: async () => [] } };
+    const { el } = await mountView(VaultView);
+    el.querySelector('#vault-own-keys').click();
+    await new Promise(r => setTimeout(r, 10));
+    expect(document.getElementById('own-keys-dialog')).not.toBeNull();
+    OwnKeys.closeKeys();
+  });
+});
