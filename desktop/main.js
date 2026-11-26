@@ -3,11 +3,12 @@
  * Lightweight wrapper loading the NICE web app locally.
  */
 
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, protocol, session, shell, ipcMain, dialog, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const AppProtocol = require('./app-protocol');
 const { Workspace, serializeError, runTag } = require('./code-host');
+const { createLlmHost } = require('./llm-host');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -242,6 +243,15 @@ handle('code:cancel', (event, tag) => {
   if (set.size > 100) set.delete(set.values().next().value);
   return true;
 });
+
+/* ── Your own API keys (llm-host.js) ── */
+let _llm = null;
+const llm = () => _llm || (_llm = createLlmHost({ file: path.join(app.getPath('userData'), 'provider-keys.json'), safeStorage }));
+handle('llm:providers', () => llm().providers());
+handle('llm:set-key', (event, provider, key) => llm().setKey(provider, key));
+handle('llm:clear-key', (event, provider) => llm().clearKey(provider));
+handle('llm:models', (event, provider) => llm().models(provider));
+handle('llm:chat', (event, body) => llm().chat(body));
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)

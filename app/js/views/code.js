@@ -10,6 +10,10 @@
    prompt bar under it; a closable panel on the right with Files and
    Terminal tabs.
 
+   Models: NICE's hosted ones (a NICE account) or the user's own API keys,
+   which the desktop app keeps and calls with (NiceDesktop.llm, see
+   desktop/llm-host.js); the page only learns which providers have a key.
+
    The agent reads, lists and searches the folder on its own, and asks
    before it edits or writes a file or runs a command (CodeTools). The
    permission mode in the prompt bar and "Always allow" answers last for
@@ -75,6 +79,11 @@ const CodeView = (() => {
   let _treeSeq = 0;              // the latest tree paint wins
   let _readSeq = 0;              // the latest file click wins
 
+  // Models on the user's own keys: provider id → { label, models: [{ id, label }] }
+  let _ownModels = new Map();
+  let _ownLoad = null;           // the load in flight
+  let _keysReturn = null;        // what gets focus back when API keys closes
+
   // Terminal tab
   let _termText = '';
   // While a command runs: its tag, the id the host's 'start' event gives
@@ -85,6 +94,8 @@ const CodeView = (() => {
   let _termHistoryAt = -1;
 
   const _host = () => (typeof window !== 'undefined' && window.NiceDesktop && window.NiceDesktop.code) || null;
+  const _llm = () => (typeof window !== 'undefined' && window.NiceDesktop && window.NiceDesktop.llm) || null;
+  const _isOwnKey = (id) => typeof id === 'string' && id.startsWith('byo:');
   const _busyNow = () => !!_turn && _turn.gen === _gen;
 
   function _panelState() {
@@ -162,6 +173,7 @@ const CodeView = (() => {
     _openFile = null;
     _linkDirs.clear();
     _termText = '';
+    _keysReturn = null;
     // No kill from here: by now host.openFolder() has swapped the workspace,
     // so a kill would reach the new folder and find nothing. The
     // code:open-folder handler in desktop/main.js stops the old folder's
@@ -181,6 +193,7 @@ const CodeView = (() => {
               <span>${_esc(_ws.name)}</span>
             </button>
             <div class="code-chat-tools">
+              <button type="button" class="code-icon-btn" id="code-keys" aria-label="API keys" title="API keys"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-key"/></svg></button>
               <button type="button" class="code-icon-btn" data-panel="files" aria-label="Files" title="Files"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-folder"/></svg></button>
               <button type="button" class="code-icon-btn" data-panel="terminal" aria-label="Terminal" title="Terminal"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-terminal"/></svg></button>
             </div>
@@ -215,10 +228,12 @@ const CodeView = (() => {
     _paintSend();
     _renderThread();
     _renderPanel();
+    _loadOwnModels();
   }
 
   function _bind(el) {
     el.querySelector('#code-change-folder').addEventListener('click', _openFolder);
+    el.querySelector('#code-keys').addEventListener('click', (e) => _openKeys(e.currentTarget));
     el.querySelectorAll('[data-panel]').forEach(b => b.addEventListener('click', () => _showPanel(b.dataset.panel, true)));
     const tabs = [...el.querySelectorAll('.code-panel-tab')];
     tabs.forEach((b, i) => {
@@ -253,7 +268,6 @@ const CodeView = (() => {
     });
     el.querySelector('#code-model').addEventListener('change', (e) => {
       try { localStorage.setItem(MODEL_KEY, e.target.value); } catch {}
-      if (_convoBlueprint) _convoBlueprint.config.llm_engine = e.target.value;
     });
   }
 
@@ -299,12 +313,178 @@ const CodeView = (() => {
     return list.length ? list : [{ id: 'gemini-2-5-flash', label: 'Gemini 2.5 Flash' }];
   }
 
+  const _ownId = (provider, model) => 'byo:' + provider + ':' + model;
+
+  // NICE's models first, then one group per provider the user has a key for.
   function _modelOptions() {
-    const models = _models();
+    const hosted = _models();
+    const own = [..._ownModels].flatMap(([p, g]) => g.models.map(m => _ownId(p, m.id)));
     let saved = null;
     try { saved = localStorage.getItem(MODEL_KEY); } catch {}
-    const pick = models.find(m => m.id === saved) ? saved : models[0].id;
-    return models.map(m => `<option value="${_attr(m.id)}"${m.id === pick ? ' selected' : ''}>${_esc(m.label || m.id)}</option>`).join('');
+    const pick = hosted.some(m => m.id === saved) || own.includes(saved) ? saved : hosted[0].id;
+    const opt = (id, label) => `<option value="${_attr(id)}"${id === pick ? ' selected' : ''}>${_esc(label)}</option>`;
+    return `<optgroup label="NICE">${hosted.map(m => opt(m.id, m.label || m.id)).join('')}</optgroup>`
+      + [..._ownModels].map(([p, g]) => g.models.length
+        ? `<optgroup label="${_attr(g.label + ' (your key)')}">${g.models.map(m => opt(_ownId(p, m.id), m.label)).join('')}</optgroup>`
+        : '').join('');
+  }
+
+  // A repaint never changes the model of a conversation: the pick is read
+  // when the next message goes (_send), never in the middle of a turn.
+  function _paintModels() {
+    const select = _el && _el.querySelector('#code-model');
+    if (!select) return;
+    const was = select.value;
+    select.innerHTML = _modelOptions();
+    if (_busyNow() && [...select.options].some(o => o.value === was)) select.value = was;
+  }
+
+  // The models of every provider the user has a key for. A provider whose
+  // list does not load keeps no group (its key may have been revoked; API
+  // keys shows the error).
+  function _loadOwnModels(force) {
+    const llm = _llm();
+    if (!llm) return Promise.resolve();
+    if (_ownLoad && !force) return _ownLoad;
+    const load = (async () => {
+      let providers = [];
+      try { providers = await llm.providers(); }
+      catch { if (_ownLoad === load) _ownLoad = null; return; }   // tried again on the next paint
+      const next = new Map();
+      await Promise.all(providers.filter(p => p.hasKey).map(async (p) => {
+        try { next.set(p.id, { label: p.label, models: await llm.models(p.id), error: null }); }
+        catch (e) { next.set(p.id, { label: p.label, models: [], error: (e && e.message) || 'Could not list models.' }); }
+      }));
+      if (_ownLoad !== load) return;
+      _ownModels = next;
+      _paintModels();
+      _paintKeys();
+    })();
+    _ownLoad = load;
+    return load;
+  }
+
+  /* ── API keys ───────────────────────────────────────────────────── */
+
+  async function _openKeys(returnTo) {
+    const llm = _llm();
+    if (!llm || !_el || document.getElementById('code-keys-dialog')) return;
+    _keysReturn = returnTo || null;
+    // On <body>, like the app's other dialogs: inside the view's grid the
+    // overlay would not cover the page.
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal-overlay open code-keys-overlay" id="code-keys-dialog">
+        <div class="modal-box code-keys-box" role="dialog" aria-modal="true" aria-labelledby="code-keys-title" tabindex="-1">
+          <div class="modal-hdr">
+            <h2 class="modal-title" id="code-keys-title">API keys</h2>
+            <button type="button" class="modal-close" id="code-keys-close" aria-label="Close"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-x"/></svg></button>
+          </div>
+          <div class="modal-body">
+            <p class="code-keys-intro">Use your own key with a model provider instead of a NICE account. NICE keeps each key encrypted on this computer and sends it only to that provider; the provider bills you.</p>
+            <div class="code-keys-list" id="code-keys-list"></div>
+          </div>
+        </div>
+      </div>`);
+    const dlg = document.getElementById('code-keys-dialog');
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) _closeKeys(); });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); _closeKeys(); return; }
+      if (e.key !== 'Tab') return;
+      // Focus stays in the dialog.
+      const f = [...dlg.querySelectorAll('button, input')].filter(x => !x.disabled);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    dlg.querySelector('#code-keys-close').addEventListener('click', _closeKeys);
+    dlg.querySelector('#code-keys-list').addEventListener('submit', _onKeySubmit);
+    dlg.querySelector('#code-keys-list').addEventListener('click', _onKeyRemove);
+    await _paintKeys(true);
+  }
+
+  function _closeKeys() {
+    const dlg = document.getElementById('code-keys-dialog');
+    if (!dlg) return;
+    dlg.remove();
+    const back = _keysReturn && _keysReturn.isConnected ? _keysReturn : (_el && _el.querySelector('#code-keys'));
+    if (back) back.focus();
+    _keysReturn = null;
+  }
+
+  let _keysSeq = 0;
+  async function _paintKeys(focusFirst) {
+    const list = document.getElementById('code-keys-list');
+    const llm = _llm();
+    if (!list || !llm) return;
+    const seq = ++_keysSeq;
+    let providers;
+    try { providers = await llm.providers(); }
+    catch (e) { list.innerHTML = `<p class="code-keys-err">${_esc((e && e.message) || 'Could not read the saved keys.')}</p>`; return; }
+    if (seq !== _keysSeq || !list.isConnected) return;
+    list.innerHTML = providers.map(p => {
+      const g = _ownModels.get(p.id);
+      const status = p.hasKey
+        ? (g && g.error ? `<span class="status-dot dot-r" aria-hidden="true"></span>${_esc(g.error)}` : `<span class="status-dot dot-g" aria-hidden="true"></span>Key saved${g ? ', ' + g.models.length + ' models' : ''}`)
+        : 'No key';
+      return `<form class="code-key-row" data-provider="${_attr(p.id)}">
+          <div class="code-key-hd"><span class="code-key-name" id="code-key-${_attr(p.id)}">${_esc(p.label)}</span><span class="code-key-status">${status}</span></div>
+          ${p.hasKey
+            ? `<div class="code-key-line"><button type="button" class="btn btn-sm" data-remove="${_attr(p.id)}" aria-describedby="code-key-${_attr(p.id)}">Remove key</button></div>`
+            : `<div class="code-key-line">
+                <input type="password" name="key" autocomplete="off" spellcheck="false" placeholder="Paste a ${_attr(p.label)} key" aria-labelledby="code-key-${_attr(p.id)}">
+                <button type="submit" class="btn btn-sm">Save</button>
+              </div>`}
+          <p class="code-keys-err" role="alert"></p>
+        </form>`;
+    }).join('');
+    if (focusFirst) { const first = list.querySelector('input, button'); if (first) first.focus(); }
+  }
+
+  // While the list repaints, focus waits on the dialog itself, so Escape
+  // and Tab still work there.
+  function _holdFocus() {
+    const box = document.querySelector('#code-keys-dialog .code-keys-box');
+    if (box) box.focus();
+  }
+
+  async function _onKeySubmit(e) {
+    e.preventDefault();
+    const form = e.target.closest('.code-key-row');
+    const llm = _llm();
+    if (!form || !llm) return;
+    const input = form.querySelector('input[name="key"]');
+    const btn = form.querySelector('button[type="submit"]');
+    const err = form.querySelector('.code-keys-err');
+    const key = input.value.trim();
+    if (!key) { err.textContent = 'Paste a key first.'; input.focus(); return; }
+    input.disabled = true; btn.disabled = true; btn.textContent = 'Checking…'; err.textContent = '';
+    _holdFocus();
+    try {
+      await llm.setKey(form.dataset.provider, key);
+      input.value = '';
+      await _loadOwnModels(true);
+      await _paintKeys();
+      const row = document.querySelector(`.code-key-row[data-provider="${form.dataset.provider}"] button`);
+      if (row) row.focus();
+    } catch (ex) {
+      input.disabled = false; btn.disabled = false; btn.textContent = 'Save';
+      err.textContent = (ex && ex.message) || 'The key could not be saved.';
+      input.focus();
+    }
+  }
+
+  async function _onKeyRemove(e) {
+    const b = e.target.closest('[data-remove]');
+    const llm = _llm();
+    if (!b || !llm) return;
+    _holdFocus();
+    b.disabled = true;
+    try { await llm.clearKey(b.dataset.remove); } catch { /* the repaint shows what is saved */ }
+    await _loadOwnModels(true);
+    await _paintKeys();
+    const input = document.querySelector(`.code-key-row[data-provider="${b.dataset.remove}"] input`);
+    if (input) input.focus();
   }
 
   /* ── Conversation ───────────────────────────────────────────────── */
@@ -329,9 +509,10 @@ const CodeView = (() => {
     input.style.height = 'auto';
     _addMsg({ role: 'user', text });
 
+    const model = (_el.querySelector('#code-model') || {}).value || 'gemini-2-5-flash';
     const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) {
-      _addMsg({ role: 'note', text: 'Sign in to chat with Code. It answers with NICE\'s hosted models, which need a NICE account.' });
+    if (!user && !_isOwnKey(model)) {
+      _addMsg({ role: 'note', text: 'NICE\'s hosted models need a NICE account. Sign in, or add your own API key (the key button above) and pick one of its models.' });
       return;
     }
     if (typeof AgentExecutor === 'undefined') {
@@ -340,7 +521,6 @@ const CodeView = (() => {
     }
 
     if (!_convo) {
-      const model = (_el.querySelector('#code-model') || {}).value || 'gemini-2-5-flash';
       const gen = _gen;
       _convoBlueprint = { id: null, name: 'Code', config: { llm_engine: model, system_prompt: _systemPrompt() } };
       const tools = typeof CodeTools !== 'undefined' && CodeTools.register() ? CodeTools.IDS : [];
@@ -353,6 +533,7 @@ const CodeView = (() => {
       });
     }
 
+    _convoBlueprint.config.llm_engine = model;
     const turnState = { gen: _gen, stopAsked: false };
     _turn = turnState;
     _lastThought = '';
@@ -897,14 +1078,22 @@ const CodeView = (() => {
   function destroy() {
     // The conversation and the terminal keep running while the user is on
     // another page; only the DOM goes.
+    const dlg = document.getElementById('code-keys-dialog');
+    if (dlg) dlg.remove();
+    _keysReturn = null;
     _el = null;
   }
 
   function _resetAll() {
     _resetForFolder(null);
+    const dlg = document.getElementById('code-keys-dialog');
+    if (dlg) dlg.remove();
     _el = null;
     _turn = null;
     _mode = 'ask';
+    _ownModels = new Map();
+    _ownLoad = null;
+    _keysSeq = 0;
     _termHistory = [];
     _termHistoryAt = -1;
     _treeSeq = 0;

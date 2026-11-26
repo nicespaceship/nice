@@ -10,7 +10,8 @@ async function call(channel, ...args) {
   if (r && r.ok) return r.value;
   // A plain object, not an Error: the context bridge copies only an Error's
   // message, and callers need the code (EOUTSIDE, ENOMATCH, ...).
-  throw { code: (r && r.error && r.error.code) || 'EUNKNOWN', message: (r && r.error && r.error.message) || 'Code host error' };
+  const e = (r && r.error) || {};
+  throw { code: e.code || 'EUNKNOWN', message: e.message || 'Desktop host error', ...(Number.isInteger(e.status) ? { status: e.status } : {}) };
 }
 
 contextBridge.exposeInMainWorld('NiceDesktop', {
@@ -49,6 +50,19 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
       ipcRenderer.on('code:run-data', listener);
       return () => ipcRenderer.removeListener('code:run-data', listener);
     },
+  },
+
+  // Models on the user's own API keys. The keys stay in the main process:
+  // the page learns only which providers have one.
+  llm: {
+    /** [{ id, label, hasKey }] */
+    providers: () => call('llm:providers'),
+    /** Checks the key with the provider, then saves it. Resolves to [{ id, label }], the provider's models. */
+    setKey: (provider, key) => call('llm:set-key', provider, key),
+    clearKey: (provider) => call('llm:clear-key', provider),
+    models: (provider) => call('llm:models', provider),
+    /** A nice-ai-shaped request with model 'byo:<provider>:<model>'; resolves to a nice-ai-shaped reply. */
+    chat: (body) => call('llm:chat', body),
   },
 
   // Window controls
