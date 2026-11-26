@@ -652,6 +652,41 @@ describe('AgentExecutor', () => {
         expect(steps[0].images).toEqual([img]);
       });
 
+      it('keeps only the latest two screenshots in the conversation itself', async () => {
+        let n = 0;
+        ToolRegistry.register({ id: 'shot-many', name: 'shot_many', description: 's', schema: { type: 'object', properties: {} }, execute: async () => ({ __images: ['data:image/jpeg;base64,SHOT' + (++n)] }) });
+        const call = (id) => ({ content: [{ type: 'tool_use', id, name: 'shot_many', input: {} }], stop_reason: 'tool_use' });
+        const chat = vi.fn()
+          .mockResolvedValueOnce(call('a')).mockResolvedValueOnce(call('b')).mockResolvedValueOnce(call('c'))
+          .mockResolvedValueOnce({ content: 'done', stop_reason: 'end_turn' })
+          .mockResolvedValueOnce({ content: 'next', stop_reason: 'end_turn' });
+        window.NiceDesktop = { llm: { chat } };
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['shot-many'], keepToolTurns: true });
+        await controller.send('three shots');
+        await controller.send('again');
+        const sent = JSON.stringify(chat.mock.calls[4][0].messages);
+        expect(sent).not.toContain('SHOT1');
+        expect(sent).toContain('SHOT2');
+        expect(sent).toContain('SHOT3');
+        expect(sent).toContain('left out to save space');
+      });
+
+      it('leaves a screenshot out of a tool called in text form, with a note', async () => {
+        ToolRegistry.register({ id: 'shot-text', name: 'shot_text', description: 's', schema: { type: 'object', properties: {} }, execute: async () => ({ url: 'http://x/', __images: ['data:image/jpeg;base64,SECRETDATA'] }) });
+        const chat = vi.fn()
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'Thought: look\nAction: shot_text\nAction Input: {}' }], stop_reason: 'end_turn' })
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'Final Answer: done' }], stop_reason: 'end_turn' });
+        window.NiceDesktop = { llm: { chat } };
+        const steps = [];
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['shot-text'], keepToolTurns: true, onStep: (st) => steps.push(st) });
+        expect((await controller.send('check')).text).toBe('done');
+        expect(chat).toHaveBeenCalledTimes(2);
+        const sent = JSON.stringify(chat.mock.calls[1][0].messages);
+        expect(sent).not.toContain('SECRETDATA');
+        expect(sent).toContain('cannot carry images');
+        expect(JSON.stringify(steps)).not.toContain('SECRETDATA');
+      });
+
       it('says own-key models need the desktop app on the website', async () => {
         const controller = AgentExecutor.converse(ownAgent, { tools: [] });
         const turn = await controller.send('hi');

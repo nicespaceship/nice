@@ -503,14 +503,18 @@ const AgentExecutor = (() => {
           toolFailed = true;
         } else {
           try {
-            const result = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
+            const raw = await ToolRegistry.execute(textToolId, parsed.actionInput || {}, {
               approvalMode:     opts && opts.approvalMode,
               onApprovalNeeded: opts && opts.onApprovalNeeded,
               toolLabel:        parsed.action,
               thought:          parsed.thought,
               stepIndex:        stepIdx + 1,
             });
+            // A reply in text form gets text back, so a tool's images are left
+            // out here, with a note; never their data in the observation.
+            const { result, images } = _splitToolImages(raw);
             observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+            if (images.length || (raw && typeof raw === 'object' && Array.isArray(raw.__images))) observation += '\n' + _IMAGE_TEXT_PATH;
           } catch (err) {
             if (err && err.declined && stopped()) {
               // Turned down because the run was called off, not by the user.
@@ -1073,10 +1077,12 @@ const AgentExecutor = (() => {
      takes an image after its tool_result, OpenAI-style APIs after the tool
      messages, Gemini beside the functionResponse. Each call sends only the
      latest MAX_TOOL_IMAGES; a model that can't see images gets a line of
-     text instead. A model on the user's own key counts as seeing: the
+     text instead, and so does a reply that called the tool in text form.
+     A model ModelCatalog doesn't know counts as blind: safe, if quiet. A model on the user's own key counts as seeing: the
      desktop host knows each provider's models and leaves images out there. */
   const MAX_TOOL_IMAGES = 2;
   const _IMAGE_GONE = '[An earlier screenshot was left out to save space.]';
+  const _IMAGE_TEXT_PATH = '[A screenshot was taken, but replies written as text cannot carry images. Use browser_read for the page as text.]';
   const _IMAGE_BLIND = '[A screenshot was taken, but this model cannot see images. Use browser_read for the page as text.]';
   const _DATA_IMAGE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 
@@ -1297,6 +1303,15 @@ const AgentExecutor = (() => {
           keep += m.role === 'assistant' ? 2 : 1;
         }
         history.splice(at + 1, 0, ...turn.slice(0, Math.min(keep, turn.length)));
+        // Screenshots past the latest few are never sent again: keep the note, not the image.
+        let seen = 0;
+        for (let i = history.length - 1; i >= 0; i--) {
+          const c = history[i] && history[i].content;
+          if (!Array.isArray(c)) continue;
+          for (let j = c.length - 1; j >= 0; j--) {
+            if (c[j] && c[j]._toolImage && ++seen > MAX_TOOL_IMAGES) c[j] = { type: 'text', text: _IMAGE_GONE };
+          }
+        }
       };
 
       if (loop.stopped) {
