@@ -130,6 +130,13 @@ describe('ToolRegistry', () => {
       expect((await ToolRegistry.execute('calculator', { expression: '1.5e-2 * 4' })).result).toBeCloseTo(0.06);
     });
 
+    it('calculator never runs code from the expression', async () => {
+      delete globalThis.__niceCalcPwned;
+      const payload = '(1).constructor.constructor(' + 'String.fromCharCode(' + [...'globalThis.__niceCalcPwned=1'].map(c => c.charCodeAt(0)).join(',') + '))()';
+      await expect(ToolRegistry.execute('calculator', { expression: payload })).rejects.toThrow();
+      expect(globalThis.__niceCalcPwned).toBeUndefined();
+    });
+
     it('calculator still expands a standalone E/e as Euler constant', async () => {
       expect((await ToolRegistry.execute('calculator', { expression: '2 * E' })).result).toBeCloseTo(2 * Math.E);
     });

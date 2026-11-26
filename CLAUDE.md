@@ -368,7 +368,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 69 modules
+### Lib Modules (`app/js/lib/`) — 70 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -384,6 +384,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `Keyboard` | `keyboard.js` | Global keyboard shortcuts & chord system |
 | `McpBridge` | `mcp-bridge.js` | Bridges MCP connections to ToolRegistry |
 | `ToolRegistry` | `tool-registry.js` | Central registry for agent tools |
+| `SafeExpr` | `safe-expr.js` | Parser for the calculator tool's arithmetic and workflow `condition` / `branch` expressions; never eval / `new Function` (the site's CSP and the desktop app's forbid them) |
 | `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |

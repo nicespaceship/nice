@@ -65,6 +65,7 @@ const SCRIPTS = [
   'app/js/lib/agent-memory.js',
   'app/js/lib/quality-gate.js',
   'app/js/lib/ship-templates.js',
+  'app/js/lib/safe-expr.js',
   'app/js/lib/tool-registry.js',
   'app/js/lib/browser-tools.js',
   'app/js/lib/mcp-bridge.js',

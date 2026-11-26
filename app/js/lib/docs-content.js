@@ -272,7 +272,7 @@
           <tr><td>parallel</td><td>Run the same prompt across multiple agents simultaneously, then merge</td></tr>
           <tr><td>quality_loop</td><td>Agent runs → reviewer scores 1–10 → if below threshold, retry with feedback (up to 3 iterations)</td></tr>
           <tr><td>approval_gate</td><td>Pause the Run in <em>review</em> state until you approve or reject</td></tr>
-          <tr><td>condition</td><td>Pass or block downstream nodes based on an expression</td></tr>
+          <tr><td>condition</td><td>Pass or block downstream nodes based on an expression about <code>result</code> (<code>result.text</code>, <code>result.length</code>, <code>result.success</code>), such as <code>result.text.includes("APPROVED")</code></td></tr>
           <tr><td>branch</td><td>Route to different paths based on conditions</td></tr>
           <tr><td>loop</td><td>Iterate over lines or JSON arrays, fanning out to a sub-plan per item</td></tr>
           <tr><td>delay</td><td>Pause execution for a set time</td></tr>
