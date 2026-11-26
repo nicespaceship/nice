@@ -501,7 +501,7 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | GPT-OSS 120B (Groq) | OpenAI | Standard | ✗ | ✗ | ✗ | ✗ | Replaced Llama 4 Scout 2026-07-26 (Groq deprecated it 2026-06-17); tools verified live 2026-08-02 |
 | DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25; tools verified live 2026-08-02. DeepSeek delisted the `deepseek-v4-flash` upstream id 2026-09-10; `nice-ai`'s `DEEPSEEK_MODEL_MAP` redirects it to `deepseek-flash` server-side, client-facing id unchanged |
 | Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 (thinking mode ~80s); tools verified live 2026-08-02, vision untested |
-| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 via hosted NIM (trial tier); tools verified live 2026-08-02 |
+| Nemotron 3.5 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | NVIDIA retired `nemotron-3-super-120b-a12b` (EOL 2026-10-03); `nice-ai`'s `NVIDIA_MODEL_MAP` points the unchanged client id `nemotron-3-super` at `nvidia/nemotron-3.5-super-vl-120b-a12b`. Text, tools and vision on the new model not yet verified live |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 

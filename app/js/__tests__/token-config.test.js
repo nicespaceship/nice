@@ -66,7 +66,7 @@ describe('TokenConfig — model → pool mapping', () => {
     }
   });
 
-  it('DeepSeek V4 Flash and Nemotron 3 Super are standard pool weight 1', () => {
+  it('DeepSeek V4 Flash and Nemotron 3.5 Super are standard pool weight 1', () => {
     for (const id of ['deepseek-v4-flash', 'nemotron-3-super']) {
       expect(TokenConfig.poolFor(id)).toBe('standard');
       expect(TokenConfig.weightFor(id)).toBe(1);

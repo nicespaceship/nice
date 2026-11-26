@@ -295,7 +295,7 @@ const BlueprintUtils = (() => {
     'gpt-oss-120b':                'GPT-OSS 120B',
     'deepseek-v4-flash':           'DeepSeek V4 Flash',
     'kimi-k2-6':                   'Kimi K2.6',
-    'nemotron-3-super':            'Nemotron 3 Super',
+    'nemotron-3-super':            'Nemotron 3.5 Super',
   };
   const _MODEL_SHORT_NAMES = {
     'nice-auto':                   'NICE Auto',
