@@ -174,6 +174,14 @@ const CodeTools = (() => {
     if (e.checked) s += ' (checked)';
     return s;
   };
+  // The site the Code view approved each call for, by the call's input
+  // object (ToolRegistry hands the same object to the gate and the tool).
+  // The browser refuses the call if the page has moved to another site.
+  const _approved = new WeakMap();
+  /** Called by the approval gate: this call is allowed on `site` (host:port). */
+  function approveSite(input, site) { if (input && typeof input === 'object' && site) _approved.set(input, site); }
+  const _expect = (input) => { const site = _approved.get(input); return site ? { expectHost: site } : {}; };
+
   const _pageState = (st) => ({ url: st.url, title: st.title, ...(st.status && st.status >= 400 ? { status: st.status } : {}), ...(st.error ? { error: st.error } : {}), ...(st.loading ? { loading: true } : {}) });
 
   const BROWSER_TOOLS = [
@@ -184,7 +192,7 @@ const CodeTools = (() => {
       sideEffect: true,
       description: 'Open a web page in the browser beside the conversation (http or https; "localhost:3000" works for a local dev server). The user sees the page. Returns its URL and title; call browser_read to see what is on it.',
       schema: { type: 'object', properties: { url: { type: 'string', description: 'The address to open' } }, required: ['url'] },
-      run: (h, input) => h.open(input.url).then(_pageState),
+      run: (h, input) => h.open(input.url, _expect(input)).then(_pageState),
     },
     {
       id: 'code-browser-read',
@@ -213,7 +221,7 @@ const CodeTools = (() => {
       sideEffect: true,
       description: 'Click a link, button or other element on the page by its ref from browser_read.',
       schema: { type: 'object', properties: { ref: { type: 'string', description: 'The element\'s ref, e.g. "12"' } }, required: ['ref'] },
-      run: (h, input) => h.click(String(input.ref)).then(_pageState),
+      run: (h, input) => h.click(String(input.ref), _expect(input)).then(_pageState),
     },
     {
       id: 'code-browser-type',
@@ -231,7 +239,7 @@ const CodeTools = (() => {
         },
         required: ['text'],
       },
-      run: (h, input) => h.type(input.ref == null || input.ref === '' ? null : String(input.ref), String(input.text == null ? '' : input.text), { clear: input.clear === true, submit: input.submit === true }).then(_pageState),
+      run: (h, input) => h.type(input.ref == null || input.ref === '' ? null : String(input.ref), String(input.text == null ? '' : input.text), { clear: input.clear === true, submit: input.submit === true, ..._expect(input) }).then(_pageState),
     },
     {
       id: 'code-browser-key',
@@ -240,7 +248,7 @@ const CodeTools = (() => {
       sideEffect: true,
       description: 'Press keys on the page: names like Enter, Tab, Escape, ArrowDown, or shortcuts like ctrl+a, separated by spaces.',
       schema: { type: 'object', properties: { keys: { type: 'string', description: 'e.g. "Enter" or "Tab Tab Enter"' } }, required: ['keys'] },
-      run: (h, input) => h.key(String(input.keys || '')).then(_pageState),
+      run: (h, input) => h.key(String(input.keys || ''), _expect(input)).then(_pageState),
     },
     {
       id: 'code-browser-scroll',
@@ -339,11 +347,15 @@ const CodeTools = (() => {
     return e.role + (e.name ? ' "' + e.name + '"' : ' [' + e.ref + ']');
   }
 
+  const LOCAL_HOST = /^(localhost|127(?:\.\d{1,3}){3}|\[::1\]|[a-z0-9-]+\.localhost)(:\d+)?$/i;
+
   /** The website an "always allow" for a page address covers: its host and port, or '' for anything that isn't http(s). */
   function siteOf(url) {
     let s = String(url || '').trim();
     if (!s) return '';
-    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = (/^(localhost|127\.|\[::1\])/i.test(s) ? 'http://' : 'https://') + s;
+    // The same rule as the desktop browser (browser-host.js normalizeUrl):
+    // this machine's addresses load over http, the rest over https.
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = (LOCAL_HOST.test(s.split(/[/?#]/)[0]) ? 'http://' : 'https://') + s;
     try {
       const u = new URL(s);
       return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password ? u.host.toLowerCase() : '';
@@ -400,7 +412,7 @@ const CodeTools = (() => {
     return want.every((w, i) => words[i] === w);
   }
 
-  return { IDS, TOOLS, AGENT_TAG, register, get, describe, elementLabel, siteOf, commandPrefix, isSimpleCommand, canRemember, prefixCovers, READ_LIMIT,
+  return { IDS, TOOLS, AGENT_TAG, register, get, describe, elementLabel, siteOf, approveSite, commandPrefix, isSimpleCommand, canRemember, prefixCovers, READ_LIMIT,
     _test: { reset: () => { _elements = new Map(); } } };
 })();
 

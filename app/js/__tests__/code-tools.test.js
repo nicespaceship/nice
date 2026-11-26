@@ -158,17 +158,31 @@ describe('CodeTools browser', () => {
     window.NiceDesktop = { browser: b };
     expect(await ToolRegistry.execute('code-browser-open', { url: 'localhost:3000' })).toEqual({ url: page.url, title: 'App' });
     await ToolRegistry.execute('code-browser-click', { ref: 2 });
-    expect(b.click).toHaveBeenCalledWith('2');
+    expect(b.click).toHaveBeenCalledWith('2', {});
     await ToolRegistry.execute('code-browser-type', { ref: '3', text: 'x', submit: true });
     expect(b.type).toHaveBeenCalledWith('3', 'x', { clear: false, submit: true });
     await ToolRegistry.execute('code-browser-type', { text: 'y' });
     expect(b.type).toHaveBeenLastCalledWith(null, 'y', { clear: false, submit: false });
     await ToolRegistry.execute('code-browser-key', { keys: 'Tab Enter' });
-    expect(b.key).toHaveBeenCalledWith('Tab Enter');
+    expect(b.key).toHaveBeenCalledWith('Tab Enter', {});
     await ToolRegistry.execute('code-browser-scroll', { direction: 'sideways' });
     expect(b.scroll).toHaveBeenCalledWith('down');
     const c = await ToolRegistry.execute('code-browser-console', {});
     expect(c.messages).toBe('error: boom (http://localhost:3000/app.js:4)');
+  });
+
+  it('tells the browser which site each approved call was allowed on', async () => {
+    const b = browser();
+    window.NiceDesktop = { browser: b };
+    const gate = (site) => ({ approvalMode: 'review', onApprovalNeeded: async ({ input }) => { CodeTools.approveSite(input, site); return true; } });
+    await ToolRegistry.execute('code-browser-open', { url: 'localhost:3000' }, gate('localhost:3000'));
+    expect(b.open).toHaveBeenCalledWith('localhost:3000', { expectHost: 'localhost:3000' });
+    await ToolRegistry.execute('code-browser-click', { ref: '2' }, gate('example.com'));
+    expect(b.click).toHaveBeenCalledWith('2', { expectHost: 'example.com' });
+    await ToolRegistry.execute('code-browser-type', { ref: '3', text: 'x' }, gate('example.com'));
+    expect(b.type).toHaveBeenCalledWith('3', 'x', { clear: false, submit: false, expectHost: 'example.com' });
+    await ToolRegistry.execute('code-browser-key', { keys: 'Enter' }, gate('example.com'));
+    expect(b.key).toHaveBeenCalledWith('Enter', { expectHost: 'example.com' });
   });
 
   it('reports a page that failed or answered with an error status', async () => {
@@ -180,6 +194,9 @@ describe('CodeTools browser', () => {
     expect(CodeTools.siteOf('localhost:3000/a')).toBe('localhost:3000');
     expect(CodeTools.siteOf('https://Docs.Example.com/x')).toBe('docs.example.com');
     expect(CodeTools.siteOf('example.com')).toBe('example.com');
+    // As the desktop browser loads them: this machine over http, so a port of 443 stays.
+    expect(CodeTools.siteOf('foo.localhost:443')).toBe('foo.localhost:443');
+    expect(CodeTools.siteOf('example.com:443')).toBe('example.com');
     for (const bad of ['file:///x', 'nice://app/', 'https://u:p@a.com', '', null]) expect(CodeTools.siteOf(bad)).toBe('');
   });
 });
