@@ -121,6 +121,7 @@ const LLMConfig = (() => {
    * Full config from a blueprint object.
    *
    * Resolution order for model + params:
+   *   0. blueprint.config.llm_engine on the user's own key ('byo:…')
    *   1. blueprint.config.model_profile (preferred — explicit declaration)
    *   2. blueprint.config.llm_engine    (legacy — single field)
    *   3. blueprint.stats                (cosmetic — derived envelope)
@@ -132,6 +133,19 @@ const LLMConfig = (() => {
     const params = fromStats((bp && bp.stats) || {});
     const cfg = (bp && bp.config) || {};
     const profile = cfg.model_profile || null;
+
+    // A model on the user's own key (desktop app) is the user's explicit
+    // pick: it wins over model_profile, takes no plan check and has no NICE
+    // fallback chain. max_tokens is left to the desktop host, which knows
+    // each provider's limits, unless the agent sets one.
+    if (typeof cfg.llm_engine === 'string' && cfg.llm_engine.startsWith('byo:')) {
+      params.model = cfg.llm_engine;
+      if (typeof cfg.temperature === 'number') params.temperature = cfg.temperature;
+      params.max_tokens = (profile && typeof profile.max_output_tokens === 'number' && profile.max_output_tokens > 0)
+        ? Math.round(profile.max_output_tokens) : (cfg.max_tokens || null);
+      params.fallbackChain = [];
+      return params;
+    }
 
     // Model selection — model_profile.preferred wins, then llm_engine.
     // For nice-auto, ask ModelIntel; if it returns nothing, fall back to

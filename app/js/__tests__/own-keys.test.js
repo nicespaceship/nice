@@ -86,12 +86,12 @@ describe('OwnKeys', () => {
     await OwnKeys.openKeys(opener);
     await flush();
     const row = document.querySelector('.own-key-row[data-provider="openai"]');
-    expect(row.querySelector('summary').textContent).toBe('In Space and chat: 0 of 2 models');
+    expect(row.querySelector('summary').textContent).toBe('In Space, chat and agents: 0 of 2 models');
     const box = row.querySelector('input[data-model="byo:openai:gpt-5"]');
     box.checked = true;
     box.dispatchEvent(new Event('change', { bubbles: true }));
     expect(OwnKeys.isOn('byo:openai:gpt-5')).toBe(true);
-    expect(row.querySelector('summary').textContent).toBe('In Space and chat: 1 of 2 models');
+    expect(row.querySelector('summary').textContent).toBe('In Space, chat and agents: 1 of 2 models');
     // A provider without a key has no model list.
     expect(document.querySelector('.own-key-row[data-provider="anthropic"] details')).toBeNull();
     document.getElementById('own-keys-dialog').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -106,7 +106,7 @@ describe('OwnKeys', () => {
     expect(document.querySelector('.own-key-row[data-provider="openai"] details')).toBeNull();
     await OwnKeys.load();
     await flush();
-    expect(document.querySelector('.own-key-row[data-provider="openai"] summary').textContent).toBe('In Space and chat: 0 of 2 models');
+    expect(document.querySelector('.own-key-row[data-provider="openai"] summary').textContent).toBe('In Space, chat and agents: 0 of 2 models');
   });
 
   it('keeps focus on the same switch when the list repaints', async () => {

@@ -1179,7 +1179,10 @@ const SpaceshipDetailView = (() => {
             spaceshipId: id,
             schedule: { cron: wf.schedule.cron, tz: wf.schedule.tz || 'UTC', enabled: wf.schedule.enabled !== false },
           });
-        } catch (e) { /* leave the stored link; surfaced on next explicit save */ }
+        } catch (e) {
+          // The schedule keeps its last saved steps; say why it didn't take the new ones.
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Schedule not updated', message: (e && e.message) || 'Could not update the schedule.', type: 'system' });
+        }
       }
     }
     _loadSpaceship(el, id);

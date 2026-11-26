@@ -115,6 +115,7 @@ const MissionRunner = (() => {
         const needle = agent.name.toLowerCase();
         agentBp = Blueprints.listAgents().find(a => a.name.toLowerCase() === needle) || null;
       }
+      agentBp = _keepOwnKeyModel(agentBp, agent);
       if (!agentBp) {
         const cfg = agent.config || {};
         agentBp = {
@@ -1205,6 +1206,7 @@ const MissionRunner = (() => {
             crewBp = Blueprints.listAgents().find(a => a.name && a.name.toLowerCase() === needle) || null;
           }
         }
+        crewBp = _keepOwnKeyModel(crewBp, crewAgent);
         if (!crewBp) crewBp = crewAgent;
 
         try {
@@ -1337,6 +1339,13 @@ const MissionRunner = (() => {
     if (willBeActive && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
       throw new Error(`NICE Pro is required to run missions on a schedule. Upgrade to automate your ${Terminology.label('spaceship', { plural: true, lowercase: true })}.`);
     }
+    // Scheduled runs execute on NICE's servers (mission-executor), which
+    // can't reach keys kept on the user's computer. The executor refuses
+    // such a step too; this says so before anything is saved.
+    const ownKeyAgents = willBeActive ? _ownKeyAgentNames(spec.plan) : [];
+    if (ownKeyAgents.length) {
+      throw new Error(`Scheduled runs happen on NICE's servers, which can't use your own API keys. Switch ${_listNames(ownKeyAgents)} to a NICE model to schedule this.`);
+    }
     const row = {
       title: spec.title,
       description: spec.description || null,
@@ -1353,6 +1362,41 @@ const MissionRunner = (() => {
     const created = await SB.db('missions').create(Object.assign({ user_id: user.id }, row));
     if (!created?.id) throw new Error('Failed to persist scheduled mission.');
     return created.id;
+  }
+
+  /* The catalog blueprint resolved for a user's agent runs on the catalog's
+     model, except where the user put their agent on a model on their own
+     key ('byo:…'): that pick is theirs and must not turn into a NICE model
+     (another provider, billed to a NICE pool) on the way. */
+  function _keepOwnKeyModel(bp, agent) {
+    if (!bp || !agent) return bp;
+    const own = (agent.config && agent.config.llm_engine) || agent.llm_engine;
+    if (typeof own !== 'string' || !own.startsWith('byo:') || (bp.config && bp.config.llm_engine) === own) return bp;
+    return { ...bp, config: { ...(bp.config || {}), llm_engine: own } };
+  }
+
+  /* Names of the agents in a plan's agent steps whose model is on the
+     user's own key ('byo:…'). Agents not loaded here are left to the
+     executor's own check. */
+  function _ownKeyAgentNames(plan) {
+    const nodes = (plan && Array.isArray(plan.nodes)) ? plan.nodes : [];
+    const names = [];
+    for (const n of nodes) {
+      if (!n || n.type !== 'agent') continue;
+      const id = n.config && (n.config.agentId || n.config.blueprintId);
+      const agent = id && typeof Blueprints !== 'undefined' && Blueprints.getAgent ? Blueprints.getAgent(id) : null;
+      const engine = agent && ((agent.config && agent.config.llm_engine) || agent.llm_engine);
+      if (typeof engine === 'string' && engine.startsWith('byo:')) {
+        const name = agent.name || 'an agent';
+        if (!names.includes(name)) names.push(name);
+      }
+    }
+    return names;
+  }
+
+  function _listNames(names) {
+    if (names.length <= 2) return names.join(' and ');
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   }
 
   /* Stop a scheduled Mission from firing without deleting its Run history
@@ -1440,6 +1484,7 @@ const MissionRunner = (() => {
     run,
     createRun,
     upsertScheduledMission,
+    _keepOwnKeyModel,
     unscheduleMission,
     resumeDag,
     isResumableGate,

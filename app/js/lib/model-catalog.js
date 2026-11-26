@@ -92,7 +92,17 @@
   };
   const FALLBACK_COLOR = '#94a3b8';
 
+  // Providers of models on the user's own keys ('byo:<provider>:<model>'),
+  // by the desktop app's provider id. Groq hosts other makers' models.
+  const OWN_KEY_PROVIDERS = {
+    anthropic: 'Anthropic', gemini: 'Google', openai: 'OpenAI', xai: 'xAI',
+    deepseek: 'DeepSeek', moonshot: 'Moonshot AI', nvidia: 'NVIDIA',
+  };
+
   function providerColor(modelId) {
+    if (typeof modelId === 'string' && modelId.startsWith('byo:')) {
+      return PROVIDER_COLORS[OWN_KEY_PROVIDERS[modelId.split(':')[1]]] || FALLBACK_COLOR;
+    }
     const m = getById(modelId);
     return (m && PROVIDER_COLORS[m.provider]) || FALLBACK_COLOR;
   }

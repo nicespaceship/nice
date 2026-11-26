@@ -326,6 +326,7 @@ const BlueprintUtils = (() => {
   function humanizeModel(id) {
     if (!id || typeof id !== 'string') return '';
     if (_MODEL_NAMES[id]) return _MODEL_NAMES[id];
+    if (id.startsWith('byo:')) return _ownModelName(id) + ' (your key)';
     // Generic fallback: kebab-case → Title Case, leaving numbers + dots intact
     return id.split('-').map(function(part) {
       if (/^\d/.test(part)) return part; // keep version segments as-is
@@ -334,7 +335,14 @@ const BlueprintUtils = (() => {
   }
   function humanizeModelShort(id) {
     if (!id || typeof id !== 'string') return '';
+    if (id.startsWith('byo:')) return _ownModelName(id);
     return _MODEL_SHORT_NAMES[id] || humanizeModel(id);
+  }
+  // A model on the user's own key ('byo:<provider>:<model>'): its name from
+  // the desktop app's list when loaded, else the model id.
+  function _ownModelName(id) {
+    if (typeof OwnKeys !== 'undefined' && OwnKeys.label) return OwnKeys.label(id);
+    return id.split(':').slice(2).join(':') || id;
   }
 
   /* ── Crew labels (shared by the crew view and the Schematic) ── */

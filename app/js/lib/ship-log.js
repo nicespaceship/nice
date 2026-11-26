@@ -239,10 +239,15 @@ const ShipLog = (() => {
     const startMs = Date.now();
 
     try {
-      if (opts.onChunk && typeof SB !== 'undefined' && SB.functions && SB.functions.invokeStream) {
+      // A model on the user's own key answers in one piece (the desktop
+      // host does not stream), so onChunk gets the whole reply at once.
+      const ownKey = _isOwnKeyModel(llmConfig.model);
+      if (!ownKey && opts.onChunk && typeof SB !== 'undefined' && SB.functions && SB.functions.invokeStream) {
         response = await _callLLMStream(agentBlueprint, prompt, context, llmConfig, opts.onChunk, opts.attachments);
       } else {
         response = await _callLLM(agentBlueprint, prompt, context, llmConfig, opts.attachments);
+        const whole = ownKey && opts.onChunk && _firstText(response && response.content);
+        if (whole) opts.onChunk(whole);
       }
       // Normalize content: Gemini returns string, Anthropic returns [{type:"text",text:"..."}]
       // Unknown shapes (object content, missing fields) fall through to JSON
@@ -340,7 +345,8 @@ const ShipLog = (() => {
       system:         systemPrompt,
       messages,
       temperature:    config.temperature || 0.7,
-      max_tokens:     config.max_tokens || 1024,
+      // A model on the user's own key leaves the limit to the desktop host.
+      max_tokens:     config.max_tokens || (_isOwnKeyModel(config.model) ? null : 1024),
       // Blueprint-assigned model: if the user can't pay for it, fall back to
       // Gemini Flash inside nice-ai and surface a toast. Without this, the
       // catalog's llm_engine would 402 every dispatch for non-subscribers.
@@ -388,6 +394,7 @@ const ShipLog = (() => {
   /* Invoke nice-ai with bounded same-model exponential backoff on transient
      overload (up to 3 attempts: immediate, +600ms, +1200ms). */
   async function _invokeWithBackoff(params) {
+    if (_isOwnKeyModel(params.model)) return _invokeOwnKey(params);
     let res = await SB.functions.invoke('nice-ai', { body: params });
     for (let i = 1; i <= 2; i++) {
       if (!((res.error || res.data?.error) && _isTransientOverload(res.error, res.data))) break;
@@ -395,6 +402,38 @@ const ShipLog = (() => {
       res = await SB.functions.invoke('nice-ai', { body: params });
     }
     return res;
+  }
+
+  /* Models on the user's own API keys ('byo:<provider>:<model>') are
+     answered by the desktop app (OwnKeys.chat), never nice-ai: no plan
+     check, no fallback to NICE's models, no auto_downgrade. Its
+     { code, message, status } failures come back as { error }. */
+  function _isOwnKeyModel(id) {
+    return typeof id === 'string' && id.startsWith('byo:');
+  }
+
+  async function _invokeOwnKey(params) {
+    if (typeof OwnKeys === 'undefined') return { data: null, error: { message: 'Models on your own key run in the NICE desktop app.' } };
+    const body = { ...params };
+    delete body.auto_downgrade;
+    delete body.stream;
+    // The desktop host reads the system prompt from a 'system' message.
+    delete body.system;
+    if (params.system) body.messages = [{ role: 'system', content: params.system }, ...(params.messages || [])];
+    try {
+      return { data: await OwnKeys.chat(body), error: null };
+    } catch (e) {
+      return { data: null, error: { message: (e && e.message) || String(e), code: e && e.code, context: { status: e && e.status } } };
+    }
+  }
+
+  function _firstText(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      const t = content.find(p => p && typeof p.text === 'string');
+      return t ? t.text : '';
+    }
+    return '';
   }
 
   /* ── Real LLM call via nice-ai Edge Function ──
@@ -406,7 +445,7 @@ const ShipLog = (() => {
      Auto-fallback: on 503/429/404 walks config.fallbackChain in capability
      order, capped at MAX_FALLBACKS. */
   async function _callLLM(blueprint, prompt, context, config, attachments) {
-    if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+    if (!_isOwnKeyModel(config && config.model) && (typeof SB === 'undefined' || !SB.functions)) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config, attachments);
     const _activity = (typeof LLMActivity !== 'undefined')

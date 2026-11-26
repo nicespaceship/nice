@@ -168,6 +168,46 @@ describe('MissionRunner', () => {
     });
   });
 
+  describe('_keepOwnKeyModel', () => {
+    const catalog = { id: 'captain', name: 'Captain', config: { llm_engine: 'claude-sonnet-4-6', tools: ['web_search'] } };
+
+    it('keeps the user\'s own-key model on the catalog blueprint it resolved to', () => {
+      const bp = MissionRunner._keepOwnKeyModel(catalog, { name: 'Captain', config: { llm_engine: 'byo:openai:gpt-5' } });
+      expect(bp.config.llm_engine).toBe('byo:openai:gpt-5');
+      expect(bp.config.tools).toEqual(['web_search']);
+      expect(catalog.config.llm_engine).toBe('claude-sonnet-4-6');
+    });
+
+    it('leaves the catalog model for an agent on a NICE model, or no blueprint', () => {
+      expect(MissionRunner._keepOwnKeyModel(catalog, { config: { llm_engine: 'gemini-2-5-flash' } })).toBe(catalog);
+      expect(MissionRunner._keepOwnKeyModel(null, { llm_engine: 'byo:openai:gpt-5' })).toBeNull();
+    });
+  });
+
+  describe('upsertScheduledMission — own-key agents', () => {
+    const planFor = (...ids) => ({ shape: 'dag', nodes: ids.map((id, i) => ({ id: 'step-' + i, type: 'agent', label: 'Step', config: { agentId: id } })), edges: [] });
+    const spec = (plan, enabled = true) => ({ title: 'Daily', plan, spaceshipId: 's1', schedule: { cron: '0 9 * * *', tz: 'UTC', enabled } });
+    const agents = {
+      own1: { id: 'own1', name: 'Ada', config: { llm_engine: 'byo:openai:gpt-5' } },
+      own2: { id: 'own2', name: 'Grace', llm_engine: 'byo:anthropic:claude-x' },
+      nice: { id: 'nice', name: 'Linus', config: { llm_engine: 'gemini-2-5-flash' } },
+    };
+    let prev;
+    beforeEach(() => { prev = Blueprints.getAgent; Blueprints.getAgent = (id) => agents[id] || null; Object.keys(_db).forEach(k => delete _db[k]); });
+    afterEach(() => { Blueprints.getAgent = prev; });
+
+    it('refuses an active schedule whose steps run on the user\'s own key, naming the agents', async () => {
+      await expect(MissionRunner.upsertScheduledMission(spec(planFor('own1', 'nice', 'own2', 'own1'))))
+        .rejects.toThrow("Scheduled runs happen on NICE's servers, which can't use your own API keys. Switch Ada and Grace to a NICE model to schedule this.");
+      expect(Object.keys(_db.missions || {})).toHaveLength(0);
+    });
+
+    it('schedules a plan on NICE models, and lets an own-key one be paused', async () => {
+      await expect(MissionRunner.upsertScheduledMission(spec(planFor('nice', 'unknown')))).resolves.toBeTruthy();
+      await expect(MissionRunner.upsertScheduledMission(spec(planFor('own1'), false))).resolves.toBeTruthy();
+    });
+  });
+
   it('should create a notification on completion', async () => {
     State.set('agents', [{ id: 'a3', name: 'NotifyBot', config: {} }]);
     await SB.db('mission_runs').create({
