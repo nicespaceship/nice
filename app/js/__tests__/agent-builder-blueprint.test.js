@@ -14,7 +14,7 @@
  * vocabulary synchronously, so role validation works without init()).
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 
 const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
@@ -288,5 +288,61 @@ describe('LLM registry derivation from MODEL_CATALOG', () => {
     expect(m2.video).toBe(false);
     const m3 = LLM_MODELS.find(m => m.id === 'm3');
     expect(m3.vision && m3.pdf && m3.audio && m3.video).toBe(true);
+  });
+});
+
+describe('AgentBuilderView model menu — models on the user\'s own key', () => {
+  const { _ownModelOptions, _loadOwnModels, _setModel } = AgentBuilderView;
+  const mount = (inner = '') => {
+    document.body.innerHTML = `<select id="b-model"><option value="nice-auto">NICE Auto</option><option value="m1">Model One</option>${inner}</select><p id="auto-model-hint"></p><p id="own-model-hint" hidden></p>`;
+    return document.getElementById('b-model');
+  };
+  const fakeOwnKeys = (on) => ({
+    available: () => true,
+    load: async () => {},
+    switchedOn: () => on,
+    label: (id) => ({ 'byo:openai:gpt-5': 'GPT-5', 'byo:anthropic:claude-x': 'Claude X' })[id] || id.split(':')[2],
+  });
+  afterEach(() => { delete globalThis.OwnKeys; document.body.innerHTML = ''; });
+
+  it('adds the switched-on own-key models under their own group', async () => {
+    globalThis.OwnKeys = fakeOwnKeys(['byo:openai:gpt-5', 'byo:anthropic:claude-x']);
+    const sel = mount();
+    await _loadOwnModels();
+    const group = sel.querySelector('optgroup#b-model-own');
+    expect(group.label).toBe('Your own API keys');
+    expect([...group.querySelectorAll('option')].map(o => [o.value, o.textContent])).toEqual([
+      ['byo:openai:gpt-5', 'GPT-5 (your key)'],
+      ['byo:anthropic:claude-x', 'Claude X (your key)'],
+    ]);
+  });
+
+  it('adds nothing on the website', async () => {
+    const sel = mount();
+    await _loadOwnModels();
+    expect(sel.querySelector('optgroup')).toBeNull();
+  });
+
+  it('keeps an agent\'s own-key model selected where that key is not, so saving never swaps it', () => {
+    const html = _ownModelOptions('byo:openai:gpt-5');
+    expect(html).toContain('value="byo:openai:gpt-5" selected');
+    expect(html).toContain('gpt-5 (your key, desktop app)');
+    expect(_ownModelOptions('m1')).toBe('');
+    const sel = mount(html);
+    expect(sel.value).toBe('byo:openai:gpt-5');
+  });
+
+  it('selects an imported own-key model and shows the hint, which goes for a NICE model', () => {
+    const sel = mount();
+    _setModel('byo:anthropic:claude-x');
+    expect(sel.value).toBe('byo:anthropic:claude-x');
+    expect(document.getElementById('own-model-hint').hidden).toBe(false);
+    expect(document.getElementById('auto-model-hint').style.display).toBe('none');
+    _setModel('nice-auto');
+    expect(document.getElementById('auto-model-hint').style.display).toBe('');
+    expect(document.getElementById('own-model-hint').hidden).toBe(true);
+    _setModel('m1');
+    expect(sel.value).toBe('m1');
+    expect(document.getElementById('own-model-hint').hidden).toBe(true);
   });
 });

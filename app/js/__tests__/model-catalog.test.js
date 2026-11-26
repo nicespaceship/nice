@@ -23,7 +23,7 @@ function loadUMD(rel) {
   new Function('module', 'exports', code)(mod, mod.exports); // CommonJS branch
   return mod.exports;
 }
-const { MODEL_CATALOG, getById, listProviders } = loadUMD('../lib/model-catalog.js');
+const { MODEL_CATALOG, PROVIDER_COLORS, getById, listProviders, providerColor } = loadUMD('../lib/model-catalog.js');
 
 describe('ModelCatalog.MODEL_CATALOG — shape', () => {
   it('gives every entry the required presentation + capability fields', () => {
@@ -115,5 +115,17 @@ describe('ModelCatalog ↔ TokenConfig.MODELS join (SSOT invariant)', () => {
     const catalogIds = MODEL_CATALOG.map(m => m.id).sort();
     const configIds = Object.keys(TokenConfig.MODELS).sort();
     expect(catalogIds).toEqual(configIds);
+  });
+});
+
+describe('ModelCatalog.providerColor — models on the user\'s own key', () => {
+  it('frames an own-key model in its maker\'s color', () => {
+    expect(providerColor('byo:anthropic:claude-x')).toBe(PROVIDER_COLORS.Anthropic);
+    expect(providerColor('byo:gemini:gemini-3-pro')).toBe(PROVIDER_COLORS.Google);
+    expect(providerColor('byo:moonshot:kimi-k2')).toBe(PROVIDER_COLORS['Moonshot AI']);
+  });
+
+  it('falls back for a host of other makers\' models', () => {
+    expect(providerColor('byo:groq:llama-x')).toBe(providerColor('no-such-model'));
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 
 describe('BlueprintUtils.humanizeModel', () => {
   const h = BlueprintUtils.humanizeModel;
@@ -95,6 +95,20 @@ describe('BlueprintUtils.humanizeModel', () => {
 
     it('returns empty string for empty string', () => {
       expect(h('')).toBe('');
+    });
+  });
+  describe('models on the user\'s own key', () => {
+    afterEach(() => { delete globalThis.OwnKeys; });
+
+    it('reads the model id when the desktop app\'s list is not loaded', () => {
+      expect(h('byo:openai:gpt-5')).toBe('gpt-5 (your key)');
+      expect(BlueprintUtils.humanizeModelShort('byo:openai:gpt-5')).toBe('gpt-5');
+    });
+
+    it('takes the name from OwnKeys when it is there', () => {
+      globalThis.OwnKeys = { label: () => 'GPT-5' };
+      expect(h('byo:openai:gpt-5')).toBe('GPT-5 (your key)');
+      expect(BlueprintUtils.humanizeModelShort('byo:openai:gpt-5')).toBe('GPT-5');
     });
   });
 });

@@ -7,7 +7,7 @@
 
    Ids are 'byo:<provider>:<model>'. Code offers every own-key model in its
    model menu. Space and the prompt panel's model menu offer the ones the
-   user switches on in API keys ("In Space and chat"), kept in
+   user switches on in API keys ("In Space, chat and agents"), kept in
    Utils.KEYS.ownModels on this computer only, like the keys.
 
    OwnKeys.openKeys() is the API keys dialog, shared by Code and AI Models.
@@ -100,7 +100,7 @@ const OwnKeys = (() => {
     return p ? (g ? g.label : p.provider) + ' (your key)' : '';
   }
 
-  /* ── Switched on for Space and chat ── */
+  /* ── Switched on for Space, chat and agents ── */
 
   function _readOn() {
     try {
@@ -149,7 +149,7 @@ const OwnKeys = (() => {
             <button type="button" class="modal-close" id="own-keys-close" aria-label="Close"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-x"/></svg></button>
           </div>
           <div class="modal-body">
-            <p class="own-keys-intro">Use your own key with a model provider instead of a NICE account. NICE keeps each key encrypted on this computer and sends it only to that provider; the provider bills you. Code can use all of a provider's models; pick the ones you want in Space and chat.</p>
+            <p class="own-keys-intro">Use your own key with a model provider instead of a NICE account. NICE keeps each key encrypted on this computer and sends it only to that provider; the provider bills you. Code can use all of a provider's models; pick the ones you want in Space, chat and agents.</p>
             <div class="own-keys-list" id="own-keys-list"></div>
           </div>
         </div>
@@ -191,7 +191,7 @@ const OwnKeys = (() => {
     const on = new Set(_readOn());
     const count = g.models.filter(m => on.has(idFor(pid, m.id))).length;
     return `<details class="own-key-models"${count ? ' open' : ''}>
-        <summary>In Space and chat: ${count} of ${g.models.length} models</summary>
+        <summary>In Space, chat and agents: ${count} of ${g.models.length} models</summary>
         <div class="own-key-model-list">${g.models.map(m => {
           const id = idFor(pid, m.id);
           return `<label class="own-key-model"><input type="checkbox" data-model="${_attr(id)}"${on.has(id) ? ' checked' : ''}> <span>${_esc(m.label || m.id)}</span></label>`;
@@ -303,7 +303,7 @@ const OwnKeys = (() => {
     const summary = details && details.querySelector('summary');
     if (summary) {
       const all = details.querySelectorAll('input[data-model]');
-      summary.textContent = 'In Space and chat: ' + [...all].filter(x => x.checked).length + ' of ' + all.length + ' models';
+      summary.textContent = 'In Space, chat and agents: ' + [...all].filter(x => x.checked).length + ' of ' + all.length + ' models';
     }
   }
 

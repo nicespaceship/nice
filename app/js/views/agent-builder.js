@@ -429,8 +429,10 @@ const AgentBuilderView = (() => {
                 <select id="b-model" class="filter-select builder-select">
                   <option value="nice-auto" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? 'selected' : ''}>NICE Auto (recommended)</option>
                   ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
+                  ${_ownModelOptions(agent?.llm_engine)}
                 </select>
                 <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>NICE Auto selects the best model based on mission history.</p>
+                <p class="builder-hint" id="own-model-hint" ${_isOwnKey(agent?.llm_engine) ? '' : 'hidden'}>${_ownModelHint()}</p>
                 ${_getAvailableModels().filter(m => m.enabled).length === 0 ? '<p class="builder-hint"><a href="#/security?tab=models">Enable a model</a> to run missions.</p>' : ''}
               </div>
               <div class="auth-field">
@@ -577,10 +579,8 @@ const AgentBuilderView = (() => {
     }
 
     // Model dropdown — toggle NICE Auto hint
-    document.getElementById('b-model')?.addEventListener('change', (e) => {
-      const hint = document.getElementById('auto-model-hint');
-      if (hint) hint.style.display = e.target.value === 'nice-auto' ? '' : 'none';
-    });
+    document.getElementById('b-model')?.addEventListener('change', _syncModelHints);
+    _loadOwnModels();
 
     // Tool chip selection
     document.querySelectorAll('.builder-tool-chip input').forEach(cb => {
@@ -657,7 +657,7 @@ const AgentBuilderView = (() => {
       document.getElementById('b-name').value = '';
       document.getElementById('b-role').value = _resolveRoleSlug(tmpl.role) || 'research';
       document.getElementById('b-type').value = tmpl.type || 'Specialist';
-      document.getElementById('b-model').value = tmpl.llm_engine || 'gemini-2-5-flash';
+      _setModel(tmpl.llm_engine || 'gemini-2-5-flash');
       document.getElementById('b-temp').value = tmpl.config?.temperature ?? 0.7;
       if (tempVal) tempVal.textContent = tmpl.config?.temperature ?? 0.7;
       if (memoryBtn) {
@@ -1068,7 +1068,7 @@ const AgentBuilderView = (() => {
     // fall back to 'research' if it doesn't match the Roles catalog.
     if (el('b-role')) el('b-role').value = _resolveRoleSlug(bp.role_type) || _resolveRoleSlug(cfg.role) || _resolveRoleSlug(bp.category) || 'research';
     if (el('b-type')) el('b-type').value = cfg.type || 'Specialist';
-    if (el('b-model')) el('b-model').value = cfg.llm_engine || 'nice-auto';
+    if (el('b-model')) _setModel(cfg.llm_engine || 'nice-auto');
     if (el('b-temp')) {
       el('b-temp').value = cfg.temperature ?? 0.7;
       const tempVal = el('b-temp-val');
@@ -1123,9 +1123,80 @@ const AgentBuilderView = (() => {
     }
   }
 
+  /* ── Models on the user's own API keys (desktop app) ──
+     The ones switched on in API keys join the list, under their own group.
+     The list loads after the form draws, so a model already set on the
+     agent gets its option at once and keeps it, even on a computer without
+     that key: saving the form never swaps the agent's model quietly. */
+  const _ownModelHint = () => {
+    const missions = typeof Terminology !== 'undefined' ? Terminology.label('mission', { plural: true, lowercase: true }) : 'missions';
+    return `Runs on your own key in the NICE desktop app. Scheduled ${Utils.esc(missions)} run on NICE's servers, which can't use your key.`;
+  };
+  const _isOwnKey = (id) => typeof id === 'string' && id.startsWith('byo:');
+
+  function _ownLabel(id) {
+    const name = typeof OwnKeys !== 'undefined' ? OwnKeys.label(id) : String(id).split(':').slice(2).join(':');
+    const here = typeof OwnKeys !== 'undefined' && OwnKeys.available();
+    return name + (here ? ' (your key)' : ' (your key, desktop app)');
+  }
+
+  function _ownModelOptions(current) {
+    if (!_isOwnKey(current)) return '';
+    return `<optgroup label="Your own API keys" id="b-model-own"><option value="${Utils.escAttr(current)}" selected>${_esc(_ownLabel(current))}</option></optgroup>`;
+  }
+
+  function _ownGroup(sel) {
+    let g = sel.querySelector('#b-model-own');
+    if (!g) {
+      g = document.createElement('optgroup');
+      g.id = 'b-model-own';
+      g.label = 'Your own API keys';
+      sel.appendChild(g);
+    }
+    return g;
+  }
+
+  function _addOwnOption(sel, id) {
+    if ([...sel.options].some(o => o.value === id)) return;
+    const o = document.createElement('option');
+    o.value = id;
+    o.textContent = _ownLabel(id);
+    _ownGroup(sel).appendChild(o);
+  }
+
+  async function _loadOwnModels() {
+    if (typeof OwnKeys === 'undefined' || !OwnKeys.available()) return;
+    try { await OwnKeys.load(); } catch { return; }
+    const sel = document.getElementById('b-model');
+    if (!sel) return;
+    OwnKeys.switchedOn().forEach(id => _addOwnOption(sel, id));
+    // The loaded list knows the model's name now.
+    [...sel.options].forEach(o => { if (_isOwnKey(o.value)) o.textContent = _ownLabel(o.value); });
+  }
+
+  function _setModel(id) {
+    const sel = document.getElementById('b-model');
+    if (!sel) return;
+    if (_isOwnKey(id)) _addOwnOption(sel, id);
+    sel.value = id;
+    _syncModelHints();
+  }
+
+  // The NICE Auto hint and the own-key hint follow the model picked, by
+  // hand or by a template or import.
+  function _syncModelHints() {
+    const sel = document.getElementById('b-model');
+    if (!sel) return;
+    const auto = document.getElementById('auto-model-hint');
+    if (auto) auto.style.display = sel.value === 'nice-auto' ? '' : 'none';
+    const own = document.getElementById('own-model-hint');
+    if (own) own.hidden = !_isOwnKey(sel.value);
+  }
+
   return { title, render,
     // Test seams: pure helpers for the agent_blueprints serialization path.
-    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel };
+    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel,
+    _ownModelOptions, _loadOwnModels, _setModel };
 })();
 
 /* ── LLM Provider / Model Registry (backwards-compatible aliases from MODEL_CATALOG) ── */
