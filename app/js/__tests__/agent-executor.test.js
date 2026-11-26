@@ -535,6 +535,89 @@ describe('AgentExecutor', () => {
       ToolRegistry.deregister(ATL_ID);
     });
 
+    const toolTurn = (id, n = 1) => ({
+      content: [
+        { type: 'text', text: 'Looking.' },
+        ...Array.from({ length: n }, (_, i) => ({ type: 'tool_use', id: id + '-' + i, name: 'outlook_search_messages', input: { query: 'q' + i } })),
+      ],
+      stop_reason: 'tool_use',
+      usage: { input_tokens: 5, output_tokens: 5 },
+    });
+    const answer = (text) => ({ content: 'Final Answer: ' + text, stop_reason: 'end_turn', usage: { input_tokens: 5, output_tokens: 5 } });
+    const agent = { id: 'agent-keep', name: 'Keep', config: { role: 'Assistant', tools: ['outlook_search_messages'] } };
+    const callIds = (msgs) => msgs.flatMap(m => Array.isArray(m.content) ? m.content : [])
+      .filter(p => p.type === 'tool_use').map(p => p.id);
+
+    it('keeps a turn\'s tool calls and results in the history with keepToolTurns', async () => {
+      _scriptedResponses.push(toolTurn('tu-a'), answer('one'), answer('two'));
+      const controller = AgentExecutor.converse(agent, { tools: ['outlook_search_messages'], keepToolTurns: true });
+      await controller.send('first');
+      await controller.send('second');
+      const msgs = _capturedRequests[2].messages.filter(m => m.role !== 'system');
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
+      expect(callIds(msgs)).toEqual(['tu-a-0']);
+      expect(msgs[2].content.some(p => p.type === 'tool_result' && p.tool_use_id === 'tu-a-0')).toBe(true);
+      expect(msgs[3].content).toBe('one');
+      expect(msgs[4].content).toBe('second');
+    });
+
+    it('keeps a stopped turn\'s finished tool calls with keepToolTurns', async () => {
+      _scriptedResponses.push(toolTurn('tu-s'), answer('two'));
+      let stop = false;
+      const controller = AgentExecutor.converse(agent, {
+        tools: ['outlook_search_messages'], keepToolTurns: true,
+        shouldStop: () => stop,
+        onStep: () => { stop = true; },
+      });
+      const first = await controller.send('first');
+      expect(first.stopped).toBe(true);
+      stop = false;
+      await controller.send('second');
+      const msgs = _capturedRequests[1].messages.filter(m => m.role !== 'system');
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
+      expect(callIds(msgs)).toEqual(['tu-s-0']);
+      expect(msgs[3].content).toMatch(/^Stopped/);
+    });
+
+    it('keeps the calls that ran when a stop lands between two calls of one reply', async () => {
+      _scriptedResponses.push(toolTurn('tu-m', 2), answer('two'));
+      let stop = false;
+      const controller = AgentExecutor.converse(agent, {
+        tools: ['outlook_search_messages'], keepToolTurns: true,
+        shouldStop: () => stop,
+        onStep: () => { stop = true; },
+      });
+      expect((await controller.send('first')).stopped).toBe(true);
+      expect(_toolCalls.length).toBe(1);
+      stop = false;
+      await controller.send('second');
+      const msgs = _capturedRequests[1].messages.filter(m => m.role !== 'system');
+      expect(callIds(msgs)).toEqual(['tu-m-0']);
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
+    });
+
+    it('keeps only the answer without keepToolTurns', async () => {
+      _scriptedResponses.push(toolTurn('tu-b'), answer('one'), answer('two'));
+      const controller = AgentExecutor.converse(agent, { tools: ['outlook_search_messages'] });
+      await controller.send('first');
+      await controller.send('second');
+      const msgs = _capturedRequests[2].messages.filter(m => m.role !== 'system');
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user']);
+      expect(callIds(msgs)).toEqual([]);
+    });
+
+    it('leaves out calls whose results never came back when a turn hits maxSteps', async () => {
+      // Two calls in one message with one step left: the second never runs.
+      _scriptedResponses.push(toolTurn('tu-c'), toolTurn('tu-d', 2), answer('two'));
+      const controller = AgentExecutor.converse(agent, { tools: ['outlook_search_messages'], keepToolTurns: true, maxSteps: 2 });
+      await controller.send('first');
+      await controller.send('second');
+      const msgs = _capturedRequests[2].messages.filter(m => m.role !== 'system');
+      expect(callIds(msgs)).toEqual(['tu-c-0']);
+      expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
+      expect(msgs[4].content).toBe('second');
+    });
+
     it('executes a native tool_use block and loops with tool_result', async () => {
       // Turn 1 from LLM: native Anthropic-style tool_use block
       _scriptedResponses.push({

@@ -11037,7 +11037,31 @@ body.preview-active .nice-ai {
   background:var(--surface); white-space:pre-wrap;
 }
 .code-msg-note, .code-msg-working { color:var(--text-muted); font-size:var(--text-sm); }
-.code-msg-working { display:flex; align-items:center; gap:8px; }
+.code-working-line { display:flex; align-items:center; gap:8px; }
+.code-working-out,
+.code-step-out,
+.code-ask-pre {
+  margin:6px 0 0; padding:8px 10px; border-radius:var(--radius); background:var(--bg2, var(--surface));
+  color:var(--text); font-family:var(--font-m); font-size:var(--text-xs); line-height:var(--lh-base);
+  white-space:pre; overflow-x:auto; max-height:240px; overflow-y:auto;
+}
+.code-working-out[hidden] { display:none; }
+/* Tool steps: one line each, the result folded under it. */
+.code-step { font-size:var(--text-sm); color:var(--text-muted); }
+.code-step summary { display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none; }
+.code-step summary::-webkit-details-marker { display:none; }
+.code-step summary:hover, .code-step[open] summary { color:var(--text); }
+.code-step-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--font-m); }
+/* Permission prompt */
+.code-ask {
+  max-width:760px; padding:12px 14px; border:1px solid var(--border-hi, var(--border)); border-radius:calc(var(--radius) * 1.2);
+  background:var(--bg); color:var(--text); font-size:var(--text-sm);
+}
+.code-ask-q { display:flex; align-items:center; gap:8px; font-weight:var(--fw-medium); overflow-wrap:anywhere; }
+.code-ask-q code { font-family:var(--font-m); }
+.code-ask-note { margin:6px 0 0; color:var(--text-muted); font-size:var(--text-xs); }
+.code-diff-del { color:var(--text-muted); }
+.code-ask-btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 
 .code-prompt {
   flex-shrink:0; margin:8px 16px 16px; padding:10px 10px 8px 14px;
@@ -11052,11 +11076,12 @@ body.preview-active .nice-ai {
   font-family:var(--font-b); font-size:var(--text-base); line-height:var(--lh-base);
 }
 .code-prompt-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
+.code-prompt-opts { display:flex; align-items:center; gap:2px; min-width:0; }
 /* The themes' select rules reach (0,3,1) with their :not() opt-outs, so
    the class on the select is what lifts these past them. */
 .code-view .code-prompt-bar select.code-model,
 .code-view .code-prompt-bar select.code-model:focus {
-  max-width:60%; padding:4px 8px; border:0; border-radius:calc(var(--radius) * .8); outline:0; box-shadow:none; clip-path:none;
+  min-width:0; max-width:100%; padding:4px 8px; border:0; border-radius:calc(var(--radius) * .8); outline:0; box-shadow:none; clip-path:none;
   appearance:auto; -webkit-appearance:auto; background:transparent;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); cursor:pointer;
 }

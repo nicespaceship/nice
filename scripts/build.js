@@ -68,6 +68,7 @@ const SCRIPTS = [
   'app/js/lib/ship-templates.js',
   'app/js/lib/safe-expr.js',
   'app/js/lib/tool-registry.js',
+  'app/js/lib/code-tools.js',
   'app/js/lib/browser-tools.js',
   'app/js/lib/mcp-bridge.js',
   'app/js/lib/agent-executor.js',

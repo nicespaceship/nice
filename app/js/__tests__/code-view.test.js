@@ -96,12 +96,12 @@ beforeEach(() => {
 afterEach(() => { delete window.NiceDesktop; delete globalThis.AgentExecutor; delete globalThis.LLM_MODELS; });
 
 describe('CodeView on the website', () => {
-  it('says Code runs in the desktop app, without promising file edits', async () => {
+  it('says Code runs in the desktop app and asks before it changes anything', async () => {
     const { el } = await mountView(CodeView);
     expect(el.querySelector('.code-empty-title').textContent).toBe('Code runs in the NICE desktop app');
     const text = el.querySelector('.code-empty-text').textContent;
-    expect(text).not.toMatch(/edits files/);
-    expect(text).toContain("can't open or change files yet");
+    expect(text).toContain('asking you first');
+    expect(text).not.toContain('—');
     expect(el.querySelector('.code-view')).toBeNull();
   });
 });
@@ -112,7 +112,7 @@ describe('CodeView in the desktop app', () => {
     window.NiceDesktop = { code: host };
     const { el } = await mountView(CodeView);
     expect(el.querySelector('.code-empty-title').textContent).toBe('Open a folder');
-    expect(el.querySelector('.code-empty-text').textContent).toContain("can't open or change files yet");
+    expect(el.querySelector('.code-empty-text').textContent).toContain('asks before it edits');
     el.querySelector('#code-open-folder').click();
     await flush();
     expect(host.openFolder).toHaveBeenCalled();
@@ -685,7 +685,11 @@ describe('CodeView in the desktop app', () => {
     const [bp, opts] = AgentExecutor.converse.mock.calls[0];
     expect(bp.config.llm_engine).toBe('gemini-2-5-flash');
     expect(bp.config.system_prompt).toContain('"project"');
-    expect(opts.tools).toEqual([]);
+    expect(opts.tools).toEqual(CodeTools.IDS);
+    expect(opts.approvalMode).toBe('review');
+    expect(opts.keepToolTurns).toBe(true);
+    expect(opts.maxSteps).toBeGreaterThan(1);
+    expect(ToolRegistry.resolve('code-edit')).toBeTruthy();
     expect(send).toHaveBeenCalledWith('what is this?');
     expect(el.querySelector('.code-msg-user').textContent).toBe('what is this?');
     expect(el.querySelector('.code-msg-assistant strong').textContent).toBe('the');
@@ -882,5 +886,218 @@ describe('Code CSS', () => {
     const [, min, pct] = cols.match(/minmax\(0,\s*1fr\)\s+minmax\((\d+)px,\s*(\d+)%\)/);
     const panel = Math.max(Number(min), 568 * Number(pct) / 100);
     expect(568 - panel).toBeGreaterThan(panel);
+  });
+});
+
+describe('CodeView agent tools', () => {
+  const ask = (el) => el.querySelector('.code-ask');
+  const click = (el, answer) => ask(el).querySelector(`[data-answer="${answer}"]`).click();
+  async function started(files = { 'a.js': 'x' }) {
+    const model = slowModel();
+    const { host, el } = await openWorkspace(files, {}, { state: { user: { id: 'u1' } } });
+    submitPrompt(el, 'go');
+    await flush();
+    return { model, host, el, opts: model.opts() };
+  }
+  const edit = { tool: 'edit_file', input: { path: 'a.js', old_text: 'x', new_text: 'y' } };
+  const run = (command) => ({ tool: 'run_command', input: { command } });
+
+  it('asks before an edit, shows the change, and runs it on Allow', async () => {
+    const { el, opts } = await started();
+    const answer = opts.onApprovalNeeded(edit);
+    await flush();
+    expect(ask(el).textContent).toContain('Allow Code to edit');
+    expect(ask(el).querySelector('code').textContent).toBe('a.js');
+    expect(ask(el).querySelector('.code-diff-del').textContent).toBe('- x');
+    expect(ask(el).querySelector('.code-diff-add').textContent).toBe('+ y');
+    expect(document.activeElement).toBe(ask(el).querySelector('[data-answer="once"]'));
+    expect(el.querySelector('.code-msg-working').textContent).toContain('Waiting for your answer');
+    click(el, 'once');
+    await expect(answer).resolves.toBe(true);
+    expect(ask(el)).toBeNull();
+    // Allow once: the next edit asks again.
+    opts.onApprovalNeeded(edit);
+    await flush();
+    expect(ask(el)).not.toBeNull();
+  });
+
+  it('turns a call down on Deny or Escape', async () => {
+    const { el, opts } = await started();
+    const first = opts.onApprovalNeeded(edit);
+    await flush();
+    click(el, 'deny');
+    await expect(first).resolves.toBe(false);
+    const second = opts.onApprovalNeeded(run('ls'));
+    await flush();
+    ask(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect(second).resolves.toBe(false);
+  });
+
+  it('allows the rest of the session\'s edits after Allow all edits', async () => {
+    const { el, opts } = await started();
+    const first = opts.onApprovalNeeded(edit);
+    await flush();
+    click(el, 'always');
+    await expect(first).resolves.toBe(true);
+    await expect(opts.onApprovalNeeded({ tool: 'write_file', input: { path: 'b.js', content: 'z' } })).resolves.toBe(true);
+    expect(ask(el)).toBeNull();
+    // Commands still ask.
+    opts.onApprovalNeeded(run('ls'));
+    await flush();
+    expect(ask(el).textContent).toContain('run this command');
+  });
+
+  it('remembers a command prefix, but never for a command with shell operators', async () => {
+    const { el, opts } = await started();
+    const first = opts.onApprovalNeeded(run('npm test'));
+    await flush();
+    expect(ask(el).querySelector('[data-answer="always"]').textContent).toBe('Always allow npm test');
+    click(el, 'always');
+    await expect(first).resolves.toBe(true);
+    await expect(opts.onApprovalNeeded(run('npm test -- --watch'))).resolves.toBe(true);
+
+    const chained = opts.onApprovalNeeded(run('npm test && rm -rf ~'));
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    expect(ask(el).querySelector('[data-answer="always"]')).toBeNull();
+    expect(ask(el).querySelector('code').textContent).toBe('$ npm test && rm -rf ~');
+    click(el, 'deny');
+    await expect(chained).resolves.toBe(false);
+  });
+
+  it('follows the permission mode, and a mode change answers a waiting prompt', async () => {
+    const { el, opts } = await started();
+    const mode = el.querySelector('#code-mode');
+    const setMode = (v) => { mode.value = v; mode.dispatchEvent(new Event('change', { bubbles: true })); };
+    const waiting = opts.onApprovalNeeded(edit);
+    await flush();
+    setMode('edits');
+    await expect(waiting).resolves.toBe(true);
+    await expect(opts.onApprovalNeeded(edit)).resolves.toBe(true);
+    const cmd = opts.onApprovalNeeded(run('ls'));
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    setMode('bypass');
+    await expect(cmd).resolves.toBe(true);
+    await expect(opts.onApprovalNeeded(run('rm -rf build'))).resolves.toBe(true);
+  });
+
+  it('answers a waiting prompt no on Stop', async () => {
+    const { el, opts } = await started();
+    const waiting = opts.onApprovalNeeded(edit);
+    await flush();
+    submitPrompt(el);
+    await expect(waiting).resolves.toBe(false);
+    expect(ask(el)).toBeNull();
+    expect(opts.shouldStop()).toBe(true);
+  });
+
+  it('draws a waiting prompt again when the view comes back', async () => {
+    const { opts } = await started();
+    const waiting = opts.onApprovalNeeded(edit);
+    await flush();
+    CodeView.destroy();
+    const { el } = await mountView(CodeView);
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    expect(el.querySelector('#code-thread').lastElementChild.classList.contains('code-msg-working')).toBe(true);
+    click(el, 'once');
+    await expect(waiting).resolves.toBe(true);
+  });
+
+  it('offers no Always allow for a shell or interpreter', async () => {
+    const { el, opts } = await started();
+    const waiting = opts.onApprovalNeeded(run("sh -c 'ls'"));
+    await flush();
+    expect(ask(el).querySelector('[data-answer="always"]')).toBeNull();
+    click(el, 'once');
+    await expect(waiting).resolves.toBe(true);
+    const again = opts.onApprovalNeeded(run("sh -c 'rm -rf ~'"));
+    await flush();
+    expect(ask(el)).not.toBeNull();
+    click(el, 'deny');
+    await expect(again).resolves.toBe(false);
+  });
+
+  it('goes back to Ask before edits when the folder changes', async () => {
+    const { host, el } = await started();
+    const mode = el.querySelector('#code-mode');
+    mode.value = 'bypass';
+    mode.dispatchEvent(new Event('change', { bubbles: true }));
+    host.openFolder.mockResolvedValueOnce({ root: '/Users/me/other', name: 'other' });
+    el.querySelector('#code-change-folder').click();
+    await flush();
+    expect(el.querySelector('#code-mode').value).toBe('ask');
+    globalThis.AgentExecutor.converse.mockClear();
+    submitPrompt(el, 'again');
+    await flush();
+    AgentExecutor.converse.mock.calls[0][1].onApprovalNeeded(edit);
+    await flush();
+    expect(ask(el)).not.toBeNull();
+  });
+
+  it('clears allowances and answers no when the folder changes', async () => {
+    const { host, el, opts } = await started();
+    const first = opts.onApprovalNeeded(edit);
+    await flush();
+    click(el, 'always');
+    await first;
+    const waiting = opts.onApprovalNeeded(run('ls'));
+    await flush();
+    host.openFolder.mockResolvedValueOnce({ root: '/Users/me/other', name: 'other' });
+    el.querySelector('#code-change-folder').click();
+    await flush();
+    await expect(waiting).resolves.toBe(false);
+    // The old conversation's gate refuses everything now.
+    await expect(opts.onApprovalNeeded(edit)).resolves.toBe(false);
+
+    globalThis.AgentExecutor.converse.mockClear();
+    submitPrompt(el, 'again');
+    await flush();
+    const next = AgentExecutor.converse.mock.calls[0][1];
+    next.onApprovalNeeded(edit);
+    await flush();
+    expect(ask(el)).not.toBeNull();
+  });
+
+  it('shows each tool call as a step line with its result', async () => {
+    const { el, opts } = await started();
+    opts.onStep({ action: 'read_file', actionInput: { path: 'a.js' }, thought: 'Reading it first.', observation: JSON.stringify({ path: 'a.js', content: 'x' }) });
+    opts.onStep({ action: 'run_command', actionInput: { command: 'npm test' }, thought: 'Reading it first.', observation: JSON.stringify({ exitCode: 1, stdout: 'FAIL', stderr: '' }) });
+    opts.onStep({ action: 'edit_file', actionInput: { path: 'a.js' }, thought: '', observation: 'Action blocked — user declined approval.' });
+    opts.onStep({ action: 'run_command', actionInput: { command: 'ls' }, thought: '', observation: 'Stopped: the chat moved on before this ran.' });
+    const steps = [...el.querySelectorAll('.code-step')];
+    expect(steps.map(s => s.querySelector('.code-step-title').textContent)).toEqual(['Read a.js', 'Run npm test', 'Denied: Edit a.js', 'Not run: Run ls']);
+    expect(steps[0].querySelector('.code-step-out').textContent).toBe('x');
+    expect(steps[1].querySelector('.code-step-out').textContent).toBe('FAIL\nExit code 1');
+    expect(steps[2].querySelector('.dot-r')).not.toBeNull();
+    expect(steps[0].querySelector('.dot-g')).not.toBeNull();
+    expect(steps[1].querySelector('.dot-r')).not.toBeNull();
+    // The agent's text before its calls shows once.
+    expect([...el.querySelectorAll('.code-msg-assistant')].map(m => m.textContent)).toEqual(['Reading it first.']);
+  });
+
+  it('lists the folder again after an edit lands', async () => {
+    const { host, opts } = await started();
+    const before = host.list.mock.calls.length;
+    opts.onStep({ action: 'write_file', actionInput: { path: 'b.js' }, thought: '', observation: JSON.stringify({ path: 'b.js', created: true }) });
+    await flush();
+    expect(host.list.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it('shows a running command\'s output and stops it on Stop', async () => {
+    const { host, el } = await started();
+    host.emit({ id: 41, tag: CodeTools.AGENT_TAG + '9', stream: 'start', data: '' });
+    host.emit({ id: 41, tag: CodeTools.AGENT_TAG + '9', stream: 'stdout', data: 'building\n' });
+    const out = el.querySelector('.code-working-out');
+    expect(out.hidden).toBe(false);
+    expect(out.textContent).toBe('building');
+    el.querySelector('#code-tab-terminal').click();
+    expect(termOut(el)).not.toContain('building');
+    submitPrompt(el);
+    expect(host.kill).toHaveBeenCalledWith(41);
+    // One that starts after Stop is stopped at once.
+    host.emit({ id: 42, tag: CodeTools.AGENT_TAG + '10', stream: 'start', data: '' });
+    expect(host.kill).toHaveBeenCalledWith(42);
   });
 });

@@ -9,6 +9,11 @@
    Layout, after Claude Code's: the conversation on the left with the
    prompt bar under it; a closable panel on the right with Files and
    Terminal tabs.
+
+   The agent reads, lists and searches the folder on its own, and asks
+   before it edits or writes a file or runs a command (CodeTools). The
+   permission mode in the prompt bar and "Always allow" answers last for
+   the session and are cleared when the folder changes.
 ═══════════════════════════════════════════════════════════════════ */
 
 const CodeView = (() => {
@@ -22,6 +27,16 @@ const CodeView = (() => {
   const SEND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   const STOP_ICON = '<span class="code-stop-square" aria-hidden="true"></span>';
   const STOPPING_TEXT = 'Stopping. Code drops the reply when it arrives, and then you can send a new message.';
+  const MAX_STEPS = 30;
+  const STEP_DETAIL_MAX = 4000;     // characters of a tool result shown in its step line
+  const LIVE_OUT_MAX = 20000;       // characters of a running command's output kept for the working line
+  const LIVE_OUT_LINES = 12;
+  const PREVIEW_LINES = 40;         // lines of a new file shown in its permission prompt
+  const MODES = [
+    { id: 'ask', label: 'Ask before edits' },
+    { id: 'edits', label: 'Edit automatically' },
+    { id: 'bypass', label: 'Bypass permissions' },
+  ];
 
   let _el = null;
   let _ws = null;            // { root, name } of the open folder
@@ -35,6 +50,16 @@ const CodeView = (() => {
   let _convo = null;
   let _convoBlueprint = null;
   let _turn = null;          // { gen, stopAsked } while a reply is on its way
+  let _lastThought = '';     // the agent's text shown before its last tool call
+
+  // Permissions, for this session
+  let _mode = 'ask';
+  let _allowEdits = false;            // "Always allow" on an edit or write
+  const _allowCmds = new Set();       // command prefixes allowed for the session
+  let _pending = null;                // { gen, d, input, resolve } while a prompt waits
+  // The command the agent is running: its tag and id from the host's
+  // 'start' event, and its output so far for the working line.
+  let _agentRun = null;               // { tag, id, out }
 
   // Files tab
   const _dirCache = new Map();   // dir path → { entries, truncated }
@@ -90,7 +115,7 @@ const CodeView = (() => {
       <div class="code-empty">
         <svg class="code-empty-icon" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-terminal"/></svg>
         <h1 class="code-empty-title">Code runs in the NICE desktop app</h1>
-        <p class="code-empty-text">Code opens a folder on your computer and puts its files and a terminal next to a chat. You browse the files and run the commands; the agent answers in the chat but can't open or change files yet. A web page can't reach your files or a terminal, so Code lives in the desktop app.</p>
+        <p class="code-empty-text">Code opens a folder on your computer and puts its files and a terminal next to a chat. The agent reads the code, edits files and runs commands there, asking you first before it changes anything. A web page can't reach your files or a terminal, so Code lives in the desktop app.</p>
         <a class="btn btn-sm" href="#/">Back to NICE</a>
       </div>`;
   }
@@ -100,7 +125,7 @@ const CodeView = (() => {
       <div class="code-empty">
         <svg class="code-empty-icon" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-folder"/></svg>
         <h1 class="code-empty-title">Open a folder</h1>
-        <p class="code-empty-text">Code works in one folder: you browse its files and run commands from it. The agent can't open or change files yet, so paste what it needs to see.</p>
+        <p class="code-empty-text">Code works in one folder. The agent reads its files on its own and asks before it edits one or runs a command; you can browse the files and run commands too.</p>
         <button type="button" class="btn btn-primary btn-sm" id="code-open-folder">Open folder</button>
       </div>`;
     el.querySelector('#code-open-folder').addEventListener('click', _openFolder);
@@ -125,6 +150,12 @@ const CodeView = (() => {
     _thread = [];
     _convo = null;
     _convoBlueprint = null;
+    _lastThought = '';
+    _answer(false);
+    _mode = 'ask';
+    _allowEdits = false;
+    _allowCmds.clear();
+    _agentRun = null;
     _dirCache.clear();
     _expanded.clear();
     _expanded.add('.');
@@ -158,7 +189,10 @@ const CodeView = (() => {
           <form class="code-prompt" id="code-prompt">
             <textarea id="code-input" rows="1" placeholder="${_attr('Ask Code to do something in ' + _ws.name)}" aria-label="Message Code"></textarea>
             <div class="code-prompt-bar">
-              <select id="code-model" class="code-model" aria-label="Model">${_modelOptions()}</select>
+              <div class="code-prompt-opts">
+                <select id="code-mode" class="code-model" aria-label="Permissions">${MODES.map(m => `<option value="${m.id}"${m.id === _mode ? ' selected' : ''}>${_esc(m.label)}</option>`).join('')}</select>
+                <select id="code-model" class="code-model" aria-label="Model">${_modelOptions()}</select>
+              </div>
               <button type="submit" class="code-send" id="code-send" aria-label="Send"></button>
             </div>
           </form>
@@ -212,6 +246,11 @@ const CodeView = (() => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!_busyNow()) _send(); }
     });
     input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 240) + 'px'; });
+    el.querySelector('#code-mode').addEventListener('change', (e) => {
+      _mode = MODES.some(m => m.id === e.target.value) ? e.target.value : 'ask';
+      // A prompt waiting now is answered by the new mode if it covers it.
+      if (_pending && _preapproved(_pending.d)) _answer(true);
+    });
     el.querySelector('#code-model').addEventListener('change', (e) => {
       try { localStorage.setItem(MODEL_KEY, e.target.value); } catch {}
       if (_convoBlueprint) _convoBlueprint.config.llm_engine = e.target.value;
@@ -272,8 +311,11 @@ const CodeView = (() => {
 
   function _systemPrompt() {
     return [
-      `You are Code, the coding agent in NICE, working in the folder "${_ws.name}" on the user's computer.`,
-      'In this version you cannot read or change files or run commands yourself yet. When you need to see code, ask the user to paste it or open it in the Files panel; when a command should run, give it to them to run in the Terminal panel.',
+      `You are Code, the coding agent in NICE, working in the folder "${_ws.name}" on the user's computer. Paths are relative to that folder.`,
+      'Use your tools to do the work rather than describing it: list_files, search_files and read_file to find and read code; edit_file to change a file, write_file to create one; run_command for tests, builds and git.',
+      'Read a file before you edit it, and copy old_text exactly from what you read, including its indentation. Keep changes small and focused on what was asked.',
+      'The user approves edits and commands before they happen and may decline one. If they do, do not retry it; take a different approach or ask.',
+      'After a change, run the project\'s tests or build when there is one, and say what you changed and what you checked.',
       'Be direct and concise. Use fenced code blocks for code and commands.',
     ].join('\n');
   }
@@ -301,20 +343,25 @@ const CodeView = (() => {
       const model = (_el.querySelector('#code-model') || {}).value || 'gemini-2-5-flash';
       const gen = _gen;
       _convoBlueprint = { id: null, name: 'Code', config: { llm_engine: model, system_prompt: _systemPrompt() } };
+      const tools = typeof CodeTools !== 'undefined' && CodeTools.register() ? CodeTools.IDS : [];
       _convo = AgentExecutor.converse(_convoBlueprint, {
-        tools: [], maxSteps: 1,
+        tools, maxSteps: MAX_STEPS, keepToolTurns: true,
+        approvalMode: 'review',
+        onApprovalNeeded: (req) => _ask(req, gen),
+        onStep: (step) => _onStep(step, gen),
         shouldStop: () => gen !== _gen || !!(_turn && _turn.gen === gen && _turn.stopAsked),
       });
     }
 
     const turnState = { gen: _gen, stopAsked: false };
     _turn = turnState;
+    _lastThought = '';
     _paintSend();
     _paintWorking();
     let turn = null, failure = null;
     try { turn = await _convo.send(text); }
     catch (e) { failure = e; }
-    if (_turn === turnState) _turn = null;
+    if (_turn === turnState) { _turn = null; _agentRun = null; }
     // The folder changed while this reply was on its way: it belongs to
     // a conversation that is gone.
     if (turnState.gen !== _gen) return;
@@ -334,8 +381,153 @@ const CodeView = (() => {
   function _stop() {
     if (!_busyNow() || _turn.stopAsked) return;
     _turn.stopAsked = true;
+    // A prompt waiting is answered no; the agent loop sees the stop and
+    // ends the turn. A command it is running is stopped; one about to
+    // start is stopped when its 'start' event comes.
+    _answer(false);
+    if (_agentRun && _agentRun.id != null) _kill(_agentRun.id);
     _paintSend();
     _paintWorking();
+  }
+
+  /* ── Permissions ────────────────────────────────────────────────── */
+
+  // Whether the mode or an "Always allow" answer covers a call already.
+  function _preapproved(d) {
+    if (_mode === 'bypass') return true;
+    if (d.kind === 'edit' || d.kind === 'write') return _mode === 'edits' || _allowEdits;
+    if (d.kind === 'run') return [..._allowCmds].some(p => CodeTools.prefixCovers(p, d.command));
+    return false;
+  }
+
+  // ToolRegistry's approval gate: resolves true to run the call.
+  function _ask(req, gen) {
+    if (gen !== _gen || typeof CodeTools === 'undefined') return Promise.resolve(false);
+    const d = CodeTools.describe(req.tool, req.input);
+    if (d.kind === 'other') return Promise.resolve(false);
+    if (_preapproved(d)) return Promise.resolve(true);
+    _answer(false);
+    return new Promise(resolve => {
+      _pending = { gen, d, input: req.input || {}, resolve };
+      _paintAsk(true);
+    });
+  }
+
+  function _answer(ok, always) {
+    const p = _pending;
+    if (!p) return;
+    _pending = null;
+    if (ok && always) {
+      if (p.d.kind !== 'run') _allowEdits = true;
+      else if (CodeTools.canRemember(p.d.command)) _allowCmds.add(CodeTools.commandPrefix(p.d.command));
+    }
+    p.resolve(!!ok);
+    _paintAsk();
+  }
+
+  function _alwaysLabel(d) {
+    if (d.kind === 'run') {
+      return CodeTools.canRemember(d.command) ? 'Always allow ' + CodeTools.commandPrefix(d.command) : null;
+    }
+    return 'Allow all edits this session';
+  }
+
+  const _lines = (t) => String(t == null ? '' : t).split('\n');
+
+  function _askBodyHTML(d, input) {
+    if (d.kind === 'run') return `<pre class="code-ask-pre"><code>$ ${_esc(d.command || '')}</code></pre>`;
+    if (d.kind === 'edit') {
+      const diff = [
+        ..._lines(input.old_text).map(l => `<span class="code-diff-del">- ${_esc(l)}</span>`),
+        ..._lines(input.new_text).map(l => `<span class="code-diff-add">+ ${_esc(l)}</span>`),
+      ].join('\n');
+      return `<pre class="code-ask-pre code-diff"><code>${diff}</code></pre>${input.replace_all ? '<p class="code-ask-note">Every occurrence in the file.</p>' : ''}`;
+    }
+    const all = _lines(input.content);
+    const shown = all.slice(0, PREVIEW_LINES).map(l => `<span class="code-diff-add">+ ${_esc(l)}</span>`).join('\n');
+    const more = all.length > PREVIEW_LINES ? `<p class="code-ask-note">${all.length - PREVIEW_LINES} more lines.</p>` : '';
+    return `<pre class="code-ask-pre code-diff"><code>${shown}</code></pre>${more}`;
+  }
+
+  // The prompt sits at the end of the thread, above the working line. It is
+  // drawn again when the view comes back while it waits.
+  function _paintAsk(focus) {
+    const box = _threadBox();
+    if (!box) return;
+    const old = box.querySelector('.code-ask');
+    const p = _pending && _pending.gen === _gen ? _pending : null;
+    if (!p) {
+      if (old) {
+        const hadFocus = old.contains(document.activeElement);
+        old.remove();
+        if (hadFocus) { const input = _el.querySelector('#code-input'); if (input) input.focus(); }
+      }
+      _paintWorking();
+      return;
+    }
+    if (old) old.remove();
+    const q = { edit: 'Allow Code to edit ', write: 'Allow Code to write ', run: 'Allow Code to run this command?' }[p.d.kind];
+    const always = _alwaysLabel(p.d);
+    const html = `<div class="code-ask" role="group" aria-label="Permission">
+        <div class="code-ask-q"><span class="status-dot dot-a" aria-hidden="true"></span><span>${_esc(q)}${p.d.kind === 'run' ? '' : `<code>${_esc(p.d.path || '')}</code>?`}</span></div>
+        ${_askBodyHTML(p.d, p.input)}
+        <div class="code-ask-btns">
+          <button type="button" class="btn btn-primary btn-sm" data-answer="once">Allow</button>
+          ${always ? `<button type="button" class="btn btn-sm" data-answer="always">${_esc(always)}</button>` : ''}
+          <button type="button" class="btn btn-sm" data-answer="deny">Deny</button>
+        </div>
+      </div>`;
+    const working = box.querySelector('.code-msg-working');
+    if (working) working.insertAdjacentHTML('beforebegin', html); else box.insertAdjacentHTML('beforeend', html);
+    const card = box.querySelector('.code-ask');
+    card.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-answer]');
+      if (!b || _pending !== p) return;
+      _answer(b.dataset.answer !== 'deny', b.dataset.answer === 'always');
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && _pending === p) { e.preventDefault(); _answer(false); }
+    });
+    _paintWorking();
+    if (focus) card.querySelector('[data-answer="once"]').focus();
+    box.scrollTop = box.scrollHeight;
+  }
+
+  /* ── Tool steps ─────────────────────────────────────────────────── */
+
+  function _onStep(step, gen) {
+    if (gen !== _gen || !step || !step.action) return;
+    const thought = String(step.thought || '').trim();
+    if (thought && thought !== _lastThought) _addMsg({ role: 'assistant', text: thought });
+    _lastThought = thought;
+    const d = typeof CodeTools !== 'undefined' ? CodeTools.describe(step.action, step.actionInput) : { kind: 'other', title: String(step.action) };
+    const obs = String(step.observation == null ? '' : step.observation);
+    let status = /^Action blocked/.test(obs) ? 'denied' : /^Stopped:/.test(obs) ? 'stopped' : /^Error:/.test(obs) ? 'error' : 'ok';
+    let detail = obs;
+    try {
+      const r = JSON.parse(obs);
+      if (r && typeof r === 'object') {
+        if (d.kind === 'run') {
+          const failed = (r.exitCode !== 0 && r.exitCode != null) || r.timedOut || r.error;
+          detail = [r.stdout, r.stderr, r.error].filter(Boolean).join('\n').trim() + (r.exitCode !== 0 && r.exitCode != null ? '\nExit code ' + r.exitCode : '');
+          if (failed && status === 'ok') status = 'error';
+        }
+        else if (d.kind === 'read') detail = r.content || '';
+      }
+    } catch { /* not JSON: an error or a plain result, shown as it is */ }
+    if (detail.length > STEP_DETAIL_MAX) detail = detail.slice(0, STEP_DETAIL_MAX) + '\n…';
+    _addMsg({ role: 'tool', title: d.title, status, detail });
+    if (d.kind === 'run') _agentRun = null;
+    if (status === 'ok' && (d.kind === 'edit' || d.kind === 'write')) _filesChanged(d.path);
+    _paintWorking();
+  }
+
+  // An edit or write landed: the Files tab lists and shows it again.
+  function _filesChanged(path) {
+    _dirCache.clear();
+    if (!_el) return;
+    if (_openFile && _openFile.path === path) _onTreeClick({ path, type: 'file', open: false });
+    else if (!_openFile) _renderFiles();
   }
 
   function _paintSend() {
@@ -359,6 +551,12 @@ const CodeView = (() => {
   function _msgHTML(m) {
     if (m.role === 'user') return `<div class="code-msg code-msg-user">${_esc(m.text)}</div>`;
     if (m.role === 'note') return `<div class="code-msg code-msg-note">${_esc(m.text)}</div>`;
+    if (m.role === 'tool') {
+      const dot = { ok: 'dot-g', error: 'dot-r', denied: 'dot-r', stopped: 'dot-r' }[m.status] || 'dot-i';
+      const label = m.status === 'denied' ? 'Denied: ' + m.title : m.status === 'stopped' ? 'Not run: ' + m.title : m.title;
+      const sr = m.status === 'error' ? '<span class="sr-only"> (failed)</span>' : '';
+      return `<details class="code-msg code-step"><summary><span class="status-dot ${dot}" aria-hidden="true"></span><span class="code-step-title">${_esc(label)}</span>${sr}</summary>${m.detail ? `<pre class="code-step-out">${_esc(m.detail)}</pre>` : ''}</details>`;
+    }
     return `<div class="code-msg code-msg-assistant">${_md(m.text)}</div>`;
   }
 
@@ -371,8 +569,8 @@ const CodeView = (() => {
     if (!box) return;
     box.innerHTML = _thread.length
       ? _thread.map(_msgHTML).join('')
-      : `<div class="code-thread-empty">Ask about the code in <strong>${_esc(_ws.name)}</strong>. Browse it in Files and run commands in Terminal.</div>`;
-    _paintWorking();
+      : `<div class="code-thread-empty">Ask Code to do something in <strong>${_esc(_ws.name)}</strong>. It asks before it changes a file or runs a command.</div>`;
+    _paintAsk();
   }
 
   function _addMsg(m) {
@@ -381,7 +579,7 @@ const CodeView = (() => {
     if (!box) return;
     const empty = box.querySelector('.code-thread-empty');
     if (empty) empty.remove();
-    const working = box.querySelector('.code-msg-working');
+    const working = box.querySelector('.code-ask, .code-msg-working');
     if (working) working.insertAdjacentHTML('beforebegin', _msgHTML(m));
     else box.insertAdjacentHTML('beforeend', _msgHTML(m));
     box.scrollTop = box.scrollHeight;
@@ -392,13 +590,18 @@ const CodeView = (() => {
     if (!box) return;
     let line = box.querySelector('.code-msg-working');
     if (!_busyNow()) { if (line) line.remove(); return; }
-    const text = _turn.stopAsked ? STOPPING_TEXT : 'Working…';
+    const waiting = !!(_pending && _pending.gen === _gen);
+    const text = _turn.stopAsked ? STOPPING_TEXT : waiting ? 'Waiting for your answer…' : 'Working…';
     if (!line) {
-      box.insertAdjacentHTML('beforeend', '<div class="code-msg code-msg-working"><span class="status-dot dot-a" aria-hidden="true"></span><span class="code-working-text"></span></div>');
+      box.insertAdjacentHTML('beforeend', '<div class="code-msg code-msg-working"><div class="code-working-line"><span class="status-dot dot-a" aria-hidden="true"></span><span class="code-working-text"></span></div><pre class="code-working-out" hidden></pre></div>');
       line = box.lastElementChild;
     }
     const label = line.querySelector('.code-working-text');
     if (label.textContent !== text) label.textContent = text;
+    const out = line.querySelector('.code-working-out');
+    const tail = _agentRun && _agentRun.out ? _agentRun.out.replace(/\n$/, '').split('\n').slice(-LIVE_OUT_LINES).join('\n') : '';
+    if (out.textContent !== tail) out.textContent = tail;
+    out.hidden = !tail;
     box.scrollTop = box.scrollHeight;
   }
 
@@ -664,6 +867,10 @@ const CodeView = (() => {
 
   function _onRunData(d) {
     if (!d) return;
+    if (typeof CodeTools !== 'undefined' && typeof d.tag === 'string' && d.tag.startsWith(CodeTools.AGENT_TAG)) {
+      _onAgentRunData(d);
+      return;
+    }
     if (!_termRun || d.tag !== _termRun.tag) return;
     if (d.stream === 'start') {
       _termRun.id = d.id;
@@ -671,6 +878,20 @@ const CodeView = (() => {
       return;
     }
     _termAppend(d.data);
+  }
+
+  // Output of a command the agent runs, for the working line. One that
+  // starts after Stop (or with no turn waiting on it) is stopped at once.
+  function _onAgentRunData(d) {
+    if (d.stream === 'start') {
+      if (!_busyNow() || _turn.stopAsked) { _kill(d.id); return; }
+      _agentRun = { tag: d.tag, id: d.id, out: '' };
+      return;
+    }
+    if (!_agentRun || _agentRun.tag !== d.tag) return;
+    _agentRun.out += d.data || '';
+    if (_agentRun.out.length > LIVE_OUT_MAX) _agentRun.out = _agentRun.out.slice(-LIVE_OUT_MAX);
+    _paintWorking();
   }
 
   function destroy() {
@@ -683,6 +904,7 @@ const CodeView = (() => {
     _resetForFolder(null);
     _el = null;
     _turn = null;
+    _mode = 'ask';
     _termHistory = [];
     _termHistoryAt = -1;
     _treeSeq = 0;
