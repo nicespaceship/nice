@@ -1303,7 +1303,9 @@ const AgentExecutor = (() => {
           keep += m.role === 'assistant' ? 2 : 1;
         }
         history.splice(at + 1, 0, ...turn.slice(0, Math.min(keep, turn.length)));
-        // Screenshots past the latest few are never sent again: keep the note, not the image.
+        // Screenshots past the latest few are never sent again: keep the note,
+        // not the image. This changes the kept turns' content arrays in place
+        // on purpose (they are the finished loop's own), so memory stays small.
         let seen = 0;
         for (let i = history.length - 1; i >= 0; i--) {
           const c = history[i] && history[i].content;
