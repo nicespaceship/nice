@@ -84,6 +84,16 @@ const VaultView = (() => {
           </div>
         </div>
 
+        ${typeof OwnKeys !== 'undefined' && OwnKeys.available() ? `
+        <!-- Models on the user's own keys (desktop app) -->
+        <div class="vault-section">
+          <div class="vault-section-hdr">
+            <h3 class="vault-section-title">Your own API keys</h3>
+            <button class="btn btn-sm" id="vault-own-keys">API keys</button>
+          </div>
+          <p class="vault-stacks-intro">Use models on your own provider keys in the desktop app. The provider bills you, not NICE. Switch on the ones you want in API keys, and they join Space and chat as cards and in the model menu.</p>
+        </div>` : ''}
+
         <!-- Advanced model toggles (collapsed by default) -->
         <div class="vault-section">
           <div class="vault-section-hdr">
@@ -276,6 +286,8 @@ const VaultView = (() => {
 
   /* ── Events ─────────────────────────────────────────────────── */
   function _bindEvents(el) {
+    const ownKeys = el.querySelector('#vault-own-keys');
+    if (ownKeys) ownKeys.addEventListener('click', () => { OwnKeys.load(); OwnKeys.openKeys(ownKeys); });
     el.querySelectorAll('.vault-toggle input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
         const modelId = cb.dataset.model;

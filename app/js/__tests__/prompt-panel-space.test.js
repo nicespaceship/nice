@@ -34,6 +34,7 @@ loadModule('lib/llm-config.js');
 loadModule('lib/token-config.js');
 // model-catalog.js is UMD: hide `module` so it assigns the browser global.
 new Function('module', 'self', readFileSync(resolve(__dir, '../lib/model-catalog.js'), 'utf-8'))(undefined, globalThis);
+loadModule('lib/own-keys.js');
 loadModule('lib/space-cards.js');
 loadModule('lib/llm-activity.js');
 loadModule('views/prompt-panel.js');
@@ -50,6 +51,9 @@ function mockNiceAi() {
   globalThis.fetch = vi.fn(async (url, init) => {
     const body = JSON.parse(init.body);
     calls.push(body);
+    if (body.prompt_only) {
+      return { ok: true, status: 200, json: async () => ({ system: 'THEME PROMPT for ' + body.provider }) };
+    }
     if (body.model === 'deepseek-v4-flash') {
       return { ok: false, status: 402, text: async () => JSON.stringify({ error: 'Your Standard pool is empty.', code: 'insufficient_tokens' }) };
     }
@@ -1075,5 +1079,93 @@ describe('PromptPanel._contentText', () => {
     expect(PromptPanel._contentText('plain')).toBe('plain');
     expect(PromptPanel._contentText(null)).toBe('');
     expect(PromptPanel._contentText({ text: 'x' })).toBe('');
+  });
+});
+
+describe('Models on the user\'s own keys', () => {
+  const OWN = 'byo:openai:gpt-5';
+  function desktop(chat) {
+    window.NiceDesktop = { llm: {
+      providers: async () => [{ id: 'openai', label: 'OpenAI', hasKey: true }],
+      models: async () => [{ id: 'gpt-5', label: 'GPT-5' }],
+      chat: chat || vi.fn(async () => ({ content: [{ type: 'text', text: 'Answer from your key' }], usage: { input_tokens: 3, output_tokens: 2 } })),
+    } };
+  }
+  afterEach(() => { delete window.NiceDesktop; OwnKeys._test.reset(); localStorage.removeItem(Utils.KEYS.ownModels); });
+
+  it('gets a card once switched on, labelled as the user\'s key', async () => {
+    desktop();
+    await OwnKeys.load(true);
+    expect(SpaceCards.available()).not.toContain(OWN);
+    OwnKeys.setOn(OWN, true);
+    expect(SpaceCards.available().at(-1)).toBe(OWN);
+    expect(SpaceCards.label(OWN)).toBe('GPT-5');
+    expect(SpaceCards.provider(OWN)).toBe('OpenAI (your key)');
+    expect(SpaceCards.poolLabel(OWN)).toBe('');
+    expect(SpaceCards.planAllows(OWN)).toBe(true);
+  });
+
+  it('answers through the desktop app with the theme\'s prompt from nice-ai, never a nice-ai model call', async () => {
+    const chat = vi.fn(async () => ({ content: [{ type: 'text', text: 'Answer from your key' }] }));
+    desktop(chat);
+    await OwnKeys.load(true);
+    OwnKeys.setOn(OWN, true);
+    SpaceCards.toggle(OWN);
+    SpaceCards.toggle('gemini-2-5-flash');
+    PromptPanel._sendToCards('Name my bakery');
+    await settled();
+    expect(calls.filter(c => !c.prompt_only).map(c => c.model)).toEqual([]);
+    const promptReq = calls.find(c => c.prompt_only);
+    expect(promptReq).toMatchObject({ provider: 'openai', theme_id: expect.any(String) });
+    expect(promptReq.messages).toBeUndefined();
+    const body = chat.mock.calls[0][0];
+    expect(body.model).toBe(OWN);
+    expect(body.messages[0]).toEqual({ role: 'system', content: 'THEME PROMPT for openai' });
+    expect(body.messages.at(-1).role).toBe('user');
+    const reply = PromptPanel.messages().find(m => m.role === 'assistant');
+    expect(reply).toMatchObject({ modelId: OWN, text: 'Answer from your key', model: 'GPT-5' });
+  });
+
+  it('asks nice-ai for the prompt once while nothing about it changes', async () => {
+    desktop();
+    await OwnKeys.load(true);
+    OwnKeys.setOn(OWN, true);
+    SpaceCards.toggle(OWN);
+    SpaceCards.toggle('gemini-2-5-flash');
+    PromptPanel._sendToCards('One');
+    await settled();
+    PromptPanel._sendToCards('Two');
+    await settled();
+    expect(calls.filter(c => c.prompt_only)).toHaveLength(1);
+  });
+
+  it('joins the chat model menu, picks as itself, and can read images only', async () => {
+    desktop();
+    globalThis.LLM_MODELS = [{ id: 'gemini-2-5-flash', label: 'Gemini 2.5 Flash', provider: 'google' }];
+    globalThis.LLM_PROVIDERS = [{ id: 'google', name: 'Google' }];
+    await OwnKeys.load(true);
+    OwnKeys.setOn(OWN, true);
+    PromptPanel._populateModelDropdown();
+    const select = document.getElementById('nice-ai-model');
+    const group = [...select.querySelectorAll('optgroup')].find(g => g.label === 'OpenAI (your key)');
+    expect([...group.querySelectorAll('option')].map(o => [o.value, o.textContent])).toEqual([[OWN, 'GPT-5']]);
+    select.value = OWN;
+    expect(PromptPanel._getSelectedModel()).toEqual({ id: OWN, label: 'GPT-5' });
+    expect(PromptPanel._modelHasCapability(OWN, 'vision')).toBe(true);
+    expect(PromptPanel._modelHasCapability(OWN, 'pdf')).toBe(false);
+  });
+
+  it('says on the card when the provider turns the call down', async () => {
+    desktop(vi.fn(async () => { throw { code: 'EKEY', message: 'OpenAI refused the key.' }; }));
+    await OwnKeys.load(true);
+    OwnKeys.setOn(OWN, true);
+    SpaceCards.toggle(OWN);
+    SpaceCards.toggle('gemini-2-5-flash');
+    PromptPanel._sendToCards('Hi');
+    await settled();
+    const reply = PromptPanel.messages().find(m => m.role === 'assistant');
+    expect(reply.modelId).toBe(OWN);
+    expect(reply.error).toBe(true);
+    expect(reply.text).toBe('OpenAI refused the key.');
   });
 });

@@ -35,9 +35,11 @@ const SpaceCards = (() => {
     return (typeof ModelCatalog !== 'undefined' && ModelCatalog.getById) ? ModelCatalog.getById(id) : null;
   }
 
-  function label(id) { return _entry(id)?.name || id; }
-  function provider(id) { return _entry(id)?.provider || ''; }
+  const _own = (id) => typeof OwnKeys !== 'undefined' && OwnKeys.isOwnKey(id);
+  function label(id) { return _own(id) ? OwnKeys.label(id) : (_entry(id)?.name || id); }
+  function provider(id) { return _own(id) ? OwnKeys.providerLabel(id) : (_entry(id)?.provider || ''); }
   function poolLabel(id) {
+    if (_own(id)) return '';
     if (typeof TokenConfig === 'undefined' || TokenConfig.isFreeModel(id)) return 'Free';
     const pool = TokenConfig.poolFor(id);
     return (pool && TokenConfig.POOLS[pool] && TokenConfig.POOLS[pool].label) || 'Paid';
@@ -47,6 +49,8 @@ const SpaceCards = (() => {
      the pool's add-on. The token balance is left out on purpose: an empty
      pool keeps its card, and the server's 402 says so on that card. */
   function planAllows(id) {
+    // The user's own key: their provider bills them, not a NICE plan.
+    if (_own(id)) return true;
     if (typeof TokenConfig === 'undefined' || TokenConfig.isFreeModel(id)) return true;
     if (typeof Subscription === 'undefined' || !Subscription.isPro || !Subscription.isPro()) return false;
     const addon = TokenConfig.requiredAddon(TokenConfig.poolFor(id));
@@ -55,13 +59,15 @@ const SpaceCards = (() => {
   }
 
   /* Cards, in catalog order: the models switched on in Settings that the
-     plan can run. NICE Auto routes between models and gets no card. */
+     plan can run, then the models on the user's own keys switched on in API
+     keys (desktop app). NICE Auto routes between models and gets no card. */
   function available() {
     let enabled = typeof State !== 'undefined' ? State.get('enabled_models') : null;
     if (!enabled && typeof TokenConfig !== 'undefined' && TokenConfig.defaultEnabledModels) enabled = TokenConfig.defaultEnabledModels();
     enabled = enabled || {};
     const on = new Set(Object.keys(enabled).filter(id => enabled[id]).map(_canon));
-    return _catalog().map(m => m.id).filter(id => id !== _autoId() && on.has(id) && planAllows(id));
+    const own = typeof OwnKeys !== 'undefined' ? OwnKeys.switchedOn() : [];
+    return [..._catalog().map(m => m.id).filter(id => id !== _autoId() && on.has(id) && planAllows(id)), ...own];
   }
 
   /* ── Selection: the cards the next prompt goes to ── */

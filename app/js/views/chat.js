@@ -447,6 +447,11 @@ const ChatView = (() => {
     _listen(_el, 'click', _onClick);
     _listen(document, SpaceCards.EVENT, _onCards);
     _listen(document, 'nice:theme-change', () => _queue('*'));
+    // Models on the user's own keys load, or get switched on or off, in API keys.
+    if (typeof OwnKeys !== 'undefined') {
+      _listen(document, OwnKeys.EVENT, () => _queue('cards'));
+      OwnKeys.load();
+    }
     // Any message saved (a NICE reply too) can change the bar and some cards.
     _listen(document, 'nice:chat-saved', () => _queue('cards'));
     // The monitor hides the reactor while it is open; a paint made under it

@@ -1782,6 +1782,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   /* ── File attachment helpers ── */
 
   function _modelHasCapability(id, cap) {
+    // The user's own key: images go through (the desktop app turns them into
+    // a note for a model that can't see them); other files can't.
+    if (typeof OwnKeys !== 'undefined' && OwnKeys.isOwnKey(id)) return cap === 'vision';
     if (typeof LLM_MODELS === 'undefined') return true; // be permissive if registry missing
     // The default select option uses a dotted id (`gemini-2.5-flash`) while
     // the catalog uses dashed (`gemini-2-5-flash`). Match either form.
@@ -1996,6 +1999,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof LLMConfig !== 'undefined' && val === LLMConfig.AUTO_ID) {
       return { id: LLMConfig.AUTO_ID, label: 'NICE Auto', auto: true };
     }
+    if (typeof OwnKeys !== 'undefined' && OwnKeys.isOwnKey(val)) return { id: val, label: OwnKeys.label(val) };
     // Check LLM_MODELS registry first (supports all providers)
     if (typeof LLM_MODELS !== 'undefined') {
       const entry = LLM_MODELS.find(m => m.id === val);
@@ -2105,6 +2109,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           ? (LLM_MODELS.find(m => m.id === opts.modelOverride)?.label || opts.modelOverride)
           : opts.modelOverride)
       : sel.label;
+    if (typeof OwnKeys !== 'undefined' && OwnKeys.isOwnKey(model)) {
+      return _callOwnKey(model, modelLabel, history, signal, opts);
+    }
     const wantStream = !!opts.onChunk;
     const _activityTokens = { total: 0 };
 
@@ -2192,6 +2199,70 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       return { text, model: modelLabel, modelId: model };
     } finally {
       if (_activity) _activity.end({ totalTokens: _activityTokens.total });
+    }
+  }
+
+  /* ── Models on the user's own keys ──
+     The desktop app calls the provider with the user's key (OwnKeys.chat).
+     The system prompt is the theme's, from nice-ai's prompt-only mode, so
+     the reply sounds like the theme; nothing is billed. That needs a NICE
+     sign-in, as Space does. One prompt is kept per theme, callsign,
+     provider and app context, the last one asked for. */
+  const _OWN_PROMPT_PROVIDER = { anthropic: 'anthropic', google: 'gemini', openai: 'openai', xai: 'xai', groq: 'groq', deepseek: 'deepseek' };
+  let _ownPrompt = null;   // { key, system }
+
+  async function _ownKeySystem(provider) {
+    if (typeof SB === 'undefined' || !SB.client) throw new Error('Sign in to NICE to use your own keys here: NICE gives the reply your theme\'s voice.');
+    const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+    let token = '';
+    try { token = (await SB.client.auth.getSession())?.data?.session?.access_token || ''; } catch { /* signed out */ }
+    if (!supabaseUrl || !token) throw new Error('Sign in to NICE to use your own keys here: NICE gives the reply your theme\'s voice.');
+    const req = {
+      prompt_only: true,
+      provider: _OWN_PROMPT_PROVIDER[provider] || 'openai',
+      theme_id: localStorage.getItem(Utils.KEYS.theme) || 'nice',
+      app_context: _buildAppContext(),
+    };
+    const callsign = Utils.sanitizeCallsign(localStorage.getItem(Utils.KEYS.callsign));
+    if (callsign) req.callsign = callsign;
+    const key = JSON.stringify(req);
+    if (_ownPrompt && _ownPrompt.key === key) return _ownPrompt.system;
+    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB._key, 'Authorization': 'Bearer ' + token },
+      body: key,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || typeof data.system !== 'string') throw new Error((data && data.error) || 'NICE could not get your theme\'s voice for this reply. Try again.');
+    _ownPrompt = { key, system: data.system };
+    return data.system;
+  }
+
+  async function _callOwnKey(model, modelLabel, history, signal, opts) {
+    const parsed = OwnKeys.parse(model);
+    let _activity = null;
+    try {
+      const system = await _ownKeySystem(parsed && parsed.provider);
+      if (signal && signal.aborted) throw new DOMException('The reply was stopped.', 'AbortError');
+      if (typeof LLMActivity !== 'undefined') _activity = LLMActivity.start(model);
+      let data;
+      try {
+        data = await OwnKeys.chat({ model, messages: [{ role: 'system', content: system }, ...history], temperature: 0.4 });
+      } catch (e) {
+        const err = new Error((e && e.message) || 'Your key\'s provider did not answer.');
+        if (e && e.code) err.code = e.code;
+        if (e && e.status) err.status = e.status;
+        throw err;
+      }
+      // The provider can't be cut off mid-call; a stopped reply is dropped.
+      if (signal && signal.aborted) throw new DOMException('The reply was stopped.', 'AbortError');
+      const text = _contentText(data && data.content);
+      if (opts.onChunk && text) opts.onChunk(text);
+      if (_activity) _activity.end({ totalTokens: ((data && data.usage && data.usage.input_tokens) || 0) + ((data && data.usage && data.usage.output_tokens) || 0) });
+      _activity = null;
+      return { text, model: modelLabel, modelId: model };
+    } finally {
+      if (_activity) _activity.end({ totalTokens: 0 });
     }
   }
 
@@ -3259,6 +3330,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Only show enabled models (free models default to on)
     const enabledModels = LLM_MODELS.filter(m => enabled[m.id]);
     if (!enabledModels.length) return; // keep default Gemini option
+    const own = typeof OwnKeys !== 'undefined' ? OwnKeys.switchedOn() : [];
     const prev = select.value;
     select.innerHTML = '';
     // NICE Auto heads the list: routes each message to the best enabled model.
@@ -3279,6 +3351,24 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         const opt = document.createElement('option');
         opt.value = m.id;
         opt.textContent = m.label;
+        grp.appendChild(opt);
+      });
+      select.appendChild(grp);
+    });
+    // Then the switched-on models on the user's own keys, one group per provider.
+    const ownGroups = new Map();
+    own.forEach(id => {
+      const g = OwnKeys.providerLabel(id);
+      if (!ownGroups.has(g)) ownGroups.set(g, []);
+      ownGroups.get(g).push(id);
+    });
+    ownGroups.forEach((ids, g) => {
+      const grp = document.createElement('optgroup');
+      grp.label = g;
+      ids.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = OwnKeys.label(id);
         grp.appendChild(opt);
       });
       select.appendChild(grp);
@@ -4028,6 +4118,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof State !== 'undefined' && State.on) {
       State.on('enabled_models', () => { _populateModelDropdown(); _renderTargets(); });
     }
+    // Models on the user's own keys (desktop app) join the menu once they
+    // load, and when the user switches one on or off in API keys.
+    if (typeof OwnKeys !== 'undefined') {
+      document.addEventListener(OwnKeys.EVENT, () => { _populateModelDropdown(); _renderTargets(); });
+      OwnKeys.load();
+    }
     // Theme voice: stop playback on theme change, sync mute button + reactor.
     // Skip the stop for themes that ship a `voice.intro` — Theme.set fires
     // their arrival greeting via CoreVoice.maybePlayThemeIntro right after
@@ -4060,6 +4156,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
     _abortSends();
+    _ownPrompt = null;
     _userPickedModel = false;
     _lastModelValue = null;
     // Stop speech recognition & mic
