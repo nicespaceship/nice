@@ -381,9 +381,10 @@ const SetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="wiz-retry">Try Again</button>
-        <button class="btn btn-sm" onclick="SetupWizard.close()">Close</button>
+        <button class="btn btn-sm" id="wiz-error-close">Close</button>
       `;
       actions.querySelector('#wiz-retry')?.addEventListener('click', () => _showStep(2));
+      actions.querySelector('#wiz-error-close')?.addEventListener('click', () => SetupWizard.close());
     });
   }
 

@@ -149,6 +149,20 @@ self.addEventListener('fetch', e => {
   // Skip other external requests
   if (url.hostname !== location.hostname) return;
 
+  // Vendored files carry their version in the name: cache-first, they never change.
+  if (url.pathname.startsWith('/app/vendor/')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
+        if (resp && resp.status === 200 && (resp.headers.get('content-type') || '').includes('javascript')) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return resp;
+      }))
+    );
+    return;
+  }
+
   const isCodeAsset = url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
   const isNavigation = e.request.mode === 'navigate';
 

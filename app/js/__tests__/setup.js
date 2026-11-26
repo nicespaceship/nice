@@ -122,6 +122,7 @@ loadScriptGlobal('lib/data-io.js');
 loadScriptGlobal('lib/command-palette.js');
 loadScriptGlobal('lib/blueprint-markdown.js');
 loadScriptGlobal('lib/prompt-builder.js');
+loadScriptGlobal('lib/safe-expr.js');      // calculator + workflow conditions evaluate through it
 loadScriptGlobal('lib/tool-registry.js');
 loadScriptGlobal('lib/nav-commands.js');  // bus Phase 2 nav/UI verbs; registers on init()
 loadScriptGlobal('lib/virtual-fs.js');

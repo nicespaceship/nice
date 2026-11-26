@@ -171,7 +171,7 @@ const Router = (() => {
         if (view.render) view.render(_el, params);
       } catch (err) {
         console.error('[NICE] View render error on ' + p + ':', err);
-        _el.innerHTML = _renderError(p, err);
+        _showError(p, err);
       }
     } else {
       // Animated transition
@@ -186,7 +186,7 @@ const Router = (() => {
           if (view.render) view.render(_el, params);
         } catch (err) {
           console.error('[NICE] View render error on ' + p + ':', err);
-          _el.innerHTML = _renderError(p, err);
+          _showError(p, err);
         }
         requestAnimationFrame(() => {
           _el.classList.add('view-enter');
@@ -194,6 +194,14 @@ const Router = (() => {
         });
       }, 120);
     }
+  }
+
+  function _showError(path, err) {
+    _el.innerHTML = _renderError(path, err);
+    // Retry draws the current route again; the hash usually has not changed,
+    // so navigating to it would do nothing.
+    _el.querySelector('[data-err-action="retry"]')?.addEventListener('click', () => _render());
+    _el.querySelector('[data-err-action="reload"]')?.addEventListener('click', () => location.reload());
   }
 
   function _renderError(path, err) {
@@ -219,8 +227,8 @@ const Router = (() => {
       '<p class="err-boundary-msg">Failed to render <code>' + _e(path) + '</code></p>' +
       '<pre class="err-boundary-detail">' + _e(err.message || err) + '</pre>' +
       '<div class="err-boundary-actions">' +
-        '<button class="btn btn-sm btn-primary" onclick="Router.navigate(\'' + _e(path).replace(/'/g, "&#39;") + '\')">Retry</button>' +
-        '<button class="btn btn-sm" onclick="location.reload()">Reload</button>' +
+        '<button type="button" class="btn btn-sm btn-primary" data-err-action="retry">Retry</button>' +
+        '<button type="button" class="btn btn-sm" data-err-action="reload">Reload</button>' +
         '<a href="#/" class="btn btn-sm">Go Home</a>' +
       '</div>' +
     '</div>';

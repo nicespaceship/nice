@@ -196,9 +196,9 @@ const MissionsView = (() => {
           <h2>No ${_Np()} Yet</h2>
           <p>Create ${Terminology.article('mission', { lowercase: true })} ${_Nl()} and assign it to an agent.</p>
           <div class="app-empty-acts">
-            <button class="btn btn-primary btn-sm" onclick="location.hash='#/missions/new'">
+            <a class="btn btn-primary btn-sm" href="#/missions/new">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create ${_N()}
-            </button>
+            </a>
           </div>
         </div>`;
       return;
@@ -825,13 +825,13 @@ const MissionDetailView = (() => {
             <div class="detail-section">
               <h3 class="detail-section-title">Assigned Agent</h3>
               ${agent ? `
-                <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="Router.navigate('#/bridge/agents/${_esc(agent.id)}')">
+                <a href="#/bridge/agents/${encodeURIComponent(agent.id)}" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none">
                   <div class="agent-avatar" style="background:${_agentColor(agent.role)}">${_esc(agentInitials)}</div>
                   <div>
                     <div style="font-weight:600;font-size:.82rem">${_esc(agent.name)}</div>
                     <div style="font-size:.68rem;color:var(--text-muted)">${_esc(agent.role || 'Agent')} &middot; ${_esc(agent.llm_engine || 'gemini-2-5-flash')}</div>
                   </div>
-                </div>
+                </a>
               ` : '<p class="text-muted" style="font-size:.78rem">No agent assigned</p>'}
             </div>
           </div>
@@ -925,7 +925,7 @@ const MissionDetailView = (() => {
     // Share Report button
     document.getElementById('md-share-report')?.addEventListener('click', () => {
       const shareHash = '#/share/report-' + id;
-      const url = window.location.origin + '/app/' + shareHash;
+      const url = Utils.publicOrigin() + '/app/' + shareHash;
       navigator.clipboard.writeText(url).then(() => {
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Report Link Copied', message: `Shareable ${_Nl()} report URL copied to clipboard.`, type: 'system' });

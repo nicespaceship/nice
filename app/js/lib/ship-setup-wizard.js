@@ -494,9 +494,10 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-retry">Try Again</button>
-        <button class="btn btn-sm" onclick="ShipSetupWizard.close()">Close</button>
+        <button class="btn btn-sm" id="ship-wiz-error-close">Close</button>
       `;
       actions.querySelector('#ship-wiz-retry')?.addEventListener('click', () => _showStep(1));
+      actions.querySelector('#ship-wiz-error-close')?.addEventListener('click', () => ShipSetupWizard.close());
     });
   }
 

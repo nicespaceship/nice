@@ -364,7 +364,7 @@ const ToolRegistry = (() => {
     },
   });
 
-  /* ── calculator: Evaluate math expressions (client-side, safe eval) ── */
+  /* ── calculator: Evaluate math expressions (client-side, parsed by SafeExpr) ── */
   register({
     id:          'calculator',
     name:        'Calculator',
@@ -385,47 +385,11 @@ const ToolRegistry = (() => {
 
   /* ═══ Internal Helpers ═══ */
 
-  /* ── Safe math evaluator (no arbitrary JS execution) ── */
+  /* ── Math evaluator: SafeExpr parses it, nothing is ever eval'd ── */
   function _safeEval(expr) {
-    // Whitelist: digits, operators, parentheses, dots, commas, whitespace, math function names
-    const sanitized = expr
-      .replace(/\^/g, '**')                          // caret to exponent
-      .replace(/PI/gi, String(Math.PI))
-      // Only a STANDALONE e/E is Euler's number. The old /E(?![a-z])/gi
-      // also matched the e in scientific notation (5e3 → 5·Math.E·3), so
-      // word-bound it: 5e3 / 1.5e-2 / ceil are left untouched.
-      .replace(/\b[eE]\b/g, String(Math.E))
-      .replace(/sqrt/gi, 'Math.sqrt')
-      .replace(/abs/gi, 'Math.abs')
-      .replace(/ceil/gi, 'Math.ceil')
-      .replace(/floor/gi, 'Math.floor')
-      .replace(/round/gi, 'Math.round')
-      .replace(/log10/gi, 'Math.log10')
-      .replace(/log2/gi, 'Math.log2')
-      .replace(/log/gi, 'Math.log')
-      .replace(/sin/gi, 'Math.sin')
-      .replace(/cos/gi, 'Math.cos')
-      .replace(/tan/gi, 'Math.tan')
-      .replace(/pow/gi, 'Math.pow')
-      .replace(/min/gi, 'Math.min')
-      .replace(/max/gi, 'Math.max');
-
-    // Validate: only allow safe characters after substitution
-    if (/[^0-9+\-*/().,%\s\w]/.test(sanitized)) {
-      throw new Error('Invalid characters in expression');
-    }
-    // Block anything that looks like assignment, function declaration, or property access beyond Math
-    if (/(?:function|=>|var |let |const |class |import |export |require|eval|new )/i.test(sanitized)) {
-      throw new Error('Expression contains disallowed keywords');
-    }
-
+    if (typeof SafeExpr === 'undefined') throw new Error('Calculator is not available');
     try {
-      const fn = new Function('return (' + sanitized + ')');
-      const result = fn();
-      if (typeof result !== 'number' || !isFinite(result)) {
-        throw new Error('Expression did not evaluate to a finite number');
-      }
-      return result;
+      return SafeExpr.arithmetic(expr);
     } catch (e) {
       throw new Error('Failed to evaluate expression: ' + e.message);
     }

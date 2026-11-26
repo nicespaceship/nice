@@ -457,8 +457,16 @@ const Theme = (() => {
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
       const tn = t.name.toUpperCase();
-      return `<button class="db" data-theme-id="${t.id}" data-tip="${tn}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${tn}" title="${tn}"></button>`;
+      return `<button class="db" data-theme-id="${t.id}" data-tip="${tn}" style="background:${accent}" aria-label="${tn}" title="${tn}"></button>`;
     }).join('');
+    // One delegated listener per container: the dock re-renders often.
+    if (!container.dataset.bound) {
+      container.dataset.bound = '1';
+      container.addEventListener('click', (e) => {
+        const b = e.target.closest('.db[data-theme-id]');
+        if (b) Theme.set(b.dataset.themeId);
+      });
+    }
 
     // Highlight current
     const current = localStorage.getItem(_K_THEME) || 'nice';
@@ -1728,6 +1736,8 @@ const NICE = (() => {
 
   function _registerSW() {
     if (!('serviceWorker' in navigator)) return;
+    // The desktop app serves NICE from its own files; there is nothing to cache.
+    if (window.NiceDesktop && window.NiceDesktop.isDesktop) return;
 
     // Reload exactly once, and only for a user-accepted update — never on the
     // first-install controller claim (which also fires controllerchange).

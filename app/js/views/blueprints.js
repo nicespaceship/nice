@@ -1825,7 +1825,7 @@ const BlueprintsView = (() => {
       || (typeof Blueprints !== 'undefined' && (Blueprints.getAgent(bpId) || Blueprints.getAgent(rawId) || Blueprints.getSpaceship(bpId) || Blueprints.getSpaceship(rawId)))
       || null;
     if (!bp) return;
-    const url = window.location.origin + '/app/#/bridge?bp=' + encodeURIComponent(bpId);
+    const url = Utils.publicOrigin() + '/app/#/bridge?bp=' + encodeURIComponent(bpId);
 
     // Always copy to clipboard (fallback for non-secure contexts)
     try {
@@ -2282,6 +2282,8 @@ const BlueprintsView = (() => {
     if (!drawer) return;
 
     drawer.querySelector('.bp-drawer-close')?.addEventListener('click', _closeDrawer);
+    // "Browse … blueprints" closes the drawer as it navigates.
+    drawer.querySelector('.bp-deps-link')?.addEventListener('click', _closeDrawer);
 
     // Hero card click → mission prompt for activated blueprints
     const isActivated = type === 'spaceship'
@@ -2730,7 +2732,7 @@ const BlueprintsView = (() => {
         return `<div class="bp-drawer-deps">
           <span class="bp-deps-icon">&#9888;</span>
           Needs ${neededShips} ${_esc(_ship({ plural: neededShips !== 1, lowercase: true }))}. You have ${activeShips}.
-          <a href="#/bridge?tab=spaceship" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse ${_esc(_ship({ lowercase: true }))} blueprints &rarr;</a>
+          <a href="#/bridge?tab=spaceship" class="bp-deps-link">Browse ${_esc(_ship({ lowercase: true }))} blueprints &rarr;</a>
         </div>`;
       }
     }
