@@ -859,10 +859,18 @@ const NICE = (() => {
       new MutationObserver(syncToggle).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
       syncToggle();
     }
-    // Code is not built yet; the switch says so.
-    document.getElementById('app-mode-code')?.addEventListener('click', () => {
-      if (typeof Notify !== 'undefined' && Notify.toast) Notify.toast('Code', 'This is not available yet.');
-    });
+    // NICE / Code switch: Code is on while #/code is open, NICE everywhere else.
+    const syncMode = () => {
+      const onCode = /^#\/code(\?|$)/.test(location.hash);
+      document.querySelectorAll('.app-mode-btn').forEach(b => {
+        const on = (b.id === 'app-mode-code') === onCode;
+        b.classList.toggle('is-on', on);
+        if (b.id === 'app-mode-code') { if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }
+      });
+    };
+    window.addEventListener('nice:navsync', syncMode);
+    window.addEventListener('hashchange', syncMode);
+    syncMode();
 
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');
     if (mobileToggle) {
@@ -1604,6 +1612,7 @@ const NICE = (() => {
     // opens the Bridge's Blueprints tab until it gets its own view.
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
     Router.on('/space', ChatView);
+    Router.on('/code', CodeView);                    // Code: one agent on a folder (desktop app)
     Router.on('/ship', OutboxView);                  // Results waiting for review, and approved work
     // Old routes that now live on the hub page: titled like it, then forwarded.
     const _bridgeRedirect = (hash) => ({ get title() { return Terminology.label('bridge'); }, render: () => { location.hash = hash; } });

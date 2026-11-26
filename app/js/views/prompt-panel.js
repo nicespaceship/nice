@@ -4273,17 +4273,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
     // If explicitly shown on this route (e.g. reactor/card click), keep it visible
     if (_manualShow) return;
-    // Default-visible routes: Chat (standalone mode), the crew view and the
-    // Schematic tab of the Bridge (Spaceship mode), and the Code tab of the
-    // Code view (Code mode).
-    // The three side-mode landings each expose the prompt surface; other
-    // sub-tabs of those views suppress it.
+    // Default-visible routes: Space, the crew view and the Schematic tab of
+    // the Bridge; other views and sub-tabs suppress it. Code (#/code) has
+    // its own prompt bar.
     const onSchematic = path.startsWith('/bridge') &&
       (/tab=schematic/.test(location.hash) || !/tab=/.test(location.hash));
-    const onCodeMode = path.startsWith('/code') &&
-      (/tab=code/.test(location.hash) || !/tab=/.test(location.hash));
     const onCrew = /^\/crew(\?|$)/.test(path);
-    const showByDefault = path === '/space' || onCrew || onSchematic || onCodeMode;
+    const showByDefault = path === '/space' || onCrew || onSchematic;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
     _maybeAutoExpandSchematicChat();

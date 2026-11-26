@@ -119,9 +119,16 @@ test.describe('Smoke Tests', () => {
     await toggle.click();
     await nice.click();
     await page.waitForFunction(() => location.hash === '#/');
+    // Code opens #/code; on the website it says Code runs in the desktop app.
     await page.locator('#app-mode-code').click();
-    await expect(page.locator('.notify-toast', { hasText: 'not available yet' }).first()).toBeVisible();
-    expect(await page.evaluate(() => location.hash)).toBe('#/');
+    await page.waitForFunction(() => location.hash === '#/code');
+    await expect(page.locator('.code-empty-title')).toHaveText('Code runs in the NICE desktop app');
+    await expect(page.locator('#app-mode-code')).toHaveClass(/\bis-on\b/);
+    await expect(nice).not.toHaveClass(/\bis-on\b/);
+    await expect(page.locator('#nice-ai-panel, .nice-ai').first()).toBeHidden();
+    await nice.click();
+    await page.waitForFunction(() => location.hash === '#/');
+    await expect(nice).toHaveClass(/\bis-on\b/);
     await expect(sidebar).toHaveClass(/\bopen\b/);
   });
 

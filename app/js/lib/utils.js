@@ -160,6 +160,8 @@ const Utils = (() => {
     favorites: 'nice-favorites',
     aiMessages: 'nice-ai-messages',
     spaceCards: 'nice-space-cards',
+    codePanel: 'nice-code-panel',
+    codeModel: 'nice-code-model',
     customAgents: 'nice-custom-agents',
     customShips: 'nice-custom-ships',
     contentQueue: 'nice-content-queue',
