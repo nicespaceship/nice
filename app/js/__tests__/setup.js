@@ -7,6 +7,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 
 const __dirname_local = dirname(fileURLToPath(import.meta.url));
 
@@ -137,6 +138,9 @@ loadScriptGlobal('lib/mcp-bridge.js');
 loadScriptGlobal('lib/model-intel.js');
 loadScriptGlobal('lib/agent-activity.js');
 loadScriptGlobal('lib/llm-activity.js');
+// AgentExecutor reads vision flags for tool screenshots. A UMD module: under
+// vitest it exports instead of setting the global.
+globalThis.ModelCatalog = createRequire(import.meta.url)('../lib/model-catalog.js');
 loadScriptGlobal('lib/agent-executor.js');
 
 // Reset helper

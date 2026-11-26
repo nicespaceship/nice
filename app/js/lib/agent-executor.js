@@ -356,11 +356,12 @@ const AgentExecutor = (() => {
         // which blocks were rejected so the all-declined nudge below still fires.
         const declined = new Set();
         const toolResultParts = [];
+        const toolImages = [];
         // Stopped partway through this response: the calls that already ran
         // stay on record (converse keepToolTurns), as the reply with just
         // those calls and their results. `skip` is a call that did not run.
         const stopMid = (skip) => {
-          const ran = toolResultParts.map(p => p.tool_use_id).filter(id => id !== skip);
+          const ran = toolResultParts.filter(p => p.type === 'tool_result').map(p => p.tool_use_id).filter(id => id !== skip);
           if (ran.length) {
             conversationMessages.push({ role: 'assistant', content: contentParts.filter(p => p.type !== 'tool_use' || ran.includes(p.id)) });
             conversationMessages.push({ role: 'user', content: toolResultParts.filter(p => ran.includes(p.tool_use_id)) });
@@ -372,6 +373,7 @@ const AgentExecutor = (() => {
           let observation;
           let isError = false;
           let wasStopped = false;
+          let stepImages = [];
           const toolId = _allowedToolId(block.name, allowedTools);
           if (!toolId) {
             // Never run, but answered, so the model can carry on without it.
@@ -379,13 +381,16 @@ const AgentExecutor = (() => {
             isError = true;
           } else {
             try {
-              const result = await ToolRegistry.execute(toolId, block.input || {}, {
+              const raw = await ToolRegistry.execute(toolId, block.input || {}, {
                 approvalMode:     opts && opts.approvalMode,
                 onApprovalNeeded: opts && opts.onApprovalNeeded,
                 toolLabel:        block.name,
                 thought:          combinedText,
                 stepIndex:        stepIdx + 1,
               });
+              const { result, images } = _splitToolImages(raw);
+              stepImages = images;
+              toolImages.push(...images);
               observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
             } catch (err) {
               if (err && err.declined && stopped()) {
@@ -417,6 +422,7 @@ const AgentExecutor = (() => {
             action: block.name,
             actionInput: block.input || {},
             observation,
+            ...(stepImages.length ? { images: stepImages } : {}),
             finalAnswer: null,
           };
           steps.push(step);
@@ -452,6 +458,8 @@ const AgentExecutor = (() => {
         // nudge so the model knows to change approach instead of re-emitting
         // the same rejected tool calls and burning through maxSteps.
         conversationMessages.push({ role: 'assistant', content: contentParts });
+        // Images go after every tool result: Claude wants the results first.
+        toolImages.forEach(url => toolResultParts.push({ type: 'image_url', image_url: { url }, _toolImage: true }));
         const allDeclined = toolUseBlocks.length > 0 && toolUseBlocks.every(b => declined.has(b.id));
         if (allDeclined) {
           toolResultParts.push({
@@ -902,9 +910,10 @@ const AgentExecutor = (() => {
     }
 
     const apiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+    const primaryModel = llmConfig.model || 'gemini-2-5-flash';
     const requestBody = {
-      model:          llmConfig.model || 'gemini-2-5-flash',
-      messages:       apiMessages,
+      model:          primaryModel,
+      messages:       _prepToolImages(apiMessages, primaryModel),
       temperature:    llmConfig.temperature || 0.3,
       max_tokens:     llmConfig.max_tokens || (ownKey ? undefined : 2048),
       // Blueprint-assigned model: if the user can't pay for it, fall back to
@@ -948,6 +957,7 @@ const AgentExecutor = (() => {
         const fbBody = fb.noTools
           ? { ...requestBody, model: fb.id, tools: undefined }
           : { ...requestBody, model: fb.id, tools: _capToolsForModel(fb.id, toolsSchema) };
+        fbBody.messages = _prepToolImages(apiMessages, fb.id);
         const fbRes = await _invokeWithBackoff(fbBody);
         data  = fbRes.data;
         error = fbRes.error;
@@ -1054,6 +1064,54 @@ const AgentExecutor = (() => {
      look for it. */
   function _isOwnKeyModel(id) {
     return typeof id === 'string' && id.startsWith('byo:');
+  }
+
+  /* ── Images from tools ──
+     A tool can return images (browser_screenshot) as data URLs in
+     `__images`. They ride in the tool-result turn as image parts after the
+     tool results, marked `_toolImage`, so every provider reads them: Claude
+     takes an image after its tool_result, OpenAI-style APIs after the tool
+     messages, Gemini beside the functionResponse. Each call sends only the
+     latest MAX_TOOL_IMAGES; a model that can't see images gets a line of
+     text instead. A model on the user's own key counts as seeing: the
+     desktop host knows each provider's models and leaves images out there. */
+  const MAX_TOOL_IMAGES = 2;
+  const _IMAGE_GONE = '[An earlier screenshot was left out to save space.]';
+  const _IMAGE_BLIND = '[A screenshot was taken, but this model cannot see images. Use browser_read for the page as text.]';
+  const _DATA_IMAGE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+
+  function _modelSees(id) {
+    if (_isOwnKeyModel(id)) return true;
+    const m = typeof ModelCatalog !== 'undefined' && ModelCatalog.getById ? ModelCatalog.getById(id) : null;
+    return !!(m && m.vision);
+  }
+
+  /** A tool's result without its images, and the images: { result, images }. */
+  function _splitToolImages(result) {
+    if (!result || typeof result !== 'object' || !Array.isArray(result.__images)) return { result, images: [] };
+    const { __images, ...rest } = result;
+    return { result: rest, images: __images.filter(u => typeof u === 'string' && _DATA_IMAGE.test(u)) };
+  }
+
+  /** The messages as sent to `modelId`: tool images past the latest few, or all of them for a model that can't see, become text. Never changes `messages`. */
+  function _prepToolImages(messages, modelId) {
+    if (!messages.some(m => m && Array.isArray(m.content) && m.content.some(p => p && p._toolImage))) return messages;
+    const sees = _modelSees(modelId);
+    let kept = 0;
+    const out = messages.slice();
+    for (let i = out.length - 1; i >= 0; i--) {
+      const m = out[i];
+      if (!m || !Array.isArray(m.content) || !m.content.some(p => p && p._toolImage)) continue;
+      const parts = m.content.slice();
+      for (let j = parts.length - 1; j >= 0; j--) {
+        const p = parts[j];
+        if (!p || !p._toolImage) continue;
+        if (sees && kept < MAX_TOOL_IMAGES) { kept++; parts[j] = { type: 'image_url', image_url: { url: p.image_url.url } }; }
+        else parts[j] = { type: 'text', text: sees ? _IMAGE_GONE : _IMAGE_BLIND };
+      }
+      out[i] = { ...m, content: parts };
+    }
+    return out;
   }
 
   async function _invokeOwnKey(body) {
@@ -1364,5 +1422,5 @@ const AgentExecutor = (() => {
     else if (_IDLE_EVENTS.has(ev)) AgentActivity.markIdle(agentId);
   }
 
-  return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog, _normalizeSchema, _sanitizeForGemini };
+  return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog, _normalizeSchema, _sanitizeForGemini, _prepToolImages };
 })();
