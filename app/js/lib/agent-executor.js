@@ -1109,6 +1109,8 @@ const AgentExecutor = (() => {
    *   - onTurn: function(turnResult) callback per turn
    *   - approvalMode: 'review' | 'autonomous' (gates side-effect tools)
    *   - onApprovalNeeded: ({tool, input, thought, stepIndex}) => Promise<bool>
+   *   - keepToolTurns: keep each turn's tool calls and results in the
+   *     history, not only its answer
    *   - shouldStop: () => bool; true calls the turn off before its next
    *     model call or tool (the result comes back with `stopped: true`)
    * @returns {Object} Conversation controller with send(), history(), reset()
@@ -1189,8 +1191,35 @@ const AgentExecutor = (() => {
         return turnResult;
       }
 
+      // keepToolTurns: the tool calls and results of this turn stay in the
+      // history, so a later turn still knows what it read and changed
+      // (Code). Otherwise only the answer is kept. A turn cut off at
+      // maxSteps can end on tool calls whose results never
+      // came back; providers refuse a history like that, so the kept part
+      // stops before the first call left without its result.
+      const keepTurn = () => {
+        if (!opts.keepToolTurns) return;
+        const at = history.lastIndexOf(userTurn);
+        if (at === -1) return;
+        const turn = conversationMessages.slice(conversationMessages.indexOf(userTurn) + 1);
+        let keep = 0;
+        while (keep < turn.length) {
+          const m = turn[keep];
+          const calls = Array.isArray(m.content) ? m.content.filter(p => p && p.type === 'tool_use').map(p => p.id) : [];
+          if (m.role === 'assistant' && calls.length) {
+            const next = turn[keep + 1];
+            const answered = new Set(next && Array.isArray(next.content)
+              ? next.content.filter(p => p && p.type === 'tool_result').map(p => p.tool_use_id) : []);
+            if (!calls.every(id => answered.has(id))) break;
+          }
+          keep += m.role === 'assistant' ? 2 : 1;
+        }
+        history.splice(at + 1, 0, ...turn.slice(0, Math.min(keep, turn.length)));
+      };
+
       if (loop.error) {
         const errorMsg = 'Error: ' + loop.error;
+        keepTurn();
         history.push({ role: 'assistant', content: errorMsg });
         _logToShipLog(spaceshipId, agentId, 'agent', errorMsg, {
           event: 'turn_error',
@@ -1204,6 +1233,7 @@ const AgentExecutor = (() => {
       }
 
       if (loop.finalAnswer != null) {
+        keepTurn();
         history.push({ role: 'assistant', content: loop.finalAnswer });
         _logToShipLog(spaceshipId, agentId, 'agent', loop.finalAnswer, {
           event: 'final_answer',
@@ -1223,6 +1253,7 @@ const AgentExecutor = (() => {
       const fallback = lastStep
         ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
         : 'No steps executed.';
+      keepTurn();
       history.push({ role: 'assistant', content: fallback });
       _logToShipLog(spaceshipId, agentId, 'agent', fallback, {
         event: 'max_steps_reached',
