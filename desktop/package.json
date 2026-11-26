@@ -22,6 +22,7 @@
       "app-protocol.js",
       "code-host.js",
       "llm-host.js",
+      "browser-host.js",
       "search-worker.js",
       "../app/**/*",
       "../public/**/*"
