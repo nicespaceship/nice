@@ -32,6 +32,8 @@ const SETTLE_MS = 400;                 // after a click or key, how long to look
 const TEXT_MAX = 20000;                // characters of page text the agent gets per read
 const ELEMENTS_MAX = 250;              // interactive elements listed per read
 const CONSOLE_MAX = 200;
+const SHOT_MAX_WIDTH = 1280;           // screenshots wider than this are scaled down
+const SHOT_JPEG_QUALITY = 70;
 const DEFAULT_SIZE = { width: 1024, height: 768 };
 const SHOW_WAIT_MS = 3000;             // how long input waits for the browser's first showing
 
@@ -375,8 +377,9 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
 
   // Hidden, the page keeps the size it was last shown at, and still takes
   // input, so the agent can click on it while the user looks at another
-  // tab. A view that has never been shown takes no input, though, so
-  // clicks, typing and keys wait for the first showing (the Code view
+  // tab. A view that has never been shown takes no input and has nothing to
+  // capture, though, so clicks, typing, keys and screenshots wait for the
+  // first showing (the Code view
   // brings the Browser tab up whenever the agent opens or acts on a page).
   function _park() {
     view.setVisible(false);
@@ -385,7 +388,7 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
   async function _whenShownOnce() {
     const start = Date.now();
     while (!everShown && !destroyed && Date.now() - start < SHOW_WAIT_MS) await _sleep(40);
-    if (!everShown) throw _err('EHIDDEN', 'The browser has not been on screen yet, so it cannot take clicks or typing. Open the Browser tab in Code\'s panel and try again.');
+    if (!everShown) throw _err('EHIDDEN', 'The browser has not been on screen yet, so it cannot take clicks, typing or screenshots. Open the Browser tab in Code\'s panel and try again.');
   }
 
   /** Where the page wants the browser drawn, in CSS pixels, or null to hide it. */
@@ -584,6 +587,23 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
     return r;
   }
 
+  /** The visible part of the page as a JPEG data URL, at most SHOT_MAX_WIDTH wide. */
+  async function screenshot() {
+    const c = _page();
+    await _whenShownOnce();
+    await _waitLoaded(5000);
+    // stayHidden: capturing a hidden browser must not show it.
+    let img = await _withTimeout(c.capturePage(undefined, { stayHidden: true }), SCRIPT_TIMEOUT_MS, 'Taking a screenshot');
+    if (!img || img.isEmpty()) throw _err('ESHOT', 'The page could not be captured. Show the Browser tab and try again.');
+    const size = img.getSize();
+    if (size.width > SHOT_MAX_WIDTH) img = img.resize({ width: SHOT_MAX_WIDTH, quality: 'good' });
+    const out = img.getSize();
+    return {
+      url: c.getURL(), title: c.getTitle(), width: out.width, height: out.height,
+      dataUrl: 'data:image/jpeg;base64,' + img.toJPEG(SHOT_JPEG_QUALITY).toString('base64'),
+    };
+  }
+
   function consoleMessages() {
     _page();
     return consoleLines.slice();
@@ -599,7 +619,7 @@ function createBrowser({ win, WebContentsView, session, notify, zoom }) {
   }
 
   return {
-    state, place, open, back, forward, reload, stop, read, click, type, key, scroll,
+    state, place, open, back, forward, reload, stop, read, click, type, key, scroll, screenshot,
     console: consoleMessages, destroy,
     get shown() { return shown; }, get bounds() { return lastBounds; },
   };

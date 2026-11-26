@@ -307,6 +307,7 @@ handle('browser:type', (event, ref, text, opts) => _browser(event).type(ref, tex
 handle('browser:key', (event, keys, opts) => _browser(event).key(keys, opts || {}));
 handle('browser:scroll', (event, direction) => _browser(event).scroll(direction));
 handle('browser:console', (event) => _browser(event).console());
+handle('browser:screenshot', (event) => _browser(event).screenshot());
 
 function createTray() {
   // Use a simple 16x16 tray icon (placeholder)

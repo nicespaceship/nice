@@ -634,6 +634,59 @@ describe('AgentExecutor', () => {
         expect(chat).toHaveBeenCalledTimes(3);
       });
 
+      it('sends a tool\'s screenshot as an image after the tool results, not in the result text', async () => {
+        const img = 'data:image/jpeg;base64,QUJD';
+        ToolRegistry.register({ id: 'shot-test', name: 'shot_test', description: 's', schema: { type: 'object', properties: {} }, execute: async () => ({ url: 'http://x/', __images: [img, 'javascript:alert(1)'] }) });
+        const chat = vi.fn()
+          .mockResolvedValueOnce({ content: [{ type: 'tool_use', id: 's1', name: 'shot_test', input: {} }], stop_reason: 'tool_use' })
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'looks fine' }], stop_reason: 'end_turn' });
+        window.NiceDesktop = { llm: { chat } };
+        const steps = [];
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['shot-test'], keepToolTurns: true, onStep: (st) => steps.push(st) });
+        expect((await controller.send('check the page')).text).toBe('looks fine');
+        const turn = chat.mock.calls[1][0].messages.at(-1);
+        expect(turn.content.map(p => p.type)).toEqual(['tool_result', 'image_url']);
+        expect(turn.content[0].content).not.toContain('base64');
+        expect(turn.content[0].content).not.toContain('__images');
+        expect(turn.content[1]).toEqual({ type: 'image_url', image_url: { url: img } });
+        expect(steps[0].images).toEqual([img]);
+      });
+
+      it('keeps only the latest two screenshots in the conversation itself', async () => {
+        let n = 0;
+        ToolRegistry.register({ id: 'shot-many', name: 'shot_many', description: 's', schema: { type: 'object', properties: {} }, execute: async () => ({ __images: ['data:image/jpeg;base64,SHOT' + (++n)] }) });
+        const call = (id) => ({ content: [{ type: 'tool_use', id, name: 'shot_many', input: {} }], stop_reason: 'tool_use' });
+        const chat = vi.fn()
+          .mockResolvedValueOnce(call('a')).mockResolvedValueOnce(call('b')).mockResolvedValueOnce(call('c'))
+          .mockResolvedValueOnce({ content: 'done', stop_reason: 'end_turn' })
+          .mockResolvedValueOnce({ content: 'next', stop_reason: 'end_turn' });
+        window.NiceDesktop = { llm: { chat } };
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['shot-many'], keepToolTurns: true });
+        await controller.send('three shots');
+        await controller.send('again');
+        const sent = JSON.stringify(chat.mock.calls[4][0].messages);
+        expect(sent).not.toContain('SHOT1');
+        expect(sent).toContain('SHOT2');
+        expect(sent).toContain('SHOT3');
+        expect(sent).toContain('left out to save space');
+      });
+
+      it('leaves a screenshot out of a tool called in text form, with a note', async () => {
+        ToolRegistry.register({ id: 'shot-text', name: 'shot_text', description: 's', schema: { type: 'object', properties: {} }, execute: async () => ({ url: 'http://x/', __images: ['data:image/jpeg;base64,SECRETDATA'] }) });
+        const chat = vi.fn()
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'Thought: look\nAction: shot_text\nAction Input: {}' }], stop_reason: 'end_turn' })
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'Final Answer: done' }], stop_reason: 'end_turn' });
+        window.NiceDesktop = { llm: { chat } };
+        const steps = [];
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['shot-text'], keepToolTurns: true, onStep: (st) => steps.push(st) });
+        expect((await controller.send('check')).text).toBe('done');
+        expect(chat).toHaveBeenCalledTimes(2);
+        const sent = JSON.stringify(chat.mock.calls[1][0].messages);
+        expect(sent).not.toContain('SECRETDATA');
+        expect(sent).toContain('cannot carry images');
+        expect(JSON.stringify(steps)).not.toContain('SECRETDATA');
+      });
+
       it('says own-key models need the desktop app on the website', async () => {
         const controller = AgentExecutor.converse(ownAgent, { tools: [] });
         const turn = await controller.send('hi');
@@ -2218,5 +2271,34 @@ describe('AgentExecutor — runs only the tools the agent was given', () => {
     } finally {
       ToolRegistry.deregister(ID);
     }
+  });
+});
+
+describe('AgentExecutor._prepToolImages', () => {
+  const shot = (n) => ({ type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + n }, _toolImage: true });
+  const turn = (n) => ({ role: 'user', content: [{ type: 'tool_result', tool_use_id: 't' + n, content: '{}' }, shot(n)] });
+  const msgs = [{ role: 'system', content: 's' }, { role: 'user', content: 'hi' }, turn('A'), turn('B'), turn('C'),
+    { role: 'user', content: [{ type: 'image_url', image_url: { url: 'data:image/png;base64,USER' } }] }];
+
+  it('keeps the latest two screenshots for a model that sees, and leaves the user\'s own images alone', () => {
+    const out = AgentExecutor._prepToolImages(msgs, 'claude-4-6-sonnet');
+    expect(out[2].content[1]).toEqual({ type: 'text', text: expect.stringContaining('left out to save space') });
+    expect(out[3].content[1]).toEqual({ type: 'image_url', image_url: { url: 'data:image/jpeg;base64,B' } });
+    expect(out[4].content[1]).toEqual({ type: 'image_url', image_url: { url: 'data:image/jpeg;base64,C' } });
+    expect(out[5]).toBe(msgs[5]);
+    // The conversation itself keeps every screenshot.
+    expect(msgs[2].content[1]._toolImage).toBe(true);
+  });
+
+  it('turns every screenshot into a note for a model that cannot see', () => {
+    const out = AgentExecutor._prepToolImages(msgs, 'deepseek-v4-flash');
+    for (const i of [2, 3, 4]) expect(out[i].content[1].text).toContain('cannot see images');
+    expect(AgentExecutor._prepToolImages(msgs, 'some-unknown-model')[4].content[1].type).toBe('text');
+  });
+
+  it('counts a model on the user\'s own key as seeing, and passes messages without screenshots through', () => {
+    expect(AgentExecutor._prepToolImages(msgs, 'byo:deepseek:deepseek-chat')[4].content[1].type).toBe('image_url');
+    const plain = [{ role: 'user', content: 'x' }];
+    expect(AgentExecutor._prepToolImages(plain, 'deepseek-v4-flash')).toBe(plain);
   });
 });

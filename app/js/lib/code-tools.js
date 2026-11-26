@@ -253,6 +253,16 @@ const CodeTools = (() => {
       run: (h, input) => h.key(String(input.keys || ''), _expect(input)).then(_pageState),
     },
     {
+      id: 'code-browser-shot',
+      name: 'browser_screenshot',
+      api: 'browser',
+      sideEffect: false,
+      description: 'Take a screenshot of what the browser shows, to see the layout, styling, images or anything browser_read can\'t tell you. Only the latest two screenshots stay in the conversation.',
+      schema: { type: 'object', properties: {} },
+      // AgentExecutor moves __images into the conversation as images.
+      run: (h) => h.screenshot().then(r => ({ url: r.url, title: r.title, width: r.width, height: r.height, __images: [r.dataUrl] })),
+    },
+    {
       id: 'code-browser-scroll',
       name: 'browser_scroll',
       api: 'browser',
@@ -326,6 +336,7 @@ const CodeTools = (() => {
       case 'code-run': return { kind: 'run', title: 'Run ' + (i.command || ''), command: i.command };
       case 'code-browser-open': return { kind: 'browse', title: 'Open ' + (i.url || ''), url: String(i.url || '') };
       case 'code-browser-read': return { kind: 'look', title: 'Read the page' };
+      case 'code-browser-shot': return { kind: 'look', title: 'Took a screenshot' };
       case 'code-browser-scroll': return { kind: 'look', title: 'Scrolled ' + (i.direction === 'up' ? 'up' : 'down') };
       case 'code-browser-back': return { kind: 'look', title: 'Went back' };
       case 'code-browser-console': return { kind: 'look', title: 'Read the console' };
