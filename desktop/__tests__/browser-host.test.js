@@ -38,7 +38,7 @@ describe('parseKey', () => {
     expect(parseKey('ArrowDown')).toEqual({ keyCode: 'Down', modifiers: [], char: null });
     expect(parseKey('ctrl+a')).toEqual({ keyCode: 'a', modifiers: ['control'], char: null });
     expect(parseKey('Shift+Tab')).toEqual({ keyCode: 'Tab', modifiers: ['shift'], char: null });
-    expect(parseKey('shift+a')).toEqual({ keyCode: 'a', modifiers: ['shift'], char: 'a' });
+    expect(parseKey('shift+a')).toEqual({ keyCode: 'a', modifiers: ['shift'], char: 'A' });
     expect(parseKey('cmd+shift+k').modifiers).toEqual(['meta', 'shift']);
     expect(parseKey('F5').keyCode).toBe('F5');
   });
@@ -313,6 +313,8 @@ describe('createBrowser', () => {
     await expect(b.click('1', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
     expect(c.inputs).toEqual([]);
     await expect(b.open('evil.test', { expectHost: 'example.com' })).rejects.toMatchObject({ code: 'ESITE' });
+    // An approval whose site could not be read binds to no site, and is refused.
+    await expect(b.key('Enter', { expectHost: '' })).rejects.toMatchObject({ code: 'ESITE' });
   });
 
   it('sends input through the DevTools protocol when it can attach', async () => {

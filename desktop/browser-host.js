@@ -94,7 +94,7 @@ function cdpKey(k) {
   let key, vk;
   if (CDP_KEYS[k.keyCode]) [key, vk] = CDP_KEYS[k.keyCode];
   else if (/^F\d+$/.test(k.keyCode)) { key = k.keyCode; vk = 111 + Number(k.keyCode.slice(1)); }
-  else { key = k.keyCode; vk = k.keyCode.toUpperCase().charCodeAt(0); }
+  else { key = k.char || k.keyCode; vk = k.keyCode.toUpperCase().charCodeAt(0); }
   const mods = k.modifiers.reduce((n, m) => n | (CDP_MODIFIER_BITS[m] || 0), 0);
   const code = /^[a-z]$/i.test(key) ? 'Key' + key.toUpperCase() : /^\d$/.test(key) ? 'Digit' + key : key === ' ' ? 'Space' : key;
   return { key, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers: mods, text: k.char || undefined };
@@ -125,8 +125,9 @@ function parseKey(spec) {
   else if (fn) keyCode = fn;
   else if (last.length === 1) { keyCode = last; char = last; }
   else return null;
-  // A shortcut (ctrl+a) types nothing; shift alone still types its key.
+  // A shortcut (ctrl+a) types nothing; shift alone still types its key, as a capital.
   if (modifiers.some(m => m !== 'shift')) char = null;
+  else if (char && modifiers.includes('shift')) char = char.toUpperCase();
   return { keyCode, modifiers, char };
 }
 

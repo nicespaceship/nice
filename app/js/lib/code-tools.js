@@ -179,8 +179,10 @@ const CodeTools = (() => {
   // The browser refuses the call if the page has moved to another site.
   const _approved = new WeakMap();
   /** Called by the approval gate: this call is allowed on `site` (host:port). */
-  function approveSite(input, site) { if (input && typeof input === 'object' && site) _approved.set(input, site); }
-  const _expect = (input) => { const site = _approved.get(input); return site ? { expectHost: site } : {}; };
+  // An approval with no site ('' when the page's site could not be read)
+  // still binds: the browser refuses it, as no page is on no site.
+  function approveSite(input, site) { if (input && typeof input === 'object') _approved.set(input, String(site || '')); }
+  const _expect = (input) => (_approved.has(input) ? { expectHost: _approved.get(input) } : {});
 
   const _pageState = (st) => ({ url: st.url, title: st.title, ...(st.status && st.status >= 400 ? { status: st.status } : {}), ...(st.error ? { error: st.error } : {}), ...(st.loading ? { loading: true } : {}) });
 

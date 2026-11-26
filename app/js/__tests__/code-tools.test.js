@@ -183,6 +183,8 @@ describe('CodeTools browser', () => {
     expect(b.type).toHaveBeenCalledWith('3', 'x', { clear: false, submit: false, expectHost: 'example.com' });
     await ToolRegistry.execute('code-browser-key', { keys: 'Enter' }, gate('example.com'));
     expect(b.key).toHaveBeenCalledWith('Enter', { expectHost: 'example.com' });
+    await ToolRegistry.execute('code-browser-key', { keys: 'Tab' }, gate(''));
+    expect(b.key).toHaveBeenLastCalledWith('Tab', { expectHost: '' });
   });
 
   it('reports a page that failed or answered with an error status', async () => {
