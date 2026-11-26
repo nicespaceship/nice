@@ -308,6 +308,7 @@ const OwnKeys = (() => {
   }
 
   function _reset() {
+    if (typeof window !== 'undefined') window.removeEventListener('hashchange', closeKeys);
     _groups = new Map();
     _load = null;
     _returnTo = null;
