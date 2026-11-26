@@ -584,7 +584,9 @@ const AgentExecutor = (() => {
       } else if (p.type === 'text' && typeof p.text === 'string') {
         out.push({ type: 'text', text: p.text });
       } else if (p.type === 'tool_use' && p.id && p.name) {
-        out.push({ type: 'tool_use', id: p.id, name: p.name, input: p.input || {} });
+        // signature: Gemini's thought signature, which a call made on the
+        // user's own key must carry back on the next request.
+        out.push({ type: 'tool_use', id: p.id, name: p.name, input: p.input || {}, ...(typeof p.signature === 'string' ? { signature: p.signature } : {}) });
       }
     }
     return out;
@@ -882,12 +884,19 @@ const AgentExecutor = (() => {
      Tool count is capped per-provider on every call (primary + each
      fallback) since the fallback chain can cross provider families. */
   async function _callLLM(blueprint, systemPrompt, messages, spaceshipId, toolsSchema) {
-    if (typeof SB === 'undefined' || !SB.functions) {
+    // A model on the user's own key (desktop app) is called as given: no
+    // plan check, no NICE fallback chain, no nice-ai.
+    const engine = blueprint && blueprint.config && blueprint.config.llm_engine;
+    const ownKey = _isOwnKeyModel(engine);
+    if (!ownKey && (typeof SB === 'undefined' || !SB.functions)) {
       throw new Error('SB.functions not available');
     }
 
     let llmConfig = {};
-    if (typeof LLMConfig !== 'undefined' && blueprint) {
+    if (ownKey) {
+      const cfg = blueprint.config;
+      llmConfig = { model: engine, temperature: cfg.temperature, max_tokens: cfg.max_tokens || 8192, fallbackChain: [] };
+    } else if (typeof LLMConfig !== 'undefined' && blueprint) {
       llmConfig = LLMConfig.forBlueprint(blueprint);
     }
 
@@ -900,7 +909,7 @@ const AgentExecutor = (() => {
       // Blueprint-assigned model: if the user can't pay for it, fall back to
       // Gemini Flash inside nice-ai and surface a toast. Without this, the
       // catalog's llm_engine would 402 every dispatch for non-subscribers.
-      auto_downgrade: true,
+      ...(ownKey ? {} : { auto_downgrade: true }),
     };
     if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
       // noTools models (tool passthrough unverified through nice-ai's
@@ -1027,13 +1036,33 @@ const AgentExecutor = (() => {
   /* Invoke nice-ai with bounded same-model exponential backoff on transient
      overload (up to 3 attempts: immediate, +600ms, +1200ms). */
   async function _invokeWithBackoff(body) {
-    let res = await SB.functions.invoke('nice-ai', { body });
+    const invoke = _isOwnKeyModel(body.model) ? _invokeOwnKey : (b) => SB.functions.invoke('nice-ai', { body: b });
+    let res = await invoke(body);
     for (let i = 1; i <= 2; i++) {
       if (!((res.error || res.data?.error) && _isTransientOverload(res.error, res.data))) break;
       await new Promise(r => setTimeout(r, _RETRY_BASE_MS * Math.pow(2, i - 1)));
-      res = await SB.functions.invoke('nice-ai', { body });
+      res = await invoke(body);
     }
     return res;
+  }
+
+  /* Models on the user's own API keys are named 'byo:<provider>:<model>'
+     and called through the desktop host (desktop/llm-host.js), which holds
+     the key and answers in nice-ai's shape. Its { code, message, status }
+     failures come back as { error } with the status where the retry rules
+     look for it. */
+  function _isOwnKeyModel(id) {
+    return typeof id === 'string' && id.startsWith('byo:');
+  }
+
+  async function _invokeOwnKey(body) {
+    const llm = typeof window !== 'undefined' && window.NiceDesktop && window.NiceDesktop.llm;
+    if (!llm) return { data: null, error: { message: 'Models on your own API key run in the NICE desktop app.' } };
+    try {
+      return { data: await llm.chat(body), error: null };
+    } catch (e) {
+      return { data: null, error: { message: (e && e.message) || String(e), code: e && e.code, context: { status: e && e.status } } };
+    }
   }
 
   /* ── Single-shot fallback (no tools, just call ShipLog directly) ── */

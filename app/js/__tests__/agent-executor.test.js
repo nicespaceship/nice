@@ -596,6 +596,52 @@ describe('AgentExecutor', () => {
       expect(msgs.map(m => m.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user']);
     });
 
+    describe('models on the user\'s own key', () => {
+      const ownAgent = { id: null, name: 'Code', config: { llm_engine: 'byo:anthropic:claude-x', system_prompt: 'Be brief.' } };
+      afterEach(() => { delete window.NiceDesktop; State.set('enabled_models', null); });
+
+      it('calls the desktop host as given, never nice-ai', async () => {
+        // An enabled_models list that lacks the id must not swap it for a NICE model.
+        State.set('enabled_models', { 'gemini-2-5-flash': true });
+        const chat = vi.fn()
+          .mockResolvedValueOnce({ content: [{ type: 'tool_use', id: 'k1', name: 'outlook_search_messages', input: {}, signature: 'sig' }], stop_reason: 'tool_use' })
+          .mockResolvedValueOnce({ content: [{ type: 'text', text: 'done' }], stop_reason: 'end_turn', usage: { input_tokens: 2, output_tokens: 1 } });
+        window.NiceDesktop = { llm: { chat } };
+        const controller = AgentExecutor.converse(ownAgent, { tools: ['outlook_search_messages'], keepToolTurns: true });
+        const turn = await controller.send('hi');
+        expect(turn.text).toBe('done');
+        expect(_capturedRequests).toHaveLength(0);
+        const body = chat.mock.calls[0][0];
+        expect(body.model).toBe('byo:anthropic:claude-x');
+        expect(body.auto_downgrade).toBeUndefined();
+        expect(body.tools[0].name).toBe('outlook_search_messages');
+        // The thought signature rides back on the next request.
+        const echoed = chat.mock.calls[1][0].messages.find(m => m.role === 'assistant').content.find(p => p.type === 'tool_use');
+        expect(echoed.signature).toBe('sig');
+      });
+
+      it('retries a rate limit in place and reports other failures', async () => {
+        const chat = vi.fn()
+          .mockRejectedValueOnce({ code: 'ERATELIMIT', message: 'Anthropic is rate limiting this key.', status: 429 })
+          .mockResolvedValueOnce({ content: 'ok', stop_reason: 'end_turn' })
+          .mockRejectedValueOnce({ code: 'EKEY', message: 'Anthropic refused the key.', status: 401 });
+        window.NiceDesktop = { llm: { chat } };
+        const controller = AgentExecutor.converse(ownAgent, { tools: [] });
+        expect((await controller.send('one')).text).toBe('ok');
+        const second = await controller.send('two');
+        expect(second.error).toBe(true);
+        expect(second.text).toContain('refused the key');
+        expect(chat).toHaveBeenCalledTimes(3);
+      });
+
+      it('says own-key models need the desktop app on the website', async () => {
+        const controller = AgentExecutor.converse(ownAgent, { tools: [] });
+        const turn = await controller.send('hi');
+        expect(turn.error).toBe(true);
+        expect(turn.text).toContain('desktop app');
+      });
+    });
+
     it('keeps only the answer without keepToolTurns', async () => {
       _scriptedResponses.push(toolTurn('tu-b'), answer('one'), answer('two'));
       const controller = AgentExecutor.converse(agent, { tools: ['outlook_search_messages'] });
