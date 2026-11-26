@@ -11168,6 +11168,21 @@ body.preview-active .nice-ai {
 .code-term-line [hidden] { display:none; }
 .code-term-line .btn[aria-disabled="true"] { opacity:.6; cursor:default; }
 
+/* The desktop app draws the web page over .code-browser-view; what is
+   inside it shows only while no page is open. */
+.code-browser { flex:1; min-height:0; display:flex; flex-direction:column; background:var(--bg); }
+.code-browser-bar { flex-shrink:0; display:flex; align-items:center; gap:2px; padding:6px 8px; border-bottom:1px solid var(--border); background:var(--bg2); }
+.code-browser-bar .code-icon-btn[aria-disabled="true"] { opacity:.4; cursor:default; }
+.code-browser-fwd .icon { transform:scaleX(-1); }
+.code-view .code-browser-bar input,
+.code-view .code-browser-bar input:focus {
+  flex:1; min-width:0; margin-left:4px; padding:5px 10px; border:1px solid var(--border); border-radius:calc(var(--radius) * .8);
+  background:var(--bg); color:var(--text); font-family:var(--font-m); font-size:var(--text-sm); box-shadow:none;
+}
+.code-view .code-browser-bar input:focus { border-color:var(--border-hi); outline:0; }
+.code-browser-view { flex:1; min-height:0; position:relative; background:var(--bg); }
+.code-browser-empty { margin:0; padding:24px 16px; color:var(--text-muted); font-size:var(--text-sm); line-height:var(--lh-base); text-align:center; }
+
 /* Below the top banners, which sit over the page. */
 .code-keys-overlay { padding-top:calc(24px + var(--app-banner-height, 0px)); }
 .code-keys-box { max-width:480px; max-height:calc(100dvh - 48px - var(--app-banner-height, 0px)); display:flex; flex-direction:column; }
