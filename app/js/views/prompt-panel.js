@@ -2212,7 +2212,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      sign-in, as Space does. The last prompt is kept per provider, for the
      theme, callsign and app context it was made for, and cards asking at
      once share one request. */
-  const _OWN_PROMPT_PROVIDER = { anthropic: 'anthropic', google: 'gemini', openai: 'openai', xai: 'xai', groq: 'groq', deepseek: 'deepseek' };
+  const _OWN_PROMPT_PROVIDER = { anthropic: 'anthropic', google: 'gemini', openai: 'openai', xai: 'xai', groq: 'groq', deepseek: 'deepseek', moonshot: 'moonshot', nvidia: 'nvidia' };
   let _ownPrompt = new Map();   // provider → { key, promise }
 
   async function _ownKeySystem(provider) {
