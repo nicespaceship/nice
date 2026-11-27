@@ -253,7 +253,6 @@ handle('code:recent', (event) => {
   return recentFolders().list().map(e => ({ ...e, current: !!ws && ws.root === e.root }));
 });
 handle('code:open-recent', async (event, id) => {
-  const entry = _recentEntry(id);
   return _openWorkspace(event, _presentEntry(id).root);
 });
 handle('code:forget-recent', (event, id) => recentFolders().remove(_recentEntry(id).id));
