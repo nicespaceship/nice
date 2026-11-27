@@ -263,6 +263,20 @@ describe('AgentBuilderView._buildBlueprintRow — optional config keys', () => {
   });
 });
 
+describe('AgentBuilderView._mergeAgentWithBlueprint — the model', () => {
+  const blueprint = { id: 'bp-1', name: 'Baker', config: { llm_engine: 'claude-4-6-sonnet' } };
+  it('shows the blueprint\'s model for an agent the user never changed', () => {
+    const merged = AgentBuilderView._mergeAgentWithBlueprint({ id: 'ua-1', config: { llm_engine: 'gemini-2-5-flash' } }, blueprint);
+    expect(merged.llm_engine).toBe('claude-4-6-sonnet');
+    expect(merged._modelChosen).toBe(false);
+  });
+  it('keeps a model the user picked on a team card', () => {
+    const merged = AgentBuilderView._mergeAgentWithBlueprint({ id: 'ua-1', config: { llm_engine: 'grok-4-3', model_chosen: true } }, blueprint);
+    expect(merged.llm_engine).toBe('grok-4-3');
+    expect(merged._modelChosen).toBe(true);
+  });
+});
+
 describe('LLM registry derivation from MODEL_CATALOG', () => {
   it('derives one provider per unique provider, id lowercased + despaced, icon from its first model', () => {
     expect(LLM_PROVIDERS).toHaveLength(2);

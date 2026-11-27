@@ -1882,6 +1882,18 @@ html:not([data-theme]) .app-main,
   font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .crew-model i { width:8px; height:8px; border-radius:50%; background:var(--crew-c); flex-shrink:0; }
+/* The model chip as a menu (the user's own agents): the shared CSelect,
+   flattened into the chip so a card reads the same either way. */
+.crew-model-pick { padding:0 0 0 9px; overflow:visible; }
+.crew-model-pick:hover,
+.crew-model-pick:focus-within { border-color:var(--border-hi, var(--border)); }
+.crew-model-pick .bp-cselect { min-width:0; display:inline-flex; }
+.crew-model-pick .bp-cselect-trigger {
+  min-width:0; gap:4px; padding:2px 8px 2px 0; border:0; border-radius:999px;
+  background:transparent; color:inherit; font-size:var(--text-xs);
+}
+.crew-model-pick .bp-cselect-trigger:focus-visible { color:var(--text); }
+.crew-model-pick .bp-cselect-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .crew-status { display:flex; align-items:center; gap:7px; padding:10px 12px 0; font-size:var(--text-xs); font-weight:var(--fw-medium); color:var(--text-muted); }
 .crew-status-dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim, var(--text-muted)); flex-shrink:0; }
 .crew-status[data-s="active"] { color:var(--accent); }

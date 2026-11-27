@@ -187,7 +187,7 @@ const CrewView = (() => {
           </span>
         </header>
         <div class="crew-card-meta">
-          <span class="crew-model"><i aria-hidden="true"></i>${_esc(_modelName(modelId))}</span>
+          ${_modelPickHTML(member, modelId, name)}
           ${tools ? `<span class="crew-tools">${_esc(tools)}</span>` : ''}
         </div>
         <div class="crew-status" data-s="${status.s}" id="crew-status-${index}">
@@ -201,6 +201,62 @@ const CrewView = (() => {
           ${_sendButtonHTML(member)}
         </form>
       </article>`;
+  }
+
+  /* The model menu on a card: NICE Auto, then the models the user can run
+     (Space's list: switched on, allowed by their plan, own keys included),
+     with the agent's current model kept even when it isn't one of them.
+     Only the user's own agents get a menu; a catalog agent shows its model. */
+  const _AUTO = 'nice-auto';
+
+  function _ownsAgent(agent) {
+    return ((typeof State !== 'undefined' && State.get('agents')) || []).some(a => a.id === agent.id);
+  }
+
+  function _modelOptions(current) {
+    const ids = (typeof SpaceCards !== 'undefined' && SpaceCards.available) ? SpaceCards.available() : [];
+    const label = (id) => id === _AUTO ? 'NICE Auto'
+      : (typeof SpaceCards !== 'undefined' && SpaceCards.label) ? SpaceCards.label(id) : _modelName(id);
+    const list = [_AUTO, ...ids.filter(id => id !== _AUTO)];
+    if (current && !list.includes(current)) list.splice(1, 0, current);
+    return list.map(id => ({ value: id, label: label(id) }));
+  }
+
+  // The model the card shows: what the agent asks for (NICE Auto included),
+  // where LLMConfig would report what Auto resolved to.
+  function _chosenModel(agent) {
+    const cfg = agent.config || {};
+    return (cfg.model_profile && cfg.model_profile.preferred) || cfg.llm_engine || agent.llm_engine || _modelId(agent);
+  }
+
+  function _modelPickHTML(member, modelId, name) {
+    const agent = member.agent;
+    if (typeof CSelect === 'undefined' || !_ownsAgent(agent)) {
+      return `<span class="crew-model"><i aria-hidden="true"></i>${_esc(_modelName(modelId))}</span>`;
+    }
+    const current = _chosenModel(agent);
+    return `<span class="crew-model crew-model-pick"><i aria-hidden="true"></i>${CSelect.html('crew-model-' + member.index, 'Model for ' + name, _modelOptions(current), current)}</span>`;
+  }
+
+  async function _pickModel(member, modelId) {
+    const agent = member.agent;
+    const id = agent.id;
+    const before = _chosenModel(agent);
+    const s = _session.get(id);
+    if (s && s.live) {
+      CSelect.set('crew-model-' + member.index, before);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Still answering', message: 'Change the model once the reply is in, or stop it first.', type: 'system' });
+      return;
+    }
+    try {
+      await Blueprints.setAgentModel(id, modelId);
+      // The next message starts a new conversation on the new model; the
+      // thread so far stays on the card.
+      if (s) s.convo = null;
+    } catch (err) {
+      if (_el) CSelect.set('crew-model-' + member.index, before);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Model not changed', message: (err && err.message) || 'Try again.', type: 'error' });
+    }
   }
 
   const SEND_ICON = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-6.5z"/><path d="M12 13.5 20 4"/></svg>';
@@ -552,6 +608,12 @@ const CrewView = (() => {
   /* ── Events ── */
 
   function _wire() {
+    if (typeof CSelect !== 'undefined') {
+      _crew.forEach(m => {
+        if (!m.agent || !_el.querySelector('#crew-model-' + m.index)) return;
+        CSelect.mount('crew-model-' + m.index, (value) => _pickModel(m, value));
+      });
+    }
     _el.querySelectorAll('.crew-compose').forEach(form => {
       form.addEventListener('submit', (e) => {
         e.preventDefault();

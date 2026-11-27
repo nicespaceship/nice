@@ -50,6 +50,11 @@ globalThis.MissionRunner = {
 };
 globalThis.Notify = { send: vi.fn() };
 
+// CSelect reads these; jsdom has neither.
+if (!window.matchMedia) window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+if (!globalThis.CSS) globalThis.CSS = {};
+if (!CSS.escape) CSS.escape = (v) => String(v).replace(/["\\]/g, '\\$&');
+load('lib/cselect.js');
 load('views/crew.js');
 
 const flush = () => new Promise(r => setTimeout(r, 0));
@@ -131,6 +136,66 @@ describe('CrewView', () => {
     history.replaceState(null, '', '#/crew?ship=ship-9');
     CrewView.render(el);
     expect(localStorage.getItem(Utils.KEYS.mcShip)).toBe('ship-9');
+  });
+
+  describe('the model menu on a card', () => {
+    const LABELS = { 'nice-auto': 'NICE Auto', 'gemini-2-5-flash': 'Gemini 2.5 Flash', 'grok-4-3': 'Grok 4.3', 'claude-4-6-sonnet': 'Claude 4.6 Sonnet' };
+    beforeEach(() => {
+      globalThis.SpaceCards = { available: () => ['gemini-2-5-flash', 'grok-4-3'], label: (id) => LABELS[id] || id };
+      Blueprints.setAgentModel = vi.fn(async (id, model) => ({ id, config: { llm_engine: model, model_chosen: true } }));
+      // a2 is one of the user's agents; a1 is a catalog agent.
+      State.set('agents', [{ id: 'a2', name: 'Orders Agent', config: { llm_engine: 'gemini-2-5-flash' } }]);
+    });
+    afterEach(() => { delete globalThis.SpaceCards; delete Blueprints.setAgentModel; delete globalThis.AgentExecutor; });
+    const options = (slot) => [...el.querySelectorAll(`#crew-model-${slot} .bp-cselect-option`)].map(o => o.textContent);
+
+    it('offers NICE Auto and the models the user can run, on their own agents only', () => {
+      CrewView.render(el);
+      expect(options(1)).toEqual(['NICE Auto', 'Gemini 2.5 Flash', 'Grok 4.3']);
+      expect(el.querySelector('#crew-model-1 .bp-cselect-label').textContent).toBe('Gemini 2.5 Flash');
+      expect(el.querySelector('#crew-model-1 .bp-cselect-trigger').getAttribute('aria-label')).toBe('Model for Orders & Payments');
+      expect(el.querySelector('#crew-model-0')).toBeNull();
+      expect(el.querySelector('.crew-card[data-slot="0"] .crew-model').textContent).toContain('Claude 4.6 Sonnet');
+    });
+
+    it('keeps the agent\'s current model in the list when the plan does not offer it', () => {
+      State.set('agents', [{ id: 'a2', name: 'Orders Agent', config: { llm_engine: 'claude-4-6-sonnet' } }]);
+      CREW[1].agent.config.llm_engine = 'claude-4-6-sonnet';
+      try {
+        CrewView.render(el);
+        expect(options(1)).toEqual(['NICE Auto', 'Claude 4.6 Sonnet', 'Gemini 2.5 Flash', 'Grok 4.3']);
+      } finally {
+        CREW[1].agent.config.llm_engine = 'gemini-2-5-flash';
+      }
+    });
+
+    it('saves a pick to the agent', async () => {
+      CrewView.render(el);
+      el.querySelector('#crew-model-1 .bp-cselect-option[data-value="grok-4-3"]').click();
+      await flush();
+      expect(Blueprints.setAgentModel).toHaveBeenCalledWith('a2', 'grok-4-3');
+    });
+
+    it('puts the menu back and says why when the save fails', async () => {
+      Blueprints.setAgentModel = vi.fn(async () => { throw new Error('You are offline. Try again when you are back online.'); });
+      CrewView.render(el);
+      el.querySelector('#crew-model-1 .bp-cselect-option[data-value="grok-4-3"]').click();
+      await flush();
+      expect(el.querySelector('#crew-model-1').dataset.value).toBe('gemini-2-5-flash');
+      expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Model not changed', message: 'You are offline. Try again when you are back online.' }));
+    });
+
+    it('waits while the card is answering', () => {
+      State.set('user', { id: 'u1' });
+      globalThis.AgentExecutor = { converse: vi.fn(() => ({ send: () => new Promise(() => {}) })) };
+      CrewView.render(el);
+      const form = el.querySelector('.crew-compose[data-slot="1"]');
+      form.querySelector('input').value = 'Busy';
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+      el.querySelector('#crew-model-1 .bp-cselect-option[data-value="grok-4-3"]').click();
+      expect(Blueprints.setAgentModel).not.toHaveBeenCalled();
+      expect(el.querySelector('#crew-model-1').dataset.value).toBe('gemini-2-5-flash');
+    });
   });
 
   describe('a card as its own chat window', () => {

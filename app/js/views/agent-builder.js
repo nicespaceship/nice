@@ -216,7 +216,11 @@ const AgentBuilderView = (() => {
     merged.category = blueprint.category || '';
     merged.role = blueprint.category || '';
     merged.type = bpConfig.type || '';
-    merged.llm_engine = bpConfig.llm_engine || 'nice-auto';
+    // A model the user picked on a team card is theirs (config.model_chosen,
+    // set by Blueprints.setAgentModel) and wins over the blueprint's.
+    const agentCfg = agent.config || {};
+    merged._modelChosen = !!(agentCfg.model_chosen && agentCfg.llm_engine);
+    merged.llm_engine = merged._modelChosen ? agentCfg.llm_engine : (bpConfig.llm_engine || 'nice-auto');
     merged.role_type = blueprint.role_type || '';
     if (Array.isArray(blueprint.tags) && blueprint.tags.length) {
       merged.tags = [...blueprint.tags];
@@ -869,6 +873,9 @@ const AgentBuilderView = (() => {
     // ship-log); role_type-style slug-keyed access goes through the
     // top-level agent_blueprints.role_type FK column.
     const roleLabel = _roleLabel(role);
+    // The model stays the user's own pick once they made one, here or on a
+    // team card, so mission runs and the builder keep it over the catalog's.
+    const modelChosen = !!existingAgent && (!!existingAgent._modelChosen || model !== (existingAgent.llm_engine || 'nice-auto'));
     const row = {
       name,
       status: existingAgent?.status || 'idle',
@@ -877,6 +884,7 @@ const AgentBuilderView = (() => {
         type,
         tools, memory, temperature: temp,
         llm_engine: model,
+        ...(modelChosen ? { model_chosen: true } : {}),
         description,
         flavor: instructions,
         caps: skills,
@@ -1195,7 +1203,7 @@ const AgentBuilderView = (() => {
 
   return { title, render,
     // Test seams: pure helpers for the agent_blueprints serialization path.
-    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel,
+    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel, _mergeAgentWithBlueprint,
     _ownModelOptions, _loadOwnModels, _setModel };
 })();
 
