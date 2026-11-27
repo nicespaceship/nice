@@ -132,14 +132,17 @@ const CrewView = (() => {
     const s = _session.get(agentId);
     const log = _logs.get(agentId) || [];
     if (!s) return log;
+    // Newest first on both sides, so a repeated request ("hi") pairs with
+    // its latest log row, never an older one.
     const pending = s.exchanges.slice();
-    const out = log.map((x) => {
-      const at = (x.ask || x.reply).ts;
-      if (!x.ask || !(at > s.cutoff)) return x;
-      const i = pending.findIndex(p => p.ask && p.ask.text === x.ask.text);
-      if (i < 0) return x;
-      return pending.splice(i, 1)[0];
-    });
+    const out = log.slice();
+    for (let j = out.length - 1; j >= 0 && pending.length; j--) {
+      const x = out[j];
+      if (!x.ask || !(x.ask.ts > s.cutoff)) continue;
+      let i = -1;
+      for (let k = pending.length - 1; k >= 0; k--) if (pending[k].ask && pending[k].ask.text === x.ask.text) { i = k; break; }
+      if (i >= 0) out[j] = pending.splice(i, 1)[0];
+    }
     return out.concat(pending).slice(-_HISTORY);
   }
 
@@ -279,7 +282,7 @@ const CrewView = (() => {
   function _paint(agentId) {
     const member = _memberOf(agentId);
     if (!_el || !member) return;
-    const card = _el.querySelector(`.crew-card[data-slot="${member.index}"]`);
+    const card = [..._el.querySelectorAll('.crew-card[data-agent]')].find(c => c.dataset.agent === String(agentId));
     if (!card) return;
     card.classList.toggle('is-open', _isOpen(agentId));
     if (_liveOf(agentId)) card.setAttribute('aria-busy', 'true'); else card.removeAttribute('aria-busy');
@@ -363,7 +366,7 @@ const CrewView = (() => {
       s.live = null;
       _paint(id);
       const r = ex.reply || {};
-      _say(id, r.stopped ? `${name} stopped.` : r.error ? `${name} could not answer: ${r.text}` : `${name} replied.`);
+      _say(id, r.stopped ? `${name} stopped.` : r.error ? `${name} could not answer: ${String(r.text).replace(/^Error:\s*/, '')}` : `${name} replied.`);
     });
     return '';
   }
@@ -482,8 +485,8 @@ const CrewView = (() => {
       _crew.forEach(m => { if (m.agent) _paint(m.agent.id); });
     })();
     try { await _logRead; } finally { _logRead = null; }
-    if (_logAgain && gen === _gen) { _logAgain = false; return _refreshChats(); }
-    _logAgain = false;
+    // The follow-up reads whatever ship is on screen now, even a new one.
+    if (_logAgain) { _logAgain = false; return _refreshChats(); }
   }
 
   function _resetChats() {

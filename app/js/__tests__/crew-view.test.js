@@ -304,7 +304,7 @@ describe('CrewView', () => {
       const realGet = ShipLog.getEntries;
       ShipLog.getEntries = vi.fn((id) => id === 'ship-1'
         ? new Promise(r => { release = () => r([{ agent_id: 'a2', role: 'agent', content: 'From ship one', metadata: { event: 'final_answer' } }]); })
-        : Promise.resolve([]));
+        : Promise.resolve([{ agent_id: 'a2', role: 'agent', content: 'From ship two', metadata: { event: 'final_answer' } }]));
       try {
         CrewView.render(el);
         shipId = 'ship-2';
@@ -314,6 +314,9 @@ describe('CrewView', () => {
         await flush();
         await flush();
         expect(el.textContent).not.toContain('From ship one');
+        // The new project's own log is still read.
+        expect(ShipLog.getEntries).toHaveBeenCalledWith('ship-2', expect.any(Number));
+        expect(card(1).querySelector('.crew-log').textContent).toContain('From ship two');
       } finally {
         ShipLog.getEntries = realGet;
       }
