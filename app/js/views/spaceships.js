@@ -184,8 +184,10 @@ const SpaceshipDetailView = (() => {
 
   function _getShipIcon(id) {
     const profile = _getShipProfile(id);
-    if (profile.icon) {
-      return `<img src="${profile.icon}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
+    // A stored icon is an image URL or data:image; anything else is dropped.
+    const iconSrc = profile.icon ? Utils.safeUrl(profile.icon, true) : '';
+    if (iconSrc) {
+      return `<img src="${Utils.escAttr(iconSrc)}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
     }
     return `<svg class="detail-header-icon-lg" fill="currentColor" stroke="none"><use href="#icon-spaceship"/></svg>`;
   }

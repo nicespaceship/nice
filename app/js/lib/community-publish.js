@@ -13,6 +13,7 @@
 
 const CommunityPublish = (() => {
   const _esc = (typeof Utils !== 'undefined' && Utils.esc) ? Utils.esc : (s => String(s ?? ''));
+  const _attr = (typeof Utils !== 'undefined' && Utils.escAttr) ? Utils.escAttr : (s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'));
   let _modalEl = null;
 
   /**
@@ -247,7 +248,7 @@ const CommunityPublish = (() => {
 
     if (status === 'rejected') {
       const reasonAttr = state.review_notes
-        ? ` data-reason="${Utils.escAttr(state.review_notes)}"`
+        ? ` data-reason="${_attr(state.review_notes)}"`
         : '';
       return `
         <button class="btn btn-sm btn-danger" data-action="community-rejected"${reasonAttr} title="See rejection reason and resubmit">
