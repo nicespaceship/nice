@@ -360,7 +360,7 @@
           <tr><td>Grok 4.3</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>1M context, always-on reasoning, real-time research</td></tr>
           <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
           <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Agentic open-source model for long-horizon work</td></tr>
-          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
+          <tr><td>Nemotron 3.5 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Standard</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
           <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
           <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Claude</span></td><td>Expert writing and nuanced synthesis</td></tr>
           <tr><td>GPT-5.4 Pro</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context multimodal flagship</td></tr>

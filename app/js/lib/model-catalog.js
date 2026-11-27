@@ -57,7 +57,7 @@
     // Kimi K2.6 supports visual input upstream, but the image passthrough is
     // not smoke-tested through nice-ai yet. Flip vision once verified.
     { id: 'kimi-k2-6',        name: 'Kimi K2.6',         provider: 'Moonshot AI', speed: 'slow',   quality: 'excellent', desc: 'Agentic open-source model built for long-horizon tool work.',        icon: 'circle', vision: false, pdf: false, audio: false, video: false },
-    { id: 'nemotron-3-super', name: 'Nemotron 3 Super',  provider: 'NVIDIA',    speed: 'fast',    quality: 'good',      desc: 'Efficient open reasoning. 120B parameters, 12B active per pass.',    icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    { id: 'nemotron-3-super', name: 'Nemotron 3.5 Super', provider: 'NVIDIA',    speed: 'fast',    quality: 'good',      desc: 'Efficient open reasoning. 120B parameters, 12B active per pass.',    icon: 'circle', vision: false, pdf: false, audio: false, video: false },
 
     // ── Claude pool (Claude add-on)
     { id: 'claude-4-6-sonnet', name: 'Claude 4.6 Sonnet', provider: 'Anthropic', speed: 'fast',    quality: 'excellent', desc: 'Best balance of speed, cost, and intelligence. Production default.', icon: 'circle', vision: true,  pdf: true,  audio: false, video: false },
