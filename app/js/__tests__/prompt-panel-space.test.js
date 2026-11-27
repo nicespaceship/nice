@@ -911,6 +911,25 @@ describe('The "To …" label', () => {
     expect(label.title).toBe('Gemini 2.5 Flash, Grok 4.3');
   });
 
+  it('says "To the team" on a project team page, where the model menu picks nothing', () => {
+    State.set('spaceships', [{ id: 'ship-77', name: 'Sunrise Bakery' }]);
+    localStorage.setItem(Utils.KEYS.mcShip, 'ship-77');
+    history.replaceState(null, '', '#/crew?ship=ship-77');
+    try {
+      PromptPanel.syncRoute();
+      const label = document.getElementById('nice-ai-targets');
+      expect(label.hidden).toBe(false);
+      expect(label.textContent).toBe('To the team');
+      expect(document.getElementById('nice-ai-model').hidden).toBe(true);
+      expect(document.getElementById('nice-ai-input').placeholder).toBe('Message the Sunrise Bakery team…');
+    } finally {
+      State.set('spaceships', []);
+      localStorage.removeItem(Utils.KEYS.mcShip);
+      history.replaceState(null, '', '#/space');
+      PromptPanel.syncRoute();
+    }
+  });
+
   it('gives the dropdown back outside Space, and the Compare toggle is gone', () => {
     history.replaceState(null, '', '#/crew');
     PromptPanel._renderTargets();

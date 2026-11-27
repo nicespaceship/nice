@@ -370,6 +370,26 @@ describe('AgentExecutor', () => {
     });
   });
 
+  describe('execute — logMeta', () => {
+    it('tags the request and the answer of a run, also on the single-shot path', async () => {
+      const appended = [];
+      const origShipLog = globalThis.ShipLog;
+      globalThis.ShipLog = {
+        append: (spaceshipId, payload) => { appended.push(payload); return Promise.resolve({}); },
+        execute: vi.fn(async () => ({ content: 'Acme and Initech.', metadata: {} })),
+      };
+      try {
+        const meta = { asked_by: 'cap-1', asked_by_name: 'Adama', brief: 'Find the top deals.' };
+        const out = await AgentExecutor.execute({ id: 'a-sales', name: 'Apollo', config: { tools: [] } }, 'Find the top deals.', { tools: [], spaceshipId: 'ship-1', logMeta: meta });
+        expect(out.finalAnswer).toBe('Acme and Initech.');
+        expect(appended[0].metadata).toEqual({ event: 'mission_start', ...meta });
+        expect(ShipLog.execute.mock.calls[0][3].replyMeta).toEqual({ event: 'final_answer', ...meta });
+      } finally {
+        globalThis.ShipLog = origShipLog;
+      }
+    });
+  });
+
   // ── Native tool-use end-to-end (the Microsoft 365 / Outlook regression
   // that motivated the converse() rewrite). These tests exercise the
   // full LLM → tool_use → tool_result → final answer loop with a mocked

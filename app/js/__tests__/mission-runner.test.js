@@ -1158,6 +1158,28 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       globalThis.Blueprints = _origBp;
     });
 
+    it('tags the lead\'s rounds and each brief, so the team cards can read the run', async () => {
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt, opts) => {
+          calls.push({ bpId: bp.id, logMeta: opts.logMeta });
+          if (calls.length === 1) return { finalAnswer: 'On it. [DISPATCH: sales] Find the top deals.', steps: [], metadata: {} };
+          if (calls.length === 2) return { finalAnswer: 'Acme and Initech.', steps: [], metadata: {} };
+          return { finalAnswer: 'Focus on Acme and Initech.', steps: [], metadata: {} };
+        },
+      };
+      try {
+        await MissionRunner.runWithDispatch(captainBp, 'What deals need attention?', ship, {});
+        expect(calls.map(c => c.logMeta)).toEqual([
+          { lead_round: 'handoff' },
+          { asked_by: 'cap-1', asked_by_name: 'Adama', brief: 'Find the top deals.' },
+          { lead_round: 'summary' },
+        ]);
+      } finally {
+        delete globalThis.AgentExecutor;
+      }
+    });
+
     it('returns captain answer directly when no dispatch tokens', async () => {
       let callCount = 0;
       globalThis.AgentExecutor = {

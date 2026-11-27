@@ -1160,6 +1160,9 @@ const MissionRunner = (() => {
       const execResult = await AgentExecutor.execute(captainWithCtx, prompt, {
         tools: captainBp.config?.tools || [],
         spaceshipId: opts.spaceshipId,
+        // The first round hands out the work; later rounds sum up the
+        // reports. The team cards read this to show one exchange per request.
+        logMeta: { lead_round: isSynthesis ? 'summary' : 'handoff' },
         approvalMode: opts.approvalMode,
         maxSteps: opts.maxSteps || captainBp.config?.maxSteps || 5,
         onStep: opts.onStep,
@@ -1213,6 +1216,8 @@ const MissionRunner = (() => {
           const crewResult = await AgentExecutor.execute(crewBp, subPrompt + _CREW_DISPATCH_GUIDANCE, {
             tools: crewBp.config?.tools,
             spaceshipId: opts.spaceshipId,
+            // Who asked: the lead, with the brief alone (no dispatch guidance).
+            logMeta: { asked_by: captainBp.id || null, asked_by_name: captainBp.name || null, brief: subPrompt },
             approvalMode: opts.approvalMode,
             maxSteps: (crewBp.config?.maxSteps || 5),
           });

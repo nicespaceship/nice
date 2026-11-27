@@ -308,7 +308,7 @@ const ShipLog = (() => {
       agentId:  agentId,
       role:     'agent',
       content:  response,
-      metadata: metadata,
+      metadata: opts.replyMeta ? Object.assign({}, metadata, opts.replyMeta) : metadata,
     });
 
     return {
