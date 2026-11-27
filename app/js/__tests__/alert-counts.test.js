@@ -65,6 +65,30 @@ describe('AlertCounts', () => {
     });
   });
 
+  describe('forShip', () => {
+    it('counts one project\'s broken crew and failed runs only', () => {
+      const had = Object.prototype.hasOwnProperty.call(globalThis, 'Blueprints');
+      const real = globalThis.Blueprints;
+      globalThis.Blueprints = { getShipCrew: (id) => id === 's1'
+        ? [{ agent: { id: 'a1', status: 'error' } }, { agent: { id: 'a2', status: 'idle' } }, { agent: null }]
+        : [{ agent: { id: 'a3', status: 'offline' } }] };
+      try {
+        State.set('missions', [
+          { spaceship_id: 's1', status: 'failed' },
+          { spaceship_id: 's1', status: 'failed', approval_status: 'rejected' },
+          { spaceship_id: 's1', status: 'completed' },
+          { spaceship_id: 's2', status: 'failed' },
+        ]);
+        expect(AlertCounts.forShip('s1')).toBe(2);
+        expect(AlertCounts.forShip('s2')).toBe(2);
+        expect(AlertCounts.forShip('')).toBe(0);
+        expect(AlertCounts.forShip(null)).toBe(0);
+      } finally {
+        if (had) globalThis.Blueprints = real; else delete globalThis.Blueprints;
+      }
+    });
+  });
+
   describe('integrations', () => {
     it('counts only error connections, not disconnected or connected', () => {
       State.set('mcp_connections', [
