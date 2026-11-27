@@ -17,18 +17,19 @@
 
 const CSelect = (() => {
   const _esc = (s) => (typeof Utils !== 'undefined' && Utils.esc) ? Utils.esc(s) : String(s == null ? '' : s);
+  const _attr = (s) => (typeof Utils !== 'undefined' && Utils.escAttr) ? Utils.escAttr(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   function html(id, ariaLabel, options, value) {
     const current = options.find(o => o.value === value) || options[0];
     const opts = options.map(o =>
-      `<button type="button" class="bp-cselect-option" role="option" data-value="${_esc(o.value)}" aria-selected="${o.value === value}">${_esc(o.label)}</button>`
+      `<button type="button" class="bp-cselect-option" role="option" data-value="${_attr(o.value)}" aria-selected="${o.value === value}">${_esc(o.label)}</button>`
     ).join('');
-    return `<div id="${id}" class="bp-cselect" data-value="${_esc(value)}">
-      <button type="button" class="bp-cselect-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${_esc(ariaLabel)}">
+    return `<div id="${id}" class="bp-cselect" data-value="${_attr(value)}">
+      <button type="button" class="bp-cselect-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${_attr(ariaLabel)}">
         <span class="bp-cselect-label">${_esc(current.label)}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
       </button>
-      <div class="bp-cselect-menu" role="listbox" aria-label="${_esc(ariaLabel)}" hidden>${opts}</div>
+      <div class="bp-cselect-menu" role="listbox" aria-label="${_attr(ariaLabel)}" hidden>${opts}</div>
     </div>`;
   }
 

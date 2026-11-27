@@ -143,7 +143,7 @@ const ProfileView = (() => {
         <div class="profile-card">
           <div class="profile-avatar-wrap" id="profile-avatar-wrap" title="Click to change photo">
             ${avatarUrl
-              ? `<img class="profile-avatar-img" src="${_esc(avatarUrl)}" alt="${_esc(name)}" />`
+              ? `<img class="profile-avatar-img" src="${Utils.escAttr(avatarUrl)}" alt="${Utils.escAttr(name)}" />`
               : `<div class="profile-avatar">${_esc(initials)}</div>`
             }
             <div class="profile-avatar-overlay">

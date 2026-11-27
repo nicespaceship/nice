@@ -139,7 +139,7 @@ const SetupWizard = (() => {
       <p class="wizard-subtitle">Tell us about your business and we'll build you a custom AI team in seconds.</p>
       <div class="wizard-field">
         <label for="wiz-biz-desc">What does your business do?</label>
-        <input type="text" id="wiz-biz-desc" class="wizard-input" placeholder="e.g., I run a restaurant called Moonwalk" maxlength="200" value="${_esc(_data.businessDesc)}">
+        <input type="text" id="wiz-biz-desc" class="wizard-input" placeholder="e.g., I run a restaurant called Moonwalk" maxlength="200" value="${Utils.escAttr(_data.businessDesc)}">
         <span class="wizard-hint">A short description is all we need — be as specific as you like.</span>
       </div>
     `;
@@ -339,7 +339,7 @@ const SetupWizard = (() => {
             <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your ${_crewWord()}${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" id="wiz-first-mission" class="wizard-input" value="${_esc(firstMissionPrompt)}" style="flex:1" />
+              <input type="text" id="wiz-first-mission" class="wizard-input" value="${Utils.escAttr(firstMissionPrompt)}" style="flex:1" />
               <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
             </div>
           </div>

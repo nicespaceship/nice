@@ -161,9 +161,9 @@ const ThemeCreatorView = (() => {
     });
     let html = `<select class="tc-select" id="${id}">`;
     for (const [group, fonts] of Object.entries(groups)) {
-      html += `<optgroup label="${_esc(group)}">`;
+      html += `<optgroup label="${Utils.escAttr(group)}">`;
       fonts.forEach(f => {
-        html += `<option value="${_esc(f.value)}" ${selectedValue === f.value ? 'selected' : ''}>${_esc(f.label)}</option>`;
+        html += `<option value="${Utils.escAttr(f.value)}" ${selectedValue === f.value ? 'selected' : ''}>${_esc(f.label)}</option>`;
       });
       html += '</optgroup>';
     }
@@ -588,10 +588,10 @@ const ThemeCreatorView = (() => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
       const checked = selected.includes(t.id) ? 'checked' : '';
       return `
-        <label class="tc-dock-item" title="${t.name}">
-          <input type="checkbox" class="tc-dock-check" data-theme-id="${t.id}" ${checked} />
-          <span class="tc-dock-swatch" style="background:${accent}"></span>
-          <span class="tc-dock-name">${t.name}</span>
+        <label class="tc-dock-item" title="${Utils.escAttr(t.name)}">
+          <input type="checkbox" class="tc-dock-check" data-theme-id="${Utils.escAttr(t.id)}" ${checked} />
+          <span class="tc-dock-swatch" style="background:${Utils.escAttr(accent)}"></span>
+          <span class="tc-dock-name">${Utils.esc(t.name)}</span>
         </label>`;
     }).join('');
   }

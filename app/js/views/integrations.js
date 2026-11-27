@@ -345,7 +345,7 @@ const IntegrationsView = (() => {
     if (conn && conn.status === 'error') {
       const baseTip = 'The OAuth token for this connection was rejected by the provider. Click to re-authorize.';
       const tip = conn.last_error ? `${baseTip}\n\nGateway: ${conn.last_error}` : baseTip;
-      return `<button class="btn ${sizeCls} btn-danger mcp-reconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}" title="${_esc(tip)}"><span class="status-dot dot-r"></span> Reconnect</button>`;
+      return `<button class="btn ${sizeCls} btn-danger mcp-reconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}" title="${Utils.escAttr(tip)}"><span class="status-dot dot-r"></span> Reconnect</button>`;
     }
     if (conn) {
       return `<button class="btn ${sizeCls} mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`;
@@ -371,7 +371,7 @@ const IntegrationsView = (() => {
       if (viewMode === 'list') {
         return `<div class="intg-list-row ${listMod}" data-cat="${mcp.cat}">
           <div class="intg-list-icon"><svg class="intg-list-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
-          <span class="intg-list-name">${mcp.name}${errored ? ` <span class="mcp-error-badge" title="${_esc(errorBadgeTip)}">Reconnect</span>` : ''}</span>
+          <span class="intg-list-name">${mcp.name}${errored ? ` <span class="mcp-error-badge" title="${Utils.escAttr(errorBadgeTip)}">Reconnect</span>` : ''}</span>
           <span class="intg-list-desc">${mcp.desc}</span>
           <span class="intg-list-cat mono">${mcp.cat}</span>
           <span class="intg-list-transport mono">${mcp.transport}</span>
@@ -391,7 +391,7 @@ const IntegrationsView = (() => {
         ? `OAuth token rejected by the provider — click Reconnect to re-authorize.\n\nGateway: ${conn.last_error}`
         : 'OAuth token rejected by the provider — click Reconnect to re-authorize';
       const errorBadge = errored
-        ? ` <span class="mcp-error-badge" title="${_esc(cardBadgeTip)}">Reconnect</span>`
+        ? ` <span class="mcp-error-badge" title="${Utils.escAttr(cardBadgeTip)}">Reconnect</span>`
         : '';
 
       return `<div class="mcp-catalog-card ${stateMod}" data-cat="${mcp.cat}">

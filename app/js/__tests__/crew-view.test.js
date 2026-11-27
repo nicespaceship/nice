@@ -104,6 +104,23 @@ describe('CrewView', () => {
     expect(el.querySelector('.crew-card-open').textContent).toContain('Open role');
   });
 
+  it('keeps a quote in a crew name inside its attributes', () => {
+    const bad = 'Q" onmouseover="window.__pwned=1';
+    const saved = { label: CREW[1].slot.label, name: CREW[1].agent.name };
+    CREW[1].slot.label = bad;
+    CREW[1].agent.name = bad;
+    try {
+      CrewView.render(el);
+      expect(el.querySelector('[onmouseover]')).toBeNull();
+      const card = el.querySelector('.crew-card[data-slot="1"]');
+      expect(card.getAttribute('aria-label')).toBe(bad);
+      expect(card.querySelector('.crew-send').getAttribute('aria-label')).toBe('Send to ' + bad);
+    } finally {
+      CREW[1].slot.label = saved.label;
+      CREW[1].agent.name = saved.name;
+    }
+  });
+
   it('summarizes the crew in the header', () => {
     CrewView.render(el);
     expect(el.querySelector('.crew-head h1').textContent).toBe('Sunrise Bakery');

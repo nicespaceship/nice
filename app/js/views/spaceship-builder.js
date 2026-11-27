@@ -272,12 +272,12 @@ const SpaceshipBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field">
                 <label for="sb-name">Name</label>
-                <input type="text" id="sb-name" required maxlength="40" placeholder="e.g. AURORA, VANGUARD, NEXUS" value="${_esc(ship?.name || '')}" />
+                <input type="text" id="sb-name" required maxlength="40" placeholder="e.g. AURORA, VANGUARD, NEXUS" value="${Utils.escAttr(ship?.name || '')}" />
               </div>
               <div class="auth-field">
                 <label for="sb-category">Category</label>
                 <select id="sb-category" class="filter-select builder-select">
-                  ${allCategories.map(c => `<option value="${_esc(c)}" ${selectedCategory === c ? 'selected' : ''}>${_esc(c)}</option>`).join('')}
+                  ${allCategories.map(c => `<option value="${Utils.escAttr(c)}" ${selectedCategory === c ? 'selected' : ''}>${_esc(c)}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -289,15 +289,15 @@ const SpaceshipBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field" style="grid-column:1/-1">
                 <label for="sb-desc">Description</label>
-                <textarea id="sb-desc" rows="2" placeholder="What does this ${_esc(_ship({ lowercase: true }))} do?">${_esc(ship?.description || ship?.desc || '')}</textarea>
+                <textarea id="sb-desc" rows="2" placeholder="What does this ${Utils.escAttr(_ship({ lowercase: true }))} do?">${_esc(ship?.description || ship?.desc || '')}</textarea>
               </div>
               <div class="auth-field">
                 <label for="sb-flavor">Tagline</label>
-                <input type="text" id="sb-flavor" maxlength="60" placeholder="e.g. Ship faster. Scale smarter." value="${_esc(ship?.flavor || '')}" />
+                <input type="text" id="sb-flavor" maxlength="60" placeholder="e.g. Ship faster. Scale smarter." value="${Utils.escAttr(ship?.flavor || '')}" />
               </div>
               <div class="auth-field">
                 <label for="sb-tags">Tags</label>
-                <input type="text" id="sb-tags" placeholder="Comma-separated: saas, startup, tech" value="${_esc((ship?.tags || []).join(', '))}" />
+                <input type="text" id="sb-tags" placeholder="Comma-separated: saas, startup, tech" value="${Utils.escAttr((ship?.tags || []).join(', '))}" />
               </div>
             </div>
           </fieldset>

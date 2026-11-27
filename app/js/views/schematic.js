@@ -400,7 +400,7 @@ const SchematicView = (() => {
       const cls = 'schematic-card-slot schematic-card-' + side +
         (filled ? '' : ' schematic-card-empty');
       return '<div class="' + cls + '" data-slot-idx="' + c.index + '"' +
-        (filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '') +
+        (filled ? ' data-bp-id="' + Utils.escAttr(bp.id) + '"' : '') +
         ' data-status="' + status + '">' +
         _renderSlotCard(bp, c.slot) +
         '<span class="schematic-card-node" aria-hidden="true"></span>' +
@@ -457,7 +457,7 @@ const SchematicView = (() => {
       // the sheet to the root stacking context lets its z:10000 win.
       const optionsHTML = activatedShips.map(s =>
         '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
-        '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
+        '" data-ship-id="' + Utils.escAttr(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
       ).join('');
       const pickerHTML =
         '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
@@ -466,7 +466,7 @@ const SchematicView = (() => {
         '</button>';
       const sheetHTML =
         '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
-        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ' + _esc(_ship({ lowercase: true })) + '" aria-modal="true" hidden>' +
+        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ' + Utils.escAttr(_ship({ lowercase: true })) + '" aria-modal="true" hidden>' +
           '<div class="bp-sheet-handle"></div>' +
           '<div class="bp-sheet-header"><h3 class="bp-sheet-title">' + _esc(_ship({ plural: true })) + '</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
           '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
@@ -518,7 +518,7 @@ const SchematicView = (() => {
     const optionsHTML = activatedShips.map(s =>
       '<button class="sch-ship-menu-option' + (s.id === activeShip.id ? ' active' : '') +
       '" role="option" aria-selected="' + (s.id === activeShip.id ? 'true' : 'false') +
-      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
+      '" data-ship-id="' + Utils.escAttr(s.id) + '">' + _esc(s.name || `Unnamed ${_ship({ lowercase: true })}`) + '</button>'
     ).join('');
     const html =
       '<div class="sch-fixed-ship-picker">' +
@@ -526,7 +526,7 @@ const SchematicView = (() => {
           '<span class="sch-fixed-ship-label">' + _esc(shipName) + '</span>' +
           '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
         '</button>' +
-        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ' + _esc(_ship({ lowercase: true })) + '" hidden>' + optionsHTML + '</div>' +
+        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ' + Utils.escAttr(_ship({ lowercase: true })) + '" hidden>' + optionsHTML + '</div>' +
       '</div>';
     // Mount into the shared sub-toolbar so the ship picker lines up with the
     // other pages' controls (centered). Falls back to a sibling of the tabs
@@ -655,7 +655,7 @@ const SchematicView = (() => {
         list.innerHTML = '<div class="sch-swap-empty">No agents found</div>';
       } else {
         list.innerHTML = filtered.map(a =>
-          '<button class="sch-swap-item" data-id="' + _esc(a.id) + '">' + _esc(a.name) + '</button>'
+          '<button class="sch-swap-item" data-id="' + Utils.escAttr(a.id) + '">' + _esc(a.name) + '</button>'
         ).join('');
       }
     };
@@ -760,13 +760,13 @@ const SchematicView = (() => {
       const rarityColor = RC[rarity] || 'var(--text-muted)';
       const fullTitle = slot.title || '';
       const roleLabel = _positionLabel(fullTitle) || _roleLabel(slot.role || slot.label || ('Slot ' + (i + 1)));
-      const roleAttr = fullTitle ? ' title="' + _esc(fullTitle) + '"' : '';
+      const roleAttr = fullTitle ? ' title="' + Utils.escAttr(fullTitle) + '"' : '';
       const rawCap = filled ? _capabilityLabel(bp) : null;
       const cap = (rawCap && rawCap !== name) ? rawCap : null;
-      const dataBp = filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
+      const dataBp = filled ? ' data-bp-id="' + Utils.escAttr(bp.id) + '"' : '';
       const status = _agentStatus(filled ? bp.id : null);
       const cls = 'schematic-stack-row ' + (filled ? 'schematic-stack-row-filled' : 'schematic-stack-row-empty');
-      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '" data-status="' + status + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
+      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + Utils.escAttr(slot.id) + '" data-status="' + status + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
         '<span class="schematic-row-node" aria-hidden="true"></span>' +
         '<div class="schematic-row-info">' +
           '<div class="schematic-row-name">' + _esc(name) + '</div>' +
@@ -775,7 +775,7 @@ const SchematicView = (() => {
             (cap ? '<span class="schematic-row-cap">' + _esc(cap) + '</span>' : '') +
           '</div>' +
         '</div>' +
-        '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + _esc(slot.id) + '">' +
+        '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + Utils.escAttr(slot.id) + '">' +
           (filled ? '⋯' : '+') +
         '</button>' +
       '</li>';
@@ -993,7 +993,7 @@ const SchematicView = (() => {
     // hover tooltip so the trimmed ship name stays recoverable.
     const fullTitle = (slot && slot.title) || '';
     const role  = _positionLabel(fullTitle) || _roleLabel((slot && (slot.role || slot.label)) || '');
-    const roleAttr = fullTitle ? ' title="' + _esc(fullTitle) + '"' : '';
+    const roleAttr = fullTitle ? ' title="' + Utils.escAttr(fullTitle) + '"' : '';
     // Name: the slot's designated crew identity (persona / job title) wins
     // over the assigned umbrella agent's name, so reskins read "Pavel Chekov"
     // not "Linear Agent".

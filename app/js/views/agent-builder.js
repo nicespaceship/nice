@@ -36,8 +36,8 @@ const AgentBuilderView = (() => {
     }
     return connected.map(conn => {
       const chips = conn.available_tools.map(tool => `
-        <label class="builder-tool-chip ${selectedTools.includes(tool) ? 'selected' : ''}" title="${_esc(tool)}">
-          <input type="checkbox" value="${_esc(tool)}" ${selectedTools.includes(tool) ? 'checked' : ''} />
+        <label class="builder-tool-chip ${selectedTools.includes(tool) ? 'selected' : ''}" title="${Utils.escAttr(tool)}">
+          <input type="checkbox" value="${Utils.escAttr(tool)}" ${selectedTools.includes(tool) ? 'checked' : ''} />
           <span class="mono" style="font-size:.85em">${_esc(tool)}</span>
         </label>
       `).join('');
@@ -258,7 +258,7 @@ const AgentBuilderView = (() => {
   function _capChipHTML(value) {
     const v = String(value || '').trim();
     if (!v) return '';
-    return `<span class="builder-cap-chip" data-value="${_esc(v)}"><span class="builder-cap-chip-text">${_esc(v)}</span><button type="button" class="builder-cap-remove" aria-label="Remove ${_esc(v)}">×</button></span>`;
+    return `<span class="builder-cap-chip" data-value="${Utils.escAttr(v)}"><span class="builder-cap-chip-text">${_esc(v)}</span><button type="button" class="builder-cap-remove" aria-label="Remove ${Utils.escAttr(v)}">×</button></span>`;
   }
   function _readCaps() {
     return [...document.querySelectorAll('#b-caps .builder-cap-chip')]
@@ -380,24 +380,24 @@ const AgentBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field">
                 <label for="b-name">Agent Name</label>
-                <input type="text" id="b-name" required maxlength="40" placeholder="e.g. NOVA, ATLAS, CIPHER" value="${_esc(agent?.name || '')}" />
+                <input type="text" id="b-name" required maxlength="40" placeholder="e.g. NOVA, ATLAS, CIPHER" value="${Utils.escAttr(agent?.name || '')}" />
               </div>
               <div class="auth-field">
                 <label for="b-role">Role</label>
                 <select id="b-role" class="filter-select builder-select">
-                  ${allRoles.map(r => `<option value="${_esc(r.slug)}" ${selectedRole === r.slug ? 'selected' : ''}>${_esc(_roleDisplay(r.slug) || r.label)}</option>`).join('')}
+                  ${allRoles.map(r => `<option value="${Utils.escAttr(r.slug)}" ${selectedRole === r.slug ? 'selected' : ''}>${_esc(_roleDisplay(r.slug) || r.label)}</option>`).join('')}
                 </select>
               </div>
               <div class="auth-field">
                 <label for="b-type">Type</label>
                 <select id="b-type" class="filter-select builder-select">
-                  ${allTypes.map(t => `<option value="${_esc(t)}" ${selectedType === t ? 'selected' : ''}>${_esc(t)}</option>`).join('')}
+                  ${allTypes.map(t => `<option value="${Utils.escAttr(t)}" ${selectedType === t ? 'selected' : ''}>${_esc(t)}</option>`).join('')}
                 </select>
               </div>
             </div>
             <div class="auth-field">
               <label for="b-description">Description</label>
-              <input type="text" id="b-description" maxlength="200" placeholder="One-line summary of what this agent does" value="${_esc(agent?.description || config.description || '')}" />
+              <input type="text" id="b-description" maxlength="200" placeholder="One-line summary of what this agent does" value="${Utils.escAttr(agent?.description || config.description || '')}" />
               <p class="builder-hint">Surfaces in cards and the system prompt.</p>
             </div>
           </fieldset>
@@ -471,7 +471,7 @@ const AgentBuilderView = (() => {
             <p class="builder-hint" style="margin-top:8px">Persona, search, and sampling overrides.</p>
             <div class="auth-field">
               <label for="b-tone">Tone</label>
-              <input type="text" id="b-tone" maxlength="120" placeholder="e.g. dry and concise · warm and encouraging · clinical" value="${_esc(config.persona?.tone || agent?.persona?.tone || '')}" />
+              <input type="text" id="b-tone" maxlength="120" placeholder="e.g. dry and concise · warm and encouraging · clinical" value="${Utils.escAttr(config.persona?.tone || agent?.persona?.tone || '')}" />
               <p class="builder-hint">Short phrase. Joins the system prompt as <code>Tone: …</code>.</p>
             </div>
             <div class="auth-field">
@@ -482,7 +482,7 @@ const AgentBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field">
                 <label for="b-tags">Tags</label>
-                <input type="text" id="b-tags" maxlength="200" placeholder="e.g. research, b2b, q1-launch" value="${_esc((agent?.tags || config.tags || []).join(', '))}" />
+                <input type="text" id="b-tags" maxlength="200" placeholder="e.g. research, b2b, q1-launch" value="${Utils.escAttr((agent?.tags || config.tags || []).join(', '))}" />
                 <p class="builder-hint">Search keywords. Comma-separated.</p>
               </div>
               <div class="auth-field">

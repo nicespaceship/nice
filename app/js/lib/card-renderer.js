@@ -698,7 +698,7 @@ const CardRenderer = (() => {
           </div>
           ${isShip
             ? `<div class="blueprint-card-front-tabs" role="tablist">
-                ${SHIP_FRONT_TABS.map((t, i) => `<button type="button" class="blueprint-card-front-tab${i === 0 ? ' active' : ''}" data-tab="${t.id}" data-title="${_esc(t.title)}" aria-label="${_esc(t.title)}" title="${_esc(t.title)}">${t.icon}</button>`).join('')}
+                ${SHIP_FRONT_TABS.map((t, i) => `<button type="button" class="blueprint-card-front-tab${i === 0 ? ' active' : ''}" data-tab="${t.id}" data-title="${Utils.escAttr(t.title)}" aria-label="${Utils.escAttr(t.title)}" title="${Utils.escAttr(t.title)}">${t.icon}</button>`).join('')}
               </div>`
             : `<div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>`}
           <div class="blueprint-card-text-box">

@@ -140,7 +140,7 @@ const PromptPanel = (() => {
     let s = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
       const idx = codeBlocks.length;
       codeBlocks.push(
-        '<pre class="monitor-code-block"' + (lang ? ' data-lang="' + _esc(lang) + '"' : '') + '>' +
+        '<pre class="monitor-code-block"' + (lang ? ' data-lang="' + Utils.escAttr(lang) + '"' : '') + '>' +
         '<code>' + _esc(code.replace(/\n$/, '')) + '</code></pre>'
       );
       return '\x00CODE' + idx + '\x00';
@@ -1046,7 +1046,7 @@ const PromptPanel = (() => {
             // do carry `dataUrl` — treat them as images.
             const kind = a.kind || (a.dataUrl ? 'image' : 'text');
             if (kind === 'image') {
-              return `<img class="monitor-user-thumb" alt="${_escAttr(a.name || '')}" src="${_esc(a.dataUrl)}">`;
+              return `<img class="monitor-user-thumb" alt="${_escAttr(a.name || '')}" src="${Utils.escAttr(a.dataUrl)}">`;
             }
             return `<div class="monitor-user-thumb monitor-user-thumb-file" title="${_escAttr(a.name || '')}">
               <span class="monitor-user-thumb-icon">${monitorIconFor(kind)}</span>
@@ -1979,13 +1979,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     row.hidden = false;
     const iconFor = k => k === 'pdf' ? '📄' : k === 'audio' ? '🎵' : k === 'video' ? '🎬' : '📝';
     row.innerHTML = _pendingAttachments.map(a => {
-      const remove = `<button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>`;
+      const remove = `<button class="nice-ai-attach-remove" data-attach-id="${Utils.escAttr(a.id)}" aria-label="Remove attachment" title="Remove">×</button>`;
       if (a.kind === 'image') {
-        return `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_escAttr(a.name)}">
-          <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">${remove}
+        return `<div class="nice-ai-attach-chip" data-attach-id="${Utils.escAttr(a.id)}" title="${_escAttr(a.name)}">
+          <img class="nice-ai-attach-thumb" alt="" src="${Utils.escAttr(a.dataUrl)}">${remove}
         </div>`;
       }
-      return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${_esc(a.id)}" title="${_escAttr(a.name)}">
+      return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${Utils.escAttr(a.id)}" title="${_escAttr(a.name)}">
         <div class="nice-ai-attach-file-icon">${iconFor(a.kind)}</div>
         <div class="nice-ai-attach-file-name">${_esc(a.name)}</div>${remove}
       </div>`;
