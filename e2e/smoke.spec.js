@@ -412,9 +412,12 @@ test.describe('Dashboard', () => {
 
   test('a project row opens a menu of actions for that project', async ({ page }) => {
     await waitForApp(page);
-    await page.evaluate(() => { Theme.set('nice'); State.set('spaceships', [{ id: 'e2e-ship', name: 'Bakery' }]); });
+    await page.evaluate(() => { Theme.set('nice'); State.set('spaceships', [{ id: 'e2e-ship', name: 'Bakery' }, { id: 'e2e-quote', name: 'Q" onmouseover="window.__pwned=1' }]); });
     const row = page.locator('#side-ships .side-ship-row', { hasText: 'Bakery' });
     await expect(row).toBeVisible();
+    // A project name with a quote stays inside its attributes.
+    expect(await page.evaluate(() => document.querySelectorAll('#side-ships [onmouseover]').length)).toBe(0);
+    expect(await page.locator('#side-ships .side-ship[data-ship="e2e-quote"]').getAttribute('title')).toBe('Q" onmouseover="window.__pwned=1');
     await expect(page.locator('#side-ships .sidebar-section-label')).toHaveCount(0);
     const more = row.locator('.side-ship-more');
     await row.hover();

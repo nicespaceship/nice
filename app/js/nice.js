@@ -1001,17 +1001,17 @@ const NICE = (() => {
       ${ships.map(s => {
         const name = s.name || noun;
         return `<div class="side-ship-row">
-          <a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${esc(s.id)}" title="${esc(name)}">
+          <a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${Utils.escAttr(s.id)}" title="${Utils.escAttr(name)}">
             <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(name))}</b>
             <span>${esc(name)}</span>
             <i class="nav-alert-dot side-ship-dot" hidden></i>
           </a>
-          <button type="button" class="side-ship-more" data-ship="${esc(s.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${esc(name)} options">
+          <button type="button" class="side-ship-more" data-ship="${Utils.escAttr(s.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${Utils.escAttr(name + ' options')}">
             <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
           </button>
         </div>`;
       }).join('')}
-      <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${esc(addLabel)}">
+      <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${Utils.escAttr(addLabel)}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
         <span>${esc(addLabel)}</span>
       </a>`;
