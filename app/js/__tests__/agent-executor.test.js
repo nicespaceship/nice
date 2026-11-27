@@ -383,7 +383,27 @@ describe('AgentExecutor', () => {
         const out = await AgentExecutor.execute({ id: 'a-sales', name: 'Apollo', config: { tools: [] } }, 'Find the top deals.', { tools: [], spaceshipId: 'ship-1', logMeta: meta });
         expect(out.finalAnswer).toBe('Acme and Initech.');
         expect(appended[0].metadata).toEqual({ event: 'mission_start', ...meta });
-        expect(ShipLog.execute.mock.calls[0][3].replyMeta).toEqual({ event: 'final_answer', ...meta });
+        // The brief rides only on the request row.
+        expect(ShipLog.execute.mock.calls[0][3].replyMeta).toEqual({ event: 'final_answer', asked_by: 'cap-1', asked_by_name: 'Adama' });
+      } finally {
+        globalThis.ShipLog = origShipLog;
+      }
+    });
+
+    it('logs why a single-shot run got no answer, then fails', async () => {
+      const appended = [];
+      const origShipLog = globalThis.ShipLog;
+      globalThis.ShipLog = {
+        append: (spaceshipId, payload) => { appended.push(payload); return Promise.resolve({}); },
+        execute: vi.fn(async () => { throw new Error('AI call failed'); }),
+      };
+      try {
+        await expect(AgentExecutor.execute({ id: 'a-sales', name: 'Apollo', config: { tools: [] } }, 'Find deals', { tools: [], spaceshipId: 'ship-1', logMeta: { asked_by: 'cap-1' } }))
+          .rejects.toThrow('AI call failed');
+        const last = appended[appended.length - 1];
+        expect(last.role).toBe('agent');
+        expect(last.content).toBe('Error: AI call failed');
+        expect(last.metadata).toEqual({ event: 'turn_error', asked_by: 'cap-1' });
       } finally {
         globalThis.ShipLog = origShipLog;
       }

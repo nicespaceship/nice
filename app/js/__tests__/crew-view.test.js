@@ -175,6 +175,45 @@ describe('CrewView', () => {
       expect(member.textContent).toContain('42 orders.');
     });
 
+    it('collects every round the lead hands out, and never shows the tokens', async () => {
+      entries = [
+        entries[0], entries[1],
+        { agent_id: 'a1', role: 'user', content: 'round 2 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: 'One more thing. [DISPATCH: marketing] Draft a post.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+      ];
+      CrewView.render(el);
+      await flush();
+      let lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments and Marketing for their part.');
+      expect(lead.textContent).not.toContain('DISPATCH');
+      expect(lead.textContent).not.toContain('did not return a final summary');
+      entries.push(
+        { agent_id: 'a1', role: 'user', content: 'round 3 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: 'Bake for 42, post on Thursday.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+      );
+      CrewView.render(el);
+      await flush();
+      lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelectorAll('.crew-ex')).toHaveLength(1);
+      expect(lead.textContent).toContain('Bake for 42, post on Thursday.');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments and Marketing for their part.');
+    });
+
+    it('says so when the last round was all tokens and no summary', async () => {
+      entries = [
+        entries[0], entries[1],
+        { agent_id: 'a1', role: 'user', content: 'round 2 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: '[DISPATCH: finance] Again.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'user', content: 'round 3 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: '[DISPATCH: finance] And again.', metadata: { event: 'final_answer', lead_round: 'summary', last_round: true } },
+      ];
+      CrewView.render(el);
+      await flush();
+      const lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.textContent).not.toContain('DISPATCH');
+      expect(lead.textContent).toContain('The team completed their tasks, but the lead did not return a final summary.');
+    });
+
     it('shows the handoff while the members are still working', async () => {
       entries = entries.slice(0, 2);
       CrewView.render(el);

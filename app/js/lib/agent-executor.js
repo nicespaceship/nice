@@ -39,8 +39,14 @@ const AgentExecutor = (() => {
     // opts.logMeta rides on this run's request and answer rows, so a reader
     // can tell how the run came about (a lead's brief, a lead's handoff or
     // summary round; see MissionRunner.runWithDispatch).
+    // The brief (the request without its dispatch guidance) rides only on the
+    // request row; a row's own fields always win over the tags.
     const logMeta = (opts.logMeta && typeof opts.logMeta === 'object') ? opts.logMeta : null;
-    const _tag = (m) => (logMeta ? Object.assign({}, m, logMeta) : m);
+    const _tag = (m) => {
+      if (!logMeta) return m;
+      const { brief, ...rest } = logMeta;
+      return Object.assign({}, rest, m.event === 'mission_start' && brief ? { brief } : {}, m);
+    };
 
     // Log the user prompt at the start of the run so the Execution Log
     // has the seed entry. Without this, an empty inbox-captain mission
@@ -1142,10 +1148,20 @@ const AgentExecutor = (() => {
   // logged the request), so the team cards can pair the two.
   async function _singleShot(blueprint, prompt, spaceshipId, startMs, attachments, replyMeta) {
     if (typeof ShipLog !== 'undefined') {
-      const result = await ShipLog.execute(spaceshipId, blueprint, prompt, { attachments, replyMeta });
+      const id = blueprint && blueprint.id;
+      let result;
+      try {
+        result = await ShipLog.execute(spaceshipId, blueprint, prompt, { attachments, replyMeta });
+      } catch (err) {
+        // The request is logged; log why it got no answer, which also marks
+        // the agent idle (as the tool loop's turn_error does).
+        _logToShipLog(spaceshipId, id, 'agent', 'Error: ' + ((err && err.message) || 'The agent could not answer.'),
+          Object.assign({}, replyMeta || {}, { event: 'turn_error' }));
+        throw err;
+      }
       // ShipLog writes this answer itself, so say the agent is done here,
       // as _logToShipLog does for the tool loop.
-      _emitActivity(blueprint && blueprint.id, { event: 'final_answer' });
+      _emitActivity(id, { event: 'final_answer' });
       return {
         steps: [],
         finalAnswer: result ? result.content : 'No response from agent.',

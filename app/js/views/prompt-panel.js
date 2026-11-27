@@ -4119,7 +4119,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       State.on('enabled_models', () => { _populateModelDropdown(); _renderTargets(); });
     }
     // The placeholder and "To the team" name the crew in the theme's words.
-    document.addEventListener('nice:theme-change', () => { _updateRouteContext(); _renderTargets(); });
+    // A flow in progress keeps its own placeholder.
+    document.addEventListener('nice:theme-change', () => { if (!isFlowActive()) _updateRouteContext(); _renderTargets(); });
     // Models on the user's own keys (desktop app) join the menu once they
     // load, and when the user switches one on or off in API keys.
     if (typeof OwnKeys !== 'undefined') {

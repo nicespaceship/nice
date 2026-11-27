@@ -831,6 +831,9 @@ const MissionRunner = (() => {
     'would need. Do not refuse a task you can reasonably do in your role.';
 
   /* Parse all [DISPATCH: slot] sub-prompt pairs from a captain response. */
+  // A brief shown on a member's card (ship_log metadata is not capped like content).
+  const _BRIEF_CAP = 2000;
+
   function _extractDispatches(text) {
     const results = [];
     // Each dispatch runs until the next [DISPATCH: or end-of-string.
@@ -1162,7 +1165,7 @@ const MissionRunner = (() => {
         spaceshipId: opts.spaceshipId,
         // The first round hands out the work; later rounds sum up the
         // reports. The team cards read this to show one exchange per request.
-        logMeta: { lead_round: isSynthesis ? 'summary' : 'handoff' },
+        logMeta: { lead_round: isSynthesis ? 'summary' : 'handoff', ...(round === MAX_DISPATCH_ROUNDS - 1 ? { last_round: true } : {}) },
         approvalMode: opts.approvalMode,
         maxSteps: opts.maxSteps || captainBp.config?.maxSteps || 5,
         onStep: opts.onStep,
@@ -1217,7 +1220,7 @@ const MissionRunner = (() => {
             tools: crewBp.config?.tools,
             spaceshipId: opts.spaceshipId,
             // Who asked: the lead, with the brief alone (no dispatch guidance).
-            logMeta: { asked_by: captainBp.id || null, asked_by_name: captainBp.name || null, brief: subPrompt },
+            logMeta: { asked_by: captainBp.id || null, asked_by_name: captainBp.name || null, brief: String(subPrompt).slice(0, _BRIEF_CAP) },
             approvalMode: opts.approvalMode,
             maxSteps: (crewBp.config?.maxSteps || 5),
           });
