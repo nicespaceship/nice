@@ -122,6 +122,27 @@ describe('CodeView in the desktop app', () => {
     expect(el.querySelector('.code-panel')).not.toBeNull();
   });
 
+  it('opens a recent folder by id, starts a fresh conversation and tells the sidebar', async () => {
+    const { host, el } = await openWorkspace({ 'README.md': '# Hi' });
+    host.openRecent = vi.fn(async () => ({ root: '/Users/me/other', name: 'other' }));
+    const heard = vi.fn();
+    document.addEventListener(CodeView.FOLDER_EVENT, heard);
+    try {
+      const ws = await CodeView.openRecent('rid-1');
+      await flush();
+      expect(host.openRecent).toHaveBeenCalledWith('rid-1');
+      expect(ws.name).toBe('other');
+      expect(el.querySelector('.code-folder span').textContent).toBe('other');
+      expect(heard).toHaveBeenCalledTimes(1);
+      host.openRecent = vi.fn(async () => Promise.reject({ code: 'ENOENT', message: 'other is not there any more.' }));
+      expect(await CodeView.openRecent('rid-1')).toBeNull();
+      expect(el.querySelector('.code-folder span').textContent).toBe('other');
+      expect(heard).toHaveBeenCalledTimes(2);
+    } finally {
+      document.removeEventListener(CodeView.FOLDER_EVENT, heard);
+    }
+  });
+
   it('browses the folder and opens a file', async () => {
     const { el } = await openWorkspace({ 'src/a.js': 'const a = 1;', 'README.md': '# Hi', 'img.png': null });
     const rows = () => [...el.querySelectorAll('.code-tree-row')].map(r => r.textContent.trim());

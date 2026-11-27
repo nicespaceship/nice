@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld('NiceDesktop', {
   // resolves to its value or rejects with { code, message }.
   code: {
     openFolder: () => call('code:open-folder'),
+    recent: () => call('code:recent'),
+    openRecent: (id) => call('code:open-recent', id),
+    forgetRecent: (id) => call('code:forget-recent', id),
+    revealRecent: (id) => call('code:reveal-recent', id),
     workspace: () => call('code:workspace'),
     /** Resolves to { content, lineEndings: 'crlf'|'lf'|'mixed', … }; a CRLF file's content comes back with LF. */
     read: (path, opts) => call('code:read', path, opts),
