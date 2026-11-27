@@ -168,19 +168,27 @@ describe('MissionRunner', () => {
     });
   });
 
-  describe('_keepOwnKeyModel', () => {
+  describe('_keepChosenModel', () => {
     const catalog = { id: 'captain', name: 'Captain', config: { llm_engine: 'claude-sonnet-4-6', tools: ['web_search'] } };
 
     it('keeps the user\'s own-key model on the catalog blueprint it resolved to', () => {
-      const bp = MissionRunner._keepOwnKeyModel(catalog, { name: 'Captain', config: { llm_engine: 'byo:openai:gpt-5' } });
+      const bp = MissionRunner._keepChosenModel(catalog, { name: 'Captain', config: { llm_engine: 'byo:openai:gpt-5' } });
       expect(bp.config.llm_engine).toBe('byo:openai:gpt-5');
       expect(bp.config.tools).toEqual(['web_search']);
       expect(catalog.config.llm_engine).toBe('claude-sonnet-4-6');
     });
 
+    it('keeps a model the user chose on a team card, over the catalog model and its preferred', () => {
+      const pinned = { ...catalog, config: { ...catalog.config, model_profile: { preferred: 'claude-opus-4-7', max_output_tokens: 800 } } };
+      const bp = MissionRunner._keepChosenModel(pinned, { config: { llm_engine: 'grok-4-3', model_chosen: true } });
+      expect(bp.config.llm_engine).toBe('grok-4-3');
+      expect(bp.config.model_profile).toEqual({ max_output_tokens: 800 });
+      expect(pinned.config.model_profile.preferred).toBe('claude-opus-4-7');
+    });
+
     it('leaves the catalog model for an agent on a NICE model, or no blueprint', () => {
-      expect(MissionRunner._keepOwnKeyModel(catalog, { config: { llm_engine: 'gemini-2-5-flash' } })).toBe(catalog);
-      expect(MissionRunner._keepOwnKeyModel(null, { llm_engine: 'byo:openai:gpt-5' })).toBeNull();
+      expect(MissionRunner._keepChosenModel(catalog, { config: { llm_engine: 'gemini-2-5-flash' } })).toBe(catalog);
+      expect(MissionRunner._keepChosenModel(null, { llm_engine: 'byo:openai:gpt-5' })).toBeNull();
     });
   });
 

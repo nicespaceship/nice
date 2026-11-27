@@ -115,7 +115,7 @@ const MissionRunner = (() => {
         const needle = agent.name.toLowerCase();
         agentBp = Blueprints.listAgents().find(a => a.name.toLowerCase() === needle) || null;
       }
-      agentBp = _keepOwnKeyModel(agentBp, agent);
+      agentBp = _keepChosenModel(agentBp, agent);
       if (!agentBp) {
         const cfg = agent.config || {};
         agentBp = {
@@ -1206,7 +1206,7 @@ const MissionRunner = (() => {
             crewBp = Blueprints.listAgents().find(a => a.name && a.name.toLowerCase() === needle) || null;
           }
         }
-        crewBp = _keepOwnKeyModel(crewBp, crewAgent);
+        crewBp = _keepChosenModel(crewBp, crewAgent);
         if (!crewBp) crewBp = crewAgent;
 
         try {
@@ -1365,14 +1365,27 @@ const MissionRunner = (() => {
   }
 
   /* The catalog blueprint resolved for a user's agent runs on the catalog's
-     model, except where the user put their agent on a model on their own
-     key ('byo:…'): that pick is theirs and must not turn into a NICE model
-     (another provider, billed to a NICE pool) on the way. */
-  function _keepOwnKeyModel(bp, agent) {
+     model, except where the user picked the agent's model themselves: a
+     model on their own key ('byo:…'), which must not turn into a NICE model
+     (another provider, billed to a NICE pool) on the way, or any model they
+     chose on a team card (config.model_chosen). The pick replaces the
+     catalog's llm_engine and any model_profile.preferred, which LLMConfig
+     would otherwise put first. */
+  function _keepChosenModel(bp, agent) {
     if (!bp || !agent) return bp;
-    const own = (agent.config && agent.config.llm_engine) || agent.llm_engine;
-    if (typeof own !== 'string' || !own.startsWith('byo:') || (bp.config && bp.config.llm_engine) === own) return bp;
-    return { ...bp, config: { ...(bp.config || {}), llm_engine: own } };
+    const cfg = agent.config || {};
+    const own = cfg.llm_engine || agent.llm_engine;
+    if (typeof own !== 'string' || !own) return bp;
+    if (!own.startsWith('byo:') && !cfg.model_chosen) return bp;
+    const bpCfg = bp.config || {};
+    const profile = bpCfg.model_profile;
+    if (bpCfg.llm_engine === own && !(profile && profile.preferred)) return bp;
+    const next = { ...bpCfg, llm_engine: own };
+    if (profile && profile.preferred) {
+      const { preferred, ...rest } = profile;
+      if (Object.keys(rest).length) next.model_profile = rest; else delete next.model_profile;
+    }
+    return { ...bp, config: next };
   }
 
   /* Names of the agents in a plan's agent steps whose model is on the
@@ -1484,7 +1497,7 @@ const MissionRunner = (() => {
     run,
     createRun,
     upsertScheduledMission,
-    _keepOwnKeyModel,
+    _keepChosenModel,
     unscheduleMission,
     resumeDag,
     isResumableGate,

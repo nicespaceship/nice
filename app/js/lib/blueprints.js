@@ -1612,6 +1612,65 @@ const Blueprints = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     AGENT model
+     The user picks the model one of their agents runs on (a team card's
+     menu). It is saved on the agent's own row (user_agents for a signed-in
+     user, the local copy for a guest) with config.model_chosen, which tells
+     the catalog fallbacks (MissionRunner, the agent builder) that this pick
+     is the user's and wins over the catalog's model. Scheduled runs read
+     user_agents.config.llm_engine directly. A model_profile.preferred would
+     beat llm_engine in LLMConfig, so it goes.
+  ═══════════════════════════════════════════════════════════════ */
+
+  function _withModel(config, modelId) {
+    const next = { ...(config || {}), llm_engine: modelId, model_chosen: true };
+    if (next.model_profile && next.model_profile.preferred) {
+      const { preferred, ...rest } = next.model_profile;
+      next.model_profile = Object.keys(rest).length ? rest : null;
+      if (!next.model_profile) delete next.model_profile;
+    }
+    return next;
+  }
+
+  // The loader mirrors config fields top-level; keep those copies in step.
+  function _mirrorModel(agent, modelId) {
+    const next = { ...agent, llm_engine: modelId };
+    if (next.model_profile && next.model_profile.preferred) {
+      const { preferred, ...rest } = next.model_profile;
+      if (Object.keys(rest).length) next.model_profile = rest; else delete next.model_profile;
+    }
+    return next;
+  }
+
+  /** Puts one of the user's agents on a model. Resolves to the saved agent;
+      rejects with a message when the agent isn't one of theirs. */
+  async function setAgentModel(agentId, modelId) {
+    if (!agentId || typeof modelId !== 'string' || !modelId) throw new Error('Pick a model.');
+    const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
+    const at = agents.findIndex(a => a.id === agentId);
+    if (_isGuestSession()) {
+      const stored = _readLocalAgents();
+      const i = stored.findIndex(a => a.id === agentId);
+      if (i < 0 && at < 0) throw new Error('This agent is part of the catalog. Make your own copy in the agent builder to change its model.');
+      if (i >= 0) {
+        stored[i] = { ...stored[i], llm_engine: modelId, config: _withModel(stored[i].config, modelId) };
+        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+      }
+      const saved = at >= 0 ? _mirrorModel({ ...agents[at], config: _withModel(agents[at].config, modelId) }, modelId) : stored[i];
+      if (at >= 0) { const next = agents.slice(); next[at] = saved; State.set('agents', next); }
+      return saved;
+    }
+    if (at < 0) throw new Error('This agent is part of the catalog. Make your own copy in the agent builder to change its model.');
+    if (!_canSync()) throw new Error('You are offline. Try again when you are back online.');
+    const config = _withModel(agents[at].config, modelId);
+    const row = await SB.db('user_agents').update(agentId, { config });
+    const saved = _mirrorModel({ ...agents[at], config: (row && row.config) || config }, modelId);
+    const next = ((typeof State !== 'undefined' && State.get('agents')) || []).map(a => a.id === agentId ? saved : a);
+    State.set('agents', next);
+    return saved;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      AGENT activation
   ═══════════════════════════════════════════════════════════════ */
 
@@ -1731,7 +1790,11 @@ const Blueprints = (() => {
     const aCfg = agent.config || {};
     const cCfg = catalog.config || {};
     const mergedCfg = { ...aCfg };
+    // A model the user picked (a team card's menu, or a model on their own
+    // key) is theirs: the catalog's llm_engine never replaces it.
+    const ownModel = !!aCfg.model_chosen || (typeof aCfg.llm_engine === 'string' && aCfg.llm_engine.startsWith('byo:'));
     for (const k of _CATALOG_DRIVEN_CONFIG) {
+      if (k === 'llm_engine' && ownModel) continue;
       if (cCfg[k] !== undefined) mergedCfg[k] = cCfg[k];
     }
     return {
@@ -3306,6 +3369,9 @@ const Blueprints = (() => {
 
     // Private agent creation (blueprint + activation)
     createPrivateAgent,
+
+    // The model one of the user's agents runs on
+    setAgentModel,
 
     // Agent activation
     activateAgent, deactivateAgent, isAgentActivated,

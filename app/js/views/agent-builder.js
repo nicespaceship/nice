@@ -206,8 +206,29 @@ const AgentBuilderView = (() => {
      blueprints the activation is just a linkage row that doesn't carry
      persona at all. Carry `_sourceBlueprint` so `_submitAgent` can pass
      it to `_buildBlueprintRow` as a content backstop. */
+  /* Whether a save keeps the agent's model as the user's own pick: it was
+     already (a team card or an earlier save), or the user chose another
+     model than the menu showed when the form opened. A save that leaves
+     the menu alone never pins the model, whatever the menu could show. */
+  // Older blueprints carry legacy model ids (gemini-2.5-flash); the menu
+  // lists canonical ones, so match through LLMConfig's aliases.
+  function _canonModel(id) {
+    return (id && typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
+  }
+
+  function _modelPinned(existingAgent, model, loadedModel) {
+    if (!existingAgent) return false;
+    if (existingAgent._modelChosen) return true;
+    return loadedModel !== undefined && model !== loadedModel;
+  }
+
   function _mergeAgentWithBlueprint(agent, blueprint) {
-    if (!blueprint) return agent;
+    if (!blueprint) {
+      // No blueprint (crew-generator agents keep it NULL): the row's own
+      // config holds the model, which the form reads top-level.
+      const cfg = agent.config || {};
+      return { ...agent, llm_engine: agent.llm_engine || cfg.llm_engine, _modelChosen: !!(cfg.model_chosen && cfg.llm_engine) };
+    }
     const bpConfig = blueprint.config || {};
     const merged = { ...agent };
     merged._sourceBlueprint = blueprint;
@@ -216,7 +237,11 @@ const AgentBuilderView = (() => {
     merged.category = blueprint.category || '';
     merged.role = blueprint.category || '';
     merged.type = bpConfig.type || '';
-    merged.llm_engine = bpConfig.llm_engine || 'nice-auto';
+    // A model the user picked on a team card is theirs (config.model_chosen,
+    // set by Blueprints.setAgentModel) and wins over the blueprint's.
+    const agentCfg = agent.config || {};
+    merged._modelChosen = !!(agentCfg.model_chosen && agentCfg.llm_engine);
+    merged.llm_engine = merged._modelChosen ? agentCfg.llm_engine : (bpConfig.llm_engine || 'nice-auto');
     merged.role_type = blueprint.role_type || '';
     if (Array.isArray(blueprint.tags) && blueprint.tags.length) {
       merged.tags = [...blueprint.tags];
@@ -428,7 +453,7 @@ const AgentBuilderView = (() => {
                 <label for="b-model">LLM Model</label>
                 <select id="b-model" class="filter-select builder-select">
                   <option value="nice-auto" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? 'selected' : ''}>NICE Auto (recommended)</option>
-                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
+                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${_canonModel(agent?.llm_engine) === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
                   ${_ownModelOptions(agent?.llm_engine)}
                 </select>
                 <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>NICE Auto selects the best model based on mission history.</p>
@@ -578,8 +603,11 @@ const AgentBuilderView = (() => {
       });
     }
 
-    // Model dropdown — toggle NICE Auto hint
-    document.getElementById('b-model')?.addEventListener('change', _syncModelHints);
+    // Model dropdown — toggle NICE Auto hint. What it showed on load is kept
+    // so a save pins the model only when the user picked another one.
+    const modelSel = document.getElementById('b-model');
+    if (modelSel) modelSel.dataset.loaded = modelSel.value;
+    modelSel?.addEventListener('change', _syncModelHints);
     _loadOwnModels();
 
     // Tool chip selection
@@ -869,6 +897,9 @@ const AgentBuilderView = (() => {
     // ship-log); role_type-style slug-keyed access goes through the
     // top-level agent_blueprints.role_type FK column.
     const roleLabel = _roleLabel(role);
+    // The model stays the user's own pick once they made one, here or on a
+    // team card, so mission runs and the builder keep it over the catalog's.
+    const modelChosen = _modelPinned(existingAgent, model, document.getElementById('b-model')?.dataset.loaded);
     const row = {
       name,
       status: existingAgent?.status || 'idle',
@@ -877,6 +908,7 @@ const AgentBuilderView = (() => {
         type,
         tools, memory, temperature: temp,
         llm_engine: model,
+        ...(modelChosen ? { model_chosen: true } : {}),
         description,
         flavor: instructions,
         caps: skills,
@@ -1195,7 +1227,7 @@ const AgentBuilderView = (() => {
 
   return { title, render,
     // Test seams: pure helpers for the agent_blueprints serialization path.
-    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel,
+    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel, _mergeAgentWithBlueprint, _modelPinned,
     _ownModelOptions, _loadOwnModels, _setModel };
 })();
 
