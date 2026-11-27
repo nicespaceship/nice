@@ -277,7 +277,7 @@ const WalletView = (() => {
         <span class="wallet-package-tokens-label">${_esc(_poolLabel(t.pool))} tokens</span>
         <span class="wallet-package-price">${_esc(t.price)}</span>
         <p class="wallet-package-desc">${_esc(t.desc)}</p>
-        <button type="button" class="btn btn-sm btn-primary wallet-buy-btn" data-topup-id="${_esc(t.id)}">Buy</button>
+        <button type="button" class="btn btn-sm btn-primary wallet-buy-btn" data-topup-id="${Utils.escAttr(t.id)}">Buy</button>
       </div>
     `;
   }
