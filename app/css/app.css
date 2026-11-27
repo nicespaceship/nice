@@ -1263,7 +1263,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 /* NICE keeps the row lit while the pointer is on the button (which takes
    :hover off the link) and while the menu is open, with its own hover look.
    Other themes keep their own rows untouched. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) .side-ship:not(.active) { background:var(--tint); color:var(--accent); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) .side-ship:not(.active) { background:var(--tint); color:var(--text); }
 .side-ship-more {
   position:absolute; top:50%; right:6px; transform:translateY(-50%);
   display:flex; align-items:center; justify-content:center;
