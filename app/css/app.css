@@ -1258,12 +1258,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    end. The button shows on hover, on focus and while its menu is open;
    touch screens have no hover, so there it always shows. */
 .side-ship-row { position:relative; }
-.side-ship-row .side-ship { padding-right:40px; }
+.side-ship-row > .side-link { padding-right:40px; }
 .side-ship-row .side-ship-dot { margin-left:auto; flex-shrink:0; }
 /* NICE keeps the row lit while the pointer is on the button (which takes
    :hover off the link) and while the menu is open, with its own hover look.
    Other themes keep their own rows untouched. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) .side-ship:not(.active) { background:var(--tint); color:var(--text); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) > .side-link:not(.active) { background:var(--tint); color:var(--text); }
 .side-ship-more {
   position:absolute; top:50%; right:6px; transform:translateY(-50%);
   display:flex; align-items:center; justify-content:center;
@@ -1659,7 +1659,7 @@ html:not([data-theme]) .app-main,
 /* On the rail a project shows only its mark: no menu button, and its dot
    moves onto the mark's corner. */
 .app-sidebar:not(.open) .side-ship-more { display:none; }
-.app-sidebar:not(.open) .side-ship-row .side-ship { padding-right:0; position:relative; }
+.app-sidebar:not(.open) .side-ship-row > .side-link { padding-right:0; position:relative; }
 .app-sidebar:not(.open) .side-ship-row .side-ship-dot { position:absolute; top:6px; right:14px; margin:0; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */

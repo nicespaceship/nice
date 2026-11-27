@@ -23,6 +23,7 @@
       "code-host.js",
       "llm-host.js",
       "browser-host.js",
+      "recent-folders.js",
       "search-worker.js",
       "../app/**/*",
       "../public/**/*"

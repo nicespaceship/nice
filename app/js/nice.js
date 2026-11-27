@@ -861,7 +861,7 @@ const NICE = (() => {
     }
     // NICE / Code switch: Code is on while #/code is open, NICE everywhere else.
     const syncMode = () => {
-      const onCode = /^#\/code(\?|$)/.test(location.hash);
+      const onCode = _onCodeRoute();
       document.querySelectorAll('.app-mode-btn').forEach(b => {
         const on = (b.id === 'app-mode-code') === onCode;
         b.classList.toggle('is-on', on);
@@ -980,15 +980,22 @@ const NICE = (() => {
      menu of what can be done to that one ship. The add link and the menu
      read the noun from Terminology ("project" in the default look), so
      the list redraws on theme change. */
+  // Code is on while #/code is open, NICE everywhere else.
+  const _onCodeRoute = () => /^#\/code(\?|$)/.test(location.hash);
+  let _sidebarMode = null;
+
   function _renderSidebarShips() {
     const el = document.getElementById('side-ships');
     if (!el) return;
+    _sidebarMode = _onCodeRoute() ? 'code' : 'nice';
+    if (_sidebarMode === 'code') { _renderSidebarFolders(); return; }
+    _folderSeq++;
     const esc = Utils.esc;
     const ships = (typeof Blueprints !== 'undefined' && Blueprints.getUserShips) ? Blueprints.getUserShips() : [];
     const noun = Terminology.label('spaceship');
     const nounLower = Terminology.label('spaceship', { lowercase: true });
     const addLabel = ships.length ? `New ${nounLower}` : `Add ${Terminology.article('spaceship')} ${nounLower}`;
-    const refocus = _shipMenu && _shipMenu.contains(document.activeElement) ? _shipMenu.dataset.ship : null;
+    const refocus = _menuFocus('ship');
     _closeShipMenu();
     el.innerHTML = `
       ${ships.map(s => {
@@ -1013,6 +1020,56 @@ const NICE = (() => {
     _updateAlertIndicators();
   }
 
+  /* ── Sidebar in Code: the desktop app's recent folders ──
+     Code works on a folder, not a project, so while it is open the list
+     shows the folders it has opened, newest first, the open one marked.
+     The desktop app keeps the list and opens an entry only by its id, so
+     the page never hands it a path. Links carry a query so Router leaves
+     their highlighting to this module. */
+  let _folderSeq = 0;
+  let _currentFolder = null;
+
+  async function _renderSidebarFolders() {
+    const el = document.getElementById('side-ships');
+    if (!el) return;
+    const seq = ++_folderSeq;
+    const host = window.NiceDesktop && window.NiceDesktop.code;
+    let folders = [];
+    if (host && host.recent) { try { folders = await host.recent(); } catch { folders = []; } }
+    if (seq !== _folderSeq || !_onCodeRoute()) return;
+    const esc = Utils.esc;
+    const refocus = _menuFocus('folder');
+    _closeShipMenu();
+    el.innerHTML = `
+      ${folders.map(f => `<div class="side-ship-row">
+          <a href="#/code?folder=${encodeURIComponent(f.id)}" class="side-link side-folder" data-folder="${esc(f.id)}" title="${esc(f.root)}">
+            <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(f.name))}</b>
+            <span>${esc(f.name)}</span>
+          </a>
+          <button type="button" class="side-ship-more" data-folder="${esc(f.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${esc(f.name)} options">
+            <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
+          </button>
+        </div>`).join('')}
+      ${host ? `<a href="#/code?open=folder" class="side-link side-ship-new side-folder-open" title="Open folder">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
+        <span>Open folder</span>
+      </a>` : ''}`;
+    _currentFolder = (folders.find(f => f.current) || {}).id || null;
+    _highlightSidebarFolder();
+    if (refocus) el.querySelector(`.side-ship-more[data-folder="${CSS.escape(refocus)}"]`)?.focus();
+  }
+
+  // Router clears links that carry a query on every route change, so the
+  // open folder is marked again on nice:navsync, as the projects are.
+  function _highlightSidebarFolder() {
+    document.querySelectorAll('#side-ships .side-folder').forEach(a => {
+      const on = _onCodeRoute() && a.dataset.folder === _currentFolder;
+      a.classList.toggle('active', on);
+      if (on) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+
   function _highlightSidebarShip() {
     const onCrew = Router.path() === '/crew';
     const current = localStorage.getItem(Utils.KEYS.mcShip);
@@ -1032,6 +1089,10 @@ const NICE = (() => {
   let _shipMenu = null;
   let _shipMenuBtn = null;
 
+  // The id of the row whose menu holds focus, when it is of this kind, so a
+  // redraw can put focus back on that row's new button.
+  const _menuFocus = (kind) => (_shipMenu && _shipMenu.dataset.kind === kind && _shipMenu.contains(document.activeElement)) ? _shipMenu.dataset.id : null;
+
   function _shipMenuEl() {
     if (_shipMenu) return _shipMenu;
     _shipMenu = document.createElement('div');
@@ -1042,9 +1103,10 @@ const NICE = (() => {
     _shipMenu.addEventListener('click', (e) => {
       const item = e.target.closest('[data-act]');
       if (!item) return;
-      const id = _shipMenu.dataset.ship;
+      const { id, kind } = _shipMenu.dataset;
       _closeShipMenu();
-      _shipAction(item.dataset.act, id);
+      if (kind === 'folder') _folderAction(item.dataset.act, id);
+      else _shipAction(item.dataset.act, id);
     });
     _shipMenu.addEventListener('keydown', (e) => {
       const items = [..._shipMenu.querySelectorAll('[role="menuitem"]')];
@@ -1062,20 +1124,29 @@ const NICE = (() => {
   }
 
   function _openShipMenu(btn) {
-    const id = btn.dataset.ship;
-    const ship = Blueprints.getUserShips().find(s => String(s.id) === id);
-    if (!ship) return;
-    const esc = Utils.esc;
-    const noun = Terminology.label('spaceship');
     const menu = _shipMenuEl();
     const icon = (name) => `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
-    menu.dataset.ship = id;
-    menu.setAttribute('aria-label', `${ship.name || noun} options`);
-    menu.innerHTML = `
-      <button type="button" class="side-popover-item" role="menuitem" data-act="diagram">${icon('network')}<span>Diagram</span></button>
-      <button type="button" class="side-popover-item" role="menuitem" data-act="details">${icon('settings')}<span>${esc(noun)} details</span></button>
-      <div class="side-divider" role="separator"></div>
-      <button type="button" class="side-popover-item side-ship-menu-danger" role="menuitem" data-act="remove">${icon('x')}<span>Remove</span></button>`;
+    const item = (act, ic, label) => `<button type="button" class="side-popover-item" role="menuitem" data-act="${act}">${icon(ic)}<span>${Utils.esc(label)}</span></button>`;
+    const divider = '<div class="side-divider" role="separator"></div>';
+    if (btn.dataset.folder) {
+      const id = btn.dataset.folder;
+      const name = btn.closest('.side-ship-row')?.querySelector('.side-folder span')?.textContent || 'Folder';
+      menu.dataset.kind = 'folder';
+      menu.dataset.id = id;
+      menu.setAttribute('aria-label', `${name} options`);
+      menu.innerHTML = item('reveal', 'folder', /Mac/i.test(navigator.platform) ? 'Show in Finder' : 'Show in folder')
+        + divider + item('forget', 'x', 'Remove from list');
+    } else {
+      const id = btn.dataset.ship;
+      const ship = Blueprints.getUserShips().find(s => String(s.id) === id);
+      if (!ship) return;
+      const noun = Terminology.label('spaceship');
+      menu.dataset.kind = 'ship';
+      menu.dataset.id = id;
+      menu.setAttribute('aria-label', `${ship.name || noun} options`);
+      menu.innerHTML = item('diagram', 'network', 'Diagram') + item('details', 'settings', `${noun} details`)
+        + divider + item('remove', 'x', 'Remove');
+    }
     if (_shipMenuBtn) _shipMenuBtn.setAttribute('aria-expanded', 'false');
     _shipMenuBtn = btn;
     btn.setAttribute('aria-expanded', 'true');
@@ -1126,15 +1197,38 @@ const NICE = (() => {
     }
   }
 
+  async function _folderAction(act, id) {
+    const host = window.NiceDesktop && window.NiceDesktop.code;
+    if (!host) return;
+    try {
+      if (act === 'reveal') await host.revealRecent(id);
+      else if (act === 'forget') { await host.forgetRecent(id); _renderSidebarShips(); }
+    } catch (e) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not do that', message: e.message || String(e), type: 'error' });
+      _renderSidebarShips();
+    }
+  }
+
   function _initSidebarShips() {
     const list = document.getElementById('side-ships');
     list?.addEventListener('click', (e) => {
       const btn = e.target.closest('.side-ship-more');
-      if (!btn) return;
+      if (btn) {
+        e.preventDefault();
+        if (_shipMenuBtn === btn) _closeShipMenu();
+        else _openShipMenu(btn);
+        return;
+      }
+      // Folder links never navigate: Code is already open, and the folder
+      // opens through CodeView so the conversation resets with it.
+      const folder = e.target.closest('.side-folder, .side-folder-open');
+      if (!folder || typeof CodeView === 'undefined') return;
       e.preventDefault();
-      if (_shipMenuBtn === btn) _closeShipMenu();
-      else _openShipMenu(btn);
+      if (folder.classList.contains('side-folder-open')) CodeView.openFolder();
+      else if (!folder.classList.contains('active')) CodeView.openRecent(folder.dataset.folder);
     });
+    document.addEventListener('nice:code-folder', _renderSidebarShips);
+    window.addEventListener('hashchange', () => { if ((_onCodeRoute() ? 'code' : 'nice') !== _sidebarMode) _renderSidebarShips(); });
     list?.addEventListener('scroll', _closeShipMenu, { passive: true });
     document.addEventListener('pointerdown', (e) => {
       if (!_shipMenuBtn) return;
@@ -1150,6 +1244,7 @@ const NICE = (() => {
     State.on('user', _renderSidebarShips);
     document.addEventListener('nice:theme-change', _renderSidebarShips);
     window.addEventListener('nice:navsync', _highlightSidebarShip);
+    window.addEventListener('nice:navsync', _highlightSidebarFolder);
     window.addEventListener('storage', (e) => { if (e.key === Utils.KEYS.mcShip) _highlightSidebarShip(); });
   }
 

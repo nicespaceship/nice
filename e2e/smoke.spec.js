@@ -437,6 +437,47 @@ test.describe('Dashboard', () => {
     await page.evaluate(() => { Theme.set('nice'); });
   });
 
+  test('Code lists its recent folders in the sidebar instead of projects', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => {
+      Theme.set('nice');
+      State.set('spaceships', [{ id: 'e2e-ship', name: 'Bakery' }]);
+      let folders = [
+        { id: 'f1', root: '/Users/me/site', name: 'site', current: true },
+        { id: 'f2', root: '/Users/me/api', name: 'api', current: false },
+      ];
+      window.__calls = [];
+      window.NiceDesktop = { code: {
+        workspace: async () => null,
+        recent: async () => folders,
+        openRecent: async (id) => { window.__calls.push(['open', id]); return null; },
+        forgetRecent: async (id) => { window.__calls.push(['forget', id]); folders = folders.filter(f => f.id !== id); return true; },
+        revealRecent: async (id) => { window.__calls.push(['reveal', id]); return true; },
+      } };
+    });
+    await navigateTo(page, '#/code', 'Code');
+    const rows = page.locator('#side-ships .side-folder');
+    const names = page.locator('#side-ships .side-folder span');
+    await expect(names).toHaveText(['site', 'api']);
+    await expect(page.locator('#side-ships .side-ship')).toHaveCount(0);
+    await expect(rows.first()).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#side-ships .side-folder-open')).toHaveText('Open folder');
+    await rows.nth(1).click();
+    await expect.poll(() => page.evaluate(() => window.__calls)).toEqual([['open', 'f2']]);
+    await expect(page).toHaveURL(/#\/code$/);
+    const row = page.locator('#side-ships .side-ship-row', { hasText: 'api' });
+    await row.hover();
+    await row.locator('.side-ship-more').click();
+    const menu = page.locator('#side-ship-menu');
+    await expect(menu.getByRole('menuitem')).toHaveText([/^Show in (Finder|folder)$/, 'Remove from list']);
+    await menu.getByRole('menuitem', { name: 'Remove from list' }).click();
+    await expect(names).toHaveText(['site']);
+    await navigateTo(page, '#/', 'Home');
+    await expect(page.locator('#side-ships .side-ship span')).toHaveText(['Bakery']);
+    await expect(page.locator('#side-ships .side-folder')).toHaveCount(0);
+    await page.evaluate(() => { delete window.NiceDesktop; });
+  });
+
   test('the default look says team and sci-fi themes say crew', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); });

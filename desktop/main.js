@@ -10,6 +10,7 @@ const AppProtocol = require('./app-protocol');
 const { Workspace, serializeError, runTag } = require('./code-host');
 const { createLlmHost } = require('./llm-host');
 const { createBrowser } = require('./browser-host');
+const { createRecentFolders } = require('./recent-folders');
 
 // The repo root: nice://app/app/… and nice://app/public/… are served from here.
 const ROOT = path.join(__dirname, '..');
@@ -193,11 +194,10 @@ function _workspace(event) {
 
 const _describe = (ws) => ws ? { root: ws.root, name: path.basename(ws.root) || ws.root } : null;
 
-handle('code:open-folder', async (event) => {
+// Opens a folder as this window's workspace after the broad-folder warning,
+// and puts it at the top of the recent folders. null when the user backs out.
+async function _openWorkspace(event, dir) {
   const win = BrowserWindow.fromWebContents(event.sender);
-  const pick = await dialog.showOpenDialog(win, { title: 'Open a folder for Code', properties: ['openDirectory', 'createDirectory'] });
-  if (pick.canceled || !pick.filePaths[0]) return null;
-  const dir = pick.filePaths[0];
   // Judged by the real path: /Volumes/Macintosh HD is the whole disk.
   const broad = await Workspace.isBroad(dir);
   if (broad) {
@@ -216,8 +216,39 @@ handle('code:open-folder', async (event) => {
   const old = workspaces.get(event.sender.id);
   if (old) _retire(old);
   workspaces.set(event.sender.id, ws);
+  try { recentFolders().add(ws.root); } catch {}
   return _describe(ws);
+}
+
+handle('code:open-folder', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const pick = await dialog.showOpenDialog(win, { title: 'Open a folder for Code', properties: ['openDirectory', 'createDirectory'] });
+  if (pick.canceled || !pick.filePaths[0]) return null;
+  return _openWorkspace(event, pick.filePaths[0]);
 });
+
+/* Recent folders: the page sees ids, names and paths, and opens one only by
+   its id, so it can never hand the app a path of its own. */
+let _recent = null;
+const recentFolders = () => _recent || (_recent = createRecentFolders({ file: path.join(app.getPath('userData'), 'recent-folders.json') }));
+
+function _recentEntry(id) {
+  const entry = typeof id === 'string' ? recentFolders().get(id) : null;
+  if (!entry) throw Object.assign(new Error('That folder is no longer in the list.'), { code: 'ENOTFOUND' });
+  return entry;
+}
+
+handle('code:recent', (event) => {
+  const ws = workspaces.get(event.sender.id);
+  return recentFolders().list().map(e => ({ ...e, current: !!ws && ws.root === e.root }));
+});
+handle('code:open-recent', async (event, id) => {
+  const entry = _recentEntry(id);
+  if (!fs.existsSync(entry.root)) throw Object.assign(new Error(entry.name + ' is not there any more. It may have been moved or deleted.'), { code: 'ENOENT' });
+  return _openWorkspace(event, entry.root);
+});
+handle('code:forget-recent', (event, id) => recentFolders().remove(_recentEntry(id).id));
+handle('code:reveal-recent', (event, id) => { shell.showItemInFolder(_recentEntry(id).root); return true; });
 handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
 handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
 handle('code:write', (event, p, content, opts) => {

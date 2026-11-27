@@ -167,18 +167,32 @@ const CodeView = (() => {
     el.querySelector('#code-open-folder').addEventListener('click', _openFolder);
   }
 
-  async function _openFolder() {
+  // The sidebar lists Code's recent folders, so it redraws whenever the open
+  // folder changes.
+  const FOLDER_EVENT = 'nice:code-folder';
+
+  async function _switchFolder(open) {
     const host = _host();
-    if (!host) return;
+    if (!host) return null;
     try {
-      const ws = await host.openFolder();
-      if (!ws) return;
+      const ws = await open(host);
+      if (!ws) return null;
+      // The desktop app swapped the workspace and stopped the old one's
+      // commands even when the folder is the same, so start over either way.
       _resetForFolder(ws);
       if (_el) _renderWorkspace(_el);
+      return ws;
     } catch (e) {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not open the folder', message: e.message || String(e), type: 'error' });
+      return null;
+    } finally {
+      document.dispatchEvent(new CustomEvent(FOLDER_EVENT));
     }
   }
+
+  const _openFolder = () => _switchFolder(host => host.openFolder());
+  /** Opens one of the desktop app's recent folders by its id. */
+  const openRecent = (id) => _switchFolder(host => host.openRecent(id));
 
   function _resetForFolder(ws) {
     _gen++;
@@ -1169,7 +1183,7 @@ const CodeView = (() => {
   }
 
   return {
-    title, render, destroy,
+    title, render, destroy, openFolder: _openFolder, openRecent, FOLDER_EVENT,
     _test: { reset: _resetAll, pathOf: (row) => (_rowInfo.get(row) || {}).path },
   };
 })();
