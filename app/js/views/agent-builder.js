@@ -206,8 +206,23 @@ const AgentBuilderView = (() => {
      blueprints the activation is just a linkage row that doesn't carry
      persona at all. Carry `_sourceBlueprint` so `_submitAgent` can pass
      it to `_buildBlueprintRow` as a content backstop. */
+  /* Whether a save keeps the agent's model as the user's own pick: it was
+     already (a team card or an earlier save), or the user chose another
+     model than the menu showed when the form opened. A save that leaves
+     the menu alone never pins the model, whatever the menu could show. */
+  function _modelPinned(existingAgent, model, loadedModel) {
+    if (!existingAgent) return false;
+    if (existingAgent._modelChosen) return true;
+    return loadedModel !== undefined && model !== loadedModel;
+  }
+
   function _mergeAgentWithBlueprint(agent, blueprint) {
-    if (!blueprint) return agent;
+    if (!blueprint) {
+      // No blueprint (crew-generator agents keep it NULL): the row's own
+      // config holds the model, which the form reads top-level.
+      const cfg = agent.config || {};
+      return { ...agent, llm_engine: agent.llm_engine || cfg.llm_engine, _modelChosen: !!(cfg.model_chosen && cfg.llm_engine) };
+    }
     const bpConfig = blueprint.config || {};
     const merged = { ...agent };
     merged._sourceBlueprint = blueprint;
@@ -582,8 +597,11 @@ const AgentBuilderView = (() => {
       });
     }
 
-    // Model dropdown — toggle NICE Auto hint
-    document.getElementById('b-model')?.addEventListener('change', _syncModelHints);
+    // Model dropdown — toggle NICE Auto hint. What it showed on load is kept
+    // so a save pins the model only when the user picked another one.
+    const modelSel = document.getElementById('b-model');
+    if (modelSel) modelSel.dataset.loaded = modelSel.value;
+    modelSel?.addEventListener('change', _syncModelHints);
     _loadOwnModels();
 
     // Tool chip selection
@@ -875,7 +893,7 @@ const AgentBuilderView = (() => {
     const roleLabel = _roleLabel(role);
     // The model stays the user's own pick once they made one, here or on a
     // team card, so mission runs and the builder keep it over the catalog's.
-    const modelChosen = !!existingAgent && (!!existingAgent._modelChosen || model !== (existingAgent.llm_engine || 'nice-auto'));
+    const modelChosen = _modelPinned(existingAgent, model, document.getElementById('b-model')?.dataset.loaded);
     const row = {
       name,
       status: existingAgent?.status || 'idle',
@@ -1203,7 +1221,7 @@ const AgentBuilderView = (() => {
 
   return { title, render,
     // Test seams: pure helpers for the agent_blueprints serialization path.
-    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel, _mergeAgentWithBlueprint,
+    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel, _mergeAgentWithBlueprint, _modelPinned,
     _ownModelOptions, _loadOwnModels, _setModel };
 })();
 

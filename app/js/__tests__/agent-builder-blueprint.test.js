@@ -270,10 +270,28 @@ describe('AgentBuilderView._mergeAgentWithBlueprint — the model', () => {
     expect(merged.llm_engine).toBe('claude-4-6-sonnet');
     expect(merged._modelChosen).toBe(false);
   });
+  it('reads the model from the row\'s config when the agent has no blueprint', () => {
+    const merged = AgentBuilderView._mergeAgentWithBlueprint({ id: 'ua-2', config: { llm_engine: 'grok-4-3', model_chosen: true } }, null);
+    expect(merged.llm_engine).toBe('grok-4-3');
+    expect(merged._modelChosen).toBe(true);
+    expect(AgentBuilderView._mergeAgentWithBlueprint({ id: 'ua-3', config: { llm_engine: 'kimi-k2-6' } }, null)._modelChosen).toBe(false);
+  });
+
   it('keeps a model the user picked on a team card', () => {
     const merged = AgentBuilderView._mergeAgentWithBlueprint({ id: 'ua-1', config: { llm_engine: 'grok-4-3', model_chosen: true } }, blueprint);
     expect(merged.llm_engine).toBe('grok-4-3');
     expect(merged._modelChosen).toBe(true);
+  });
+});
+
+describe('AgentBuilderView._modelPinned', () => {
+  it('pins only a model the user picked', () => {
+    // A save that leaves the menu alone, even when the menu could not show
+    // the stored id and fell back to NICE Auto.
+    expect(AgentBuilderView._modelPinned({ llm_engine: 'gemini-2.5-flash' }, 'nice-auto', 'nice-auto')).toBe(false);
+    expect(AgentBuilderView._modelPinned({ llm_engine: 'grok-4-3' }, 'kimi-k2-6', 'grok-4-3')).toBe(true);
+    expect(AgentBuilderView._modelPinned({ _modelChosen: true }, 'grok-4-3', 'grok-4-3')).toBe(true);
+    expect(AgentBuilderView._modelPinned(null, 'grok-4-3', 'nice-auto')).toBe(false);
   });
 });
 

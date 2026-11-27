@@ -1632,6 +1632,16 @@ const Blueprints = (() => {
     return next;
   }
 
+  // The loader mirrors config fields top-level; keep those copies in step.
+  function _mirrorModel(agent, modelId) {
+    const next = { ...agent, llm_engine: modelId };
+    if (next.model_profile && next.model_profile.preferred) {
+      const { preferred, ...rest } = next.model_profile;
+      if (Object.keys(rest).length) next.model_profile = rest; else delete next.model_profile;
+    }
+    return next;
+  }
+
   /** Puts one of the user's agents on a model. Resolves to the saved agent;
       rejects with a message when the agent isn't one of theirs. */
   async function setAgentModel(agentId, modelId) {
@@ -1646,7 +1656,7 @@ const Blueprints = (() => {
         stored[i] = { ...stored[i], llm_engine: modelId, config: _withModel(stored[i].config, modelId) };
         localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
       }
-      const saved = at >= 0 ? { ...agents[at], llm_engine: modelId, config: _withModel(agents[at].config, modelId) } : stored[i];
+      const saved = at >= 0 ? _mirrorModel({ ...agents[at], config: _withModel(agents[at].config, modelId) }, modelId) : stored[i];
       if (at >= 0) { const next = agents.slice(); next[at] = saved; State.set('agents', next); }
       return saved;
     }
@@ -1654,7 +1664,7 @@ const Blueprints = (() => {
     if (!_canSync()) throw new Error('You are offline. Try again when you are back online.');
     const config = _withModel(agents[at].config, modelId);
     const row = await SB.db('user_agents').update(agentId, { config });
-    const saved = { ...agents[at], ...(row || {}), llm_engine: modelId, config: (row && row.config) || config };
+    const saved = _mirrorModel({ ...agents[at], config: (row && row.config) || config }, modelId);
     const next = ((typeof State !== 'undefined' && State.get('agents')) || []).map(a => a.id === agentId ? saved : a);
     State.set('agents', next);
     return saved;
@@ -1780,7 +1790,11 @@ const Blueprints = (() => {
     const aCfg = agent.config || {};
     const cCfg = catalog.config || {};
     const mergedCfg = { ...aCfg };
+    // A model the user picked (a team card's menu, or a model on their own
+    // key) is theirs: the catalog's llm_engine never replaces it.
+    const ownModel = !!aCfg.model_chosen || (typeof aCfg.llm_engine === 'string' && aCfg.llm_engine.startsWith('byo:'));
     for (const k of _CATALOG_DRIVEN_CONFIG) {
+      if (k === 'llm_engine' && ownModel) continue;
       if (cCfg[k] !== undefined) mergedCfg[k] = cCfg[k];
     }
     return {

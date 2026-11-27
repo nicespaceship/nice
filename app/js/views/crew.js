@@ -226,8 +226,12 @@ const CrewView = (() => {
   // where LLMConfig would report what Auto resolved to.
   function _chosenModel(agent) {
     const cfg = agent.config || {};
-    return (cfg.model_profile && cfg.model_profile.preferred) || cfg.llm_engine || agent.llm_engine || _modelId(agent);
+    const id = (cfg.model_profile && cfg.model_profile.preferred) || cfg.llm_engine || agent.llm_engine || _modelId(agent);
+    // Older blueprints carry legacy ids (gemini-2.5-flash); show the model, not a second entry.
+    return (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
   }
+
+  const _savingModel = new Set();   // agentIds whose pick is being saved
 
   function _modelPickHTML(member, modelId, name) {
     const agent = member.agent;
@@ -243,11 +247,16 @@ const CrewView = (() => {
     const id = agent.id;
     const before = _chosenModel(agent);
     const s = _session.get(id);
+    if (_savingModel.has(id)) {
+      CSelect.set('crew-model-' + member.index, before);
+      return;
+    }
     if (s && s.live) {
       CSelect.set('crew-model-' + member.index, before);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Still answering', message: 'Change the model once the reply is in, or stop it first.', type: 'system' });
       return;
     }
+    _savingModel.add(id);
     try {
       await Blueprints.setAgentModel(id, modelId);
       // The next message starts a new conversation on the new model; the
@@ -256,6 +265,8 @@ const CrewView = (() => {
     } catch (err) {
       if (_el) CSelect.set('crew-model-' + member.index, before);
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Model not changed', message: (err && err.message) || 'Try again.', type: 'error' });
+    } finally {
+      _savingModel.delete(id);
     }
   }
 
