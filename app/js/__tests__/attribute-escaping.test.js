@@ -14,8 +14,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ALLOWED = [
   // Lowercased and reduced to [a-z0-9-] right after, so nothing can close the attribute.
   ['views/vault.js', 'id="vault-upsell-${_esc(name).toLowerCase().replace('],
-  // Billing file, merged by hand: fixed in its own PR.
-  ['views/wallet.js', 'data-topup-id="${_esc(t.id)}"'],
 ];
 
 function files(dir) {
