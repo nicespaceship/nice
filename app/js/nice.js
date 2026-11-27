@@ -1038,15 +1038,17 @@ const NICE = (() => {
     if (host && host.recent) { try { folders = await host.recent(); } catch { folders = []; } }
     if (seq !== _folderSeq || !_onCodeRoute()) return;
     const esc = Utils.esc;
+    // Folder names and paths come from disk, where a name may hold quotes.
+    const attr = Utils.escAttr;
     const refocus = _menuFocus('folder');
     _closeShipMenu();
     el.innerHTML = `
       ${folders.map(f => `<div class="side-ship-row">
-          <a href="#/code?folder=${encodeURIComponent(f.id)}" class="side-link side-folder" data-folder="${esc(f.id)}" title="${esc(f.root)}">
+          <a href="#/code?folder=${encodeURIComponent(f.id)}" class="side-link side-folder" data-folder="${attr(f.id)}" title="${attr(f.root)}">
             <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(f.name))}</b>
             <span>${esc(f.name)}</span>
           </a>
-          <button type="button" class="side-ship-more" data-folder="${esc(f.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${esc(f.name)} options">
+          <button type="button" class="side-ship-more" data-folder="${attr(f.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${attr(f.name + ' options')}">
             <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
           </button>
         </div>`).join('')}
@@ -1134,7 +1136,7 @@ const NICE = (() => {
       menu.dataset.kind = 'folder';
       menu.dataset.id = id;
       menu.setAttribute('aria-label', `${name} options`);
-      menu.innerHTML = item('reveal', 'folder', /Mac/i.test(navigator.platform) ? 'Show in Finder' : 'Show in folder')
+      menu.innerHTML = item('reveal', 'folder', window.NiceDesktop?.platform === 'darwin' ? 'Show in Finder' : 'Show in folder')
         + divider + item('forget', 'x', 'Remove from list');
     } else {
       const id = btn.dataset.ship;

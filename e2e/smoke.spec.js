@@ -445,6 +445,7 @@ test.describe('Dashboard', () => {
       let folders = [
         { id: 'f1', root: '/Users/me/site', name: 'site', current: true },
         { id: 'f2', root: '/Users/me/api', name: 'api', current: false },
+        { id: 'f3', root: '/Users/me/x" onmouseover="window.__pwned=1', name: 'x" onmouseover="window.__pwned=1 <b>', current: false },
       ];
       window.__calls = [];
       window.NiceDesktop = { code: {
@@ -458,7 +459,10 @@ test.describe('Dashboard', () => {
     await navigateTo(page, '#/code', 'Code');
     const rows = page.locator('#side-ships .side-folder');
     const names = page.locator('#side-ships .side-folder span');
-    await expect(names).toHaveText(['site', 'api']);
+    await expect(names).toHaveText(['site', 'api', 'x" onmouseover="window.__pwned=1 <b>']);
+    // A quote in a folder's name or path stays inside its attribute.
+    expect(await page.evaluate(() => document.querySelectorAll('#side-ships [onmouseover], #side-ships b b').length)).toBe(0);
+    expect(await page.locator('#side-ships .side-folder[data-folder="f3"]').getAttribute('title')).toBe('/Users/me/x" onmouseover="window.__pwned=1');
     await expect(page.locator('#side-ships .side-ship')).toHaveCount(0);
     await expect(rows.first()).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('#side-ships .side-folder-open')).toHaveText('Open folder');
@@ -470,8 +474,13 @@ test.describe('Dashboard', () => {
     await row.locator('.side-ship-more').click();
     const menu = page.locator('#side-ship-menu');
     await expect(menu.getByRole('menuitem')).toHaveText([/^Show in (Finder|folder)$/, 'Remove from list']);
+    await menu.getByRole('menuitem', { name: /^Show in/ }).click();
+    await expect.poll(() => page.evaluate(() => window.__calls.at(-1))).toEqual(['reveal', 'f2']);
+    await row.hover();
+    await row.locator('.side-ship-more').click();
     await menu.getByRole('menuitem', { name: 'Remove from list' }).click();
-    await expect(names).toHaveText(['site']);
+    await expect(names).toHaveText(['site', 'x" onmouseover="window.__pwned=1 <b>']);
+    expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
     await navigateTo(page, '#/', 'Home');
     await expect(page.locator('#side-ships .side-ship span')).toHaveText(['Bakery']);
     await expect(page.locator('#side-ships .side-folder')).toHaveCount(0);

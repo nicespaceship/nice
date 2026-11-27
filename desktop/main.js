@@ -150,7 +150,10 @@ function createWindow() {
 }
 
 /* ── Code bridge ──
-   One workspace per window, opened only through the native folder dialog.
+   One workspace per window. A folder becomes one only after the user picks
+   it in the native folder dialog; after that it is on the recent folders
+   list, which the page can reopen by id (with the broad-folder warning
+   again) but never extend with a path of its own.
    Each call answers { ok, value } or { ok:false, error:{ code, message } },
    and only NICE's own page (the main frame on nice://app/app/) may call. */
 const workspaces = new Map();
@@ -234,7 +237,14 @@ const recentFolders = () => _recent || (_recent = createRecentFolders({ file: pa
 
 function _recentEntry(id) {
   const entry = typeof id === 'string' ? recentFolders().get(id) : null;
-  if (!entry) throw Object.assign(new Error('That folder is no longer in the list.'), { code: 'ENOTFOUND' });
+  if (!entry) throw Object.assign(new Error('That folder is no longer in the list.'), { code: 'ENORECENT' });
+  return entry;
+}
+
+// A listed folder that is still on disk.
+function _presentEntry(id) {
+  const entry = _recentEntry(id);
+  if (!fs.existsSync(entry.root)) throw Object.assign(new Error(entry.name + ' is not there any more. It may have been moved or deleted; its menu can remove it from the list.'), { code: 'ENOENT' });
   return entry;
 }
 
@@ -244,11 +254,10 @@ handle('code:recent', (event) => {
 });
 handle('code:open-recent', async (event, id) => {
   const entry = _recentEntry(id);
-  if (!fs.existsSync(entry.root)) throw Object.assign(new Error(entry.name + ' is not there any more. It may have been moved or deleted.'), { code: 'ENOENT' });
-  return _openWorkspace(event, entry.root);
+  return _openWorkspace(event, _presentEntry(id).root);
 });
 handle('code:forget-recent', (event, id) => recentFolders().remove(_recentEntry(id).id));
-handle('code:reveal-recent', (event, id) => { shell.showItemInFolder(_recentEntry(id).root); return true; });
+handle('code:reveal-recent', (event, id) => { shell.showItemInFolder(_presentEntry(id).root); return true; });
 handle('code:workspace', (event) => _describe(workspaces.get(event.sender.id)));
 handle('code:read', (event, p, opts) => _workspace(event).readFile(p, opts || {}));
 handle('code:write', (event, p, content, opts) => {
