@@ -2367,21 +2367,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     }
   }
 
-  /* ── Send straight to one agent ──
-     The crew view's cards send through here. Same agent-with-tools path as
-     an @mention (AgentExecutor.converse, ShipLog persistence, the approval
-     monitor); the chosen agent wins over any @mention or route agent for
-     this one send. */
-  let _forcedAgent = null;
-  function sendToAgent(agentBp, text) {
-    if (!agentBp || !text || _sending) return false;
-    show();
-    prefill(text);
-    _forcedAgent = agentBp;
-    _send();
-    return true;
-  }
-
   /* ── Space: one prompt, the selected model cards ──
      Space (#/space) shows a card per model the user can run; the prompt
      goes to the cards they selected (SpaceCards). Each card gets its own
@@ -2804,8 +2789,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   /* ── Send message ── */
   function _send() {
-    const forcedAgent = _forcedAgent;
-    _forcedAgent = null;
     const input = _panel?.querySelector('#nice-ai-input');
     if (!input || _sending) return;
     const text = input.value.trim();
@@ -2907,7 +2890,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // itself, on the monitor below. The pre-check runs once: its intents
     // act as they are detected (a theme switch, a queued command).
     let spacePreCheck = null;
-    if (!forcedAgent && _isStandaloneChat() && !_parseMention(text) && !_parseShipMention(text)) {
+    if (_isStandaloneChat() && !_parseMention(text) && !_parseShipMention(text)) {
       spacePreCheck = _getResponse(text);
       if (!spacePreCheck.autoMission && !spacePreCheck.isNav) {
         if (!_sendToCards(text, sentAttachments)) {
@@ -2943,7 +2926,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // it gets going still ends, so it can't leave the panel locked.
     const sendToken = _startNiceSend();
     try {
-      _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken });
+      _replyAsNice({ text, userMsg, sentAttachments, spacePreCheck, sendToken });
     } catch (err) {
       _failNiceSend(sendToken, err);
     }
@@ -2952,21 +2935,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   /* NICE answers a prompt itself: an agent, a ship's crew, a mission, a
      navigation, or the model directly. Every reply goes through sendToken
      (see "Who holds the send lock"). */
-  function _replyAsNice({ text, userMsg, sentAttachments, forcedAgent, spacePreCheck, sendToken }) {
+  function _replyAsNice({ text, userMsg, sentAttachments, spacePreCheck, sendToken }) {
 
     // Show thinking on monitor
     _addMonitorThinking();
 
-    // Agent context — a card's direct send wins, then an @mention, then the
-    // route-scoped agent
+    // Agent context — an @mention, then the route-scoped agent
     const bpSelect = _panel?.querySelector('#nice-ai-bp-select');
     const bpId = bpSelect?.value;
-    const mentioned = forcedAgent ? null : _parseMention(text);
+    const mentioned = _parseMention(text);
 
     let agentBp = null;
-    if (forcedAgent) {
-      agentBp = forcedAgent;
-    } else if (mentioned) {
+    if (mentioned) {
       agentBp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(mentioned.id)
         : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === mentioned.id) : null;
     } else if (_routeAgent) {
@@ -4490,5 +4470,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The current conversation, for Space's cards. Same auth gate as the store.
   function messages() { return _messages; }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent, _handleSlashCommand };
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, retryCard, _renderTargets, _isStandaloneChat, messages, _detectIntent, _handleSlashCommand };
 })();

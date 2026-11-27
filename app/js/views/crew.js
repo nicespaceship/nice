@@ -46,14 +46,19 @@ const CrewView = (() => {
   // Each card's conversation. _logs holds what ShipLog has for the agent;
   // _session what was sent from the card since this view opened: its
   // exchanges, the AgentExecutor conversation that keeps the context, and
-  // the turn in flight. History older than the first send comes from the
-  // log, so a reply is never shown twice. _gen fences replies that land
-  // after the view is gone.
+  // the turn in flight. Once the log holds a sent exchange (same request,
+  // newer than the newest row the log had at the first send), the session's
+  // copy takes its place, so nothing shows twice and nothing done elsewhere
+  // in the meantime is hidden. Only server timestamps are compared. _gen
+  // fences work that lands after the view is gone or the ship changed.
   const _logs = new Map();       // agentId → exchanges
-  const _session = new Map();    // agentId → { since, exchanges, convo, live }
+  const _session = new Map();    // agentId → { cutoff, exchanges, convo, live }
   const _expanded = new Set();   // agentIds showing the whole conversation
+  let _logNewest = -Infinity;    // newest created_at in the last log read
   let _gen = 0;
   let _approvalSeq = 0;
+  let _logRead = null;           // the read in flight, shared by a burst of refreshes
+  let _logAgain = false;
 
   /* ── Data ── */
 
@@ -110,18 +115,32 @@ const CrewView = (() => {
     return out.slice(-_HISTORY);
   }
 
-  async function _loadLogs() {
-    if (!_shipId || typeof ShipLog === 'undefined' || !ShipLog.getEntries) return;
-    let entries = [];
-    try { entries = await ShipLog.getEntries(_shipId, _LOG_LIMIT); } catch { return; }
-    _crew.forEach(m => { if (m.agent) _logs.set(m.agent.id, _exchanges(entries, m.agent.id)); });
+  // The ship's log as exchanges per agent, or null when the read failed.
+  async function _readLogs(shipId) {
+    if (!shipId || typeof ShipLog === 'undefined' || !ShipLog.getEntries) return null;
+    let entries;
+    try { entries = await ShipLog.getEntries(shipId, _LOG_LIMIT); } catch { return null; }
+    let newest = -Infinity;
+    for (const e of entries || []) {
+      const t = Date.parse(e.created_at);
+      if (t > newest) newest = t;
+    }
+    return { entries: entries || [], newest };
   }
 
   function _thread(agentId) {
     const s = _session.get(agentId);
-    const at = (x) => (x.ask || x.reply).ts;
-    const log = (_logs.get(agentId) || []).filter(x => !s || at(x) < s.since);
-    return log.concat(s ? s.exchanges : []).slice(-_HISTORY);
+    const log = _logs.get(agentId) || [];
+    if (!s) return log;
+    const pending = s.exchanges.slice();
+    const out = log.map((x) => {
+      const at = (x.ask || x.reply).ts;
+      if (!x.ask || !(at > s.cutoff)) return x;
+      const i = pending.findIndex(p => p.ask && p.ask.text === x.ask.text);
+      if (i < 0) return x;
+      return pending.splice(i, 1)[0];
+    });
+    return out.concat(pending).slice(-_HISTORY);
   }
 
   async function _loadRuns() {
@@ -156,7 +175,7 @@ const CrewView = (() => {
     const status = _statusOf(agent);
     const first = String(name).split(/\s+/)[0];
     return `
-      <article class="crew-card" style="--crew-c:${Utils.escAttr(_modelColor(modelId))}" data-slot="${index}" aria-label="${Utils.escAttr(name)}">
+      <article class="crew-card${_isOpen(agent.id) ? ' is-open' : ''}" style="--crew-c:${Utils.escAttr(_modelColor(modelId))}" data-slot="${index}" data-agent="${Utils.escAttr(agent.id)}" aria-label="${Utils.escAttr(name)}"${_liveOf(agent.id) ? ' aria-busy="true"' : ''}>
         <header class="crew-card-top">
           <span class="crew-avatar" aria-hidden="true">${_esc(Utils.initials(name))}</span>
           <span class="crew-card-names">
@@ -172,6 +191,7 @@ const CrewView = (() => {
           <span class="crew-status-dot" aria-hidden="true"></span><span>${_esc(status.text)}</span>
         </div>
         <div class="crew-chat" id="crew-chat-${index}">${_chatHTML(member)}</div>
+        <p class="sr-only" id="crew-say-${index}" aria-live="polite"></p>
         <form class="crew-compose" data-slot="${index}">
           <label class="sr-only" for="crew-msg-${index}">Message ${_esc(name)}</label>
           <input type="text" id="crew-msg-${index}" autocomplete="off" placeholder="Message ${Utils.escAttr(first)}…">
@@ -182,6 +202,11 @@ const CrewView = (() => {
 
   const SEND_ICON = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-6.5z"/><path d="M12 13.5 20 4"/></svg>';
   const STOP_ICON = '<svg class="icon icon-sm" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+  const _liveOf = (agentId) => (_session.get(agentId) || {}).live || null;
+  const _isOpen = (agentId) => _expanded.has(agentId) && _thread(agentId).length > 1;
+  // The card that shows this agent now: slots can move under a running turn.
+  const _memberOf = (agentId) => _crew.find(m => m.agent && m.agent.id === agentId) || null;
 
   function _nameOf(member) {
     return BlueprintUtils.crewIdentity(member.slot, member.agent) || member.agent.name || 'Agent';
@@ -231,7 +256,7 @@ const CrewView = (() => {
     const name = _nameOf(member);
     const thread = _thread(id);
     const live = (_session.get(id) || {}).live;
-    const open = _expanded.has(id) && thread.length > 1;
+    const open = _isOpen(id);
     const shown = open ? thread : thread.slice(-1);
     const exHTML = shown.map((x, i) => {
       const last = i === shown.length - 1;
@@ -244,29 +269,45 @@ const CrewView = (() => {
       ? `<button type="button" class="crew-more" data-crew-action="expand" data-slot="${member.index}" aria-expanded="${open}" aria-controls="crew-log-${member.index}">${open ? 'Show less' : 'Show all'}</button>`
       : '';
     return `
-      <div class="crew-log${open ? ' is-open' : ''}" id="crew-log-${member.index}" aria-live="polite">${body}</div>
+      <div class="crew-log${open ? ' is-open' : ''}" id="crew-log-${member.index}">${body}</div>
       ${live && live.approval ? _approvalHTML(member, live.approval) : ''}
       ${more ? `<div class="crew-chat-foot">${more}</div>` : ''}`;
   }
 
-  // Repaints one card's conversation and its send button; the typed message stays.
-  function _paintCard(member) {
-    if (!_el || !member.agent) return;
+  // Repaints one agent's card: its conversation, send button and status.
+  // The typed message stays, and focus on the send button follows it.
+  function _paint(agentId) {
+    const member = _memberOf(agentId);
+    if (!_el || !member) return;
     const card = _el.querySelector(`.crew-card[data-slot="${member.index}"]`);
     if (!card) return;
-    card.classList.toggle('is-open', _expanded.has(member.agent.id) && _thread(member.agent.id).length > 1);
-    const live = (_session.get(member.agent.id) || {}).live;
-    if (live) card.setAttribute('aria-busy', 'true'); else card.removeAttribute('aria-busy');
+    card.classList.toggle('is-open', _isOpen(agentId));
+    if (_liveOf(agentId)) card.setAttribute('aria-busy', 'true'); else card.removeAttribute('aria-busy');
     const chat = card.querySelector('.crew-chat');
     if (chat) chat.innerHTML = _chatHTML(member);
     const btn = card.querySelector('.crew-send');
-    if (btn) btn.outerHTML = _sendButtonHTML(member);
+    if (btn) {
+      const hadFocus = document.activeElement === btn;
+      btn.outerHTML = _sendButtonHTML(member);
+      if (hadFocus) {
+        const next = card.querySelector('.crew-send');
+        if (next && !next.disabled) next.focus(); else card.querySelector('.crew-compose input')?.focus();
+      }
+    }
     const node = card.querySelector('.crew-status');
     if (node) {
       const status = _statusOf(member.agent);
       node.dataset.s = status.s;
       node.lastElementChild.textContent = status.text;
     }
+  }
+
+  // One line for screen readers when a turn ends; the live node is never
+  // replaced, so the announcement is heard.
+  function _say(agentId, text) {
+    const member = _memberOf(agentId);
+    const node = member && _el && _el.querySelector('#crew-say-' + member.index);
+    if (node) node.textContent = text;
   }
 
   function _stepLabel(step) {
@@ -276,13 +317,15 @@ const CrewView = (() => {
 
   // One message from a card: the agent's own conversation, kept per card so
   // follow-ups carry the context. Cards run at the same time; each waits for
-  // its own turn to finish before it takes another message.
+  // its own turn to finish before it takes another message. Returns '' when
+  // sent, else why not ('busy' or 'unavailable').
   function _send(member, text) {
     const agent = member.agent;
-    if (typeof AgentExecutor === 'undefined' || !AgentExecutor.converse) return false;
-    let s = _session.get(agent.id);
-    if (!s) { s = { since: Date.now(), exchanges: [], convo: null, live: null }; _session.set(agent.id, s); }
-    if (s.live) return false;
+    const id = agent.id;
+    if (typeof AgentExecutor === 'undefined' || !AgentExecutor.converse) return 'unavailable';
+    let s = _session.get(id);
+    if (!s) { s = { cutoff: _logNewest, exchanges: [], convo: null, live: null }; _session.set(id, s); }
+    if (s.live) return 'busy';
     const gen = _gen;
     const ex = { ask: { text, ts: Date.now() }, reply: null };
     s.exchanges.push(ex);
@@ -297,13 +340,14 @@ const CrewView = (() => {
         onStep: (step) => {
           if (gen !== _gen || !s.live) return;
           s.live.step = _stepLabel(step);
-          _paintCard(member);
+          _paint(id);
         },
-        onApprovalNeeded: (action) => _askApproval(member, s, gen, action),
+        onApprovalNeeded: (action) => _askApproval(id, s, gen, action),
         shouldStop: () => gen !== _gen || !!(s.live && s.live.stop),
       });
     }
-    _paintCard(member);
+    _paint(id);
+    const name = _nameOf(member);
     s.convo.send(text).then((r) => {
       if (gen !== _gen) return;
       ex.reply = r && r.stopped
@@ -317,34 +361,38 @@ const CrewView = (() => {
       if (gen !== _gen) return;
       if (s.live && s.live.approval) s.live.approval.resolve(false);
       s.live = null;
-      _paintCard(member);
+      _paint(id);
+      const r = ex.reply || {};
+      _say(id, r.stopped ? `${name} stopped.` : r.error ? `${name} could not answer: ${r.text}` : `${name} replied.`);
     });
-    return true;
+    return '';
   }
 
-  function _askApproval(member, s, gen, action) {
+  function _askApproval(agentId, s, gen, action) {
     if (gen !== _gen || !s.live || s.live.stop) return Promise.resolve(false);
     return new Promise((resolve) => {
       s.live.approval = { action, resolve, token: ++_approvalSeq };
-      _paintCard(member);
+      _paint(agentId);
+      const m = _memberOf(agentId);
+      if (m) _say(agentId, `${_nameOf(m)} needs your approval.`);
     });
   }
 
-  function _answerApproval(member, token, ok) {
-    const s = _session.get(member.agent.id);
+  function _answerApproval(agentId, token, ok) {
+    const s = _session.get(agentId);
     const a = s && s.live && s.live.approval;
     if (!a || String(a.token) !== String(token)) return;
     s.live.approval = null;
     a.resolve(ok);
-    _paintCard(member);
+    _paint(agentId);
   }
 
-  function _stop(member) {
-    const s = _session.get(member.agent.id);
+  function _stop(agentId) {
+    const s = _session.get(agentId);
     if (!s || !s.live || s.live.stop) return;
     s.live.stop = true;
     if (s.live.approval) { const a = s.live.approval; s.live.approval = null; a.resolve(false); }
-    _paintCard(member);
+    _paint(agentId);
   }
 
   function _emptyHTML() {
@@ -417,16 +465,30 @@ const CrewView = (() => {
     _loadRuns();
   }
 
-  // Reads the ship's log again and repaints every card's conversation.
+  // Reads the ship's log again and repaints every card. A burst of calls
+  // (several cards finishing together) shares one read plus one more after
+  // it, and a read that comes back after the ship changed is dropped.
   async function _refreshChats() {
+    if (_logRead) { _logAgain = true; return _logRead; }
     const gen = _gen;
-    await _loadLogs();
-    if (gen !== _gen || !_el) return;
-    _crew.forEach(m => { if (m.agent) _paintCard(m); });
+    const shipId = _shipId;
+    _logRead = (async () => {
+      const got = await _readLogs(shipId);
+      if (gen !== _gen || String(shipId) !== String(_shipId) || !_el) return;
+      if (got) {
+        _logNewest = got.newest;
+        _crew.forEach(m => { if (m.agent) _logs.set(m.agent.id, _exchanges(got.entries, m.agent.id)); });
+      }
+      _crew.forEach(m => { if (m.agent) _paint(m.agent.id); });
+    })();
+    try { await _logRead; } finally { _logRead = null; }
+    if (_logAgain && gen === _gen) { _logAgain = false; return _refreshChats(); }
+    _logAgain = false;
   }
 
   function _resetChats() {
     _gen++;
+    _logNewest = -Infinity;
     for (const s of _session.values()) {
       if (s.live && s.live.approval) s.live.approval.resolve(false);
     }
@@ -498,8 +560,9 @@ const CrewView = (() => {
           if (typeof NICE !== 'undefined' && NICE.openModal) NICE.openModal('modal-auth');
           return;
         }
-        if (_send(member, text)) input.value = '';
-        else if (typeof Notify !== 'undefined') Notify.send({ title: 'Still answering', message: 'Wait for the reply on this card, or stop it, then send again.', type: 'system' });
+        const why = _send(member, text);
+        if (!why) input.value = '';
+        else if (why === 'busy' && typeof Notify !== 'undefined') Notify.send({ title: 'Still answering', message: 'Wait for the reply on this card, or stop it, then send again.', type: 'system' });
       });
     });
     _el.addEventListener('click', _onClick);
@@ -515,15 +578,20 @@ const CrewView = (() => {
     }
     const member = btn.dataset.slot != null ? _crew[Number(btn.dataset.slot)] : null;
     if (member && member.agent) {
+      const id = member.agent.id;
       if (action === 'expand') {
-        const id = member.agent.id;
         if (_expanded.has(id)) _expanded.delete(id); else _expanded.add(id);
-        _paintCard(member);
+        _paint(id);
         _el.querySelector(`.crew-card[data-slot="${member.index}"] .crew-more`)?.focus();
         return;
       }
-      if (action === 'stop') { _stop(member); return; }
-      if (action === 'allow' || action === 'deny') { _answerApproval(member, btn.dataset.token, action === 'allow'); return; }
+      if (action === 'stop') {
+        _stop(id);
+        // The Stop button turns disabled; keep the keyboard on the card.
+        _el.querySelector(`.crew-card[data-slot="${member.index}"] .crew-compose input`)?.focus();
+        return;
+      }
+      if (action === 'allow' || action === 'deny') { _answerApproval(id, btn.dataset.token, action === 'allow'); return; }
     }
     const run = _runs.find(r => String(r.id) === btn.dataset.run);
     if (!run || typeof MissionRunner === 'undefined') return;
