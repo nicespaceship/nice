@@ -247,7 +247,7 @@ const CommunityPublish = (() => {
 
     if (status === 'rejected') {
       const reasonAttr = state.review_notes
-        ? ` data-reason="${_esc(state.review_notes).replace(/"/g, '&quot;')}"`
+        ? ` data-reason="${Utils.escAttr(state.review_notes)}"`
         : '';
       return `
         <button class="btn btn-sm btn-danger" data-action="community-rejected"${reasonAttr} title="See rejection reason and resubmit">

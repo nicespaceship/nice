@@ -289,7 +289,7 @@ const ModerationView = (() => {
     }
 
     return `
-      <article class="moderation-recent-row" data-listing-id="${_esc(row.listing_id)}">
+      <article class="moderation-recent-row" data-listing-id="${Utils.escAttr(row.listing_id)}">
         <header class="moderation-recent-head">
           <div>
             <span class="moderation-badge ${statusBadge}">${_esc(row.status)}</span>
@@ -424,14 +424,14 @@ const ModerationView = (() => {
       : '';
 
     return `
-      <article class="moderation-row" data-listing-id="${_esc(row.listing_id)}">
+      <article class="moderation-row" data-listing-id="${Utils.escAttr(row.listing_id)}">
         <header class="moderation-row-hdr">
           <div>
             <h3 class="moderation-row-title">${_esc(row.title || row.blueprint_name || 'Untitled')}</h3>
             <div class="moderation-row-meta">
               <span class="moderation-type">${_esc(row.blueprint_type || 'agent')}</span>
               <span class="moderation-category">${_esc(row.blueprint_category || '')}</span>
-              <span class="moderation-age" title="${_esc(created.toISOString())}">${ageLabel}</span>
+              <span class="moderation-age" title="${Utils.escAttr(created.toISOString())}">${ageLabel}</span>
               <span class="moderation-hash" title="Content SHA-256 — remains stable across admin review" style="font-family:var(--font-m)">${_esc((row.content_hash || '').slice(0, 10))}</span>
             </div>
             <div class="moderation-row-author">by <span class="mono">${_esc(row.author_email || row.author_id || 'unknown')}</span></div>

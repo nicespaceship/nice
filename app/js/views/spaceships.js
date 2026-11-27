@@ -31,7 +31,7 @@ const SpaceshipDetailView = (() => {
       { value: 'draft', label: 'Draft Mode', desc: 'Creates drafts but never auto-publishes' },
     ].map(opt =>
       `<label class="behavior-radio ${b.approvalMode === opt.value ? 'active' : ''}">
-        <input type="radio" name="sb-approval-${Utils.esc(shipId)}" value="${opt.value}" ${b.approvalMode === opt.value ? 'checked' : ''}>
+        <input type="radio" name="sb-approval-${Utils.escAttr(shipId)}" value="${opt.value}" ${b.approvalMode === opt.value ? 'checked' : ''}>
         <span class="behavior-radio-label">${opt.label}</span>
         <span class="behavior-radio-desc">${opt.desc}</span>
       </label>`
@@ -42,7 +42,7 @@ const SpaceshipDetailView = (() => {
     const budgetPct = b.dailyBudget ? Math.min(100, Math.round((b.budgetUsedToday / b.dailyBudget) * 100)) : 0;
 
     return `
-      <div class="detail-section ship-behaviors-panel" data-ship-id="${Utils.esc(shipId)}">
+      <div class="detail-section ship-behaviors-panel" data-ship-id="${Utils.escAttr(shipId)}">
         <h3 class="detail-section-title">⚙️ ${_esc(_ship())} behaviors</h3>
 
         <div class="behavior-group">
@@ -73,10 +73,10 @@ const SpaceshipDetailView = (() => {
             <span class="behavior-hint">0 = unlimited</span>
           </div>
           <div class="behavior-budget-row">
-            <input type="number" class="behavior-input" id="sb-budget-${Utils.esc(shipId)}"
+            <input type="number" class="behavior-input" id="sb-budget-${Utils.escAttr(shipId)}"
               placeholder="0" min="0" step="1000" value="${b.dailyBudget || ''}">
             <span class="behavior-budget-unit">tokens / day</span>
-            <button class="behavior-save-btn" data-key="dailyBudget" data-input="sb-budget-${Utils.esc(shipId)}">Save</button>
+            <button class="behavior-save-btn" data-key="dailyBudget" data-input="sb-budget-${Utils.escAttr(shipId)}">Save</button>
           </div>
           ${b.dailyBudget ? `
           <div class="behavior-budget-bar">
@@ -88,9 +88,9 @@ const SpaceshipDetailView = (() => {
         <div class="behavior-group">
           <div class="behavior-group-label">Max Concurrent Missions</div>
           <div class="behavior-budget-row">
-            <input type="number" class="behavior-input" id="sb-concurrent-${Utils.esc(shipId)}"
+            <input type="number" class="behavior-input" id="sb-concurrent-${Utils.escAttr(shipId)}"
               placeholder="3" min="1" max="10" value="${b.maxConcurrent || 3}">
-            <button class="behavior-save-btn" data-key="maxConcurrent" data-input="sb-concurrent-${Utils.esc(shipId)}">Save</button>
+            <button class="behavior-save-btn" data-key="maxConcurrent" data-input="sb-concurrent-${Utils.escAttr(shipId)}">Save</button>
           </div>
         </div>
       </div>
@@ -185,7 +185,7 @@ const SpaceshipDetailView = (() => {
   function _getShipIcon(id) {
     const profile = _getShipProfile(id);
     if (profile.icon) {
-      return `<img src="${profile.icon}" class="ship-profile-img" alt="${_esc(_ship())} icon" />`;
+      return `<img src="${profile.icon}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
     }
     return `<svg class="detail-header-icon-lg" fill="currentColor" stroke="none"><use href="#icon-spaceship"/></svg>`;
   }
@@ -215,7 +215,7 @@ const SpaceshipDetailView = (() => {
             img.src = dataUrl;
           } else {
             const svg = iconWrap.querySelector('.detail-header-icon-lg');
-            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="${_esc(_ship())} icon" />`;
+            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
           }
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: `${_ship()} icon saved.`, type: 'success' });
         };
@@ -465,7 +465,7 @@ const SpaceshipDetailView = (() => {
             </div>
             <div class="detail-header-info">
               <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)}</h2>
-              <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add ${Terminology.article('spaceship')} ${_esc(_ship({ lowercase: true }))} description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
+              <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add ${Terminology.article('spaceship')} ${Utils.escAttr(_ship({ lowercase: true }))} description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
                 <span class="detail-status">${_esc(_statusLabel(fleet.status))}</span>
@@ -715,7 +715,7 @@ const SpaceshipDetailView = (() => {
           <div class="ship-wf-footer">
             <div class="ship-wf-footer-l">
               <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
-              ${sched ? `<span class="ship-wf-sched-chip${schedPaused ? ' paused' : ''}" title="${_esc(schedLabel)}">
+              ${sched ? `<span class="ship-wf-sched-chip${schedPaused ? ' paused' : ''}" title="${Utils.escAttr(schedLabel)}">
                 <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-clock"/></svg>
                 ${schedPaused ? 'Paused' : _esc(schedLabel)}
               </span>` : ''}
@@ -1042,7 +1042,7 @@ const SpaceshipDetailView = (() => {
     const rowHTML = (step, i) => `
       <div class="wfe-step" data-i="${i}">
         <span class="wfe-step-num">${i + 1}</span>
-        <input type="text" class="wfe-step-text" value="${_esc(step.step)}" placeholder="Describe what happens in this step…" />
+        <input type="text" class="wfe-step-text" value="${Utils.escAttr(step.step)}" placeholder="Describe what happens in this step…" />
         ${CSelect.html('wfe-slot-' + i, 'Assign ' + _crewWord() + ' slot', slotOptions, String(step.agent_slot || 0))}
         <div class="wfe-step-ctrls">
           <button type="button" class="wfe-ctrl wfe-gate${step.approval ? ' is-on' : ''}" aria-pressed="${!!step.approval}" aria-label="Require approval before this step" title="Require approval before this step">
@@ -1265,11 +1265,11 @@ const SpaceshipDetailView = (() => {
           </div>
           <div class="wfs-row" id="wfs-row-cron">
             <label for="wfs-cron">Cron (minute hour dom month dow)</label>
-            <input type="text" id="wfs-cron" placeholder="0 9 * * 1-5" value="${_esc(spec.cron || '')}" />
+            <input type="text" id="wfs-cron" placeholder="0 9 * * 1-5" value="${Utils.escAttr(spec.cron || '')}" />
           </div>
           <div class="wfs-row">
             <label for="wfs-tz">Timezone</label>
-            <input type="text" id="wfs-tz" placeholder="America/Los_Angeles" value="${_esc(tz0)}" />
+            <input type="text" id="wfs-tz" placeholder="America/Los_Angeles" value="${Utils.escAttr(tz0)}" />
           </div>
           <div class="wfs-preview" id="wfs-preview"></div>
           <div class="auth-error" id="wfs-error"></div>

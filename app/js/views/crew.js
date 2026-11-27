@@ -114,7 +114,7 @@ const CrewView = (() => {
     const status = _statusOf(agent);
     const first = String(name).split(/\s+/)[0];
     return `
-      <article class="crew-card" style="--crew-c:${_esc(_modelColor(modelId))}" data-slot="${index}" aria-label="${_esc(name)}">
+      <article class="crew-card" style="--crew-c:${Utils.escAttr(_modelColor(modelId))}" data-slot="${index}" aria-label="${Utils.escAttr(name)}">
         <header class="crew-card-top">
           <span class="crew-avatar" aria-hidden="true">${_esc(Utils.initials(name))}</span>
           <span class="crew-card-names">
@@ -132,8 +132,8 @@ const CrewView = (() => {
         <div class="crew-log" id="crew-log-${index}" aria-live="polite"></div>
         <form class="crew-compose" data-slot="${index}">
           <label class="sr-only" for="crew-msg-${index}">Message ${_esc(name)}</label>
-          <input type="text" id="crew-msg-${index}" autocomplete="off" placeholder="Message ${_esc(first)}…">
-          <button type="submit" class="crew-send" aria-label="Send to ${_esc(name)}">
+          <input type="text" id="crew-msg-${index}" autocomplete="off" placeholder="Message ${Utils.escAttr(first)}…">
+          <button type="submit" class="crew-send" aria-label="Send to ${Utils.escAttr(name)}">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-6.5z"/><path d="M12 13.5 20 4"/></svg>
           </button>
         </form>
@@ -192,7 +192,7 @@ const CrewView = (() => {
         </header>
         <div id="crew-review"></div>
         <div class="crew-layout">
-          <section class="crew-cards" aria-label="${_esc(_crewWord(true))}">
+          <section class="crew-cards" aria-label="${Utils.escAttr(_crewWord(true))}">
             ${_crew.map(_cardHTML).join('')}
           </section>
           <aside class="widget-card crew-runs" aria-labelledby="crew-runs-title">
@@ -235,7 +235,7 @@ const CrewView = (() => {
       <li>
         <a class="crew-run" href="#/missions/${encodeURIComponent(r.id)}">
           <span class="crew-run-title">${_esc(r.title || 'Untitled run')}</span>
-          <span class="crew-run-meta"><span class="crew-run-state" data-s="${_esc(r.status || '')}">${_esc(_RUN_LABELS[r.status] || r.status || '')}</span><time>${_esc(Utils.timeAgo ? Utils.timeAgo(r.created_at) : '')}</time></span>
+          <span class="crew-run-meta"><span class="crew-run-state" data-s="${Utils.escAttr(r.status || '')}">${_esc(_RUN_LABELS[r.status] || r.status || '')}</span><time>${_esc(Utils.timeAgo ? Utils.timeAgo(r.created_at) : '')}</time></span>
         </a>
       </li>`).join('')}</ol>`;
   }
@@ -249,8 +249,8 @@ const CrewView = (() => {
         <span class="crew-review-dot" aria-hidden="true"></span>
         <p><b>${_esc(r.title || 'A run')}</b> is waiting for your review.</p>
         <div class="crew-review-acts">
-          <button type="button" class="btn btn-sm btn-primary" data-crew-action="approve" data-run="${_esc(r.id)}">Approve</button>
-          <button type="button" class="btn btn-sm" data-crew-action="reject" data-run="${_esc(r.id)}">Reject</button>
+          <button type="button" class="btn btn-sm btn-primary" data-crew-action="approve" data-run="${Utils.escAttr(r.id)}">Approve</button>
+          <button type="button" class="btn btn-sm" data-crew-action="reject" data-run="${Utils.escAttr(r.id)}">Reject</button>
           <a class="btn btn-sm" href="#/missions/${encodeURIComponent(r.id)}">Review</a>
         </div>
       </div>`).join('');

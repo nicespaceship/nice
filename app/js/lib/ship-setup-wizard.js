@@ -183,7 +183,7 @@ const ShipSetupWizard = (() => {
     body.innerHTML = `
       <h2 class="wizard-title">Name your ${_esc(Terminology.label('spaceship', { lowercase: true }))}</h2>
       <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name, such as your business name.</p>
-      <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${_esc(bpName)}" maxlength="60" value="${_esc(_data.shipName)}" autofocus>
+      <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${Utils.escAttr(bpName)}" maxlength="60" value="${Utils.escAttr(_data.shipName)}" autofocus>
       <div class="ship-wizard-bp-preview">
         <div>
           <div class="ship-wizard-bp-class">${_esc(bpName)}</div>
@@ -304,7 +304,7 @@ const ShipSetupWizard = (() => {
         <div class="ship-wizard-slot-select">
           <select data-slot="${i}">
             <option value="">— Select Agent —</option>
-            ${hasNewAgent ? `<option value="${_esc(currentVal)}" selected>${_esc(newAgentName)} (Blueprint)</option>` : ''}
+            ${hasNewAgent ? `<option value="${Utils.escAttr(currentVal)}" selected>${_esc(newAgentName)} (Blueprint)</option>` : ''}
             ${compatible.map(a => {
               const r = _agentRarity(a);
               const sel = (!hasNewAgent && currentVal === a.id) ? 'selected' : '';

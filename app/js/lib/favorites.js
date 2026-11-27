@@ -92,7 +92,7 @@ const Favorites = (() => {
           <a href="#${f.path}" class="side-link fav-link${active}" data-fav-path="${f.path}">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>
             <span>${_esc(f.label)}</span>
-            <button class="fav-remove" data-remove="${f.path}" title="Remove favorite" aria-label="Remove ${_esc(f.label)} from favorites">&times;</button>
+            <button class="fav-remove" data-remove="${f.path}" title="Remove favorite" aria-label="Remove ${Utils.escAttr(f.label)} from favorites">&times;</button>
           </a>`;
       }).join('')}
     `;

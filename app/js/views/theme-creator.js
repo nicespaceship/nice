@@ -161,9 +161,9 @@ const ThemeCreatorView = (() => {
     });
     let html = `<select class="tc-select" id="${id}">`;
     for (const [group, fonts] of Object.entries(groups)) {
-      html += `<optgroup label="${_esc(group)}">`;
+      html += `<optgroup label="${Utils.escAttr(group)}">`;
       fonts.forEach(f => {
-        html += `<option value="${_esc(f.value)}" ${selectedValue === f.value ? 'selected' : ''}>${_esc(f.label)}</option>`;
+        html += `<option value="${Utils.escAttr(f.value)}" ${selectedValue === f.value ? 'selected' : ''}>${_esc(f.label)}</option>`;
       });
       html += '</optgroup>';
     }

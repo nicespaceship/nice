@@ -16,13 +16,15 @@ const __dirname_local = dirname(fileURLToPath(import.meta.url));
 // Minimal globals — missions.js references Utils, Terminology, State, SB,
 // Router, Notify, etc. Only Utils.esc + Terminology.label are reached on
 // the helper code paths we test.
+const _escStub = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 globalThis.Utils = {
-  esc: (s) => String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;'),
+  esc: _escStub,
+  escAttr: _escStub,
   timeAgo: () => 'just now',
   KEYS: {},
 };

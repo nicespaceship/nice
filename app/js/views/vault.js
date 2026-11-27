@@ -163,7 +163,7 @@ const VaultView = (() => {
       const name = m?.name || id;
       const w = TokenConfig.weightFor(id);
       const wLabel = w === 0 ? 'free' : `${w}t`;
-      return `<span class="vault-stack-chip" title="${_esc(wLabel)}">${_esc(name)}</span>`;
+      return `<span class="vault-stack-chip" title="${Utils.escAttr(wLabel)}">${_esc(name)}</span>`;
     }).join('');
 
     let cta;

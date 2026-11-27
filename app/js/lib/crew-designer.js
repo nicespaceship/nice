@@ -124,7 +124,7 @@ const CrewDesigner = (() => {
         <p class="cd-subheading">Describe your goal in plain English. NICE will design the perfect ${_crewWord()}.</p>
         <textarea class="cd-textarea" id="cd-prompt" placeholder="e.g., Monitor my Gmail for customer complaints, draft responses, and track patterns in a weekly report..." rows="4">${_esc(_data.userPrompt)}</textarea>
         <div class="cd-suggestions" id="cd-suggestions">
-          ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${_esc(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
+          ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${Utils.escAttr(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
         </div>
         <div class="cd-actions">
           <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>${Terminology.pick('Design my team', 'Design My Crew')} →</button>
@@ -389,8 +389,8 @@ Rules:
         <!-- Ship Header -->
         <div class="cd-ship-header">
           <div class="cd-ship-name-row">
-            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${_esc(_data.shipName)}" placeholder="${_esc(Terminology.label('spaceship'))} name">
-            <span class="cd-flow-badge" title="${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')} flow">
+            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${Utils.escAttr(_data.shipName)}" placeholder="${Utils.escAttr(Terminology.label('spaceship'))} name">
+            <span class="cd-flow-badge" title="${Utils.escAttr(FLOW_LABELS[_data.flowPattern] || 'Sequential')} flow">
               ${FLOW_ICONS[_data.flowPattern] || '→'} ${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')}
             </span>
           </div>
@@ -424,7 +424,7 @@ Rules:
 
         <!-- Test Mission -->
         <div class="cd-section-label">Test Mission</div>
-        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${_esc(_data.testMission)}" placeholder="First mission to test your ${_crewWord()}...">
+        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${Utils.escAttr(_data.testMission)}" placeholder="First mission to test your ${_crewWord()}...">
 
         <!-- Actions -->
         <div class="cd-actions cd-actions-split">
@@ -511,7 +511,7 @@ Rules:
         <!-- Expanded edit form (hidden by default) -->
         <div class="cd-agent-edit">
           <label>Name</label>
-          <input type="text" class="cd-edit-name" data-idx="${idx}" value="${_esc(agent.name)}">
+          <input type="text" class="cd-edit-name" data-idx="${idx}" value="${Utils.escAttr(agent.name)}">
           <label>Role</label>
           <select class="cd-edit-role" data-idx="${idx}">
             ${ROLES.map(r => `<option value="${r}" ${agent.role === r ? 'selected' : ''}>${r}</option>`).join('')}

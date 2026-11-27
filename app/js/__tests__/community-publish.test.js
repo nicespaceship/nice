@@ -63,7 +63,7 @@ function installDomStub() {
 
 installDomStub();
 
-globalThis.Utils = { esc: (s) => String(s ?? '') };
+globalThis.Utils = { esc: (s) => String(s ?? ''), escAttr: (s) => String(s ?? '').replace(/"/g, '&quot;') };
 globalThis.Notify = { _sent: [], send(args) { this._sent.push(args); } };
 
 // Fresh Blueprints mock per test

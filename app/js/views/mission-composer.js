@@ -99,7 +99,7 @@ const MissionComposerView = (() => {
       const steps = (_plan.plan?.nodes || []).map((n, i) => {
         const label = n.label || n.config?.prompt || n.prompt || n.type;
         const badge = n.type && n.type !== 'agent'
-          ? `<span class="mc-plan-step-badge" data-node-type="${_esc(n.type)}">${_esc(n.type.replace(/_/g, ' '))}</span>`
+          ? `<span class="mc-plan-step-badge" data-node-type="${Utils.escAttr(n.type)}">${_esc(n.type.replace(/_/g, ' '))}</span>`
           : '';
         return `<li class="mc-plan-step"><span class="mc-plan-step-num">${i + 1}</span><span class="mc-plan-step-label">${_esc(label)}</span>${badge}</li>`;
       }).join('');

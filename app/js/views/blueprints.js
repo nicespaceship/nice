@@ -2228,7 +2228,7 @@ const BlueprintsView = (() => {
     const alreadyCloned = isCommunity && Blueprints.hasDownloadedCommunity(bp.id);
     if (type === 'agent') {
       if (Blueprints.isAgentActivated(bp.id)) {
-        btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
+        btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${Utils.escAttr(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
       } else if (isCommunity) {
         // Community install clones the blueprint into the downloader's
         // own user_agents row so they can edit and re-publish. Distinct
@@ -2236,14 +2236,14 @@ const BlueprintsView = (() => {
         if (alreadyCloned) {
           btns.push(`<button class="btn btn-sm bp-drawer-community-installed" disabled>Installed</button>`);
         } else {
-          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="agent" data-listing="${_esc(listingId || '')}">Install</button>`);
+          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="agent" data-listing="${Utils.escAttr(listingId || '')}">Install</button>`);
         }
       }
       btns.push(`<button class="btn btn-sm bp-drawer-nav" data-route="#/agents/${encodeURIComponent(bp.id)}">View Agent &rarr;</button>`);
     } else if (type === 'spaceship') {
       const isAct = Blueprints.isShipActivated(bp.id);
       if (isAct) {
-        btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
+        btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${Utils.escAttr(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
         btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">Remove</button>`);
       } else if (isCommunity) {
         // Community ships also install-as-clone — the downloader gets
@@ -2252,7 +2252,7 @@ const BlueprintsView = (() => {
         if (alreadyCloned) {
           btns.push(`<button class="btn btn-sm bp-drawer-community-installed" disabled>Installed</button>`);
         } else {
-          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${_esc(listingId || '')}">Install</button>`);
+          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${Utils.escAttr(listingId || '')}">Install</button>`);
         }
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Set up ${_esc(_ship({ lowercase: true }))}</button>`);
@@ -2683,7 +2683,7 @@ const BlueprintsView = (() => {
     }
 
     const thumbs = _hangarItems.map(h =>
-      `<div class="bp-hangar-item" data-id="${h.id}" title="${_esc(h.name)}">
+      `<div class="bp-hangar-item" data-id="${h.id}" title="${Utils.escAttr(h.name)}">
         <span class="bp-hangar-item-name">${_esc(h.name.slice(0, 8))}</span>
         <button class="bp-hangar-item-x" data-id="${h.id}">&times;</button>
       </div>`
@@ -2758,7 +2758,7 @@ const BlueprintsView = (() => {
 
     const cards = related.map(r => {
       const rType = SEED.find(b => b.id === r.id) ? 'agent' : 'spaceship';
-      return `<div class="bp-drawer-related-card" data-id="${r.id}" title="${_esc(r.name)}">
+      return `<div class="bp-drawer-related-card" data-id="${r.id}" title="${Utils.escAttr(r.name)}">
         <div class="bp-related-mini-name">${_esc(r.name)}</div>
         <div class="bp-related-mini-cat">${_esc(r.category || '')}</div>
       </div>`;

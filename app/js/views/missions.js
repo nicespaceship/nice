@@ -845,13 +845,13 @@ const MissionDetailView = (() => {
               <div class="mission-result-content mission-md" id="mission-result-body">
                 ${_renderMarkdown(mission.edited_content || mission.result)}
               </div>
-              <div class="outbox-card-actions" style="padding:12px 0 0; border-top:1px solid var(--border,#333); margin-top:12px;" data-id="${_esc(mission.id)}">
+              <div class="outbox-card-actions" style="padding:12px 0 0; border-top:1px solid var(--border,#333); margin-top:12px;" data-id="${Utils.escAttr(mission.id)}">
                 ${mission.approval_status === 'approved' ? '<span class="outbox-status-badge approved" style="margin-right:8px">✓ Approved</span>' : ''}
                 ${mission.approval_status === 'rejected' ? '<span class="outbox-status-badge rejected" style="margin-right:8px">✕ Rejected</span>' : ''}
-                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-approve-btn" data-action="approve" data-mid="${_esc(mission.id)}">✓ Approve</button>` : ''}
-                <button class="btn outbox-edit-btn" data-action="edit" data-mid="${_esc(mission.id)}">✎ Edit</button>
-                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-reject-btn" data-action="reject" data-mid="${_esc(mission.id)}">✕ Reject</button>` : ''}
-                <button class="btn outbox-copy-btn" data-action="copy" data-mid="${_esc(mission.id)}">\u{1F4CB} Copy</button>
+                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-approve-btn" data-action="approve" data-mid="${Utils.escAttr(mission.id)}">✓ Approve</button>` : ''}
+                <button class="btn outbox-edit-btn" data-action="edit" data-mid="${Utils.escAttr(mission.id)}">✎ Edit</button>
+                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-reject-btn" data-action="reject" data-mid="${Utils.escAttr(mission.id)}">✕ Reject</button>` : ''}
+                <button class="btn outbox-copy-btn" data-action="copy" data-mid="${Utils.escAttr(mission.id)}">\u{1F4CB} Copy</button>
                 ${_isInboxMission(mission, agent) ? `<a class="btn" href="${_gmailDraftsUrl()}" target="_blank" rel="noopener noreferrer" style="margin-left:auto">\u2709\uFE0F Open Gmail Drafts</a>` : ''}
               </div>
             </div>
@@ -1179,7 +1179,7 @@ const MissionDetailView = (() => {
   function _nodeTypeBadge(type) {
     if (!type || type === 'agent') return '';
     const pretty = String(type).replace(/_/g, ' ');
-    return `<span class="dag-node-type-badge" data-node-type="${_esc(type)}">${_esc(pretty)}</span>`;
+    return `<span class="dag-node-type-badge" data-node-type="${Utils.escAttr(type)}">${_esc(pretty)}</span>`;
   }
 
   function _renderDagPanel(mission, missionId) {
@@ -1197,7 +1197,7 @@ const MissionDetailView = (() => {
     return `
       <div class="detail-section">
         <h3 class="detail-section-title">Workflow</h3>
-        <div class="mission-dag-list" data-mission-id="${_esc(missionId)}">
+        <div class="mission-dag-list" data-mission-id="${Utils.escAttr(missionId)}">
           ${cards}
         </div>
       </div>
@@ -1222,13 +1222,13 @@ const MissionDetailView = (() => {
 
     const gateActions = gateIsLive
       ? `<div class="dag-gate-actions">
-           <button class="btn btn-sm btn-primary dag-gate-approve" data-id="${_esc(missionId)}" style="background:var(--color-success);border-color:var(--color-success)">✓ ${_esc(node.config?.approveLabel || 'Approve')}</button>
-           <button class="btn btn-sm dag-gate-reject" data-id="${_esc(missionId)}" style="color:var(--mono, #f87171)">✕ ${_esc(node.config?.rejectLabel || 'Reject')}</button>
+           <button class="btn btn-sm btn-primary dag-gate-approve" data-id="${Utils.escAttr(missionId)}" style="background:var(--color-success);border-color:var(--color-success)">✓ ${_esc(node.config?.approveLabel || 'Approve')}</button>
+           <button class="btn btn-sm dag-gate-reject" data-id="${Utils.escAttr(missionId)}" style="color:var(--mono, #f87171)">✕ ${_esc(node.config?.rejectLabel || 'Reject')}</button>
          </div>`
       : '';
 
     return `
-      <div class="dag-node" data-node-id="${_esc(node.id)}" data-node-status="${status}" data-node-type="${_esc(node.type || 'agent')}">
+      <div class="dag-node" data-node-id="${Utils.escAttr(node.id)}" data-node-status="${status}" data-node-type="${Utils.escAttr(node.type || 'agent')}">
         <div class="dag-node-head">
           <span class="dag-node-index">${index + 1}</span>
           <div class="dag-node-heading">
