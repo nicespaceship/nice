@@ -210,14 +210,15 @@ const SpaceshipDetailView = (() => {
         }
         const reader = new FileReader();
         reader.onload = () => {
-          const dataUrl = reader.result;
+          const dataUrl = Utils.safeUrl(reader.result, true);
+          if (!dataUrl) return;
           _saveShipProfile(shipId, { icon: dataUrl });
           const img = iconWrap.querySelector('.ship-profile-img');
           if (img) {
             img.src = dataUrl;
           } else {
             const svg = iconWrap.querySelector('.detail-header-icon-lg');
-            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
+            if (svg) svg.outerHTML = `<img src="${Utils.escAttr(dataUrl)}" class="ship-profile-img" alt="${Utils.escAttr(_ship())} icon" />`;
           }
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: `${_ship()} icon saved.`, type: 'success' });
         };
