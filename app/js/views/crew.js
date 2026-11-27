@@ -348,7 +348,7 @@ const CrewView = (() => {
     const key = String(slot || '').toLowerCase();
     const exact = (c) => String((c.slot && c.slot.role) || '').toLowerCase() === key
       || _nameOf(c).toLowerCase() === key || String(c.agent.name || '').toLowerCase() === key;
-    const partial = (c) => key && (_nameOf(c).toLowerCase().includes(key) || String(c.agent.name || '').toLowerCase().includes(key));
+    const partial = (c) => key.length >= 3 && (_nameOf(c).toLowerCase().includes(key) || String(c.agent.name || '').toLowerCase().includes(key));
     const m = _crew.find(c => c.agent && exact(c)) || _crew.find(c => c.agent && partial(c));
     if (m) return _nameOf(m);
     const raw = String(slot || '');

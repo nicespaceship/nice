@@ -830,10 +830,10 @@ const MissionRunner = (() => {
     'live/private data you do not have access to, and then say exactly what you ' +
     'would need. Do not refuse a task you can reasonably do in your role.';
 
-  /* Parse all [DISPATCH: slot] sub-prompt pairs from a captain response. */
   // A brief shown on a member's card (ship_log metadata is not capped like content).
   const _BRIEF_CAP = 2000;
 
+  /* Parse all [DISPATCH: slot] sub-prompt pairs from a captain response. */
   function _extractDispatches(text) {
     const results = [];
     // Each dispatch runs until the next [DISPATCH: or end-of-string.
