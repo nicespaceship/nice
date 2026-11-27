@@ -1,10 +1,10 @@
 /**
  * CrewView (#/crew): one card per crew member framed in its model's
  * provider color, live status from AgentActivity, the agent's latest
- * exchange from ShipLog, direct sends through PromptPanel.sendToAgent, and
+ * exchanges from ShipLog, each card's own conversation (AgentExecutor), and
  * the ship's recent runs with an approval bar for runs in review.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -43,7 +43,7 @@ globalThis.AgentActivity = {
 globalThis.ShipLog = { getEntries: async () => entries };
 const realtime = { subscribe: vi.fn(() => ({ id: 'chan' })), unsubscribe: vi.fn() };
 globalThis.SB = { db: () => ({ list: async () => runs }), realtime };
-globalThis.PromptPanel = { sendToAgent: vi.fn(() => true) };
+globalThis.PromptPanel = {};
 globalThis.MissionRunner = {
   approveRun: vi.fn(async () => ({ resumed: false, persisted: true })),
   rejectRun: vi.fn(async () => ({ persisted: true })),
@@ -133,13 +133,251 @@ describe('CrewView', () => {
     expect(localStorage.getItem(Utils.KEYS.mcShip)).toBe('ship-9');
   });
 
-  it('sends a card message straight to that agent', () => {
-    CrewView.render(el);
-    const form = el.querySelector('.crew-compose[data-slot="1"]');
-    form.querySelector('input').value = 'How many pre-orders came in?';
-    form.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(PromptPanel.sendToAgent).toHaveBeenCalledWith(CREW[1].agent, 'How many pre-orders came in?');
-    expect(form.querySelector('input').value).toBe('');
+  describe('a card as its own chat window', () => {
+    // A conversation per call to converse(), answering when the test says.
+    function fakeExecutor() {
+      const convos = [];
+      globalThis.AgentExecutor = {
+        converse: vi.fn((agent, opts) => {
+          const c = { agent, opts, sends: [] };
+          c.send = vi.fn((text) => new Promise((resolve, reject) => c.sends.push({ text, resolve, reject })));
+          convos.push(c);
+          return c;
+        }),
+      };
+      return convos;
+    }
+    const send = (slot, text) => {
+      const form = el.querySelector(`.crew-compose[data-slot="${slot}"]`);
+      form.querySelector('input').value = text;
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+      return form;
+    };
+    const card = (slot) => el.querySelector(`.crew-card[data-slot="${slot}"]`);
+
+    beforeEach(() => { State.set('user', { id: 'u1' }); });
+    afterEach(() => { delete globalThis.AgentExecutor; delete globalThis.NICE; });
+
+    it('sends to that agent and shows the reply in its own card', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      const form = send(1, 'How many pre-orders came in?');
+      expect(AgentExecutor.converse).toHaveBeenCalledWith(CREW[1].agent, expect.objectContaining({ spaceshipId: 'ship-1' }));
+      expect(convos[0].sends[0].text).toBe('How many pre-orders came in?');
+      expect(form.querySelector('input').value).toBe('');
+      expect(card(1).querySelector('.crew-log').textContent).toContain('Working…');
+      expect(card(1).getAttribute('aria-busy')).toBe('true');
+      expect(card(1).querySelector('.crew-status').textContent).toContain('Working…');
+      expect(card(1).querySelector('.crew-send').getAttribute('aria-label')).toBe('Stop Orders & Payments');
+      PromptPanel._md = (t) => '<p>' + t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</p>';
+      try {
+        convos[0].sends[0].resolve({ text: '**42** pre-orders', done: true });
+        await flush();
+      } finally {
+        delete PromptPanel._md;
+      }
+      const log = card(1).querySelector('.crew-log');
+      expect(log.textContent).toContain('How many pre-orders came in?');
+      expect(log.querySelector('.crew-reply strong').textContent).toBe('42');
+      expect(card(1).hasAttribute('aria-busy')).toBe(false);
+      expect(card(0).querySelector('.crew-log').textContent).not.toContain('pre-orders');
+    });
+
+    it('keeps one conversation per card, so a follow-up carries the context', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'First');
+      convos[0].sends[0].resolve({ text: 'One', done: true });
+      await flush();
+      send(1, 'Second');
+      expect(AgentExecutor.converse).toHaveBeenCalledTimes(1);
+      expect(convos[0].sends[1].text).toBe('Second');
+    });
+
+    it('lets two cards work at the same time', () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(0, 'Plan tomorrow');
+      send(1, 'Count orders');
+      expect(convos).toHaveLength(2);
+      expect(card(0).getAttribute('aria-busy')).toBe('true');
+      expect(card(1).getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('stops a card when asked, before its next step', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Long job');
+      card(1).querySelector('[data-crew-action="stop"]').click();
+      expect(convos[0].opts.shouldStop()).toBe(true);
+      expect(card(1).querySelector('.crew-log').textContent).toContain('Stopping…');
+      convos[0].sends[0].resolve({ text: '', stopped: true, done: false });
+      await flush();
+      expect(card(1).querySelector('.crew-reply').textContent).toContain('Stopped.');
+    });
+
+    it('asks on the card before a tool that needs approval', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Email the supplier');
+      const answer = convos[0].opts.onApprovalNeeded({ tool: 'gmail_send', input: { to: 'a@b.c' } });
+      const box = card(1).querySelector('.crew-approval');
+      expect(box.textContent).toContain('wants to use gmail_send');
+      expect(card(1).querySelector('.crew-status').textContent).toContain('Waiting for you');
+      box.querySelector('[data-crew-action="allow"]').click();
+      expect(await answer).toBe(true);
+      expect(card(1).querySelector('.crew-approval')).toBeNull();
+    });
+
+    it('shows a failed reply on its card', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Anything');
+      convos[0].sends[0].reject(new Error('The model is busy. Try again.'));
+      await flush();
+      const reply = card(1).querySelector('.crew-reply.is-error');
+      expect(reply.textContent).toContain('The model is busy. Try again.');
+    });
+
+    it('asks a signed-out user to sign in instead of sending', () => {
+      fakeExecutor();
+      State.set('user', null);
+      globalThis.NICE = { openModal: vi.fn() };
+      CrewView.render(el);
+      send(1, 'Hello');
+      expect(NICE.openModal).toHaveBeenCalledWith('modal-auth');
+      expect(AgentExecutor.converse).not.toHaveBeenCalled();
+    });
+
+    it('says on the card, for screen readers, when a reply lands', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Hi');
+      convos[0].sends[0].resolve({ text: 'Hello', done: true });
+      await flush();
+      expect(el.querySelector('#crew-say-1').textContent).toBe('Orders & Payments replied.');
+      expect(el.querySelector('#crew-say-1').getAttribute('aria-live')).toBe('polite');
+    });
+
+    it('refuses a second message while the card is answering', () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'First');
+      const form = send(1, 'Second');
+      expect(convos[0].sends).toHaveLength(1);
+      expect(form.querySelector('input').value).toBe('Second');
+      expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Still answering' }));
+    });
+
+    it('turns down a waiting approval when the card is stopped', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Email the supplier');
+      const answer = convos[0].opts.onApprovalNeeded({ tool: 'gmail_send', input: {} });
+      const token = card(1).querySelector('[data-crew-action="allow"]').dataset.token;
+      card(1).querySelector('[data-crew-action="stop"]').click();
+      expect(await answer).toBe(false);
+      expect(card(1).querySelector('.crew-approval')).toBeNull();
+      expect(document.activeElement).toBe(card(1).querySelector('.crew-compose input'));
+      // A click on the old box after the stop does nothing.
+      const late = document.createElement('button');
+      late.dataset.crewAction = 'allow'; late.dataset.slot = '1'; late.dataset.token = token;
+      card(1).appendChild(late);
+      late.click();
+      expect(convos[0].opts.shouldStop()).toBe(true);
+    });
+
+    it('drops a reply that lands after the project changed', async () => {
+      const convos = fakeExecutor();
+      CrewView.render(el);
+      send(1, 'Slow one');
+      shipId = 'ship-2';
+      CrewView.render(el);
+      convos[0].sends[0].resolve({ text: 'Late answer', done: true });
+      await flush();
+      expect(el.textContent).not.toContain('Late answer');
+      expect(convos[0].opts.shouldStop()).toBe(true);
+    });
+
+    it('drops a log read that comes back after the project changed', async () => {
+      let release;
+      const realGet = ShipLog.getEntries;
+      ShipLog.getEntries = vi.fn((id) => id === 'ship-1'
+        ? new Promise(r => { release = () => r([{ agent_id: 'a2', role: 'agent', content: 'From ship one', metadata: { event: 'final_answer' } }]); })
+        : Promise.resolve([{ agent_id: 'a2', role: 'agent', content: 'From ship two', metadata: { event: 'final_answer' } }]));
+      try {
+        CrewView.render(el);
+        shipId = 'ship-2';
+        CrewView.render(el);
+        await flush();
+        release();
+        await flush();
+        await flush();
+        expect(el.textContent).not.toContain('From ship one');
+        // The new project's own log is still read.
+        expect(ShipLog.getEntries).toHaveBeenCalledWith('ship-2', expect.any(Number));
+        expect(card(1).querySelector('.crew-log').textContent).toContain('From ship two');
+      } finally {
+        ShipLog.getEntries = realGet;
+      }
+    });
+
+    it('matches a sent exchange to its log row by the server clock, not the browser one', async () => {
+      const convos = fakeExecutor();
+      const t = (s) => new Date(Date.now() - s * 1000).toISOString();
+      // The server's clock runs 30 seconds behind the browser's.
+      entries = [
+        { agent_id: 'a2', role: 'user', content: 'Earlier', metadata: { event: 'turn_start' }, created_at: t(90) },
+        { agent_id: 'a2', role: 'agent', content: 'Earlier answer', metadata: { event: 'final_answer' }, created_at: t(89) },
+      ];
+      CrewView.render(el);
+      await flush();
+      send(1, 'Now');
+      convos[0].sends[0].resolve({ text: 'Now answer', done: true });
+      await flush();
+      entries.push(
+        { agent_id: 'a2', role: 'user', content: 'From a mission', metadata: { event: 'mission_start' }, created_at: t(40) },
+        { agent_id: 'a2', role: 'agent', content: 'Mission answer', metadata: { event: 'final_answer' }, created_at: t(39) },
+        { agent_id: 'a2', role: 'user', content: 'Now', metadata: { event: 'turn_start' }, created_at: t(31) },
+        { agent_id: 'a2', role: 'agent', content: 'Now answer', metadata: { event: 'final_answer' }, created_at: t(30) },
+      );
+      CrewView.render(el);
+      await flush();
+      card(1).querySelector('[data-crew-action="expand"]').click();
+      const text = card(1).querySelector('.crew-log').textContent;
+      expect(text.match(/Now answer/g)).toHaveLength(1);
+      expect(text).toContain('Mission answer');
+      expect(text.indexOf('Mission answer')).toBeLessThan(text.indexOf('Now answer'));
+    });
+
+    it('shows the whole conversation on Show all, without repeating what the log already has', async () => {
+      const convos = fakeExecutor();
+      entries = [
+        { agent_id: 'a2', role: 'user', content: 'Old question', metadata: { event: 'turn_start' } },
+        { agent_id: 'a2', role: 'agent', content: 'Old answer', metadata: { event: 'final_answer' } },
+      ];
+      CrewView.render(el);
+      await flush();
+      send(1, 'New question');
+      convos[0].sends[0].resolve({ text: 'New answer', done: true });
+      await flush();
+      // The log now holds the new exchange too, as AgentExecutor wrote it.
+      entries.push(
+        { agent_id: 'a2', role: 'user', content: 'New question', metadata: { event: 'turn_start' }, created_at: new Date().toISOString() },
+        { agent_id: 'a2', role: 'agent', content: 'New answer', metadata: { event: 'final_answer' }, created_at: new Date().toISOString() },
+      );
+      CrewView.render(el);
+      await flush();
+      expect(card(1).querySelector('.crew-log').textContent).not.toContain('Old answer');
+      const more = card(1).querySelector('[data-crew-action="expand"]');
+      expect(more.textContent).toBe('Show all');
+      more.click();
+      const log = card(1).querySelector('.crew-log');
+      expect(card(1).classList.contains('is-open')).toBe(true);
+      expect(log.textContent).toContain('Old answer');
+      expect(log.textContent.match(/New answer/g)).toHaveLength(1);
+      expect(card(1).querySelector('[data-crew-action="expand"]').getAttribute('aria-expanded')).toBe('true');
+    });
   });
 
   it("shows each agent's latest exchange, without tool chatter", async () => {

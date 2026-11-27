@@ -1890,15 +1890,57 @@ html:not([data-theme]) .app-main,
 .crew-status[data-s="error"] { color:var(--color-error); }
 .crew-status[data-s="error"] .crew-status-dot { background:var(--dot-stop, var(--color-error)); }
 @keyframes crew-pulse { 50% { opacity:.3; } }
+/* A card's conversation: the latest exchange, capped and cut off with a
+   fade; "Show all" opens the card across the row with the whole thread, so
+   the page stays the only scroller (as on Space). The bottom padding is
+   the fade's room. */
 .crew-log {
-  display:flex; flex-direction:column; gap:6px; margin:10px 12px 0; padding:8px 10px;
-  min-height:64px; border-radius:var(--radius); background:var(--surface2);
-  font-size:var(--text-xs); line-height:var(--lh-base); color:var(--text);
+  --crew-fade:16px;
+  display:flex; flex-direction:column; gap:10px; margin:10px 12px 0; padding:8px 10px var(--crew-fade);
+  min-height:64px; overflow:hidden; border-radius:var(--radius); background:var(--surface2);
+  font-size:var(--text-sm); line-height:var(--lh-base); color:var(--text); overflow-wrap:anywhere;
 }
-.crew-msg { margin:0; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-.crew-msg b { display:block; font-size:var(--text-2xs); font-weight:var(--fw-bold); color:var(--text-muted); }
-.crew-msg-you b { color:var(--accent); }
-.crew-log-empty { margin:auto 0; color:var(--text-muted); }
+.crew-log:not(.is-open) {
+  max-height:180px;
+  -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - var(--crew-fade)), transparent);
+          mask-image:linear-gradient(to bottom, #000 calc(100% - var(--crew-fade)), transparent);
+}
+.crew-log.is-open { --crew-fade:8px; }
+.crew-card.is-open { grid-column:1 / -1; }
+.crew-card.is-open .crew-ex { max-width:72ch; }
+.crew-ex + .crew-ex { padding-top:10px; border-top:1px solid var(--border); }
+.crew-ask,
+.crew-wait { margin:0 0 6px; font-size:var(--text-xs); color:var(--text-muted); }
+.crew-ask b,
+.crew-reply b { display:block; font-size:var(--text-2xs); font-weight:var(--fw-bold); color:var(--text-muted); }
+.crew-ask b { color:var(--accent); }
+.crew-card:not(.is-open) .crew-ask { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.crew-reply p { margin:0 0 6px; }
+.crew-reply p:last-child { margin-bottom:0; }
+.crew-reply ul,
+.crew-reply ol { margin:0 0 6px; padding-left:18px; }
+.crew-reply pre { margin:0 0 6px; overflow-x:auto; white-space:pre-wrap; }
+.crew-reply.is-note p { color:var(--text-muted); }
+.crew-reply.is-error p { color:var(--color-error); }
+.crew-reply.is-error b::after {
+  content:""; display:inline-block; width:7px; height:7px; margin-left:6px; vertical-align:middle;
+  border-radius:50%; background:var(--dot-stop, var(--color-error));
+}
+.crew-log-empty { margin:auto 0; font-size:var(--text-xs); color:var(--text-muted); }
+.crew-approval {
+  display:flex; flex-direction:column; gap:6px; margin:10px 12px 0; padding:10px;
+  border:1px solid var(--border-hi, var(--border)); border-radius:var(--radius); background:var(--bg);
+  font-size:var(--text-sm); color:var(--text);
+}
+.crew-approval p { margin:0; }
+.crew-approval code { font-family:var(--font-m); font-size:var(--text-xs); color:var(--text-muted); overflow-wrap:anywhere; }
+.crew-approval-acts { display:flex; flex-wrap:wrap; gap:8px; }
+.crew-chat-foot { display:flex; justify-content:flex-end; padding:6px 12px 0; }
+.crew-more {
+  padding:2px 4px; border:0; background:transparent; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-medium); color:var(--text-muted);
+}
+.crew-more:hover { color:var(--accent); }
 .crew-compose {
   display:flex; align-items:center; gap:4px; margin:10px 12px 12px; padding-left:10px;
   border:1px solid var(--border); border-radius:var(--radius); background:var(--bg);
@@ -1913,6 +1955,7 @@ html:not([data-theme]) .app-main,
   border:0; background:transparent; color:var(--text-muted); cursor:pointer; border-radius:var(--radius);
 }
 .crew-send:hover { color:var(--accent); }
+.crew-send.is-busy { color:var(--text); }
 .crew-card-open {
   align-items:center; justify-content:center; gap:4px; min-height:180px; padding:16px;
   border-style:dashed; border-color:var(--border); background:transparent; text-align:center; color:var(--text-muted);
@@ -1957,6 +2000,8 @@ html:not([data-theme]) .app-main,
     overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px;
   }
   .crew-cards > * { scroll-snap-align:start; }
+  /* In the sideways hand an opened card grows down in its own column. */
+  .crew-card.is-open { grid-column:auto; }
   .crew-compose input { font-size:16px; }
 }
 @media (prefers-reduced-motion:reduce) {
