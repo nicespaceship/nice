@@ -1260,11 +1260,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-ship-row { position:relative; }
 .side-ship-row .side-ship { padding-right:40px; }
 .side-ship-row .side-ship-dot { margin-left:auto; flex-shrink:0; }
-/* The pointer on the button leaves the link's own :hover, so keep the row
-   lit then and while the menu is open. An active row keeps its theme's
-   active look. */
-.side-ship-row:has(.side-ship-more:hover) .side-ship:not(.active),
-.side-ship-row.menu-open .side-ship:not(.active) { background:var(--tint, var(--nav-surface, var(--surface))); color:var(--nav-text, var(--text)); }
+/* NICE keeps the row lit while the pointer is on the button (which takes
+   :hover off the link) and while the menu is open, with its own hover look.
+   Other themes keep their own rows untouched. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) .side-ship:not(.active) { background:var(--tint); color:var(--accent); }
 .side-ship-more {
   position:absolute; top:50%; right:6px; transform:translateY(-50%);
   display:flex; align-items:center; justify-content:center;
@@ -1280,8 +1279,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 @media (hover:none) { .side-ship-more { opacity:1; } }
 /* 303: above the phone drawer (302), which the menu opens from. */
 .side-popover.side-ship-menu {
-  position:fixed; bottom:auto; right:auto; margin:0; min-width:200px;
-  box-shadow:0 4px 24px rgba(0,0,0,.4); z-index:303;
+  position:fixed; bottom:auto; right:auto; margin:0; min-width:200px; z-index:303;
 }
 .side-popover.side-ship-menu .side-divider { margin:6px 0; }
 .side-ship-mark {

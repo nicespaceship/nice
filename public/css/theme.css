@@ -2256,8 +2256,15 @@ html:not([data-theme]),
   transition:background .15s;
   position:relative;
 }
-[data-theme="lcars"] .side-link:nth-child(even) { background:#ffcc99; }
-[data-theme="lcars"] .side-link:nth-child(3n) { background:#ffaa90; }
+[data-theme="lcars"] .side-link:nth-child(even):not(:where(.side-ship-new)) { background:#ffcc99; }
+[data-theme="lcars"] .side-link:nth-child(3n):not(:where(.side-ship-new)) { background:#ffaa90; }
+/* Each project link sits alone in its row, so the alternation counts rows,
+   and the add link one place later, as when a heading led the list. :where
+   keeps these below :hover and .active. */
+[data-theme="lcars"] .side-link:where(.side-ship-row:nth-child(odd) > *),
+[data-theme="lcars"] .side-link:where(.side-ship-new):nth-child(odd) { background:#ffcc99; }
+[data-theme="lcars"] .side-link:where(.side-ship-row:nth-child(3n+2) > *),
+[data-theme="lcars"] .side-link:where(.side-ship-new):nth-child(3n+2) { background:#ffaa90; }
 [data-theme="lcars"] .side-link:hover {
   background:#ffeecc;
 }
@@ -2266,6 +2273,10 @@ html:not([data-theme]),
   color:#000;
 }
 [data-theme="lcars"] .side-link svg { display:none; }
+/* The pill stops 10px short of the row, so the menu button moves in with it. */
+[data-theme="lcars"] .side-ship-more { right:16px; color:#000; }
+[data-theme="lcars"] .side-ship-more:hover,
+[data-theme="lcars"] .side-ship-row.menu-open .side-ship-more { background:rgba(0,0,0,.12); color:#000; }
 [data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
 
 /* The project list is first under the header now: clear the elbow. */

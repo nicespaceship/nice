@@ -988,6 +988,7 @@ const NICE = (() => {
     const noun = Terminology.label('spaceship');
     const nounLower = Terminology.label('spaceship', { lowercase: true });
     const addLabel = ships.length ? `New ${nounLower}` : `Add ${Terminology.article('spaceship')} ${nounLower}`;
+    const refocus = _shipMenu && _shipMenu.contains(document.activeElement) ? _shipMenu.dataset.ship : null;
     _closeShipMenu();
     el.innerHTML = `
       ${ships.map(s => {
@@ -1007,6 +1008,7 @@ const NICE = (() => {
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
         <span>${esc(addLabel)}</span>
       </a>`;
+    if (refocus) el.querySelector(`.side-ship-more[data-ship="${CSS.escape(refocus)}"]`)?.focus();
     _highlightSidebarShip();
     _updateAlertIndicators();
   }
@@ -1050,7 +1052,11 @@ const NICE = (() => {
       if (e.key === 'Escape') { e.preventDefault(); const btn = _shipMenuBtn; _closeShipMenu(); btn?.focus(); }
       else if (e.key === 'ArrowDown') { e.preventDefault(); items[(at + 1) % items.length]?.focus(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); items[(at - 1 + items.length) % items.length]?.focus(); }
-      else if (e.key === 'Tab') _closeShipMenu();
+      else if (e.key === 'Home') { e.preventDefault(); items[0]?.focus(); }
+      else if (e.key === 'End') { e.preventDefault(); items[items.length - 1]?.focus(); }
+      // Back on the button first, so Tab carries on from the row, not from
+      // the end of the page where the menu lives.
+      else if (e.key === 'Tab') { const btn = _shipMenuBtn; _closeShipMenu(); btn?.focus(); }
     });
     return _shipMenu;
   }
@@ -1110,7 +1116,9 @@ const NICE = (() => {
       const noun = Terminology.label('spaceship');
       const name = ship.name || noun;
       BlueprintsView.confirmDeactivate(name, async () => {
-        const showing = Router.path() === '/crew' && localStorage.getItem(Utils.KEYS.mcShip) === id;
+        const path = Router.path();
+        const showing = (path === '/crew' && localStorage.getItem(Utils.KEYS.mcShip) === id)
+          || path === '/bridge/spaceships/' + encodeURIComponent(id);
         await Blueprints.deactivateShip(id);
         if (typeof Notify !== 'undefined') Notify.send({ title: `${noun} removed`, message: `${name} has been removed.`, type: 'info' });
         if (showing) Router.navigate('#/');
@@ -1134,6 +1142,8 @@ const NICE = (() => {
       _closeShipMenu();
     });
     window.addEventListener('resize', _closeShipMenu);
+    const sidebar = document.querySelector('.app-sidebar');
+    if (sidebar) new MutationObserver(_closeShipMenu).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('hashchange', _closeShipMenu);
     _renderSidebarShips();
     State.on('spaceships', _renderSidebarShips);
