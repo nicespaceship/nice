@@ -138,6 +138,92 @@ describe('CrewView', () => {
     expect(localStorage.getItem(Utils.KEYS.mcShip)).toBe('ship-9');
   });
 
+  describe('a team request the lead handed out', () => {
+    beforeEach(() => {
+      globalThis.MissionRunner._extractDispatches = (t) => [...t.matchAll(/\[DISPATCH:\s*([^\]]+?)\]\s*([^\[]*)/g)].map(m => ({ slot: m[1].trim().toLowerCase(), subPrompt: m[2].trim() }));
+      globalThis.MissionRunner._stripDispatches = (t) => t.replace(/\[DISPATCH:[^\]]*\][^\[]*/g, '').trim();
+      entries = [
+        { agent_id: 'a1', role: 'user', content: 'Plan Friday', metadata: { event: 'mission_start', lead_round: 'handoff' } },
+        { agent_id: 'a1', role: 'agent', content: 'On it. [DISPATCH: finance] Count Friday orders.', metadata: { event: 'final_answer', lead_round: 'handoff' } },
+        { agent_id: 'a2', role: 'user', content: 'Count Friday orders.\n\nGUIDANCE FOR CREW', metadata: { event: 'mission_start', asked_by: 'a1', asked_by_name: 'Baker Bot', brief: 'Count Friday orders.' } },
+        { agent_id: 'a2', role: 'agent', content: '42 orders.', metadata: { event: 'final_answer', asked_by: 'a1', asked_by_name: 'Baker Bot' } },
+        { agent_id: 'a1', role: 'user', content: 'Plan Friday\n\n---\nCrew reports received:\n42 orders.', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: 'Bake for 42 orders on Friday.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+      ];
+    });
+    afterEach(() => { delete globalThis.MissionRunner._extractDispatches; delete globalThis.MissionRunner._stripDispatches; });
+
+    it('shows the lead one exchange: the request, who it asked, and the summed-up answer', async () => {
+      CrewView.render(el);
+      await flush();
+      const lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelectorAll('.crew-ex')).toHaveLength(1);
+      expect(lead.querySelector('.crew-ask').textContent).toBe('YouPlan Friday');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments for their part.');
+      expect(lead.textContent).toContain('Bake for 42 orders on Friday.');
+      expect(lead.textContent).not.toContain('Crew reports received');
+      expect(el.querySelector('.crew-card[data-slot="0"] [data-crew-action="expand"]')).toBeNull();
+    });
+
+    it('shows a member the lead\'s brief, without the dispatch guidance', async () => {
+      CrewView.render(el);
+      await flush();
+      const member = el.querySelector('.crew-card[data-slot="1"] .crew-log');
+      // Named as the lead's card names it (Head Baker), not the run's agent name.
+      expect(member.querySelector('.crew-ask b').textContent).toBe('From Head Baker');
+      expect(member.querySelector('.crew-ask').textContent).toBe('From Head BakerCount Friday orders.');
+      expect(member.textContent).toContain('42 orders.');
+    });
+
+    it('collects every round the lead hands out, and never shows the tokens', async () => {
+      entries = [
+        entries[0], entries[1],
+        { agent_id: 'a1', role: 'user', content: 'round 2 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: 'One more thing. [DISPATCH: marketing] Draft a post.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+      ];
+      CrewView.render(el);
+      await flush();
+      let lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments and Marketing for their part.');
+      expect(lead.textContent).not.toContain('DISPATCH');
+      expect(lead.textContent).not.toContain('did not return a final summary');
+      entries.push(
+        { agent_id: 'a1', role: 'user', content: 'round 3 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: 'Bake for 42, post on Thursday.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+      );
+      CrewView.render(el);
+      await flush();
+      lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelectorAll('.crew-ex')).toHaveLength(1);
+      expect(lead.textContent).toContain('Bake for 42, post on Thursday.');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments and Marketing for their part.');
+    });
+
+    it('says so when the last round was all tokens and no summary', async () => {
+      entries = [
+        entries[0], entries[1],
+        { agent_id: 'a1', role: 'user', content: 'round 2 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: '[DISPATCH: finance] Again.', metadata: { event: 'final_answer', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'user', content: 'round 3 prompt', metadata: { event: 'mission_start', lead_round: 'summary' } },
+        { agent_id: 'a1', role: 'agent', content: '[DISPATCH: finance] And again.', metadata: { event: 'final_answer', lead_round: 'summary', last_round: true } },
+      ];
+      CrewView.render(el);
+      await flush();
+      const lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.textContent).not.toContain('DISPATCH');
+      expect(lead.textContent).toContain('The team completed their tasks, but the lead did not return a final summary.');
+    });
+
+    it('shows the handoff while the members are still working', async () => {
+      entries = entries.slice(0, 2);
+      CrewView.render(el);
+      await flush();
+      const lead = el.querySelector('.crew-card[data-slot="0"] .crew-log');
+      expect(lead.querySelector('.crew-handoff').textContent).toBe('Asked Orders & Payments for their part.');
+      expect(lead.textContent).toContain('On it.');
+    });
+  });
+
   describe('the model menu on a card', () => {
     const LABELS = { 'nice-auto': 'NICE Auto', 'gemini-2-5-flash': 'Gemini 2.5 Flash', 'grok-4-3': 'Grok 4.3', 'claude-4-6-sonnet': 'Claude 4.6 Sonnet' };
     beforeEach(() => {

@@ -2728,8 +2728,17 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const label = _panel?.querySelector('#nice-ai-targets');
     const modelSelect = _panel?.querySelector('#nice-ai-model');
     const on = _isStandaloneChat() && typeof SpaceCards !== 'undefined';
-    if (modelSelect) modelSelect.hidden = on;
+    // A project's page sends to its team, which runs on each agent's own
+    // model, so the model menu has nothing to pick there.
+    const toTeam = !on && !!_routeShip && !_routeAgent;
+    if (modelSelect) modelSelect.hidden = on || toTeam;
     if (!label) return;
+    if (toTeam) {
+      label.hidden = false;
+      label.textContent = 'To the ' + (typeof Terminology !== 'undefined' ? Terminology.label('crew', { lowercase: true }) : 'team');
+      label.removeAttribute('title');
+      return;
+    }
     label.hidden = !on;
     if (!on) { label.textContent = ''; label.removeAttribute('title'); return; }
     const targets = SpaceCards.selected();
@@ -4109,6 +4118,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof State !== 'undefined' && State.on) {
       State.on('enabled_models', () => { _populateModelDropdown(); _renderTargets(); });
     }
+    // The placeholder and "To the team" name the crew in the theme's words.
+    // A flow in progress keeps its own placeholder.
+    document.addEventListener('nice:theme-change', () => { if (!isFlowActive()) _updateRouteContext(); _renderTargets(); });
     // Models on the user's own keys (desktop app) join the menu once they
     // load, and when the user switches one on or off in API keys.
     if (typeof OwnKeys !== 'undefined') {

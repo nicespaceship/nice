@@ -1933,6 +1933,7 @@ html:not([data-theme]) .app-main,
 .crew-reply ol { margin:0 0 6px; padding-left:18px; }
 .crew-reply pre { margin:0 0 6px; overflow-x:auto; white-space:pre-wrap; }
 .crew-reply.is-note p { color:var(--text-muted); }
+.crew-reply .crew-handoff { font-size:var(--text-xs); color:var(--text-muted); }
 .crew-reply.is-error p { color:var(--color-error); }
 .crew-reply.is-error b::after {
   content:""; display:inline-block; width:7px; height:7px; margin-left:6px; vertical-align:middle;

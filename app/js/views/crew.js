@@ -96,18 +96,46 @@ const CrewView = (() => {
   }
 
   // Requests to the agent and its answers in this ship, oldest first, as
-  // exchanges { ask, reply }. Tool rows are left out.
+  // exchanges { ask, reply }. Tool rows are left out. A team request run by
+  // the lead (MissionRunner.runWithDispatch tags its rows) reads as one
+  // exchange: on the lead's card, the request, who it handed parts to and
+  // the summed-up answer; on a member's card, the lead's brief and its
+  // report.
   function _exchanges(entries, agentId) {
     const out = [];
+    const dispatch = (typeof MissionRunner !== 'undefined') ? MissionRunner : null;
     for (const e of entries || []) {
       const md = e.metadata || {};
       if (e.agent_id !== agentId && md.agent_blueprint_id !== agentId) continue;
       const ts = Date.parse(e.created_at) || 0;
       if (e.role === 'user' && _ASK_EVENTS.includes(md.event)) {
-        out.push({ ask: { text: String(e.content || ''), ts }, reply: null });
+        // The summary round's request is the lead's own working prompt.
+        if (md.lead_round === 'summary') continue;
+        const ask = { text: String(md.brief || e.content || ''), ts };
+        if (md.asked_by || md.asked_by_name) { ask.fromId = md.asked_by || null; ask.from = String(md.asked_by_name || ''); }
+        out.push({ ask, reply: null });
       } else if (e.role === 'agent' && _REPLY_EVENTS.includes(md.event)) {
-        const reply = { text: String(e.content || ''), ts, error: md.event === 'turn_error', stopped: md.event === 'turn_stopped' };
+        const text = String(e.content || '');
+        const reply = { text, ts, error: md.event === 'turn_error', stopped: md.event === 'turn_stopped' };
         const last = out[out.length - 1];
+        // Any round of the lead's can hand out more work (up to
+        // MissionRunner's round cap): who got a part is collected, and the
+        // protocol tokens never show.
+        if (md.lead_round && dispatch && dispatch._extractDispatches) {
+          const parts = dispatch._extractDispatches(text);
+          if (parts.length) {
+            reply.handedTo = [...new Set(parts.map(p => p.slot))];
+            reply.text = dispatch._stripDispatches ? dispatch._stripDispatches(text) : '';
+          }
+        }
+        if (md.lead_round === 'summary' && last && last.reply && last.reply.handedTo) {
+          const handedTo = [...new Set([...last.reply.handedTo, ...(reply.handedTo || [])])];
+          // Still handing out work: the summary is not in yet, unless this
+          // was the last round the lead gets.
+          const pending = !!(reply.handedTo && reply.handedTo.length) && !md.last_round;
+          last.reply = { ...reply, handedTo, pending };
+          continue;
+        }
         if (last && !last.reply) last.reply = reply;
         else out.push({ ask: null, reply });
       }
@@ -299,8 +327,43 @@ const CrewView = (() => {
   }
 
   function _replyHTML(reply, name) {
-    if (reply.stopped) return `<div class="crew-reply is-note"><b>${_esc(name)}</b><p>Stopped.</p></div>`;
-    return `<div class="crew-reply${reply.error ? ' is-error' : ''}"><b>${_esc(name)}</b>${reply.error ? `<p>${_esc(reply.text)}</p>` : _md(reply.text)}</div>`;
+    // A lead's handoff: who got a part, then the summed-up answer once it is in.
+    const handed = reply.handedTo && reply.handedTo.length
+      ? `<p class="crew-handoff">Asked ${_esc(_listNames(reply.handedTo.map(_slotName)))} for their part.</p>` : '';
+    if (reply.stopped) return `<div class="crew-reply is-note"><b>${_esc(name)}</b>${handed}<p>Stopped.</p></div>`;
+    let body;
+    if (reply.error) body = `<p>${_esc(reply.text)}</p>`;
+    else if (reply.text.trim()) body = _md(reply.text);
+    // A summary round that came back empty once its tokens were stripped,
+    // worded as the monitor words it (MissionRunner.runWithDispatch).
+    else if (reply.handedTo && reply.handedTo.length && reply.pending === false) {
+      body = `<p>${_esc(`The ${_crewWord()} completed their tasks, but the ${Terminology.label('captain', { lowercase: true })} did not return a final summary.`)}</p>`;
+    } else body = '';
+    return `<div class="crew-reply${reply.error ? ' is-error' : ''}"><b>${_esc(name)}</b>${handed}${body}</div>`;
+  }
+
+  // A dispatch names a slot by role or name, lowercased (MissionRunner):
+  // show the crew member who holds it, as the cards name them.
+  function _slotName(slot) {
+    const key = String(slot || '').toLowerCase();
+    const exact = (c) => String((c.slot && c.slot.role) || '').toLowerCase() === key
+      || _nameOf(c).toLowerCase() === key || String(c.agent.name || '').toLowerCase() === key;
+    const partial = (c) => key.length >= 3 && (_nameOf(c).toLowerCase().includes(key) || String(c.agent.name || '').toLowerCase().includes(key));
+    const m = _crew.find(c => c.agent && exact(c)) || _crew.find(c => c.agent && partial(c));
+    if (m) return _nameOf(m);
+    const raw = String(slot || '');
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
+  // The lead who asked, as its card names it, else as the run named it.
+  function _askerName(ask) {
+    const m = ask.fromId ? _memberOf(ask.fromId) : null;
+    return m ? _nameOf(m) : (ask.from || 'the ' + Terminology.label('captain', { lowercase: true }));
+  }
+
+  function _listNames(names) {
+    if (names.length <= 1) return names.join('');
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   }
 
   function _approvalHTML(member, approval) {
@@ -332,7 +395,8 @@ const CrewView = (() => {
       const last = i === shown.length - 1;
       const reply = x.reply ? _replyHTML(x.reply, name)
         : (last && live) ? `<p class="crew-wait">${live.stop ? 'Stopping…' : 'Working…'}${live.step && !live.stop ? ' ' + _esc(live.step) : ''}</p>` : '';
-      return `<div class="crew-ex">${x.ask ? `<p class="crew-ask"><b>You</b>${_esc(x.ask.text)}</p>` : ''}${reply}</div>`;
+      const asker = x.ask && (x.ask.fromId || x.ask.from) ? `From ${_askerName(x.ask)}` : 'You';
+      return `<div class="crew-ex">${x.ask ? `<p class="crew-ask"><b>${_esc(asker)}</b>${_esc(x.ask.text)}</p>` : ''}${reply}</div>`;
     }).join('');
     const body = thread.length ? exHTML : '<p class="crew-log-empty">No messages yet.</p>';
     const more = thread.length > 1

@@ -36,18 +36,29 @@ const AgentExecutor = (() => {
     const onStep     = opts.onStep || null;
     const startMs    = Date.now();
     const agentId    = (agentBlueprint && agentBlueprint.id) || null;
+    // opts.logMeta rides on this run's request and answer rows, so a reader
+    // can tell how the run came about (a lead's brief, a lead's handoff or
+    // summary round; see MissionRunner.runWithDispatch).
+    // The brief (the request without its dispatch guidance) rides only on the
+    // request row; a row's own fields always win over the tags.
+    const logMeta = (opts.logMeta && typeof opts.logMeta === 'object') ? opts.logMeta : null;
+    const _tag = (m) => {
+      if (!logMeta) return m;
+      const { brief, ...rest } = logMeta;
+      return Object.assign({}, rest, m.event === 'mission_start' && brief ? { brief } : {}, m);
+    };
 
     // Log the user prompt at the start of the run so the Execution Log
     // has the seed entry. Without this, an empty inbox-captain mission
     // produces zero ship_log rows and the detail view shows "no log yet"
     // even though the agent did complete a multi-turn tool-use session.
-    _logToShipLog(spaceshipId, agentId, 'user', prompt, { event: 'mission_start' });
+    _logToShipLog(spaceshipId, agentId, 'user', prompt, _tag({ event: 'mission_start' }));
 
     const ctx = _buildExecContext(agentBlueprint, toolIds);
 
     // If no tools available, fall back to single-shot
     if (!ctx.availableTools.length) {
-      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments);
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments, _tag({ event: 'final_answer' }));
     }
 
     // First user turn carries any attachments as multimodal parts; ship_log
@@ -73,13 +84,13 @@ const AgentExecutor = (() => {
     });
 
     if (loop.stopped) {
-      _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, {
+      _logToShipLog(spaceshipId, agentId, 'agent', _STOP_TURN_NOTE, _tag({
         event: 'turn_stopped',
         stopped: true,
         duration_ms: Date.now() - startMs,
         steps_used: loop.stepsUsed,
         total_tokens: tokensRef.value,
-      });
+      }));
       return {
         steps,
         finalAnswer: null,
@@ -98,16 +109,16 @@ const AgentExecutor = (() => {
       // LLM call failed mid-loop — fall back to single-shot like the
       // original execute() did, so callers always get a finalAnswer.
       console.warn('[AgentExecutor] LLM call failed, falling back to single-shot:', loop.error);
-      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments);
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments, _tag({ event: 'final_answer' }));
     }
 
     if (loop.finalAnswer != null) {
-      _logToShipLog(spaceshipId, agentId, 'agent', loop.finalAnswer, {
+      _logToShipLog(spaceshipId, agentId, 'agent', loop.finalAnswer, _tag({
         event: 'final_answer',
         duration_ms: Date.now() - startMs,
         steps_used: loop.stepsUsed,
         total_tokens: tokensRef.value,
-      });
+      }));
 
       return {
         steps,
@@ -127,12 +138,12 @@ const AgentExecutor = (() => {
     const finalAnswer = lastStep
       ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
       : 'No steps executed.';
-    _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
+    _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, _tag({
       event: 'max_steps_reached',
       duration_ms: Date.now() - startMs,
       steps_used: maxSteps,
       total_tokens: tokensRef.value,
-    });
+    }));
 
     return {
       steps,
@@ -1133,9 +1144,24 @@ const AgentExecutor = (() => {
   }
 
   /* ── Single-shot fallback (no tools, just call ShipLog directly) ── */
-  async function _singleShot(blueprint, prompt, spaceshipId, startMs, attachments) {
+  // replyMeta marks the answer row as the run's answer (execute() already
+  // logged the request), so the team cards can pair the two.
+  async function _singleShot(blueprint, prompt, spaceshipId, startMs, attachments, replyMeta) {
     if (typeof ShipLog !== 'undefined') {
-      const result = await ShipLog.execute(spaceshipId, blueprint, prompt, { attachments });
+      const id = blueprint && blueprint.id;
+      let result;
+      try {
+        result = await ShipLog.execute(spaceshipId, blueprint, prompt, { attachments, replyMeta });
+      } catch (err) {
+        // The request is logged; log why it got no answer, which also marks
+        // the agent idle (as the tool loop's turn_error does).
+        _logToShipLog(spaceshipId, id, 'agent', 'Error: ' + ((err && err.message) || 'The agent could not answer.'),
+          Object.assign({}, replyMeta || {}, { event: 'turn_error' }));
+        throw err;
+      }
+      // ShipLog writes this answer itself, so say the agent is done here,
+      // as _logToShipLog does for the tool loop.
+      _emitActivity(id, { event: 'final_answer' });
       return {
         steps: [],
         finalAnswer: result ? result.content : 'No response from agent.',
