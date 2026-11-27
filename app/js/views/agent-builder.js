@@ -210,6 +210,12 @@ const AgentBuilderView = (() => {
      already (a team card or an earlier save), or the user chose another
      model than the menu showed when the form opened. A save that leaves
      the menu alone never pins the model, whatever the menu could show. */
+  // Older blueprints carry legacy model ids (gemini-2.5-flash); the menu
+  // lists canonical ones, so match through LLMConfig's aliases.
+  function _canonModel(id) {
+    return (id && typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
+  }
+
   function _modelPinned(existingAgent, model, loadedModel) {
     if (!existingAgent) return false;
     if (existingAgent._modelChosen) return true;
@@ -447,7 +453,7 @@ const AgentBuilderView = (() => {
                 <label for="b-model">LLM Model</label>
                 <select id="b-model" class="filter-select builder-select">
                   <option value="nice-auto" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? 'selected' : ''}>NICE Auto (recommended)</option>
-                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
+                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${_canonModel(agent?.llm_engine) === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
                   ${_ownModelOptions(agent?.llm_engine)}
                 </select>
                 <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>NICE Auto selects the best model based on mission history.</p>
