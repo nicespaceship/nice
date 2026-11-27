@@ -378,7 +378,7 @@ const Theme = (() => {
       }
     });
     // Sidebar link text (direct text nodes)
-    document.querySelectorAll('.side-link, .sidebar-section-label').forEach(el => {
+    document.querySelectorAll('.side-link').forEach(el => {
       const nodes = [];
       el.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); });
       el.querySelectorAll('span').forEach(s => { s.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); }); });
@@ -975,9 +975,11 @@ const NICE = (() => {
      One link per spaceship the user runs (catalog activations plus Crew
      Designer ships, the same set the crew view's picker offers), each
      opening that ship's crew view. Router skips these links (their href
-     carries ?ship=), so this module highlights the one on screen. The
-     heading and the add link read the noun from Terminology ("Projects"
-     in the default look), so the list redraws on theme change. */
+     carries ?ship=), so this module highlights the one on screen. No
+     heading: the whole list is projects. Each row's dot button opens a
+     menu of what can be done to that one ship. The add link and the menu
+     read the noun from Terminology ("project" in the default look), so
+     the list redraws on theme change. */
   function _renderSidebarShips() {
     const el = document.getElementById('side-ships');
     if (!el) return;
@@ -986,19 +988,27 @@ const NICE = (() => {
     const noun = Terminology.label('spaceship');
     const nounLower = Terminology.label('spaceship', { lowercase: true });
     const addLabel = ships.length ? `New ${nounLower}` : `Add ${Terminology.article('spaceship')} ${nounLower}`;
+    const refocus = _shipMenu && _shipMenu.contains(document.activeElement) ? _shipMenu.dataset.ship : null;
+    _closeShipMenu();
     el.innerHTML = `
-      <div class="sidebar-section-label">${esc(Terminology.label('spaceship', { plural: true }))}<span class="nav-alert-dot" id="side-ships-alert-dot" hidden></span></div>
       ${ships.map(s => {
         const name = s.name || noun;
-        return `<a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${esc(s.id)}" title="${esc(name)}">
-          <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(name))}</b>
-          <span>${esc(name)}</span>
-        </a>`;
+        return `<div class="side-ship-row">
+          <a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${esc(s.id)}" title="${esc(name)}">
+            <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(name))}</b>
+            <span>${esc(name)}</span>
+            <i class="nav-alert-dot side-ship-dot" hidden></i>
+          </a>
+          <button type="button" class="side-ship-more" data-ship="${esc(s.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${esc(name)} options">
+            <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
+          </button>
+        </div>`;
       }).join('')}
       <a href="#/blueprints?tab=spaceship" class="side-link side-ship-new" title="${esc(addLabel)}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
         <span>${esc(addLabel)}</span>
       </a>`;
+    if (refocus) el.querySelector(`.side-ship-more[data-ship="${CSS.escape(refocus)}"]`)?.focus();
     _highlightSidebarShip();
     _updateAlertIndicators();
   }
@@ -1014,7 +1024,127 @@ const NICE = (() => {
     });
   }
 
+  /* ── The menu behind a project row's dot button ──
+     One menu element, moved beside whichever button opened it. Every row
+     acts on its own ship: the Diagram makes it the current ship first (the
+     Schematic shows the current one), the details page takes its id, and
+     Remove asks first through the Blueprints confirm. */
+  let _shipMenu = null;
+  let _shipMenuBtn = null;
+
+  function _shipMenuEl() {
+    if (_shipMenu) return _shipMenu;
+    _shipMenu = document.createElement('div');
+    _shipMenu.className = 'side-popover side-ship-menu';
+    _shipMenu.id = 'side-ship-menu';
+    _shipMenu.setAttribute('role', 'menu');
+    document.body.appendChild(_shipMenu);
+    _shipMenu.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-act]');
+      if (!item) return;
+      const id = _shipMenu.dataset.ship;
+      _closeShipMenu();
+      _shipAction(item.dataset.act, id);
+    });
+    _shipMenu.addEventListener('keydown', (e) => {
+      const items = [..._shipMenu.querySelectorAll('[role="menuitem"]')];
+      const at = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); const btn = _shipMenuBtn; _closeShipMenu(); btn?.focus(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); items[(at + 1) % items.length]?.focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[(at - 1 + items.length) % items.length]?.focus(); }
+      else if (e.key === 'Home') { e.preventDefault(); items[0]?.focus(); }
+      else if (e.key === 'End') { e.preventDefault(); items[items.length - 1]?.focus(); }
+      // Back on the button first, so Tab carries on from the row, not from
+      // the end of the page where the menu lives.
+      else if (e.key === 'Tab') { const btn = _shipMenuBtn; _closeShipMenu(); btn?.focus(); }
+    });
+    return _shipMenu;
+  }
+
+  function _openShipMenu(btn) {
+    const id = btn.dataset.ship;
+    const ship = Blueprints.getUserShips().find(s => String(s.id) === id);
+    if (!ship) return;
+    const esc = Utils.esc;
+    const noun = Terminology.label('spaceship');
+    const menu = _shipMenuEl();
+    const icon = (name) => `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
+    menu.dataset.ship = id;
+    menu.setAttribute('aria-label', `${ship.name || noun} options`);
+    menu.innerHTML = `
+      <button type="button" class="side-popover-item" role="menuitem" data-act="diagram">${icon('network')}<span>Diagram</span></button>
+      <button type="button" class="side-popover-item" role="menuitem" data-act="details">${icon('settings')}<span>${esc(noun)} details</span></button>
+      <div class="side-divider" role="separator"></div>
+      <button type="button" class="side-popover-item side-ship-menu-danger" role="menuitem" data-act="remove">${icon('x')}<span>Remove</span></button>`;
+    if (_shipMenuBtn) _shipMenuBtn.setAttribute('aria-expanded', 'false');
+    _shipMenuBtn = btn;
+    btn.setAttribute('aria-expanded', 'true');
+    btn.closest('.side-ship-row')?.classList.add('menu-open');
+    menu.classList.add('open');
+    const r = btn.getBoundingClientRect();
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+    const below = r.bottom + 4;
+    const top = below + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 4) : below;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.querySelector('[role="menuitem"]')?.focus();
+  }
+
+  function _closeShipMenu() {
+    if (!_shipMenu || !_shipMenu.classList.contains('open')) return;
+    _shipMenu.classList.remove('open');
+    if (_shipMenuBtn) {
+      _shipMenuBtn.setAttribute('aria-expanded', 'false');
+      _shipMenuBtn.closest('.side-ship-row')?.classList.remove('menu-open');
+    }
+    _shipMenuBtn = null;
+  }
+
+  function _shipAction(act, id) {
+    const ship = Blueprints.getUserShips().find(s => String(s.id) === id);
+    if (!ship) return;
+    if (act === 'diagram') {
+      try {
+        localStorage.setItem(Utils.KEYS.mcShip, id);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: id }));
+      } catch {}
+      Router.navigate('#/bridge?tab=schematic');
+    } else if (act === 'details') {
+      Router.navigate('#/bridge/spaceships/' + encodeURIComponent(id));
+    } else if (act === 'remove' && typeof BlueprintsView !== 'undefined' && BlueprintsView.confirmDeactivate) {
+      const noun = Terminology.label('spaceship');
+      const name = ship.name || noun;
+      BlueprintsView.confirmDeactivate(name, async () => {
+        const path = Router.path();
+        const showing = (path === '/crew' && localStorage.getItem(Utils.KEYS.mcShip) === id)
+          || path === '/bridge/spaceships/' + encodeURIComponent(id);
+        await Blueprints.deactivateShip(id);
+        if (typeof Notify !== 'undefined') Notify.send({ title: `${noun} removed`, message: `${name} has been removed.`, type: 'info' });
+        if (showing) Router.navigate('#/');
+      });
+    }
+  }
+
   function _initSidebarShips() {
+    const list = document.getElementById('side-ships');
+    list?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.side-ship-more');
+      if (!btn) return;
+      e.preventDefault();
+      if (_shipMenuBtn === btn) _closeShipMenu();
+      else _openShipMenu(btn);
+    });
+    list?.addEventListener('scroll', _closeShipMenu, { passive: true });
+    document.addEventListener('pointerdown', (e) => {
+      if (!_shipMenuBtn) return;
+      if (e.target.closest('#side-ship-menu') || e.target.closest('.side-ship-more') === _shipMenuBtn) return;
+      _closeShipMenu();
+    });
+    window.addEventListener('resize', _closeShipMenu);
+    const sidebar = document.querySelector('.app-sidebar');
+    if (sidebar) new MutationObserver(_closeShipMenu).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('hashchange', _closeShipMenu);
     _renderSidebarShips();
     State.on('spaceships', _renderSidebarShips);
     State.on('user', _renderSidebarShips);
@@ -2518,8 +2648,11 @@ const NICE = (() => {
     // The spaceships section and the Crew tab show a dot for crew trouble
     // or failed runs.
     const crew = AlertCounts.count('schematic') + AlertCounts.count('missions');
-    _setDot('side-ships-alert-dot', crew);
     _setDot('tab-crew-alert-dot', crew);
+    document.querySelectorAll('#side-ships .side-ship').forEach(a => {
+      const dot = a.querySelector('.side-ship-dot');
+      if (dot) dot.hidden = !(AlertCounts.forShip(a.dataset.ship) > 0);
+    });
 
     _setDot('alert-dot-integrations', AlertCounts.count('integrations'));
     _setDot('alert-dot-wallet',       AlertCounts.count('wallet'));

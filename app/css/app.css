@@ -255,7 +255,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-font="pixel"] .app-sidebar { font-size:9px; }
 [data-font="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
-[data-font="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
 [data-font="pixel"] .app-sidebar .badge { font-size:7px; }
 [data-font="pixel"] .view-container { font-size:10px; }
 [data-font="pixel"] .view-container h1 { font-size:var(--text-2xl); }
@@ -1255,13 +1254,34 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    account footer off screen. */
 .side-ships { display:flex; flex-direction:column; gap:2px; padding:4px 8px 0; flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
 .side-link > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sidebar-section-label {
-  display:flex; align-items:center; gap:6px; padding:16px 12px 4px;
-  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-bold);
-  letter-spacing:var(--tracking-caps); text-transform:uppercase;
-  color:var(--nav-text-muted, var(--text-muted));
+/* A project row: the link fills it and the dot button sits over its right
+   end. The button shows on hover, on focus and while its menu is open;
+   touch screens have no hover, so there it always shows. */
+.side-ship-row { position:relative; }
+.side-ship-row .side-ship { padding-right:40px; }
+.side-ship-row .side-ship-dot { margin-left:auto; flex-shrink:0; }
+/* NICE keeps the row lit while the pointer is on the button (which takes
+   :hover off the link) and while the menu is open, with its own hover look.
+   Other themes keep their own rows untouched. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-ship-row:is(.menu-open, :has(.side-ship-more:hover)) .side-ship:not(.active) { background:var(--tint); color:var(--text); }
+.side-ship-more {
+  position:absolute; top:50%; right:6px; transform:translateY(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width:28px; height:28px; padding:0; border:0; border-radius:6px;
+  background:transparent; color:var(--nav-text-muted, var(--text-muted));
+  cursor:pointer; opacity:0; transition:opacity .15s, background .15s, color .15s;
 }
-.sidebar-section-label .nav-alert-dot { margin-left:0; }
+.side-ship-row:hover .side-ship-more,
+.side-ship-row.menu-open .side-ship-more,
+.side-ship-more:focus-visible { opacity:1; }
+.side-ship-more:hover,
+.side-ship-row.menu-open .side-ship-more { background:var(--nav-surface2, var(--surface2)); color:var(--nav-text, var(--text)); }
+@media (hover:none) { .side-ship-more { opacity:1; } }
+/* 303: above the phone drawer (302), which the menu opens from. */
+.side-popover.side-ship-menu {
+  position:fixed; bottom:auto; right:auto; margin:0; min-width:200px; z-index:303;
+}
+.side-popover.side-ship-menu .side-divider { margin:6px 0; }
 .side-ship-mark {
   display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
   width:22px; height:22px; border-radius:50%;
@@ -1622,7 +1642,6 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-footer .side-popover,
 .app-sidebar:not(.open) .side-footer #sidebar-presence,
 .app-sidebar:not(.open) .sidebar-favorites,
-.app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider { display:none; }
 
 /* Collapsed sidebar: a narrow rail; only icon-level controls (projects,
@@ -1637,6 +1656,11 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-account-chev { display:none; }
 /* On the rail the dot sits on the avatar's corner instead of taking a column. */
 .app-sidebar:not(.open) .side-account .nav-alert-dot { position:absolute; top:2px; right:8px; margin:0; }
+/* On the rail a project shows only its mark: no menu button, and its dot
+   moves onto the mark's corner. */
+.app-sidebar:not(.open) .side-ship-more { display:none; }
+.app-sidebar:not(.open) .side-ship-row .side-ship { padding-right:0; position:relative; }
+.app-sidebar:not(.open) .side-ship-row .side-ship-dot { position:absolute; top:6px; right:14px; margin:0; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {

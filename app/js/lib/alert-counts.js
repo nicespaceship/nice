@@ -108,6 +108,19 @@ const AlertCounts = (() => {
     return _num('compliance_open');
   }
 
+  // One project's share of the crew dots: its crew members in error or
+  // offline, plus its failed runs. Drives the dot on that project's sidebar
+  // row. Agents on no project only count toward the Bridge tabs.
+  function forShip(shipId) {
+    if (shipId == null || shipId === '') return 0;
+    const id = String(shipId);
+    const crew = (typeof Blueprints !== 'undefined' && Blueprints.getShipCrew) ? Blueprints.getShipCrew(id) : [];
+    const broken = crew.filter(m => m.agent && (m.agent.status === 'error' || m.agent.status === 'offline')).length;
+    const failed = _state('missions').filter(m =>
+      String(m.spaceship_id) === id && m.status === 'failed' && m.approval_status !== 'rejected').length;
+    return broken + failed;
+  }
+
   // Keys grouped by their aggregating parent, so a surface can ask for "all
   // the Bridge dots" or "all the Settings dots" without hardcoding the list.
   const GROUPS = {
@@ -137,5 +150,5 @@ const AlertCounts = (() => {
     return keys.reduce((n, k) => n + count(k), 0);
   }
 
-  return { get, count, sum, GROUPS };
+  return { get, count, sum, forShip, GROUPS };
 })();

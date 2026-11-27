@@ -400,17 +400,41 @@ test.describe('Dashboard', () => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); });
     await navigateTo(page, '#/', 'Home');
-    const sideLabel = page.locator('#side-ships .sidebar-section-label');
     const sideAdd = page.locator('#side-ships .side-ship-new span');
-    await expect(sideLabel).toHaveText('Projects');
     await expect(sideAdd).toHaveText('Add a project');
     await page.evaluate(() => { Theme.set('matrix'); });
-    await expect(sideLabel).toHaveText('Spaceships');
     await expect(sideAdd).toHaveText('Add a spaceship');
     await expect(page.locator('#home-ships-title')).toHaveText('Your spaceships');
     await page.evaluate(() => { Theme.set('nice'); });
-    await expect(sideLabel).toHaveText('Projects');
+    await expect(sideAdd).toHaveText('Add a project');
     await expect(page.locator('#home-ships-title')).toHaveText('Your projects');
+  });
+
+  test('a project row opens a menu of actions for that project', async ({ page }) => {
+    await waitForApp(page);
+    await page.evaluate(() => { Theme.set('nice'); State.set('spaceships', [{ id: 'e2e-ship', name: 'Bakery' }]); });
+    const row = page.locator('#side-ships .side-ship-row', { hasText: 'Bakery' });
+    await expect(row).toBeVisible();
+    await expect(page.locator('#side-ships .sidebar-section-label')).toHaveCount(0);
+    const more = row.locator('.side-ship-more');
+    await row.hover();
+    await more.click();
+    const menu = page.locator('#side-ship-menu');
+    await expect(menu).toBeVisible();
+    await expect(more).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu.getByRole('menuitem')).toHaveText(['Diagram', 'Project details', 'Remove']);
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(more).toBeFocused();
+    await page.evaluate(() => { Theme.set('matrix'); });
+    await row.hover();
+    await more.click();
+    await expect(menu.getByRole('menuitem').nth(1)).toHaveText('Spaceship details');
+    await menu.getByRole('menuitem', { name: 'Diagram' }).click();
+    await expect(menu).toBeHidden();
+    await expect(page).toHaveURL(/#\/bridge\?tab=schematic/);
+    expect(await page.evaluate(() => localStorage.getItem(Utils.KEYS.mcShip))).toBe('e2e-ship');
+    await page.evaluate(() => { Theme.set('nice'); });
   });
 
   test('the default look says team and sci-fi themes say crew', async ({ page }) => {
