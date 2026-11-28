@@ -90,19 +90,41 @@ const NiceChatView = (() => {
     else if (p.startsWith('/project/')) _route = { kind: 'project', id: params && params.id };
     else _route = { kind: 'home', id: null };
 
-    if (_route.kind === 'chat' && !ChatStore.chat(_route.id)) return _missing('This chat is gone', 'It was deleted, or it was made on another computer.');
-    if (_route.kind === 'project' && !ChatStore.project(_route.id)) return _missing('This project is gone', 'It was deleted, or it was made on another computer.');
-
     el.classList.add('view-no-scroll');
     el.addEventListener('click', _onClick);
-    _paint();
-
     _onStore = (e) => _storeChanged(e.detail || {});
     document.addEventListener(ChatStore.EVENT, _onStore);
+    _show();
+
     _onModels = () => _paintModel();
     State.onScoped('enabled_models', _onModels);
-    State.onScoped('user', _onModels);
+    // A reload signed in draws before the session lands: the chat is in the
+    // account's record, not the guest's, so the page draws again once it does.
+    State.onScoped('user', () => { if (_shown !== 'page') _show(); else _onModels(); });
     if (typeof OwnKeys !== 'undefined' && OwnKeys.EVENT) document.addEventListener(OwnKeys.EVENT, _onModels);
+  }
+
+  let _shown = null; // 'page' | 'missing' | 'waiting'
+
+  function _exists() {
+    if (_route.kind === 'chat') return !!ChatStore.chat(_route.id);
+    if (_route.kind === 'project') return !!ChatStore.project(_route.id);
+    return true;
+  }
+
+  function _show() {
+    if (!_el) return;
+    if (_exists()) { _shown = 'page'; _paint(); return; }
+    // A saved session whose user has not loaded yet: wait for it instead of
+    // saying the chat is gone.
+    if (!State.get('user') && Utils.hasAuthSession && Utils.hasAuthSession()) {
+      _shown = 'waiting';
+      _el.innerHTML = '<div class="nc"></div>';
+      return;
+    }
+    _shown = 'missing';
+    if (_route.kind === 'chat') _missing('This chat is gone', 'It was deleted, or it was made on another computer.');
+    else _missing('This project is gone', 'It was deleted, or it was made on another computer.');
   }
 
   function _missing(heading, body) {
@@ -225,7 +247,10 @@ const NiceChatView = (() => {
       input.setSelectionRange(input.value.length, input.value.length);
     }));
     _mountModel();
-    if (_route.kind !== 'chat' || !ChatStore.messages(_route.id).length) input.focus({ preventScroll: true });
+    // Never pull focus out of a box the user is typing in elsewhere (a
+    // sidebar rename that started before this page drew).
+    const typing = document.activeElement && document.activeElement !== document.body && document.activeElement.matches('input, textarea, [contenteditable="true"]');
+    if (!typing && (_route.kind !== 'chat' || !ChatStore.messages(_route.id).length)) input.focus({ preventScroll: true });
   }
 
   function _mountModel() {
@@ -256,15 +281,28 @@ const NiceChatView = (() => {
   /* ── Store changes: redraw only what moved ── */
   function _storeChanged(change) {
     if (!_el) return;
-    if (_route.kind === 'chat' && !ChatStore.chat(_route.id)) { Router.navigate('#/'); return; }
-    if (_route.kind === 'project' && !ChatStore.project(_route.id)) { Router.navigate('#/'); return; }
-    if (_route.kind === 'chat' && change.type === 'message' && change.chatId === _route.id) {
-      _paintThread();
+    if (_shown !== 'page') { if (_exists()) _show(); return; }
+    if (!_exists()) {
+      // Deleted here or in another tab goes back to NICE; another account's
+      // record (a sign-out) shows its own state.
+      if (change.deleted) Router.navigate('#/');
+      else _show();
       return;
     }
-    if (change.type === 'message') return;
-    // A chat or project changed (a title, a rename, another tab): redraw
-    // around the prompt, which keeps its text through _draft.
+    if (_route.kind === 'chat') {
+      if (change.type === 'message' && change.chatId === _route.id) { _paintThread(); return; }
+      // Its own rename or model pick changes only its title; nothing about
+      // other chats shows here. A store reloaded from another tab redraws.
+      if (change.type === 'chat' && change.id === _route.id) {
+        const t = _el.querySelector('.nc-title');
+        const chat = ChatStore.chat(_route.id);
+        if (t && chat) t.textContent = chat.title || 'New chat';
+        return;
+      }
+      if (change.type !== 'external' && change.type !== 'account' && change.type !== 'project') return;
+    } else if (change.type === 'message') {
+      return;
+    }
     const focused = document.activeElement && document.activeElement.id === 'nc-input';
     _paint();
     if (focused) _el.querySelector('#nc-input')?.focus({ preventScroll: true });
@@ -327,13 +365,12 @@ const NiceChatView = (() => {
     }
     if (_route.kind === 'chat' && _turns.has(_route.id)) return;
     let chatId = _route.kind === 'chat' ? _route.id : null;
-    const from = _place();
+    delete _draft[_place()];
+    input.value = '';
     if (!chatId) {
       const chat = ChatStore.createChat({ projectId: _route.kind === 'project' ? _route.id : null, model });
       chatId = chat.id;
     }
-    delete _draft[from];
-    input.value = '';
     ChatStore.addMessage(chatId, { role: 'user', text });
     _reply(chatId, model);
     if (_route.kind !== 'chat') Router.navigate('#/chat/' + encodeURIComponent(chatId));
@@ -355,7 +392,10 @@ const NiceChatView = (() => {
       if (last && last.role === m.role) last.content += '\n\n' + m.content;
       else merged.push({ ...m });
     });
-    return merged.slice(-HISTORY_TURNS);
+    // The last turns only, opening on a user turn as providers require.
+    const kept = merged.slice(-HISTORY_TURNS);
+    while (kept.length && kept[0].role !== 'user') kept.shift();
+    return kept;
   }
 
   function _systemPrompt() {
@@ -402,9 +442,12 @@ const NiceChatView = (() => {
     const turn = _turns.get(chatId);
     if (!turn) return;
     turn.stop = true;
-    // The call already sent can't be cut off; its reply is dropped when it lands.
+    // The call already sent can't be cut off; its reply is dropped when it
+    // lands. Each send reads the chat afresh, so the next one needn't wait.
+    _turns.delete(chatId);
     const last = ChatStore.messages(chatId).filter(m => m.status === 'pending').pop();
     if (last) ChatStore.updateMessage(chatId, last.id, { status: 'stopped', text: '' });
+    if (_el && _route && _route.kind === 'chat' && _route.id === chatId) _paintSend(ChatStore.chat(chatId));
   }
 
   function _retry(chatId, replyId) {
@@ -435,6 +478,7 @@ const NiceChatView = (() => {
     if (_el) { _el.removeEventListener('click', _onClick); _el.classList.remove('view-no-scroll'); }
     _onStore = null;
     _onModels = null;
+    _shown = null;
     _el = null;
     _route = null;
   }

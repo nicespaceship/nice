@@ -1043,6 +1043,11 @@ const NICE = (() => {
      which the desktop app does not have). Links carry no query, so Router
      highlights the open one. */
   let _renaming = null; // { kind, id } while a row is being renamed
+  let _chatListShown = null;
+  const _chatListKey = () => JSON.stringify([
+    ChatStore.projects().map(p => [p.id, p.name, ChatStore.chats(p.id).map(c => [c.id, c.title])]),
+    ChatStore.chats(null).map(c => [c.id, c.title]),
+  ]);
 
   function _chatRowHTML(c, nested) {
     const title = c.title || 'New chat';
@@ -1062,6 +1067,7 @@ const NICE = (() => {
     const plus = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><use href="#icon-plus"/></svg>';
     const projects = ChatStore.projects();
     const loose = ChatStore.chats(null);
+    _chatListShown = _chatListKey();
     const refocus = _menuFocus('project') || _menuFocus('chat');
     _closeShipMenu();
     el.innerHTML = `
@@ -1116,7 +1122,7 @@ const NICE = (() => {
     };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); finish(true); }
-      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
     });
     input.addEventListener('blur', () => finish(true));
     input.focus();
@@ -1371,7 +1377,9 @@ const NICE = (() => {
     });
     document.addEventListener('nice:code-folder', _renderSidebarShips);
     if (typeof ChatStore !== 'undefined') {
-      document.addEventListener(ChatStore.EVENT, () => { if (_sidebarMode === 'nice') _renderSidebarChats(); });
+      // Replies landing change no row, so they leave the list (and an open
+      // row menu) alone; a new chat, a title, a rename or a delete redraws.
+      document.addEventListener(ChatStore.EVENT, () => { if (_sidebarMode === 'nice' && _chatListKey() !== _chatListShown) _renderSidebarChats(); });
       document.addEventListener('nice:chat-rename', (e) => {
         const d = e.detail || {};
         if (_sidebarMode !== 'nice' || !d.id) return;

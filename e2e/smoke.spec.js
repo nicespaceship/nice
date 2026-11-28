@@ -510,6 +510,9 @@ test.describe('Dashboard', () => {
     // A new project opens its page with its name ready to type in place.
     await page.locator('#side-ships .side-group-add[data-new="project"]').click();
     const rename = page.locator('#side-ships .side-rename');
+    // The project page draws after the router's swap; the box keeps focus through it.
+    await expect(page.locator('.nc.nc-project')).toBeVisible();
+    await page.waitForTimeout(300);
     await expect(rename).toBeFocused();
     await rename.fill('Launch "Q1" <b>');
     await page.keyboard.press('Enter');

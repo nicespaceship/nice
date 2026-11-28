@@ -325,7 +325,7 @@ The founder's rule: everything in `nice` and `nice-dark` is black, white or a ne
 
 ### Case rules (follow modern SaaS — Linear/Stripe/Notion/Figma)
 - **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create project", not "Create Project" or "CREATE PROJECT".
-- **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`.
+- **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`. One exception, from the April 2026 look Ben chose for the NICE chat (2026-11-28): its outlined call to action (`.nc-cta`, "New project") is spaced capitals at `--text-xs` with `--tracking-caps-wide`. Every other button stays sentence case.
 - **Title Case** — page titles, product/feature names, proper nouns only ("NICE SPACESHIP", "Bridge", "Captain's Log", "Gemini 2.5 Flash"). Do NOT title-case arbitrary headings.
 - **Banned:** `text-transform: capitalize`. Produces "An Agent Of The Fleet" which no style guide blesses. Fix the source string instead.
 

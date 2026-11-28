@@ -201,10 +201,24 @@ describe('NiceChatView', () => {
     expect(calls).toHaveLength(1);
     el.querySelector('#nc-stop').click();
     expect(ChatStore.messages(c.id)[1].status).toBe('stopped');
-    release();
-    await flush();
-    expect(ChatStore.messages(c.id)[1]).toMatchObject({ status: 'stopped', text: '' });
+    // The chat is free at once: the next send needn't wait for the old call.
     expect(el.querySelector('#nc-send')).toBeTruthy();
+    const late = release;
+    release = null;
+    // The new send answers first; the old call's reply comes after and is dropped.
+    replies = [{ text: 'fresh', done: true }, { text: 'too late', done: true }];
+    type('Again');
+    send();
+    await flush();
+    late();
+    await flush();
+    const msgs = ChatStore.messages(c.id);
+    expect(msgs.map(m => [m.role, m.text, m.status || null])).toEqual([
+      ['user', 'Hi', null],
+      ['assistant', '', 'stopped'],
+      ['user', 'Again', null],
+      ['assistant', 'fresh', null],
+    ]);
   });
 
   it('saves the model picked on the chat and for the next chat', () => {
@@ -227,6 +241,37 @@ describe('NiceChatView', () => {
     expect(el.querySelector('b')).toBeNull();
     expect(el.querySelector('.nc-bubble').textContent).toBe('<img src=x onerror=alert(1)> "q"');
     expect(el.querySelector('.nc-title').textContent).toBe('<b>x</b>');
+  });
+
+  it('waits for a signed-in session to land instead of saying the chat is gone', () => {
+    const c = ChatStore.createChat();
+    ChatStore.addMessage(c.id, { role: 'user', text: 'Mine' });
+    // A reload: the page draws before the session's user has loaded.
+    State.set('user', null);
+    ChatStore._reset();
+    localStorage.setItem('sb-test-auth-token', '{"access_token":"tok"}');
+    mount('/chat/' + c.id, { id: c.id });
+    expect(el.querySelector('.app-empty')).toBeNull();
+    State.set('user', { id: 'u1', email: 'ben@test.com' });
+    expect(el.querySelector('.nc-bubble').textContent).toBe('Mine');
+    localStorage.removeItem('sb-test-auth-token');
+  });
+
+  it('keeps a long chat\u2019s history to its last turns, opening on a user turn', async () => {
+    const c = ChatStore.createChat();
+    for (let i = 0; i < 30; i++) {
+      ChatStore.addMessage(c.id, { role: 'user', text: 'q' + i });
+      ChatStore.addMessage(c.id, { role: 'assistant', text: 'a' + i });
+    }
+    mount('/chat/' + c.id, { id: c.id });
+    type('last');
+    send();
+    await flush();
+    const h = calls[0].opts.history;
+    expect(h.length).toBeLessThanOrEqual(40);
+    expect(h[0].role).toBe('user');
+    expect(h[h.length - 1]).toEqual({ role: 'assistant', content: 'a29' });
+    expect(calls[0].prompt).toBe('last');
   });
 
   it('says so when the chat is gone', () => {
