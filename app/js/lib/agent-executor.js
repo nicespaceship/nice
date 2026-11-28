@@ -1250,7 +1250,12 @@ const AgentExecutor = (() => {
    */
   function converse(agentBlueprint, opts) {
     opts = opts || {};
-    const history = [];
+    // opts.history carries an earlier conversation on (a saved chat): plain
+    // { role, content } turns, user and assistant only.
+    const history = Array.isArray(opts.history)
+      ? opts.history.filter(m => m && (m.role === 'user' || m.role === 'assistant') && m.content != null)
+        .map(m => ({ role: m.role, content: m.content }))
+      : [];
     // See execute() — preserve undefined-vs-[] so _buildExecContext can
     // tell "generic agent" from "explicitly tool-less".
     const toolIds = opts.tools;

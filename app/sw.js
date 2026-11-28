@@ -36,9 +36,11 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/mission-runner.js',
   '/app/js/lib/auth-modal.js',
   '/app/js/lib/blueprints.js',
+  '/app/js/lib/chat-store.js',
   // View modules
   '/app/js/views/home.js',
   '/app/js/views/chat.js',
+  '/app/js/views/nice-chat.js',
   '/app/js/views/code.js',
   '/app/js/views/crew.js',
   '/app/js/views/outbox.js',

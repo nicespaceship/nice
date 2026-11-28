@@ -172,13 +172,14 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 - `MissionRouter` is deleted. Its delegation patterns (pipeline, parallel, quality-loop, triage, hierarchy) are WorkflowEngine node types.
 
 ### Chat surface tiers — which chats create Runs
-NICE has four chat surfaces. Three intentionally bypass the Run primitive; one is full mission-grade. This is the current shape, not drift: the simpler patterns are correct for ephemeral surfaces and the ontology accommodates the split.
+NICE has five chat surfaces. Four intentionally bypass the Run primitive; one is full mission-grade. This is the current shape, not drift: the simpler patterns are correct for ephemeral surfaces and the ontology accommodates the split.
 
 | Surface | Code path | Creates Run? | Lifecycle |
 |---|---|---|---|
 | **Mission-grade chat** (ship-level) | [prompt-panel.js:725](app/js/views/prompt-panel.js:725) → `MissionRunner.run` | ✅ | Full Run state machine, audit, cancel, analytics |
 | **Agent-with-tools chat** | `@mention` in the prompt panel (→ `AgentExecutor.converse`), or a crew card's own chat (CrewView → `AgentExecutor.converse`, one conversation per card, cards answering at the same time) | ❌ | Request-response, `ship_log` persistence only |
-| **Top-level NICE chat** (Space) | `#/space` → `PromptPanel._sendToCards` → `_callEdgeLLM` once per selected model card, each with its own thread and abort signal (other routes without a ship: `_callDirectLLM`) | ❌ | Request-response, no persistence beyond message history (one flat list per conversation, tagged per model by `SpaceCards`) |
+| **NICE chat** (the app, NICE in the switch) | `#/`, `#/project/:id`, `#/chat/:id` → `NiceChatView` → `AgentExecutor.converse` with no tools, one step, the chat's finished turns as `opts.history` and no spaceship; a reply belongs to the module, not the page, so it lands while the user is elsewhere | ❌ | Request-response; projects, chats and messages persist in `ChatStore` (localStorage per account on this device; no server copy yet, no `ship_log` row) |
+| **Space** (model cards, Blueprints mode) | `#/space` → `PromptPanel._sendToCards` → `_callEdgeLLM` once per selected model card, each with its own thread and abort signal (other routes without a ship: `_callDirectLLM`) | ❌ | Request-response, no persistence beyond message history (one flat list per conversation, tagged per model by `SpaceCards`) |
 | **Code** (desktop app) | `#/code` → `CodeView` → `AgentExecutor.converse` with the `CodeTools` file, shell and browser tools, up to 30 steps a turn, tool turns kept in history (`keepToolTurns`) and no spaceship. Models are NICE's hosted ones (via `nice-ai`, needs sign-in) or ones on the user's own API key (`byo:<provider>:<model>`, called by the desktop app, no sign-in) | ❌ | Request-response; the conversation lives in memory only and goes when the folder changes or the app reloads (no `ship_log` row, since there is no spaceship) |
 
 **Rationale for the split:** casual chat surfaces are latency-sensitive and ephemeral. Forcing a `mission_runs` INSERT before each LLM call adds round-trip latency and bloats the table with throwaway rows. Audit, cancel, and analytics features that depend on Runs apply only to mission-grade chat today, and that's currently fine — there's no user demand for cancel/audit/analytics on casual chat.
@@ -187,7 +188,9 @@ NICE has four chat surfaces. Three intentionally bypass the Run primitive; one i
 
 **Future direction (when audit/analytics demand surfaces):** consolidate by adding server-side bookkeeping in `nice-ai` — get-or-create a singleton Mission per `(user_id, spaceship_id, agent_id)` and INSERT a `mission_runs` row per reply. Keeps the client surface unchanged, centralises the bookkeeping in one place that already authenticates the user and writes to Supabase. Not implemented today.
 
-**Don't add a fifth chat surface without revising this table.** If a new path needs Run-level features, route it through `MissionRunner`. If it doesn't, document it here as a casual surface with rationale.
+**Why the NICE chat has no Run:** Ben reset NICE on 2026-11-28 as a plain multi-model chat app apart from blueprints, so its chats belong to its own projects, not to a Spaceship, and a Mission or Run would need one. When its models start working together (the participant and mode steps), give the conversation its own server record then, not a `mission_runs` row per reply.
+
+**Don't add a sixth chat surface without revising this table.** If a new path needs Run-level features, route it through `MissionRunner`. If it doesn't, document it here as a casual surface with rationale.
 
 ## Rarity Tiers & Access
 Ranks, XP and achievements were removed 2026-10-28. Rarity stays as catalog data and display for now; a later pass removes it too.
@@ -322,7 +325,7 @@ The founder's rule: everything in `nice` and `nice-dark` is black, white or a ne
 
 ### Case rules (follow modern SaaS — Linear/Stripe/Notion/Figma)
 - **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create project", not "Create Project" or "CREATE PROJECT".
-- **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`.
+- **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`. One exception, from the April 2026 look Ben chose for the NICE chat (2026-11-28): its outlined call to action (`.nc-cta`, "New project") is spaced capitals at `--text-xs` with `--tracking-caps-wide`. Every other button stays sentence case.
 - **Title Case** — page titles, product/feature names, proper nouns only ("NICE SPACESHIP", "Bridge", "Captain's Log", "Gemini 2.5 Flash"). Do NOT title-case arbitrary headings.
 - **Banned:** `text-transform: capitalize`. Produces "An Agent Of The Fleet" which no style guide blesses. Fix the source string instead.
 
@@ -371,7 +374,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 71 modules
+### Lib Modules (`app/js/lib/`) — 72 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -440,14 +443,16 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 | `OwnKeys` | `own-keys.js` | SSOT for models on the user's own API keys (desktop app, `window.NiceDesktop.llm`): ids `byo:<provider>:<model>`, the provider model lists, which ones are switched on for Space, chat and agents (`Utils.KEYS.ownModels`, this computer only), the call (`chat`), and the API keys dialog shared by Code and AI Models (`openKeys`). Fires `OwnKeys.EVENT` on changes |
+| `ChatStore` | `chat-store.js` | SSOT for the NICE chat app's projects, chats (in a project or loose) and messages, one record per account on this device (`Utils.KEYS.chats(userId)`, guests their own). A chat takes its first prompt as its title; deleting a project takes its chats; a reply a closed page left pending reads as stopped on the next load. Fires `ChatStore.EVENT` on every change, also for a change from another tab |
 | `SpaceCards` | `space-cards.js` | SSOT for Space's model cards: which models get a card (`available`: switched on ∩ the plan can run, never NICE Auto), the selection the prompt goes to (`selected`/`toggle`, persisted in `Utils.KEYS.spaceCards`, defaults to the free model), live per-card state, approvals a card is waiting on (`requestApproval` / `answer`), each card's thread inside the flat conversation (`threads`, `historyFor`; `tagLegacy` puts pre-card conversations on the card of the model that answered, or the default card), and NICE's own replies that sit on no card (`offCard`) |
 
-### View Modules (`app/js/views/`) — 28 views
-Main nav (Ben, 2026-11-25: keep it simple, everything is projects): the sidebar holds only the list of **Projects** (no heading; each row's dot button opens that project's menu: Diagram, details, Remove), and while Code is open it lists Code's recent folders instead (each with Show in Finder and Remove from list); its header has the open / close toggle on the left and a **NICE / Code** switch on the right (NICE is Home, Code opens `#/code`; Ben, after Claude's sidebar), and phones keep the NICE mark on their top bar; **Blueprints** (`#/blueprints`, templates a project starts from) is a row in the account menu above Integrations, with **Themes** (opens the theme panel) above it; the phone tab bar holds Team and Blueprints. Space (`#/space`), Ship (`#/ship`) and the saved-chats list are out of the menu. The two pages still exist and are reached from Home ("Ask anything", "Review") and the command palette; saved chats stay in localStorage with no list to reopen them. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). The nav icons follow it already, and the default look calls a spaceship a project (see the ontology above); Commander and other sci-fi words in default copy are still to go.
+### View Modules (`app/js/views/`) — 29 views
+Main nav (Ben, 2026-11-28: NICE starts over as a plain chat app, apart from blueprints): the sidebar header has the open / close toggle on the left and a **NICE / Code / Blueprints** switch on the right; a page belongs to the mode it was opened in, and pages of no mode (Settings, Profile, Wallet…) keep the last one. **NICE** (`#/`) lists its **Projects**, each with its chats under it, then the loose **Chats**, each heading with a round + (a new project opens its page with its name ready to type in place); every row's dot button opens its menu (a project: New chat, Rename, Delete; a chat: Rename, Delete). **Code** lists Code's recent folders (each with Show in Finder and Remove from list). **Blueprints** (`#/blueprints/home`, the old Home) lists the user's spaceships, "projects" in the default look (each row: Diagram, details, Remove), as the sidebar did before. The look follows the April 2026 one Ben picked (commit 720af8cc): a near-black page with a faint dot grid in NICE, hairline borders, a centred greeting over an outlined spaced-caps button, and the prompt in one rounded box with its controls on a row under the text and quick-start chips under the box. Phones keep the NICE mark on their top bar; the phone tab bar holds Team and Blueprints. **Blueprints** (`#/blueprints`) is also a row in the account menu above Integrations, with **Themes** (opens the theme panel) above it. Space (`#/space`), Ship (`#/ship`) and the saved-chats list are out of the menu, reached from the Blueprints Home ("Ask anything", "Review") and the command palette. Direction (Ben, 2026-10-30): the default look becomes a plain application, with sci-fi and spaceship imagery and wording kept to the optional themes (The Matrix, HAL-9000, and so on). Next for the NICE chat (Ben, 2026-11-28): several models in one chat (chips in the prompt bar, @mention), then modes (Solo, Compare, Roundtable, Conductor), then project-wide instructions and files.
 
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
-| `HomeView` | `home.js` | `#/` (NICE in the sidebar header; no Home nav item) | Home (the landing: what needs you from AlertCounts, your projects from `Blueprints.getUserShips`, and two ways to start) |
+| `NiceChatView` | `nice-chat.js` | `#/`, `#/project/:id`, `#/chat/:id` (NICE in the sidebar header's switch) | Chat (the NICE app: `#/` greets and starts a loose chat, a project's page lists its chats and starts one in it, a chat shows its thread with each reply labelled by its model. The prompt bar is the April 2026 one: text over a hairline, the model menu (`SpaceCards.available`, the pick saved on the chat and as the next chat's in `Utils.KEYS.chatModel`) and send or stop, quick starts under it while a chat is empty. NICE's own models need a sign-in (the text stays in the box); a failed reply says why and offers Retry; Stop drops a reply that lands after it) |
+| `HomeView` | `home.js` | `#/blueprints/home` (Blueprints in the sidebar header's switch) | Home (the Blueprints landing: what needs you from AlertCounts, your projects from `Blueprints.getUserShips`, and two ways to start) |
 | `ChatView` | `chat.js` | `#/space` (`#/chat` forwards) | Space (the main workspace: rows of compact model cards, as tall as what they hold up to a cap, one per model the user switched on that their plan can run, above the global prompt panel. A card shows its model's latest exchange in the current conversation, a status dot (go / busy / stop) and "Show all" for the whole thread. Clicking a card adds it to the prompt or takes it out; the prompt goes to every selected card in parallel, one card by default (Gemini 2.5 Flash). The panel shows "To …" in place of the model dropdown here. A failed card offers Retry, even while other cards are still answering (billing failures link the Wallet); a command a reply asks for ([EXEC] in review mode) waits for Approve / Deny on that card, a new prompt to the card skips it, and a reply from a multi-card send runs no command but says so on its card. Cards are the models; the monitor stays NICE's own voice (agents, slash commands, navigation, missions): a card send closes it, a reopened chat holding such replies opens it, and "Show full chat" brings it back. Themes with a reactor keep it in a slot above the cards) |
 | `CodeView` | `code.js` | `#/code` (Code in the sidebar header's NICE / Code switch) | Code (desktop app only: one folder on the user's computer, a conversation with its prompt bar on the left and a closable Files / Terminal / Browser panel on the right, which browses the folder and runs commands through `window.NiceDesktop.code`; the Browser tab shows the web page the user and the agent share (`window.NiceDesktop.browser`), with back, forward, reload and an address bar. The agent works through `AgentExecutor.converse` with `CodeTools`: it reads the folder on its own and asks in the conversation before it edits a file or runs a command; the key button opens API keys, and the models of each provider with a key join NICE's in the model picker; the prompt bar holds the permission mode and the model, tool calls show as step lines and a running command's output shows under the working line. The sidebar lists the folders Code has opened, which the desktop app keeps (`desktop/recent-folders.js`, at most 20 in its data folder); a row reopens one by its id through `CodeView.openRecent`. On the website the page says Code runs in the desktop app) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status, a model menu (the user's own agents: NICE Auto plus the models they can run; the pick is saved to the agent everywhere), and its own chat window: the conversation from ShipLog plus what was sent from the card, replies in place, Stop, approvals on the card, Show all opening the card across the row; cards work at the same time. A team request from the bottom prompt ("To the team" there, no model menu) runs through MissionRunner; its rows carry `logMeta` (the lead's `lead_round` handoff/summary, each brief's `asked_by`), so the lead's card shows the request, who it asked and the summed-up answer, and each member's card the lead's brief and its report. Plus recent runs and an approval bar for runs in review) |
@@ -536,6 +541,8 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 | `nice-code-panel` | Code: whether the Files / Terminal / Browser panel is open and which tab it shows (`{ open, tab }`) |
 | `nice-code-model` | Code: the model the conversation uses |
 | `nice-own-models` | Models on the user's own keys switched on for Space, chat and agents (`byo:` ids) |
+| `nice-chats-<userId>` | NICE chat app: projects, chats and messages for that account (`nice-chats-guest` signed out) |
+| `nice-chat-model` | NICE chat app: the model a new chat starts on |
 
 ## Testing
 
@@ -551,10 +558,10 @@ Coverage areas:
 - **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`
 - **Agents + missions**: `agent-executor`, `mission-runner`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`, `workflow-engine` (triage / pipeline / parallel / quality_loop replace the deleted MissionRouter)
 - **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
-- **Views**: `home-view`, `missions-view`, `chat-view` (Space's model cards)
+- **Views**: `home-view`, `missions-view`, `chat-view` (Space's model cards), `nice-chat-view` (the NICE chat app)
 - **Onboarding**: `onboarding`
 - **Prompt panel**: `attachment-utils`, `prompt-panel-space` (sending to the selected cards), `space-cards`
-- **Other**: `content-queue`
+- **Other**: `content-queue`, `chat-store`
 
 ### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 39 tests
 ```bash
@@ -601,6 +608,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
+| NICE chat projects, chats, messages | `ChatStore` (`chat-store.js`) | NiceChatView draws and sends, the sidebar lists; never read `nice-chats-*` directly |
 | Space model cards | `SpaceCards` (`space-cards.js`) | Card set, selection, live state and per-model threads; ChatView draws, PromptPanel sends |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views; painted through `var(--mono, …)` so NICE renders ink |
 | Indicator dot colors | `--dot-stop` / `--dot-go` / `--dot-busy` / `--dot-info` in `theme.css` (NICE-scoped) | The only color in the NICE theme. `.status-dot` + `.dot-r/g/a/i` in `app.css`; uses read `var(--dot-*, <fallback>)` |

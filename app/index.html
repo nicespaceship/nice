@@ -244,16 +244,17 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Sidebar header: the open / close toggle on the left, the NICE / Code
-       switch on the right. Collapsed, only the toggle shows. Themes
+  <!-- Sidebar header: the open / close toggle on the left, the NICE / Code /
+       Blueprints switch on the right. Collapsed, only the toggle shows. Themes
        (#btn-hud, in the account menu) slides the HUD panel down under it. -->
   <div class="side-header">
     <button type="button" class="side-theme-btn" id="app-sidebar-toggle" aria-controls="app-sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-collapse"/></svg>
     </button>
-    <div class="app-mode" role="group" aria-label="Switch between NICE and Code">
-      <a href="#/" class="app-mode-btn is-on" data-home-link>NICE</a>
-      <a href="#/code" class="app-mode-btn" id="app-mode-code">Code</a>
+    <div class="app-mode" role="group" aria-label="Switch between NICE, Code and Blueprints">
+      <a href="#/" class="app-mode-btn is-on" data-home-link data-mode="nice">NICE</a>
+      <a href="#/code" class="app-mode-btn" id="app-mode-code" data-mode="code">Code</a>
+      <a href="#/blueprints/home" class="app-mode-btn" id="app-mode-blueprints" data-mode="blueprints">Blueprints</a>
     </div>
   </div>
 
@@ -285,7 +286,8 @@
   </div>
 
 
-  <!-- Your projects (activated spaceships), rendered by nice.js. -->
+  <!-- What the open mode lists, rendered by nice.js: NICE's projects and
+       chats, Code's recent folders, or the spaceships in Blueprints. -->
   <div class="side-ships" id="side-ships"></div>
 
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
@@ -509,6 +511,7 @@
 <script defer src="./js/lib/model-catalog.js?v=55"></script>
 <script defer src="./js/lib/own-keys.js?v=55"></script>
 <script defer src="./js/lib/space-cards.js?v=55"></script>
+<script defer src="./js/lib/chat-store.js?v=55"></script>
 <script defer src="./js/lib/crew-matcher.js?v=55"></script>
 <script defer src="./js/lib/card-renderer.js?v=55"></script>
 <script defer src="./js/lib/jarvis-hud.js?v=55"></script>
@@ -518,6 +521,7 @@
 <script defer src="./js/lib/core-voice.js?v=55"></script>
 <script defer src="./js/views/home.js?v=55"></script>
 <script defer src="./js/views/chat.js?v=55"></script>
+<script defer src="./js/views/nice-chat.js?v=55"></script>
 <script defer src="./js/views/code.js?v=55"></script>
 <script defer src="./js/views/crew.js?v=55"></script>
 <script defer src="./js/views/outbox.js?v=55"></script>

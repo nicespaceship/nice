@@ -5,7 +5,8 @@ import AxeBuilder from '@axe-core/playwright';
  * NICE™ E2E Smoke Tests
  *
  * Routes:
- *   #/           → HomeView ('Home') — what needs you, your projects (the NICE mark)
+ *   #/           → NiceChatView ('Chat') — NICE: start a chat; #/project/:id and #/chat/:id
+ *   #/blueprints/home → HomeView ('Home') — what needs you, your projects (Blueprints in the switch)
  *   #/space      → ChatView ('Space') — model cards above the prompt; the prompt goes to the selected cards
  *   #/crew       → CrewView ('Team') — one project's crew as cards, recent runs, approvals
  *   #/ship       → OutboxView ('Ship') — results waiting for review, approved, rejected; week view
@@ -247,7 +248,8 @@ test.describe('Route Tests', () => {
     await waitForApp(page);
     await navigateTo(page, '#/security', 'Security');
     await navigateTo(page, '#/settings', 'Settings');
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/', 'Chat');
+    await navigateTo(page, '#/blueprints/home', 'Home');
     await navigateTo(page, '#/space', 'Space');
   });
 });
@@ -313,7 +315,7 @@ test.describe('Auth Flow', () => {
 test.describe('Dashboard', () => {
   test('home view greets new users and points them to a project', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/blueprints/home', 'Home');
     const title = page.locator('.home-title');
     await expect(title).toBeVisible();
     expect(await title.textContent()).toMatch(/Good (morning|afternoon|evening)/);
@@ -381,7 +383,7 @@ test.describe('Dashboard', () => {
 
   test('the shortcuts the account menu advertises work', async ({ page }) => {
     await waitForApp(page);
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/', 'Chat');
     await page.keyboard.press('Control+,');
     await expect(page).toHaveTitle(/Settings/);
     // On layouts where that physical key types "-", Ctrl+minus stays the browser's zoom-out.
@@ -399,7 +401,7 @@ test.describe('Dashboard', () => {
   test('the default look says project and sci-fi themes say spaceship', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); });
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/blueprints/home', 'Home');
     const sideAdd = page.locator('#side-ships .side-ship-new span');
     await expect(sideAdd).toHaveText('Add a project');
     await page.evaluate(() => { Theme.set('matrix'); });
@@ -413,6 +415,7 @@ test.describe('Dashboard', () => {
   test('a project row opens a menu of actions for that project', async ({ page }) => {
     await waitForApp(page);
     await page.evaluate(() => { Theme.set('nice'); State.set('spaceships', [{ id: 'e2e-ship', name: 'Bakery' }, { id: 'e2e-quote', name: 'Q" onmouseover="window.__pwned=1' }]); });
+    await navigateTo(page, '#/blueprints/home', 'Home');
     const row = page.locator('#side-ships .side-ship-row', { hasText: 'Bakery' });
     await expect(row).toBeVisible();
     // A project name with a quote stays inside its attributes.
@@ -484,10 +487,91 @@ test.describe('Dashboard', () => {
     await menu.getByRole('menuitem', { name: 'Remove from list' }).click();
     await expect(names).toHaveText(['site', 'x" onmouseover="window.__pwned=1 <b>']);
     expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/blueprints/home', 'Home');
     await expect(page.locator('#side-ships .side-ship span')).toHaveText(['Bakery']);
     await expect(page.locator('#side-ships .side-folder')).toHaveCount(0);
     await page.evaluate(() => { delete window.NiceDesktop; });
+  });
+
+  test('NICE opens on a chat, with its projects and chats in the sidebar', async ({ page }) => {
+    await waitForApp(page);
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.evaluate(() => { Theme.set('nice-dark'); });
+    await navigateTo(page, '#/', 'Chat');
+    await expect(page.locator('.nc-greeting')).toHaveText(/^Good (morning|afternoon|evening)/);
+    await expect(page.locator('#nc-input')).toHaveAttribute('placeholder', 'Ask NICE…');
+    await expect(page.locator('.nc-start')).toHaveCount(6);
+    await expect(page.locator('#nice-ai')).toBeHidden();
+    // The switch: NICE on, and the sidebar lists Projects and Chats.
+    await expect(page.locator('.app-mode-btn[data-mode="nice"]')).toHaveClass(/\bis-on\b/);
+    await expect(page.locator('#side-ships .side-group-hdr h2')).toHaveText(['Projects', 'Chats']);
+    await expect(page.locator('#side-ships .side-empty')).toHaveText(['No projects yet', 'No chats yet']);
+    // A new project opens its page with its name ready to type in place.
+    await page.locator('#side-ships .side-group-add[data-new="project"]').click();
+    const rename = page.locator('#side-ships .side-rename');
+    // The project page draws after the router's swap; the box keeps focus through it.
+    await expect(page.locator('.nc.nc-project')).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(rename).toBeFocused();
+    await rename.fill('Launch "Q1" <b>');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#side-ships .side-project span')).toHaveText(['Launch "Q1" <b>']);
+    await expect(page.locator('.nc-greeting')).toHaveText('Launch "Q1" <b>');
+    await expect(page.locator('#nc-input')).toHaveAttribute('placeholder', 'Start a chat in this project…');
+    // A signed-out send asks for a sign-in and keeps the text.
+    await page.locator('#nc-input').fill('Plan the launch');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.auth-modal-overlay.open .auth-sub')).toHaveText('Sign in to chat with Gemini 2.5 Flash');
+    await page.locator('.auth-modal-overlay.open .auth-modal-close').click();
+    await expect(page.locator('#nc-input')).toHaveValue('Plan the launch');
+    // A chat in the project shows under it, and opens with its messages.
+    const chatId = await page.evaluate(() => {
+      const p = ChatStore.projects()[0];
+      const c = ChatStore.createChat({ projectId: p.id });
+      ChatStore.addMessage(c.id, { role: 'user', text: 'Hello <i>there</i>' });
+      ChatStore.addMessage(c.id, { role: 'assistant', text: 'Hi **back**', model: 'gemini-2-5-flash' });
+      return c.id;
+    });
+    const chatRow = page.locator('#side-ships .side-chat-row.is-nested .side-chat');
+    await expect(chatRow).toHaveText('Hello <i>there</i>');
+    await chatRow.click();
+    await page.waitForFunction((id) => location.hash === '#/chat/' + id, chatId);
+    await expect(chatRow).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.nc-bubble')).toHaveText('Hello <i>there</i>');
+    await expect(page.locator('.nc-msg-assistant .nc-who')).toHaveText('Gemini 2.5 Flash');
+    await expect(page.locator('.nc-msg-assistant strong')).toHaveText('back');
+    // Its menu deletes it, and the chat page goes back to NICE.
+    await page.evaluate(() => { window.confirm = () => true; });
+    const row = page.locator('#side-ships .side-chat-row');
+    await row.hover();
+    await row.locator('.side-ship-more').click();
+    await expect(page.locator('#side-ship-menu').getByRole('menuitem')).toHaveText(['Rename', 'Delete']);
+    await page.locator('#side-ship-menu').getByRole('menuitem', { name: 'Delete' }).click();
+    await page.waitForFunction(() => location.hash === '#/');
+    await expect(page.locator('#side-ships .side-chat')).toHaveCount(0);
+    // Blueprints switches the sidebar to the spaceships and opens their Home.
+    await page.locator('#app-mode-blueprints').click();
+    await page.waitForFunction(() => location.hash === '#/blueprints/home');
+    await expect(page.locator('#app-mode-blueprints')).toHaveClass(/\bis-on\b/);
+    await expect(page.locator('#side-ships .side-group')).toHaveCount(0);
+    await expect(page.locator('#side-ships .side-ship-new')).toBeVisible();
+    // Settings keeps the mode it was opened from.
+    await navigateTo(page, '#/settings', 'Settings');
+    await expect(page.locator('#app-mode-blueprints')).toHaveClass(/\bis-on\b/);
+    await page.evaluate(() => { Theme.set('nice'); });
+    expect(errors).toEqual([]);
+  });
+
+  test('NICE chat passes critical a11y checks', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/', 'Chat');
+    await expect(page.locator('#nc-input')).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    expect(results.violations.filter(v => v.impact === 'critical')).toHaveLength(0);
   });
 
   test('the default look says team and sci-fi themes say crew', async ({ page }) => {
@@ -565,7 +649,7 @@ test.describe('Dashboard', () => {
     await grok.locator('.space-card-head').click();
     await page.locator('.space-card[data-model="gemini-2-5-flash"] .space-card-head').click();
     await expect(page.locator('.space-card.is-selected')).toHaveCount(1);
-    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/', 'Chat');
     await navigateTo(page, '#/space', 'Space');
     await expect(page.locator('.space-card.is-selected')).toHaveCount(1);
   });
