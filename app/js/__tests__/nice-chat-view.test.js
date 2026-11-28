@@ -247,13 +247,19 @@ describe('NiceChatView', () => {
     const c = ChatStore.createChat();
     ChatStore.addMessage(c.id, { role: 'user', text: 'Mine' });
     // A reload: the page draws before the session's user has loaded.
-    State.set('user', null);
+    State.set('user', undefined);
     ChatStore._reset();
     localStorage.setItem('sb-test-auth-token', '{"access_token":"tok"}');
     mount('/chat/' + c.id, { id: c.id });
     expect(el.querySelector('.app-empty')).toBeNull();
     State.set('user', { id: 'u1', email: 'ben@test.com' });
     expect(el.querySelector('.nc-bubble').textContent).toBe('Mine');
+    // Auth answering signed out, token still stored: the page says so.
+    NiceChatView.destroy();
+    State.set('user', undefined);
+    mount('/chat/' + c.id, { id: c.id });
+    State.set('user', null);
+    expect(el.querySelector('.app-empty h2').textContent).toBe('This chat is gone');
     localStorage.removeItem('sb-test-auth-token');
   });
 

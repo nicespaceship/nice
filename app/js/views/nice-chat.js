@@ -115,9 +115,10 @@ const NiceChatView = (() => {
   function _show() {
     if (!_el) return;
     if (_exists()) { _shown = 'page'; _paint(); return; }
-    // A saved session whose user has not loaded yet: wait for it instead of
-    // saying the chat is gone.
-    if (!State.get('user') && Utils.hasAuthSession && Utils.hasAuthSession()) {
+    // A saved session whose user has not loaded yet (undefined: auth has
+    // not answered; null means it answered signed out): wait for it instead
+    // of saying the chat is gone.
+    if (State.get('user') === undefined && Utils.hasAuthSession && Utils.hasAuthSession()) {
       _shown = 'waiting';
       _el.innerHTML = '<div class="nc"></div>';
       return;
