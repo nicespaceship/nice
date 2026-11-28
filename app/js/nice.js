@@ -859,13 +859,16 @@ const NICE = (() => {
       new MutationObserver(syncToggle).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
       syncToggle();
     }
-    // NICE / Code switch: Code is on while #/code is open, NICE everywhere else.
+    // NICE / Code / Blueprints switch: the mode the page on screen belongs to.
+    // NICE's own button keeps Router's aria-current (it is a home link).
     const syncMode = () => {
-      const onCode = _onCodeRoute();
+      const mode = _modeOf();
+      document.documentElement.dataset.appMode = mode;
       document.querySelectorAll('.app-mode-btn').forEach(b => {
-        const on = (b.id === 'app-mode-code') === onCode;
+        const on = b.dataset.mode === mode;
         b.classList.toggle('is-on', on);
-        if (b.id === 'app-mode-code') { if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }
+        if (b.dataset.mode === 'nice') return;
+        if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
       });
     };
     window.addEventListener('nice:navsync', syncMode);
@@ -980,16 +983,29 @@ const NICE = (() => {
      menu of what can be done to that one ship. The add link and the menu
      read the noun from Terminology ("project" in the default look), so
      the list redraws on theme change. */
-  // Code is on while #/code is open, NICE everywhere else.
+  // Which mode a page belongs to: Code while #/code is open, Blueprints on
+  // the spaceship pages, NICE on its chats. Pages of no mode (Settings,
+  // Profile, Wallet…) keep the mode they were opened from.
   const _onCodeRoute = () => /^#\/code(\?|$)/.test(location.hash);
+  const _BLUEPRINT_ROUTE = /^#\/(blueprints|bridge|crew|ship|outbox|missions|space|chat|library|agents|spaceships|dock|log|analytics|cost|board|workflows|connectors)(\/|\?|$)/;
+  const _NICE_ROUTE = /^#\/(project\/|chat\/|$|\?)|^#?$/;
+  let _lastMode = 'nice';
+  function _modeOf() {
+    const h = location.hash || '';
+    if (_onCodeRoute()) _lastMode = 'code';
+    else if (_NICE_ROUTE.test(h)) _lastMode = 'nice';
+    else if (_BLUEPRINT_ROUTE.test(h)) _lastMode = 'blueprints';
+    return _lastMode;
+  }
   let _sidebarMode = null;
 
   function _renderSidebarShips() {
     const el = document.getElementById('side-ships');
     if (!el) return;
-    _sidebarMode = _onCodeRoute() ? 'code' : 'nice';
+    _sidebarMode = _modeOf();
     if (_sidebarMode === 'code') { _renderSidebarFolders(); return; }
     _folderSeq++;
+    if (_sidebarMode === 'nice') { _renderSidebarChats(); return; }
     const esc = Utils.esc;
     const ships = (typeof Blueprints !== 'undefined' && Blueprints.getUserShips) ? Blueprints.getUserShips() : [];
     const noun = Terminology.label('spaceship');
@@ -1018,6 +1034,112 @@ const NICE = (() => {
     if (refocus) el.querySelector(`.side-ship-more[data-ship="${CSS.escape(refocus)}"]`)?.focus();
     _highlightSidebarShip();
     _updateAlertIndicators();
+  }
+
+  /* ── Sidebar in NICE: projects and their chats, then loose chats ──
+     A project opens to its own page; its chats sit under it. Chats made
+     outside any project follow under Chats. Every row's dot button opens
+     its menu, and Rename turns the row into a box in place (no prompt(),
+     which the desktop app does not have). Links carry no query, so Router
+     highlights the open one. */
+  let _renaming = null; // { kind, id } while a row is being renamed
+
+  function _chatRowHTML(c, nested) {
+    const title = c.title || 'New chat';
+    return `<div class="side-ship-row side-chat-row${nested ? ' is-nested' : ''}" data-row="chat:${Utils.escAttr(c.id)}">
+        <a href="#/chat/${encodeURIComponent(c.id)}" class="side-link side-chat" data-chat="${Utils.escAttr(c.id)}" title="${Utils.escAttr(title)}"><span>${Utils.esc(title)}</span></a>
+        <button type="button" class="side-ship-more" data-chat="${Utils.escAttr(c.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${Utils.escAttr(title + ' options')}">
+          <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
+        </button>
+      </div>`;
+  }
+
+  function _renderSidebarChats() {
+    const el = document.getElementById('side-ships');
+    if (!el || typeof ChatStore === 'undefined') return;
+    if (_renaming && el.querySelector('.side-rename')) return; // redraws after the rename
+    const esc = Utils.esc, attr = Utils.escAttr;
+    const plus = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><use href="#icon-plus"/></svg>';
+    const projects = ChatStore.projects();
+    const loose = ChatStore.chats(null);
+    const refocus = _menuFocus('project') || _menuFocus('chat');
+    _closeShipMenu();
+    el.innerHTML = `
+      <section class="side-group" aria-labelledby="side-group-projects">
+        <div class="side-group-hdr"><h2 id="side-group-projects">Projects</h2><button type="button" class="side-group-add" data-new="project" aria-label="New project" title="New project">${plus}</button></div>
+        ${projects.map(p => `<div class="side-ship-row side-project-row" data-row="project:${attr(p.id)}">
+            <a href="#/project/${encodeURIComponent(p.id)}" class="side-link side-project" data-project="${attr(p.id)}" title="${attr(p.name)}">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-folder"/></svg>
+              <span>${esc(p.name)}</span>
+            </a>
+            <button type="button" class="side-ship-more" data-project="${attr(p.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="${attr(p.name + ' options')}">
+              <svg class="icon icon-sm" fill="currentColor" aria-hidden="true"><use href="#icon-more"/></svg>
+            </button>
+          </div>
+          ${ChatStore.chats(p.id).map(c => _chatRowHTML(c, true)).join('')}`).join('')}
+        ${projects.length ? '' : '<p class="side-empty">No projects yet</p>'}
+      </section>
+      <section class="side-group" aria-labelledby="side-group-chats">
+        <div class="side-group-hdr"><h2 id="side-group-chats">Chats</h2><button type="button" class="side-group-add" data-new="chat" aria-label="New chat" title="New chat">${plus}</button></div>
+        ${loose.map(c => _chatRowHTML(c, false)).join('')}
+        ${loose.length ? '' : '<p class="side-empty">No chats yet</p>'}
+      </section>`;
+    if (refocus) el.querySelector(`.side-ship-more[data-project="${CSS.escape(refocus)}"], .side-ship-more[data-chat="${CSS.escape(refocus)}"]`)?.focus();
+    if (typeof Router !== 'undefined' && Router.syncNav) Router.syncNav();
+    if (_renaming) _startRename(_renaming.kind, _renaming.id);
+  }
+
+  function _startRename(kind, id) {
+    const row = document.querySelector(`#side-ships [data-row="${kind}:${CSS.escape(id)}"]`);
+    const item = kind === 'project' ? ChatStore.project(id) : ChatStore.chat(id);
+    if (!row || !item) { _renaming = null; return; }
+    _renaming = { kind, id };
+    row.classList.add('is-renaming');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'side-rename';
+    input.maxLength = kind === 'project' ? ChatStore.NAME_MAX : ChatStore.TITLE_MAX;
+    input.value = kind === 'project' ? item.name : (item.title || '');
+    input.setAttribute('aria-label', kind === 'project' ? 'Project name' : 'Chat name');
+    row.insertBefore(input, row.firstChild);
+    let done = false;
+    const finish = (save) => {
+      if (done) return;
+      done = true;
+      _renaming = null;
+      if (save) {
+        if (kind === 'project') ChatStore.renameProject(id, input.value);
+        else ChatStore.renameChat(id, input.value);
+      }
+      _renderSidebarChats();
+      document.querySelector(`#side-ships .side-ship-more[data-${kind}="${CSS.escape(id)}"]`)?.focus();
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(true));
+    input.focus();
+    input.select();
+  }
+
+  function _chatAction(kind, act, id) {
+    if (kind === 'project') {
+      const p = ChatStore.project(id);
+      if (!p) return;
+      if (act === 'new-chat') NiceChatView.newChat(id);
+      else if (act === 'rename') _startRename('project', id);
+      else if (act === 'delete') {
+        const n = ChatStore.chats(id).length;
+        const also = n ? ` Its ${n === 1 ? 'chat goes' : n + ' chats go'} with it.` : '';
+        if (window.confirm(`Delete the project "${p.name}"?${also} This can't be undone.`)) ChatStore.deleteProject(id);
+      }
+    } else {
+      const c = ChatStore.chat(id);
+      if (!c) return;
+      if (act === 'rename') _startRename('chat', id);
+      else if (act === 'delete' && window.confirm(`Delete the chat "${c.title || 'New chat'}"? This can't be undone.`)) ChatStore.deleteChat(id);
+    }
   }
 
   /* ── Sidebar in Code: the desktop app's recent folders ──
@@ -1108,6 +1230,7 @@ const NICE = (() => {
       const { id, kind } = _shipMenu.dataset;
       _closeShipMenu();
       if (kind === 'folder') _folderAction(item.dataset.act, id);
+      else if (kind === 'project' || kind === 'chat') _chatAction(kind, item.dataset.act, id);
       else _shipAction(item.dataset.act, id);
     });
     _shipMenu.addEventListener('keydown', (e) => {
@@ -1130,7 +1253,18 @@ const NICE = (() => {
     const icon = (name) => `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
     const item = (act, ic, label) => `<button type="button" class="side-popover-item" role="menuitem" data-act="${act}">${icon(ic)}<span>${Utils.esc(label)}</span></button>`;
     const divider = '<div class="side-divider" role="separator"></div>';
-    if (btn.dataset.folder) {
+    if (btn.dataset.project || btn.dataset.chat) {
+      const kind = btn.dataset.project ? 'project' : 'chat';
+      const id = btn.dataset[kind];
+      const entry = kind === 'project' ? ChatStore.project(id) : ChatStore.chat(id);
+      if (!entry) return;
+      const name = kind === 'project' ? entry.name : (entry.title || 'New chat');
+      menu.dataset.kind = kind;
+      menu.dataset.id = id;
+      menu.setAttribute('aria-label', `${name} options`);
+      menu.innerHTML = (kind === 'project' ? item('new-chat', 'plus', 'New chat') : '')
+        + item('rename', 'edit', 'Rename') + divider + item('delete', 'x', 'Delete');
+    } else if (btn.dataset.folder) {
       const id = btn.dataset.folder;
       const name = btn.closest('.side-ship-row')?.querySelector('.side-folder span')?.textContent || 'Folder';
       menu.dataset.kind = 'folder';
@@ -1194,7 +1328,7 @@ const NICE = (() => {
           || path === '/bridge/spaceships/' + encodeURIComponent(id);
         await Blueprints.deactivateShip(id);
         if (typeof Notify !== 'undefined') Notify.send({ title: `${noun} removed`, message: `${name} has been removed.`, type: 'info' });
-        if (showing) Router.navigate('#/');
+        if (showing) Router.navigate('#/blueprints/home');
       });
     }
   }
@@ -1221,6 +1355,12 @@ const NICE = (() => {
         else _openShipMenu(btn);
         return;
       }
+      const add = e.target.closest('.side-group-add');
+      if (add) {
+        if (add.dataset.new === 'project') NiceChatView.newProject();
+        else NiceChatView.newChat(null);
+        return;
+      }
       // Folder links never navigate: Code is already open, and the folder
       // opens through CodeView so the conversation resets with it.
       const folder = e.target.closest('.side-folder, .side-folder-open');
@@ -1230,7 +1370,16 @@ const NICE = (() => {
       else if (!folder.classList.contains('active')) CodeView.openRecent(folder.dataset.folder);
     });
     document.addEventListener('nice:code-folder', _renderSidebarShips);
-    window.addEventListener('hashchange', () => { if ((_onCodeRoute() ? 'code' : 'nice') !== _sidebarMode) _renderSidebarShips(); });
+    if (typeof ChatStore !== 'undefined') {
+      document.addEventListener(ChatStore.EVENT, () => { if (_sidebarMode === 'nice') _renderSidebarChats(); });
+      document.addEventListener('nice:chat-rename', (e) => {
+        const d = e.detail || {};
+        if (_sidebarMode !== 'nice' || !d.id) return;
+        _renaming = { kind: d.kind, id: d.id };
+        _renderSidebarChats();
+      });
+    }
+    window.addEventListener('hashchange', () => { if (_modeOf() !== _sidebarMode) _renderSidebarShips(); });
     list?.addEventListener('scroll', _closeShipMenu, { passive: true });
     document.addEventListener('pointerdown', (e) => {
       if (!_shipMenuBtn) return;
@@ -1837,7 +1986,10 @@ const NICE = (() => {
     // mark. Space is the workspace (a card per model, the prompt goes to the
     // selected cards), Ship is where finished work goes out, and Blueprints
     // opens the Bridge's Blueprints tab until it gets its own view.
-    Router.on('/', HomeView);                        // Home: what needs you, your spaceships
+    Router.on('/', NiceChatView);                    // NICE: start a chat
+    Router.on('/project/:id', NiceChatView);         // A NICE project: its chats, start one in it
+    Router.on('/chat/:id', NiceChatView);            // One NICE chat
+    Router.on('/blueprints/home', HomeView);         // Blueprints: what needs you, your spaceships
     Router.on('/space', ChatView);
     Router.on('/code', CodeView);                    // Code: one agent on a folder (desktop app)
     Router.on('/ship', OutboxView);                  // Results waiting for review, and approved work
@@ -2601,6 +2753,7 @@ const NICE = (() => {
     if (localStorage.getItem(Utils.KEYS.highContrast) === '1') {
       document.documentElement.setAttribute('data-contrast', 'high');
     }
+    if (typeof ChatStore !== 'undefined') ChatStore.init();
     _initSidebar();
     _initSidebarDnD();
     _initSidebarKeyboard();

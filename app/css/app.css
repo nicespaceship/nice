@@ -1224,13 +1224,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar:not(.open) .app-mode { display:none; }
   .app-sidebar:not(.open) #app-sidebar-toggle .icon { transform:scaleX(-1); }
 }
-/* NICE / Code switch */
+/* NICE / Code / Blueprints switch */
 .app-mode {
   display:inline-flex; align-items:center; gap:2px; padding:3px;
   border-radius:10px; background:var(--surface2, var(--surface));
 }
 .app-mode-btn {
-  display:inline-flex; align-items:center; height:30px; padding:0 14px;
+  display:inline-flex; align-items:center; height:30px; padding:0 10px;
   border:0; border-radius:8px; background:transparent;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm);
   font-weight:var(--fw-medium); line-height:1; text-decoration:none; cursor:pointer;
@@ -1628,11 +1628,13 @@ html:not([data-theme]) .app-main,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .monitor-card-error { border-color:var(--border-hi); background:var(--tint); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(.nice-ai-voice-btn.listening, .nice-ai-voice-btn.listening:hover) { background:var(--tint); }
 
-/* nice-dark only: a neutral panel grey for sidebar + prompt panel so the
-   left rail and the input strip read as one matched surface against the
-   near-black canvas. */
-[data-theme="nice-dark"] .app-sidebar,
+/* nice-dark only: a neutral panel grey for the prompt panel against the
+   near-black canvas. The sidebar keeps the canvas with its hairline edge,
+   as the April 2026 look had it. */
 [data-theme="nice-dark"] .nice-ai-input-area { background:#282828; }
+/* NICE draws the hairline between the sidebar and the page that the
+   universal rule above takes off, as in the April 2026 look. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-sidebar { border-right:1px solid var(--border); }
 
 
 /* ── Sidebar collapsed state ── */
@@ -11330,4 +11332,173 @@ body.preview-active .nice-ai {
    inside that (border-box), so the inset is 52px too. */
 @media (max-width:768px) and (max-height:500px) and (orientation:landscape) {
   .app-main:has(.code-view) { padding-bottom:52px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NICE CHAT (#/, #/project/:id, #/chat/:id) — the April 2026 look: a
+   quiet page, a centred greeting, hairline borders, and the prompt in one
+   rounded box with its controls on a row below the text and quick starts
+   under it. NICE's own looks lay a faint dot grid on the page; the other
+   themes keep their own backgrounds. Like Code, the view fills
+   .app-view-content and scrolls only its thread.
+═══════════════════════════════════════════════════════════════════ */
+.app-main:has(.nc) .app-view-content { overflow:hidden; padding:0; }
+.nc { display:flex; flex-direction:column; height:100%; min-height:0; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nc {
+  background-image:radial-gradient(color-mix(in srgb, var(--text) 10%, transparent) 1px, transparent 1px);
+  background-size:24px 24px;
+}
+
+.nc-hero {
+  flex:1; min-height:0; overflow-y:auto;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;
+  padding:32px 24px; text-align:center;
+}
+.nc-greeting {
+  margin:0; color:var(--text); font-family:var(--font-h); font-size:var(--text-2xl);
+  font-weight:var(--fw-bold); line-height:var(--lh-tight); letter-spacing:var(--tracking-display);
+}
+.nc-overline {
+  margin:0 0 -16px; color:var(--text-muted); font-size:var(--text-xs); font-weight:var(--fw-bold);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps);
+}
+/* The outlined call to action, spaced capitals as in April. */
+.nc-cta {
+  padding:12px 24px; border:1px solid var(--border); border-radius:calc(var(--radius) * .5);
+  background:transparent; color:var(--text-muted); cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-medium);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps-wide, .12em);
+  transition:color .15s, border-color .15s;
+}
+.nc-cta:hover { color:var(--text); border-color:var(--border-hi, var(--text-muted)); }
+.nc-cta:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.nc-muted { margin:0; color:var(--text-muted); font-size:var(--text-sm); }
+
+/* A project's chats. */
+.nc-chat-list { list-style:none; margin:0; padding:0; width:min(560px, 100%); text-align:left; border-top:1px solid var(--border); }
+.nc-chat-link {
+  display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+  padding:12px 4px; border-bottom:1px solid var(--border);
+  color:var(--text); font-size:var(--text-base); text-decoration:none;
+}
+.nc-chat-link span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nc-chat-link time { flex-shrink:0; color:var(--text-muted); font-size:var(--text-xs); }
+.nc-chat-link:hover span { text-decoration:underline; }
+
+/* A chat: its name over the thread. */
+.nc-head {
+  display:flex; align-items:baseline; gap:12px; flex-shrink:0; min-width:0;
+  padding:12px 24px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+.nc-title {
+  margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:var(--text); font-size:var(--text-base); font-weight:var(--fw-medium); line-height:var(--lh-snug);
+}
+.nc-head-project { flex-shrink:0; color:var(--text-muted); font-size:var(--text-sm); }
+.nc-thread { flex:1; min-height:0; overflow-y:auto; padding:24px 24px 8px; }
+.nc-thread-inner { display:flex; flex-direction:column; gap:20px; max-width:760px; margin:0 auto; }
+.nc-msg { color:var(--text); font-size:var(--text-base); line-height:var(--lh-base); overflow-wrap:anywhere; }
+.nc-msg-user { align-self:flex-end; max-width:80%; }
+.nc-bubble {
+  padding:10px 14px; border:1px solid var(--border); border-radius:calc(var(--radius) * 1.5);
+  background:var(--surface, var(--bg2)); white-space:pre-wrap;
+}
+.nc-who { margin-bottom:4px; color:var(--text-muted); font-size:var(--text-xs); font-weight:var(--fw-medium); }
+.nc-md > :first-child { margin-top:0; }
+.nc-md > :last-child { margin-bottom:0; }
+.nc-md pre { overflow-x:auto; }
+.nc-md :is(ol, ul) { padding-left:1.5em; }
+.nc-working, .nc-note { display:flex; align-items:center; gap:8px; margin:0; color:var(--text-muted); font-size:var(--text-sm); }
+.nc-retry {
+  margin-top:8px; padding:4px 12px; border:1px solid var(--border); border-radius:calc(var(--radius) * .8);
+  background:transparent; color:var(--text); font-family:var(--font-b); font-size:var(--text-sm); cursor:pointer;
+}
+.nc-retry:hover { border-color:var(--border-hi, var(--text-muted)); }
+
+/* The prompt: one rounded box, the text above a hairline, the controls
+   on a row below it, the quick starts under the box. */
+.nc-dock { flex-shrink:0; width:100%; max-width:808px; margin:0 auto; padding:8px 24px 24px; }
+.nc-prompt {
+  display:flex; flex-direction:column; padding:12px 12px 8px;
+  border:1px solid var(--border); border-radius:16px; background:var(--panel-bg, var(--bg2));
+  transition:border-color .2s;
+}
+.nc-prompt:focus-within { border-color:var(--border-hi, var(--accent)); }
+/* .nc lifts these past the themes' blanket textarea styles. */
+.nc .nc-prompt textarea.nc-input,
+.nc .nc-prompt textarea.nc-input:focus {
+  display:block; width:100%; min-height:36px; max-height:200px; resize:none; padding:2px;
+  border:0; outline:0; box-shadow:none; background:transparent; color:var(--text);
+  font-family:var(--font-b); font-size:var(--text-base); line-height:var(--lh-base);
+}
+.nc .nc-prompt textarea.nc-input::placeholder { color:var(--text-muted); }
+.nc-toolbar {
+  display:flex; align-items:center; gap:8px; margin-top:6px; padding-top:8px;
+  border-top:1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.nc-toolbar-gap { flex:1; }
+.nc-model { min-width:0; }
+.nc-model .bp-cselect-trigger { height:30px; font-size:var(--text-sm); }
+.nc-model-name { color:var(--text-muted); font-size:var(--text-sm); }
+.nc-btn {
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:30px; height:30px; padding:0; border:1px solid var(--border); border-radius:calc(var(--radius) * .75);
+  background:transparent; color:var(--text-muted); cursor:pointer; transition:color .15s, border-color .15s;
+}
+.nc-btn:hover { color:var(--text); border-color:var(--border-hi, var(--text-muted)); }
+.nc-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.nc-starts { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:16px; }
+.nc-start {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 16px;
+  border:1px solid var(--border); border-radius:999px; background:transparent;
+  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm); cursor:pointer;
+  transition:color .15s, border-color .15s;
+}
+.nc-start:hover { color:var(--text); border-color:var(--border-hi, var(--text-muted)); }
+.nc-start:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* Phones: sized to what is visible, stopping above the tab bar, as Code. */
+@media (max-width:768px) {
+  .app-main:has(.nc) {
+    height:calc(100vh - 48px - var(--app-banner-height, 0px));
+    height:calc(100dvh - 48px - var(--app-banner-height, 0px));
+    padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+  .nc-dock { padding:8px 12px 12px; }
+  .nc-thread { padding:16px 12px 8px; }
+  .nc-head { padding:10px 12px; }
+  .nc-starts { margin-top:12px; }
+  .nc .nc-prompt textarea.nc-input { font-size:16px; } /* iOS zooms into smaller inputs */
+}
+@media (max-width:768px) and (max-height:500px) and (orientation:landscape) {
+  .app-main:has(.nc) { padding-bottom:52px; }
+}
+
+/* ── Sidebar in NICE: Projects and Chats ── */
+.side-group { display:flex; flex-direction:column; gap:2px; }
+.side-group + .side-group { margin-top:16px; }
+.side-group-hdr { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 6px 4px 12px; }
+.side-group-hdr h2 {
+  margin:0; color:var(--nav-text-muted, var(--text-muted)); font-size:var(--text-xs); font-weight:var(--fw-bold);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps);
+}
+.side-group-add {
+  display:flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0;
+  border:1px solid var(--border); border-radius:50%; background:transparent;
+  color:var(--nav-text-muted, var(--text-muted)); cursor:pointer;
+}
+.side-group-add:hover { color:var(--nav-text, var(--text)); border-color:var(--border-hi, var(--text-muted)); }
+.side-group-add .icon { width:14px; height:14px; }
+.side-empty { margin:0; padding:4px 12px 6px; color:var(--nav-text-muted, var(--text-muted)); font-size:var(--text-sm); }
+.side-chat-row.is-nested > .side-link { padding-left:36px; }
+.side-ship-row.is-renaming > .side-link,
+.side-ship-row.is-renaming > .side-ship-more { display:none; }
+.app-sidebar .side-rename {
+  width:100%; height:34px; padding:0 10px; margin:1px 0;
+  border:1px solid var(--border-hi, var(--accent)); border-radius:var(--radius);
+  background:var(--bg); color:var(--text); font-family:var(--font-b); font-size:var(--text-sm);
+}
+/* The rail has no room for names: the groups show only on the open sidebar. */
+@media (min-width:769px) {
+  .app-sidebar:not(.open) .side-group { display:none; }
 }
