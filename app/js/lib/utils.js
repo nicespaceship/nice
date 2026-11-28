@@ -162,6 +162,7 @@ const Utils = (() => {
     spaceCards: 'nice-space-cards',
     codePanel: 'nice-code-panel',
     codeModel: 'nice-code-model',
+    chatModel: 'nice-chat-model',
     ownModels: 'nice-own-models',
     customAgents: 'nice-custom-agents',
     customShips: 'nice-custom-ships',
@@ -216,6 +217,7 @@ const Utils = (() => {
        and bypass this SSOT. */
     mcMigrated:      (userId) => 'nice-mc-migrated-' + userId,
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
+    chats:           (userId) => 'nice-chats-' + (userId || 'guest'),
   };
 
   // Origin for links people share: the site's own, also from the desktop
