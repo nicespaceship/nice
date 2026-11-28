@@ -69,15 +69,21 @@ const CSelect = (() => {
       const r = trigger.getBoundingClientRect();
       const vw = window.innerWidth;
       const menuW = Math.max(r.width, menu.offsetWidth || r.width);
-      menu.style.top = (r.bottom + 4) + 'px';
+      // Below the trigger, unless it would run off the bottom and fits above
+      // (a prompt bar at the foot of the screen).
+      const h = menu.offsetHeight || 0;
+      const room = window.innerHeight - 8;
+      const up = r.bottom + 4 + h > room && r.top - 4 - h >= 8;
+      menu.style.top = (up ? r.top - 4 - h : r.bottom + 4) + 'px';
       menu.style.minWidth = r.width + 'px';
       if (r.left + menuW > vw - 8) { menu.style.left = 'auto'; menu.style.right = Math.max(8, vw - r.right) + 'px'; }
       else { menu.style.right = 'auto'; menu.style.left = r.left + 'px'; }
     };
     const hide = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
     const show = () => {
-      reposition();
+      // Shown first, so its height is known when it is placed.
       menu.hidden = false;
+      reposition();
       trigger.setAttribute('aria-expanded', 'true');
       (opts().find(o => o.getAttribute('aria-selected') === 'true') || opts()[0])?.focus();
     };
