@@ -494,6 +494,31 @@ describe('AgentExecutor', () => {
       expect(req.tools[0].parameters).toEqual({ type: 'object', properties: { query: { type: 'string' } } });
     });
 
+    it('carries an earlier conversation on from opts.history', async () => {
+      _scriptedResponses.push({ content: 'Paris.', stop_reason: 'end_turn', usage: { input_tokens: 4, output_tokens: 1 } });
+      const controller = AgentExecutor.converse(
+        { id: null, name: 'NICE', config: { system_prompt: 'Be brief.' } },
+        { tools: [], history: [
+          { role: 'user', content: 'Capital of Italy?' },
+          { role: 'assistant', content: 'Rome.' },
+          { role: 'tool', content: 'dropped' },
+          null,
+        ] },
+      );
+      expect(controller.history()).toEqual([
+        { role: 'user', content: 'Capital of Italy?' },
+        { role: 'assistant', content: 'Rome.' },
+      ]);
+      const turn = await controller.send('And France?');
+      expect(turn.text).toBe('Paris.');
+      const sent = _capturedRequests[0].messages.slice(1).map(m => [m.role, typeof m.content === 'string' ? m.content : m.content.map(p => p.text).join('')]);
+      expect(sent).toEqual([
+        ['user', 'Capital of Italy?'],
+        ['assistant', 'Rome.'],
+        ['user', 'And France?'],
+      ]);
+    });
+
     it('injects agent memory exactly once (system prompt only, not the user turn)', async () => {
       // Regression: memory was folded into the system prompt by PromptBuilder
       // AND prepended to the first user message by the executor, so any
